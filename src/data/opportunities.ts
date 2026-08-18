@@ -1,0 +1,85 @@
+import type { Opportunity, OpportunityFilter } from "@/types/opportunity";
+
+export const OPPORTUNITY_FILTERS: OpportunityFilter[] = [
+  "ทั้งหมด",
+  "ตรงกับคุณสูง",
+  "เปิดรับฟังความคิดเห็น",
+  "ประกาศ TOR",
+  "ประกาศผู้ชนะ",
+];
+
+export const OPPORTUNITIES: Opportunity[] = [
+  {
+    id: 1,
+    title: "พัฒนาระบบบริหารจัดการศูนย์ข้อมูลเมืองอัจฉริยะ",
+    agency: "สำนักยุทธศาสตร์และประเมินผล",
+    budget: "฿12,500,000",
+    deadline: "18 ส.ค. 2569",
+    daysLeft: 6,
+    match: 96,
+    tags: ["Next.js", "Data Platform", "Cloud"],
+    stage: "เปิดรับฟังความคิดเห็น",
+    summary:
+      "พัฒนาแพลตฟอร์มกลางสำหรับรวบรวม เชื่อมโยง และแสดงผลข้อมูลเมืองแบบเรียลไทม์ พร้อมระบบวิเคราะห์สำหรับผู้บริหาร",
+    isNew: true,
+    budgetStatus: "ปกติ",
+  },
+  {
+    id: 2,
+    title: "จ้างพัฒนาระบบติดตามและบริหารจัดการเรื่องร้องเรียน",
+    agency: "สำนักงานเลขานุการปลัดกรุงเทพมหานคร",
+    budget: "฿7,800,000",
+    deadline: "22 ส.ค. 2569",
+    daysLeft: 10,
+    match: 91,
+    tags: ["Web Application", "API", "UX/UI"],
+    stage: "ประกาศ TOR",
+    summary:
+      "ปรับปรุงช่องทางรับเรื่องร้องเรียนและระบบติดตามสถานะ เชื่อมต่อข้อมูลระหว่างหน่วยงาน พร้อมแดชบอร์ดวิเคราะห์",
+    isNew: true,
+    budgetStatus: "ปกติ",
+  },
+  {
+    id: 3,
+    title: "โครงการระบบสารสนเทศเพื่อบริหารจัดการโรงพยาบาล",
+    agency: "สำนักการแพทย์ กรุงเทพมหานคร",
+    budget: "฿24,000,000",
+    deadline: "28 ส.ค. 2569",
+    daysLeft: 16,
+    match: 87,
+    tags: ["HealthTech", "Security", "Integration"],
+    stage: "ประกาศผู้ชนะ",
+    summary:
+      "จัดหาระบบสารสนเทศโรงพยาบาล รองรับการเชื่อมโยงเวชระเบียน การนัดหมาย และการรายงานผลอย่างปลอดภัย",
+    budgetStatus: "ต่ำกว่าปกติ",
+    hasVendorMismatch: true,
+  },
+  {
+    id: 4,
+    title: "พัฒนาแอปพลิเคชันบริการประชาชนสำหรับงานเขต",
+    agency: "สำนักการวางผังและพัฒนาเมือง",
+    budget: "฿5,900,000",
+    deadline: "2 ก.ย. 2569",
+    daysLeft: 21,
+    match: 82,
+    tags: ["Mobile", "Citizen Service", "Cloud"],
+    stage: "เปิดรับฟังความคิดเห็น",
+    summary:
+      "แอปพลิเคชันสำหรับยื่นคำร้อง นัดหมาย และติดตามงานบริการของสำนักงานเขต พร้อมระบบแจ้งเตือนประชาชน",
+    budgetStatus: "ปกติ",
+  },
+  {
+    id: 5,
+    title: "ระบบ Dashboard ติดตามการทำงานของพนักงานกวาดถนน",
+    agency: "สำนักสิ่งแวดล้อม",
+    budget: "฿30,000,000",
+    deadline: "1 ส.ค. 2569",
+    daysLeft: 0,
+    match: 75,
+    tags: ["Web Application", "Dashboard", "CRUD"],
+    stage: "ประกาศผู้ชนะ",
+    summary: "ระบบ Dashboard แสดงผลข้อมูลการทำงานของพนักงานกวาดถนน และบันทึกเวลาเข้าออก",
+    budgetStatus: "สูงกว่าปกติ",
+    hasVendorMismatch: true,
+  },
+];
