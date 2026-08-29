@@ -43,3 +43,9 @@ next-env.d.ts
 # agent
 AGENTS.md
 CLAUDE.md
+
+#env
+.env*.local
+
+# but do track the secret-free template
+!.env.example
