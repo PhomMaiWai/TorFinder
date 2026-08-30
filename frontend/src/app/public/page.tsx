@@ -1,17 +1,29 @@
 "use client";
 
-import { Building2, Clock, MessageSquare, Search, SlidersHorizontal, TrendingUp, TrendingDown, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Bookmark, Building2, Clock, MessageSquare, Search, SlidersHorizontal, TrendingUp, TrendingDown, CheckCircle2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
-import { OPPORTUNITIES } from "@/data/opportunities";
+import { BMA_AGENCIES, OPPORTUNITIES } from "@/data/opportunities";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
+import { useSavedTors } from "@/lib/use-saved-tors";
 
 const STAGES = ["เปิดรับฟังความคิดเห็น", "ประกาศ TOR", "ประกาศผู้ชนะ"];
-const AGENCIES = Array.from(new Set(OPPORTUNITIES.map((o) => o.agency))).sort();
+const AGENCIES = [...BMA_AGENCIES];
 const TAGS = Array.from(new Set(OPPORTUNITIES.flatMap((o) => o.tags))).sort();
+
+const BUDGET_RANGES = [
+  { id: "under-5m", label: "ต่ำกว่า 5 ล้านบาท", min: 0, max: 5_000_000 },
+  { id: "5m-10m", label: "5 - 10 ล้านบาท", min: 5_000_000, max: 10_000_000 },
+  { id: "10m-20m", label: "10 - 20 ล้านบาท", min: 10_000_000, max: 20_000_000 },
+  { id: "over-20m", label: "มากกว่า 20 ล้านบาท", min: 20_000_000, max: Infinity },
+];
+
+function parseBudget(budget: string) {
+  return Number(budget.replace(/[^0-9]/g, ""));
+}
 
 function CheckboxFilter({
   title,
@@ -72,6 +84,8 @@ function PublicTorCard({
   onFeedbackChange,
   onToggleFeedback,
   onSubmitFeedback,
+  isSaved,
+  onToggleSave,
 }: {
   tor: typeof OPPORTUNITIES[0];
   isFeedbackOpen: boolean;
@@ -79,6 +93,8 @@ function PublicTorCard({
   onFeedbackChange: (val: string) => void;
   onToggleFeedback: () => void;
   onSubmitFeedback: () => void;
+  isSaved: boolean;
+  onToggleSave: () => void;
 }) {
   const isFeedbackStage = tor.stage === "เปิดรับฟังความคิดเห็น";
   const isUrgent = tor.daysLeft <= 7;
@@ -170,9 +186,22 @@ function PublicTorCard({
         </div>
 
         <div className="flex shrink-0 flex-col items-start justify-between border-t border-zinc-100 pt-5 sm:w-[220px] sm:items-end sm:border-none sm:pl-6 sm:pt-0">
-          <div className="mb-4 w-full sm:mb-0 sm:text-right">
-            <div className="mb-1 text-xs font-medium text-zinc-500">งบประมาณโครงการ</div>
-            <div className="text-[17px] font-bold text-zinc-900">{tor.budget}</div>
+          <div className="mb-4 flex w-full items-start justify-between gap-3 sm:mb-0 sm:flex-col sm:items-end">
+            <div className="sm:text-right">
+              <div className="mb-1 text-xs font-medium text-zinc-500">งบประมาณโครงการ</div>
+              <div className="text-[17px] font-bold text-zinc-900">{tor.budget}</div>
+            </div>
+            <button
+              onClick={onToggleSave}
+              aria-label={isSaved ? "เอาออกจากรายการที่บันทึก" : "บันทึก"}
+              className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors sm:mt-1 ${
+                isSaved
+                  ? "bg-accent-soft text-accent"
+                  : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-600"
+              }`}
+            >
+              <Bookmark size={15} fill={isSaved ? "currentColor" : "none"} />
+            </button>
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:mt-auto">
@@ -244,9 +273,11 @@ export default function PublicPage() {
   const [selectedStages, setSelectedStages] = useState<string[]>([]);
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedBudgets, setSelectedBudgets] = useState<string[]>([]);
   const [feedbackOpenId, setFeedbackOpenId] = useState<number | null>(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const { savedIds, toggleSaved } = useSavedTors();
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -256,10 +287,17 @@ export default function PublicPage() {
       const matchStage = selectedStages.length === 0 || selectedStages.includes(opp.stage);
       const matchAgency = selectedAgencies.length === 0 || selectedAgencies.includes(opp.agency);
       const matchTags = selectedTags.length === 0 || opp.tags.some((t) => selectedTags.includes(t));
+      const budgetValue = parseBudget(opp.budget);
+      const matchBudget =
+        selectedBudgets.length === 0 ||
+        selectedBudgets.some((id) => {
+          const range = BUDGET_RANGES.find((r) => r.id === id);
+          return !!range && budgetValue >= range.min && budgetValue <= range.max;
+        });
 
-      return matchSearch && matchStage && matchAgency && matchTags;
+      return matchSearch && matchStage && matchAgency && matchTags && matchBudget;
     });
-  }, [search, selectedStages, selectedAgencies, selectedTags]);
+  }, [search, selectedStages, selectedAgencies, selectedTags, selectedBudgets]);
 
   function handleSubmitFeedback() {
     if (!feedbackText.trim()) return;
@@ -271,11 +309,15 @@ export default function PublicPage() {
     setSelectedStages([]);
     setSelectedAgencies([]);
     setSelectedTags([]);
+    setSelectedBudgets([]);
     setSearch("");
   }
 
   const hasActiveFilters =
-    selectedStages.length > 0 || selectedAgencies.length > 0 || selectedTags.length > 0;
+    selectedStages.length > 0 ||
+    selectedAgencies.length > 0 ||
+    selectedTags.length > 0 ||
+    selectedBudgets.length > 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
@@ -314,7 +356,7 @@ export default function PublicPage() {
                 showMobileFilters ? "block" : "hidden"
               }`}
             >
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 lg:sticky lg:top-8">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="flex items-center gap-2 text-base font-bold text-zinc-900">
                     <SlidersHorizontal size={18} /> ตัวกรอง
@@ -355,7 +397,22 @@ export default function PublicPage() {
                   selected={selectedStages}
                   onChange={setSelectedStages}
                 />
-                
+
+                <div className="h-px w-full bg-zinc-100 mb-7" />
+
+                <CheckboxFilter
+                  title="งบประมาณ"
+                  options={BUDGET_RANGES.map((r) => r.label)}
+                  selected={selectedBudgets.map(
+                    (id) => BUDGET_RANGES.find((r) => r.id === id)!.label,
+                  )}
+                  onChange={(labels) =>
+                    setSelectedBudgets(
+                      BUDGET_RANGES.filter((r) => labels.includes(r.label)).map((r) => r.id),
+                    )
+                  }
+                />
+
                 <div className="h-px w-full bg-zinc-100 mb-7" />
 
                 <CheckboxFilter
@@ -418,6 +475,8 @@ export default function PublicPage() {
                         }
                       }}
                       onSubmitFeedback={handleSubmitFeedback}
+                      isSaved={savedIds.includes(tor.id)}
+                      onToggleSave={() => toggleSaved(tor.id)}
                     />
                   ))}
                 </div>

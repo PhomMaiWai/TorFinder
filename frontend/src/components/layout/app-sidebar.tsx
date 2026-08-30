@@ -1,52 +1,113 @@
 "use client";
 
 import {
+  Activity,
   ArrowLeft,
+  Bell,
+  Bookmark,
+  Building2,
   ChevronDown,
+  ClipboardList,
   LayoutDashboard,
   Menu,
+  MessageSquare,
   Search,
-  ShieldAlert,
+  UserCheck,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import { PENDING_ACCOUNTS } from "@/data/admin";
+import { NOTIFICATIONS } from "@/data/notifications";
+import { FEEDBACK_ENTRIES } from "@/data/tor-details";
+import { useSavedTors } from "@/lib/use-saved-tors";
+
 type NavLink = {
   label: string;
   href: string;
   icon: React.ElementType;
-  badge?: string;
+  badge?: number;
 };
 
-const NAV: { section: string | null; links: NavLink[] }[] = [
+const UNREAD_NOTIFICATIONS = NOTIFICATIONS.filter((n) => !n.read).length;
+const PENDING_ACCOUNTS_COUNT = PENDING_ACCOUNTS.filter(
+  (a) => a.status === "รอตรวจสอบ",
+).length;
+const PENDING_FEEDBACK_COUNT = FEEDBACK_ENTRIES.filter(
+  (f) => f.status === "รอตรวจสอบ",
+).length;
+
+const ORG_NAV: { section: string | null; links: NavLink[] }[] = [
   {
     section: null,
     links: [
       { label: "ภาพรวม", href: "/dashboard", icon: LayoutDashboard },
       { label: "ค้นหา TOR", href: "/public", icon: Search },
+      { label: "รายการที่บันทึก", href: "/saved?scope=org", icon: Bookmark },
+      { label: "โปรไฟล์บริษัท", href: "/profile", icon: Building2 },
+      {
+        label: "การแจ้งเตือน",
+        href: "/notifications",
+        icon: Bell,
+        badge: UNREAD_NOTIFICATIONS || undefined,
+      },
     ],
   },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+const ADMIN_NAV: { section: string | null; links: NavLink[] }[] = [
+  {
+    section: null,
+    links: [
+      { label: "ภาพรวม", href: "/admin", icon: Activity },
+      {
+        label: "บัญชีรออนุมัติ",
+        href: "/admin/accounts",
+        icon: UserCheck,
+        badge: PENDING_ACCOUNTS_COUNT || undefined,
+      },
+      {
+        label: "กลั่นกรองความคิดเห็น",
+        href: "/admin/moderation",
+        icon: MessageSquare,
+        badge: PENDING_FEEDBACK_COUNT || undefined,
+      },
+      { label: "จัดการบริษัท", href: "/admin/companies", icon: Building2 },
+      { label: "จัดการผู้ใช้งาน", href: "/admin/users", icon: Users },
+      { label: "Audit Log", href: "/admin/audit", icon: ClipboardList },
+    ],
+  },
+];
+
+function NavLinks({
+  nav,
+  onNavigate,
+}: {
+  nav: { section: string | null; links: NavLink[] }[];
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
+  const { savedIds } = useSavedTors("org");
 
   function isActive(href: string) {
-    if (href === "/dashboard") return pathname === href;
-    return pathname === href || pathname.startsWith(href + "/");
+    const path = href.split("?")[0];
+    if (path === "/dashboard" || path === "/admin") return pathname === path;
+    return pathname === path || pathname.startsWith(path + "/");
   }
 
   return (
     <nav className="flex-1 overflow-y-auto px-3" aria-label="เมนูหลัก">
-      {NAV.map(({ section, links }, i) => (
+      {nav.map(({ section, links }, i) => (
         <div key={i} className={i > 0 ? "mt-5" : ""}>
           {section && (
             <p className="mb-1 px-2.5 text-[11px] font-medium text-ink-subtle">{section}</p>
           )}
           <ul className="space-y-0.5">
-            {links.map(({ label, href, icon: Icon, badge }) => {
+            {links.map(({ label, href, icon: Icon, badge: staticBadge }) => {
               const active = isActive(href);
+              const badge = href.startsWith("/saved") ? savedIds.length || undefined : staticBadge;
               return (
                 <li key={href}>
                   <Link
@@ -60,9 +121,12 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                   >
                     <Icon size={16} className="shrink-0 opacity-70" />
                     <span className="flex-1">{label}</span>
-                    {badge && (
-                      <span className="flex items-center gap-0.5 rounded bg-danger-soft px-1.5 py-0.5 text-[10px] font-semibold text-danger">
-                        <ShieldAlert size={9} />
+                    {badge !== undefined && (
+                      <span
+                        className={`flex size-4.5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                          href.startsWith("/saved") ? "bg-accent" : "bg-danger"
+                        }`}
+                      >
                         {badge}
                       </span>
                     )}
@@ -78,16 +142,24 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith("/admin");
+  const nav = isAdmin ? ADMIN_NAV : ORG_NAV;
+
   return (
     <div className="flex h-full flex-col bg-[#f5f5f4]">
       {/* Workspace */}
       <div className="px-3 pt-4 pb-2">
         <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-zinc-200/50">
-          <span className="flex size-7 items-center justify-center rounded-md bg-accent text-[11px] font-bold text-white">
+          <span
+            className={`flex size-7 items-center justify-center rounded-md text-[11px] font-bold text-white ${
+              isAdmin ? "bg-danger" : "bg-accent"
+            }`}
+          >
             T
           </span>
           <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-ink">
-            Arun Digital
+            {isAdmin ? "Torr Admin" : "Arun Digital"}
           </span>
           <ChevronDown size={14} className="shrink-0 text-ink-subtle" />
         </button>
@@ -104,7 +176,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
 
-      <NavLinks onNavigate={onNavigate} />
+      <NavLinks nav={nav} onNavigate={onNavigate} />
 
       {/* Back to landing */}
       <div className="px-3 pb-2">
@@ -125,8 +197,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             A
           </span>
           <div className="min-w-0 text-left">
-            <p className="truncate text-sm font-medium text-ink">Arun Digital</p>
-            <p className="truncate text-xs text-ink-muted">Co., Ltd</p>
+            <p className="truncate text-sm font-medium text-ink">
+              {isAdmin ? "ผู้ดูแลระบบ" : "Arun Digital"}
+            </p>
+            <p className="truncate text-xs text-ink-muted">
+              {isAdmin ? "admin@bma.go.th" : "Co., Ltd"}
+            </p>
           </div>
         </button>
       </div>
@@ -158,7 +234,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="flex size-7 items-center justify-center rounded-md bg-accent text-[11px] font-bold text-white">
               T
             </span>
-            <span className="text-sm font-bold text-ink">Torr</span>
+            <span className="text-sm font-bold text-ink">TorFinder</span>
           </Link>
           <button
             className="grid size-9 place-items-center rounded-lg text-ink-muted hover:bg-surface-alt"
