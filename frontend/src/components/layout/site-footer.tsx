@@ -23,7 +23,7 @@ export function SiteFooter() {
               <span className="flex size-7 items-center justify-center rounded-md bg-accent text-xs font-bold text-white">
                 T
               </span>
-              Torr
+              TorFinder
             </div>
             <p className="mt-3 text-sm leading-relaxed text-ink-muted">
               แพลตฟอร์มค้นหาและวิเคราะห์
@@ -54,7 +54,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 text-sm text-ink-subtle sm:flex-row sm:items-center">
-          <span>© 2569 Torr — สงวนลิขสิทธิ์</span>
+          <span>© 2569 TorFinder — สงวนลิขสิทธิ์</span>
           <span>Demo · ข้อมูลจำลองเพื่อการศึกษา</span>
         </div>
       </div>

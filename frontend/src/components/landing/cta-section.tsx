@@ -9,7 +9,7 @@ export function CtaSection() {
           พร้อมเริ่มต้นแล้วหรือยัง?
         </h2>
         <p className="mt-4 text-base leading-relaxed text-ink-subtle">
-          เข้าร่วมกับบริษัทซอฟต์แวร์ที่ใช้ Torr
+          เข้าร่วมกับบริษัทซอฟต์แวร์ที่ใช้ TorFinder
           และไม่พลาดโอกาสจัดซื้อจัดจ้าง BMA อีกต่อไป
         </p>
         <Link

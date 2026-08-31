@@ -213,7 +213,7 @@ function ProfilePanel() {
     <div className="overflow-hidden rounded-xl border border-border bg-white">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <p className="text-sm font-semibold text-ink">โปรไฟล์บริษัท</p>
-        <Link href="#" className="text-xs font-medium text-accent hover:text-accent-dark">
+        <Link href="/profile" className="text-xs font-medium text-accent hover:text-accent-dark">
           แก้ไข
         </Link>
       </div>
@@ -242,7 +242,7 @@ function ProfilePanel() {
           ))}
         </div>
         <Link
-          href="#"
+          href="/profile"
           className="mt-4 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-border text-xs font-medium text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
         >
           ตั้งค่าโปรไฟล์

@@ -15,7 +15,7 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "Torr — ค้นหา TOR ซอฟต์แวร์ BMA",
+  title: "TorFinder — ค้นหา TOR ซอฟต์แวร์ BMA",
   description:
     "แพลตฟอร์มรวบรวม วิเคราะห์ และจับคู่ประกาศ TOR ด้านซอฟต์แวร์ของกรุงเทพมหานคร",
 };
