@@ -1,11 +1,60 @@
-# TOR Finder
+# TOR Radar (TOR Finder)
 
-**Find, match, and track Bangkok's software procurement — in one place.**
+A platform that aggregates Thai government software procurement announcements (TOR)
+from e-GP and BMA sources, uses AI to extract and classify key details, and matches
+relevant opportunities to registered software companies.
 
----
+## Tech Stack
 
-Bidding on BMA software work shouldn't start with a PDF marathon.
+- **Framework:** Next.js (App Router)
+- **Database:** MongoDB Atlas (with Vector Search)
+- **AI:** Google Vertex AI (Gemini + Document AI)
+- **Auth:** JWT / session-based
 
-TOR Finder is a web platform that brings Bangkok's software procurement into one clear view. It automatically collects Terms of Reference (TOR) from e-GP, uses AI to surface only software-related opportunities, and turns dense documents into structured, actionable details — scope, budget, qualifications, deadlines.
+## Getting Started
 
-Software companies spend less time searching and more time bidding on projects that actually fit. The public and the State Audit Office (สตง.) gain the visibility to search, compare, and scrutinize procurement with confidence.
+### 1. Clone and install
+
+\`\`\`bash
+git clone <repo-url>
+cd torfinder
+npm install
+\`\`\`
+
+### 2. Set up environment variables
+
+Copy the example file and fill in your own values:
+\`\`\`bash
+cp .env.example .env.local
+\`\`\`
+Ask a teammate for the MongoDB connection string and other secrets — never commit `.env.local`.
+
+### 3. Run the dev server
+
+\`\`\`bash
+npm run dev
+\`\`\`
+Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+## Project Structure
+
+\`\`\`
+src/
+├── app/ # Pages and API routes (Next.js App Router)
+│ └── api/ # Backend endpoints
+├── components/ # Reusable UI components
+├── data/ # Mock data (being replaced by real DB calls)
+└── lib/ # Shared utilities (e.g. MongoDB connection)
+\`\`\`
+
+## Branching & Commits
+
+- `main` — always deployable
+- `feature/<name>` — one branch per issue
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
+  (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`)
+
+## Course Context
+
+Built for Collaborative Software Process and Project Management (01219346),
+Kasetsart University.
