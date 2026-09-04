@@ -29,6 +29,12 @@ cp .env.example .env.local
 \`\`\`
 Ask a teammate for the MongoDB connection string and other secrets — never commit `.env.local`.
 
+Required variables:
+- `MONGODB_URI` — MongoDB Atlas connection string
+- `JWT_SECRET` — secret used to sign auth session/JWT tokens
+
+The app validates these at startup (see `frontend/src/lib/env.ts`) and fails fast with a clear error if any are missing.
+
 ### 3. Run the dev server
 
 \`\`\`bash
