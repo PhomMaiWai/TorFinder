@@ -1,16 +1,13 @@
 import { MongoClient } from "mongodb";
+import { env } from "./env";
 
-if (!process.env.MONGODB_URI) {
-  throw new Error("Missing MONGODB_URI in .env.local");
-}
-
-const uri = process.env.MONGODB_URI;
+const uri = env.MONGODB_URI;
 const options = {};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-if (process.env.NODE_ENV === "development") {
+if (env.NODE_ENV === "development") {
   // Prevents multiple connections during hot-reload in dev
   const globalWithMongo = global as typeof globalThis & {
     _mongoClientPromise?: Promise<MongoClient>;
