@@ -3,3 +3,36 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"
+    environment:
+      - BACKEND_URL=http://backend:4000
+      - SESSION_SECRET=${SESSION_SECRET:-dev-only-insecure-secret-change-me}
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - MONGODB_URI=mongodb://torr:torr@db:27017/torr?authSource=admin
+      - SESSION_SECRET=${SESSION_SECRET:-dev-only-insecure-secret-change-me}
+      - FRONTEND_ORIGIN=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mongo:7
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=torr
+      - MONGO_INITDB_ROOT_PASSWORD=torr
+    volumes:
+      - torr_db_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  torr_db_data:
