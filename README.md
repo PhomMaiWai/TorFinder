@@ -15,37 +15,40 @@ relevant opportunities to registered software companies.
 
 ### 1. Clone and install
 
-\`\`\`bash
+```
 git clone <repo-url>
 cd torfinder
 npm install
-\`\`\`
+```
 
 ### 2. Set up environment variables
 
 Copy the example file and fill in your own values:
-\`\`\`bash
+
+```
 cp .env.example .env.local
-\`\`\`
+```
+
 Ask a teammate for the MongoDB connection string and other secrets — never commit `.env.local`.
 
 ### 3. Run the dev server
 
-\`\`\`bash
+```
 npm run dev
-\`\`\`
+```
+
 Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ## Project Structure
 
-\`\`\`
+```
 src/
 ├── app/ # Pages and API routes (Next.js App Router)
 │ └── api/ # Backend endpoints
 ├── components/ # Reusable UI components
 ├── data/ # Mock data (being replaced by real DB calls)
 └── lib/ # Shared utilities (e.g. MongoDB connection)
-\`\`\`
+```
 
 ## Branching & Commits
 
@@ -57,4 +60,4 @@ src/
 ## Course Context
 
 Built for Collaborative Software Process and Project Management (01219346),
-Kasetsart University.
+Kasetsart University.cdxf
