@@ -4,6 +4,7 @@ import { Bell, Bookmark, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { LanguageToggle } from "@/components/layout/language-toggle";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 import { PUBLIC_NOTICES } from "@/data/public-notices";
@@ -59,8 +60,9 @@ export function SiteNavbar() {
         </nav>
 
         <div className="flex items-center gap-1.5">
+          <LanguageToggle />
           <ThemeToggle />
-          
+
           <Link
             href="/saved"
             className="relative grid size-9 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
