@@ -2,16 +2,12 @@
 
 import { Bell, Bookmark, Menu, X } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 import { PUBLIC_NOTICES } from "@/data/public-notices";
 import { useSavedTors } from "@/lib/use-saved-tors";
-
-const NAV_LINKS = [
-  { label: "ค้นหา TOR", href: "/public" },
-  { label: "วิธีการทำงาน", href: "#how-it-works" },
-];
 
 function useClickOutside(onOutside: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -28,11 +24,17 @@ function useClickOutside(onOutside: () => void) {
 }
 
 export function SiteNavbar() {
+  const t = useTranslations("Navbar");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [noticesOpen, setNoticesOpen] = useState(false);
   const { savedIds } = useSavedTors();
 
   const noticesRef = useClickOutside(() => setNoticesOpen(false));
+
+  const navLinks = [
+    { label: t("navSearch"), href: "/public" },
+    { label: t("navHowItWorks"), href: "#how-it-works" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white">
@@ -45,7 +47,7 @@ export function SiteNavbar() {
         </Link>
 
         <nav className="hidden items-center md:flex">
-          {NAV_LINKS.map(({ label, href }) => (
+          {navLinks.map(({ label, href }) => (
             <Link
               key={label}
               href={href}
@@ -62,7 +64,7 @@ export function SiteNavbar() {
           <Link
             href="/saved"
             className="relative grid size-9 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
-            aria-label="รายการที่บันทึกไว้"
+            aria-label={t("savedAriaLabel")}
           >
             <Bookmark size={17} />
             {savedIds.length > 0 && (
@@ -76,7 +78,7 @@ export function SiteNavbar() {
             <button
               onClick={() => setNoticesOpen((v) => !v)}
               className="relative grid size-9 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
-              aria-label="การแจ้งเตือน"
+              aria-label={t("notificationsAriaLabel")}
             >
               <Bell size={17} />
               <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-accent" />
@@ -85,7 +87,7 @@ export function SiteNavbar() {
             {noticesOpen && (
               <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-border bg-white p-2 shadow-lg">
                 <p className="px-2.5 py-1.5 text-xs font-semibold tracking-wide text-ink-subtle uppercase">
-                  ประกาศล่าสุด
+                  {t("recentNotices")}
                 </p>
                 <ul className="space-y-0.5">
                   {PUBLIC_NOTICES.map((n) => (
@@ -103,19 +105,19 @@ export function SiteNavbar() {
             href="/login"
             className="hidden px-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink md:block"
           >
-            เข้าสู่ระบบ
+            {t("login")}
           </Link>
           <Link
             href="/dashboard"
             className="hidden h-9 items-center rounded-lg bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-dark md:flex"
           >
-            เริ่มต้นฟรี
+            {t("getStarted")}
           </Link>
 
           <button
             className="grid size-9 place-items-center rounded-lg text-ink-muted hover:bg-surface-alt md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
-            aria-label={mobileOpen ? "ปิดเมนู" : "เปิดเมนู"}
+            aria-label={mobileOpen ? t("closeMenuAriaLabel") : t("openMenuAriaLabel")}
           >
             {mobileOpen ? <X size={19} /> : <Menu size={19} />}
           </button>
@@ -124,7 +126,7 @@ export function SiteNavbar() {
 
       {mobileOpen && (
         <nav className="border-t border-border bg-white px-6 py-2 md:hidden">
-          {NAV_LINKS.map(({ label, href }) => (
+          {navLinks.map(({ label, href }) => (
             <Link
               key={label}
               href={href}
@@ -136,13 +138,13 @@ export function SiteNavbar() {
           ))}
           <div className="flex gap-3 border-t border-border py-3">
             <Link href="/login" className="flex-1 py-2 text-center text-sm text-ink-muted">
-              เข้าสู่ระบบ
+              {t("login")}
             </Link>
             <Link
               href="/dashboard"
               className="flex flex-1 items-center justify-center rounded-lg bg-accent py-2 text-sm font-semibold text-white"
             >
-              เริ่มต้นฟรี
+              {t("getStarted")}
             </Link>
           </div>
         </nav>

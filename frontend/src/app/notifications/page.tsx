@@ -1,6 +1,7 @@
 "use client";
 
 import { BellOff } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { PageBody, PageHeader } from "@/components/layout/app-page";
@@ -22,6 +23,7 @@ const TONE_ICON_CLS = {
 };
 
 export default function NotificationsPage() {
+  const t = useTranslations("NotificationsPage");
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
   const [filter, setFilter] = useState<FilterId>("all");
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -45,11 +47,11 @@ export default function NotificationsPage() {
   return (
     <AppShell>
       <PageHeader
-        title="การแจ้งเตือน"
+        title={t("pageTitle")}
         description={
           unreadCount > 0
-            ? `${unreadCount} รายการที่ยังไม่ได้อ่าน`
-            : "อ่านครบทุกรายการแล้ว"
+            ? t("unreadCountDescription", { count: unreadCount })
+            : t("allReadDescription")
         }
         action={
           unreadCount > 0 && (
@@ -57,7 +59,7 @@ export default function NotificationsPage() {
               onClick={markAllRead}
               className="inline-flex h-9 items-center rounded-lg border border-border bg-white px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-alt"
             >
-              ทำเครื่องหมายว่าอ่านแล้วทั้งหมด
+              {t("markAllReadButton")}
             </button>
           )
         }
@@ -92,7 +94,7 @@ export default function NotificationsPage() {
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border py-20 text-center">
             <BellOff size={28} className="mx-auto mb-3 text-ink-subtle" />
-            <p className="text-sm font-medium text-ink">ไม่มีการแจ้งเตือนในหมวดนี้</p>
+            <p className="text-sm font-medium text-ink">{t("emptyFilterState")}</p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border bg-white divide-y divide-border">

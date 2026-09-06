@@ -2,12 +2,14 @@
 
 import { Clock } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 function PendingCard() {
+  const t = useTranslations("SignupPendingPage");
   const params = useSearchParams();
-  const name = params.get("name") ?? "บริษัทของคุณ";
+  const name = params.get("name") ?? t("defaultCompanyName");
 
   return (
     <div className="w-full max-w-md text-center">
@@ -22,10 +24,12 @@ function PendingCard() {
         <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-warn-soft">
           <Clock size={26} className="text-warn" />
         </span>
-        <h1 className="text-xl font-bold text-ink">รอการอนุมัติจากผู้ดูแลระบบ</h1>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-          บัญชีของ <span className="font-medium text-ink">{name}</span> ถูกส่งเรียบร้อยแล้ว
-          ทีมผู้ดูแลระบบจะตรวจสอบข้อมูลและแจ้งผลผ่านอีเมลภายใน 1-2 วันทำการ
+          {t.rich("pendingMessage", {
+            name,
+            bold: (chunks) => <span className="font-medium text-ink">{chunks}</span>,
+          })}
         </p>
       </div>
 
@@ -33,7 +37,7 @@ function PendingCard() {
         href="/login"
         className="mt-6 inline-block text-sm font-medium text-accent hover:text-accent-dark"
       >
-        ← กลับหน้าเข้าสู่ระบบ
+        {t("backToLogin")}
       </Link>
     </div>
   );

@@ -11,12 +11,14 @@ import {
   User,
   XCircle,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { PENDING_ACCOUNTS } from "@/data/admin";
 
 export default function AdminAccountsPage() {
+  const t = useTranslations("AdminAccountsPage");
   const [accounts, setAccounts] = useState(PENDING_ACCOUNTS);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -30,14 +32,14 @@ export default function AdminAccountsPage() {
 
   return (
     <AdminPageShell
-      title="บัญชีรออนุมัติ"
-      description="ตรวจสอบและอนุมัติบัญชีบริษัทที่สมัครเข้ามาใหม่"
+      title={t("title")}
+      description={t("description")}
     >
       <div className="space-y-3">
         {accounts.length === 0 ? (
           <div className="py-20 text-center">
             <CheckCircle2 size={36} className="mx-auto mb-3 text-success opacity-70" />
-            <p className="text-base font-semibold text-ink">ไม่มีบัญชีรออนุมัติ</p>
+            <p className="text-base font-semibold text-ink">{t("emptyState")}</p>
           </div>
         ) : (
           accounts.map((a) => {
@@ -76,7 +78,7 @@ export default function AdminAccountsPage() {
                     </div>
                     <h3 className="text-sm font-semibold text-ink">{a.companyName}</h3>
                     <p className="mt-1 text-xs text-ink-muted">
-                      {a.specialty} · {a.size} · สมัครเมื่อ {a.submittedAt}
+                      {a.specialty} · {a.size} · {t("submittedInfo", { date: a.submittedAt })}
                     </p>
                   </div>
 
@@ -91,14 +93,14 @@ export default function AdminAccountsPage() {
                           className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
                         >
                           <XCircle size={15} />
-                          ปฏิเสธ
+                          {t("rejectAction")}
                         </button>
                         <button
                           onClick={() => updateAccountStatus(a.id, "อนุมัติ")}
                           className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
                         >
                           <Check size={15} />
-                          อนุมัติ
+                          {t("approveAction")}
                         </button>
                       </>
                     )}
@@ -114,34 +116,34 @@ export default function AdminAccountsPage() {
                 {isExpanded && (
                   <div className="border-t border-border bg-surface-alt/50 px-5 py-4">
                     <p className="mb-3 text-xs font-semibold tracking-wide text-ink-subtle uppercase">
-                      รายละเอียดบริษัท
+                      {t("companyDetailsHeading")}
                     </p>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="flex items-start gap-2">
                         <Building2 size={14} className="mt-0.5 shrink-0 text-ink-subtle" />
                         <div>
-                          <p className="text-xs text-ink-muted">เลขทะเบียนนิติบุคคล</p>
+                          <p className="text-xs text-ink-muted">{t("taxIdLabel")}</p>
                           <p className="text-sm text-ink">{a.taxId}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
                         <User size={14} className="mt-0.5 shrink-0 text-ink-subtle" />
                         <div>
-                          <p className="text-xs text-ink-muted">ชื่อผู้ติดต่อ</p>
+                          <p className="text-xs text-ink-muted">{t("contactNameLabel")}</p>
                           <p className="text-sm text-ink">{a.contactName}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
                         <Phone size={14} className="mt-0.5 shrink-0 text-ink-subtle" />
                         <div>
-                          <p className="text-xs text-ink-muted">เบอร์โทรศัพท์</p>
+                          <p className="text-xs text-ink-muted">{t("phoneLabel")}</p>
                           <p className="text-sm text-ink">{a.phone}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2 sm:col-span-2">
                         <MapPin size={14} className="mt-0.5 shrink-0 text-ink-subtle" />
                         <div>
-                          <p className="text-xs text-ink-muted">ที่อยู่บริษัท</p>
+                          <p className="text-xs text-ink-muted">{t("addressLabel")}</p>
                           <p className="text-sm text-ink">{a.address}</p>
                         </div>
                       </div>

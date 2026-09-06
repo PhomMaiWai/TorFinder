@@ -2,12 +2,14 @@
 
 import { ArrowRight, Building2, Clock, MessageSquare, Search } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState, useMemo } from "react";
 
 import { OPPORTUNITIES } from "@/data/opportunities";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
 
 export function PreviewSection() {
+  const t = useTranslations("LandingPreview");
   const [search, setSearch] = useState("");
   const [feedbackOpenId, setFeedbackOpenId] = useState<number | null>(null);
   const [feedbackText, setFeedbackText] = useState("");
@@ -33,11 +35,10 @@ export function PreviewSection() {
       <div className="mx-auto max-w-[1000px] px-6">
         <div className="mb-10 text-center sm:mb-14">
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            ค้นหาและตรวจสอบ TOR โปร่งใส
+            {t("heading")}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] text-zinc-500">
-            ระบบเปิดให้ประชาชนและบริษัทซอฟต์แวร์เข้ามาค้นหาโครงการของ กทม. ได้อย่างอิสระ 
-            ตรวจสอบราคา และสามารถส่งข้อเสนอแนะในช่วงประชาพิจารณ์ (Draft) ได้ทันที
+            {t("description")}
           </p>
         </div>
 
@@ -49,13 +50,13 @@ export function PreviewSection() {
               className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ค้นหาชื่อโครงการ หรือชื่อหน่วยงาน..."
+              placeholder={t("searchPlaceholder")}
             />
             <Link
               href="/public"
               className="hidden h-10 shrink-0 items-center justify-center rounded-lg bg-zinc-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 sm:flex"
             >
-              ค้นหาทั้งหมด
+              {t("searchAll")}
             </Link>
           </div>
         </div>
@@ -88,7 +89,7 @@ export function PreviewSection() {
                     {isUrgent && (
                       <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
                         <div className="size-1.5 animate-pulse rounded-full bg-red-500" />
-                        ใกล้หมดเขต
+                        {t("closingSoon")}
                       </span>
                     )}
                   </div>
@@ -110,7 +111,7 @@ export function PreviewSection() {
                         }`}
                       >
                         <Clock size={15} className={isUrgent ? "text-red-500" : "text-zinc-400"} />
-                        เหลือ {tor.daysLeft} วัน
+                        {t("daysLeft", { count: tor.daysLeft })}
                       </span>
                     </div>
 
@@ -143,14 +144,14 @@ export function PreviewSection() {
                         }}
                         className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-3 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
                       >
-                        {isFeedbackOpen ? "ปิด" : "แสดงความเห็น"}
+                        {isFeedbackOpen ? t("close") : t("showFeedback")}
                       </button>
                     )}
                     <Link
                       href={`/tor/${tor.id}`}
                       className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-900 px-3 text-xs font-medium text-white transition-colors hover:bg-zinc-800"
                     >
-                      ดูรายละเอียด
+                      {t("viewDetails")}
                     </Link>
                   </div>
                 </div>
@@ -162,20 +163,20 @@ export function PreviewSection() {
                       rows={2}
                       value={feedbackText}
                       onChange={(e) => setFeedbackText(e.target.value)}
-                      placeholder="ระบุข้อเสนอแนะ ข้อกังวล หรือความคิดเห็นเพื่อให้โปร่งใสมากขึ้น..."
+                      placeholder={t("feedbackPlaceholder")}
                     />
                     <div className="mt-2.5 flex justify-end gap-2">
                       <button
                         onClick={() => setFeedbackOpenId(null)}
                         className="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
                       >
-                        ยกเลิก
+                        {t("cancel")}
                       </button>
                       <button
                         onClick={handleSubmitFeedback}
                         className="rounded-lg bg-accent px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-accent-dark"
                       >
-                        ส่งความเห็น
+                        {t("submitFeedback")}
                       </button>
                     </div>
                   </div>
@@ -187,7 +188,7 @@ export function PreviewSection() {
 
         {items.length === 0 && (
           <div className="mt-6 rounded-2xl border border-dashed border-zinc-200 bg-white py-16 text-center">
-            <p className="text-[15px] font-medium text-zinc-700">ไม่พบโครงการที่ตรงกับคำค้นหา</p>
+            <p className="text-[15px] font-medium text-zinc-700">{t("noResults")}</p>
           </div>
         )}
 
@@ -196,7 +197,7 @@ export function PreviewSection() {
             href="/public"
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-6 text-[15px] font-medium text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 hover:text-zinc-900"
           >
-            ไปหน้า Public Portal ค้นหาโครงการทั้งหมด
+            {t("viewPublicPortal")}
             <ArrowRight size={16} />
           </Link>
         </div>

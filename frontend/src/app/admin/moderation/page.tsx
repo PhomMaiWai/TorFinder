@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
@@ -8,6 +9,7 @@ import { OPPORTUNITIES } from "@/data/opportunities";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
 
 export default function AdminModerationPage() {
+  const t = useTranslations("AdminModerationPage");
   const [feedbackItems, setFeedbackItems] = useState(FEEDBACK_ENTRIES);
 
   function updateFeedbackStatus(id: number, status: "อนุมัติ" | "ปฏิเสธ") {
@@ -18,8 +20,8 @@ export default function AdminModerationPage() {
 
   return (
     <AdminPageShell
-      title="กลั่นกรองความคิดเห็น"
-      description="ตรวจสอบและอนุมัติความคิดเห็นสาธารณะที่ส่งเข้ามาต่อ TOR แต่ละรายการ"
+      title={t("title")}
+      description={t("description")}
     >
       <div className="space-y-3">
         {feedbackItems.map((f) => {
@@ -57,14 +59,14 @@ export default function AdminModerationPage() {
                       className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
                     >
                       <X size={14} />
-                      ปฏิเสธ
+                      {t("rejectAction")}
                     </button>
                     <button
                       onClick={() => updateFeedbackStatus(f.id, "อนุมัติ")}
                       className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
                     >
                       <Check size={14} />
-                      อนุมัติ
+                      {t("approveAction")}
                     </button>
                   </div>
                 )}

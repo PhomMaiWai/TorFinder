@@ -1,1 +1,436 @@
-{}
+{
+  "Metadata": {
+    "title": "TorFinder — ค้นหา TOR ซอฟต์แวร์ BMA",
+    "description": "แพลตฟอร์มรวบรวม วิเคราะห์ และจับคู่ประกาศ TOR ด้านซอฟต์แวร์ของกรุงเทพมหานคร"
+  },
+  "Common": {
+    "searchPlaceholder": "ค้นหา..."
+  },
+  "Navbar": {
+    "navSearch": "ค้นหา TOR",
+    "navHowItWorks": "วิธีการทำงาน",
+    "savedAriaLabel": "รายการที่บันทึกไว้",
+    "notificationsAriaLabel": "การแจ้งเตือน",
+    "recentNotices": "ประกาศล่าสุด",
+    "login": "เข้าสู่ระบบ",
+    "getStarted": "เริ่มต้นฟรี",
+    "closeMenuAriaLabel": "ปิดเมนู",
+    "openMenuAriaLabel": "เปิดเมนู"
+  },
+  "Footer": {
+    "productsHeading": "ผลิตภัณฑ์",
+    "productsLinks": [
+      "ค้นหา TOR",
+      "การแจ้งเตือน",
+      "จับคู่ AI",
+      "ข้อมูลเชิงลึก"
+    ],
+    "forBuyersHeading": "สำหรับผู้ว่าจ้าง",
+    "forBuyersLinks": [
+      "โอเพ่นดาต้า",
+      "สตง.",
+      "ผู้บริหาร BMA"
+    ],
+    "companyHeading": "บริษัท",
+    "companyLinks": [
+      "เกี่ยวกับ",
+      "นโยบายความเป็นส่วนตัว",
+      "GitHub"
+    ],
+    "descriptionLine1": "แพลตฟอร์มค้นหาและวิเคราะห์",
+    "descriptionLine2": "TOR ซอฟต์แวร์ BMA โดย AI",
+    "copyright": "© 2569 TorFinder — สงวนลิขสิทธิ์",
+    "demoNote": "Demo · ข้อมูลจำลองเพื่อการศึกษา"
+  },
+  "AppShell": {
+    "mainNavAriaLabel": "เมนูหลัก",
+    "navOverview": "ภาพรวม",
+    "navSearchTor": "ค้นหา TOR",
+    "navSavedList": "รายการที่บันทึก",
+    "navCompanyProfile": "โปรไฟล์บริษัท",
+    "navNotifications": "การแจ้งเตือน",
+    "navPendingAccounts": "บัญชีรออนุมัติ",
+    "navModeration": "กลั่นกรองความคิดเห็น",
+    "navManageCompanies": "จัดการบริษัท",
+    "navManageUsers": "จัดการผู้ใช้งาน",
+    "navAuditLog": "Audit Log",
+    "searchPlaceholder": "ค้นหา...",
+    "backToHome": "กลับหน้าหลัก",
+    "adminRoleLabel": "ผู้ดูแลระบบ",
+    "openMenuAriaLabel": "เปิดเมนู"
+  },
+  "Dashboard": {
+    "newBadge": "ใหม่",
+    "urgentBadge": "ใกล้หมดเขต",
+    "daysLeftLabel": "เหลือ {days} วัน",
+    "unsaveAriaLabel": "ยกเลิกบันทึก",
+    "saveAriaLabel": "บันทึก",
+    "savedButtonText": "บันทึกแล้ว",
+    "saveButtonText": "บันทึก",
+    "viewDetails": "ดูรายละเอียด",
+    "deadlinePanelTitle": "กำหนดส่งใกล้ถึง",
+    "daysAbbrev": "{days}ว",
+    "profileItemCompanyName": "ชื่อบริษัท",
+    "profileItemExpertise": "ความเชี่ยวชาญ",
+    "profileItemCompanySize": "ขนาดบริษัท",
+    "companyProfileTitle": "โปรไฟล์บริษัท",
+    "editLink": "แก้ไข",
+    "completionLabel": "ความสมบูรณ์",
+    "setupProfileLink": "ตั้งค่าโปรไฟล์",
+    "overviewTitle": "ภาพรวมระบบ",
+    "overviewDescription": "โอกาส TOR ที่ตรงกับโปรไฟล์บริษัท จัดลำดับตามความเหมาะสมและกำหนดส่ง เพื่อให้คุณไม่พลาดโครงการสำคัญของกรุงเทพมหานคร",
+    "statTotal": "ทั้งหมด",
+    "statHighMatch": "Match สูง",
+    "statUrgent": "ใกล้หมดเขต",
+    "statSaved": "บันทึกไว้",
+    "searchPlaceholder": "ค้นหาโครงการ หน่วยงาน หรือเทคโนโลยี...",
+    "recommendedTitle": "โอกาสที่แนะนำ",
+    "resultsCount": "พบ <strong>{count}</strong> รายการ",
+    "viewNewOpportunities": "ดูโอกาสใหม่",
+    "emptyStateTitle": "ไม่พบรายการที่ตรงกัน",
+    "emptyStateDescription": "ลองเปลี่ยนคำค้นหาหรือตัวกรอง",
+    "toastRemoved": "นำออกจากรายการที่บันทึกแล้ว",
+    "toastSaved": "บันทึกโอกาสนี้แล้ว"
+  },
+  "LandingHero": {
+    "badge": "สำหรับบริษัทซอฟต์แวร์ในไทย",
+    "titleLine1": "ไม่พลาดโอกาส",
+    "titleLine2": "จัดซื้อซอฟต์แวร์ BMA",
+    "description": "รวบรวม วิเคราะห์ และจับคู่ TOR จากหน่วยงาน กทม. กับบริษัทของคุณโดยอัตโนมัติ ไม่ต้องตรวจสอบ e-GP ทุกวันอีกต่อไป",
+    "ctaPrimary": "เริ่มต้นฟรี",
+    "ctaSecondary": "ดูตัวอย่าง"
+  },
+  "LandingFeatures": {
+    "heading": "แพลตฟอร์มที่ตอบโจทย์ทั้งภาคธุรกิจและรัฐ",
+    "subheading": "ระบบทำงานอัตโนมัติตั้งแต่ดึงข้อมูลไปจนถึงแจ้งเตือน ลดภาระให้เอกชน พร้อมเพิ่มความโปร่งใสให้ภาครัฐ",
+    "collectTitle": "รวบรวม TOR อัตโนมัติ",
+    "collectDescription": "ดึงและกรองประกาศจัดซื้อจัดจ้างซอฟต์แวร์จาก e-GP และหน่วยงาน กทม. อัตโนมัติ พร้อมตรวจจับรายการซ้ำ",
+    "aiTitle": "AI สกัดข้อมูลจาก PDF",
+    "aiDescription": "Vertex AI ช่วยวิเคราะห์และสกัดข้อมูลสำคัญ เช่น ขอบเขตงาน คุณสมบัติ งบประมาณ โดยไม่ต้องเสียเวลาเปิดอ่าน PDF ทีละฉบับ",
+    "matchTitle": "จับคู่บริษัท & แจ้งเตือน",
+    "matchDescription": "เปรียบเทียบความต้องการของ TOR กับโปรไฟล์บริษัทของคุณ และแจ้งเตือนทันทีเมื่อมีโครงการที่เหมาะสม (Match Score)",
+    "transparencyTitle": "เครื่องมือเพื่อความโปร่งใส",
+    "transparencyDescription": "เปิดให้ประชาชนค้นหาข้อมูล และให้ สตง. ตรวจสอบความผิดปกติของราคาและการแข่งขันที่ต่ำกว่าเกณฑ์ได้ง่ายขึ้น"
+  },
+  "LandingStats": {
+    "items": [
+      {
+        "value": "200+",
+        "label": "TOR ซอฟต์แวร์ต่อปี"
+      },
+      {
+        "value": "40+",
+        "label": "หน่วยงาน BMA"
+      },
+      {
+        "value": "฿450M+",
+        "label": "มูลค่าตลาดต่อปี"
+      },
+      {
+        "value": "ทุก 24 ชม.",
+        "label": "รอบอัปเดตข้อมูล"
+      }
+    ]
+  },
+  "LandingSteps": {
+    "heading": "เริ่มต้นภายใน 3 ขั้นตอน",
+    "subheading": "ง่าย รวดเร็ว ไม่ต้องการความรู้ด้านเทคนิค",
+    "step1Title": "กรอกโปรไฟล์บริษัท",
+    "step1Description": "ระบุทักษะเทคโนโลยี ขนาดองค์กร และความเชี่ยวชาญ ใช้เวลาไม่ถึง 5 นาที",
+    "step2Title": "AI วิเคราะห์และจับคู่",
+    "step2Description": "ระบบสแกน TOR ใหม่ทุกวัน เปรียบเทียบกับโปรไฟล์ และคำนวณคะแนนความเหมาะสม",
+    "step3Title": "รับโอกาสและยื่นข้อเสนอ",
+    "step3Description": "รับการแจ้งเตือน ดูรายละเอียดที่ AI สรุปให้แล้ว และยื่นข้อเสนอก่อนคู่แข่ง"
+  },
+  "LandingCta": {
+    "heading": "พร้อมเริ่มต้นแล้วหรือยัง?",
+    "description": "เข้าร่วมกับบริษัทซอฟต์แวร์ที่ใช้ TorFinder และไม่พลาดโอกาสจัดซื้อจัดจ้าง BMA อีกต่อไป",
+    "cta": "เริ่มต้นฟรีวันนี้"
+  },
+  "LandingPreview": {
+    "heading": "ค้นหาและตรวจสอบ TOR โปร่งใส",
+    "description": "ระบบเปิดให้ประชาชนและบริษัทซอฟต์แวร์เข้ามาค้นหาโครงการของ กทม. ได้อย่างอิสระ ตรวจสอบราคา และสามารถส่งข้อเสนอแนะในช่วงประชาพิจารณ์ (Draft) ได้ทันที",
+    "searchPlaceholder": "ค้นหาชื่อโครงการ หรือชื่อหน่วยงาน...",
+    "searchAll": "ค้นหาทั้งหมด",
+    "closingSoon": "ใกล้หมดเขต",
+    "daysLeft": "เหลือ {count} วัน",
+    "close": "ปิด",
+    "showFeedback": "แสดงความเห็น",
+    "viewDetails": "ดูรายละเอียด",
+    "feedbackPlaceholder": "ระบุข้อเสนอแนะ ข้อกังวล หรือความคิดเห็นเพื่อให้โปร่งใสมากขึ้น...",
+    "cancel": "ยกเลิก",
+    "submitFeedback": "ส่งความเห็น",
+    "noResults": "ไม่พบโครงการที่ตรงกับคำค้นหา",
+    "viewPublicPortal": "ไปหน้า Public Portal ค้นหาโครงการทั้งหมด"
+  },
+  "SignInForm": {
+    "emailLabel": "อีเมล",
+    "passwordLabel": "รหัสผ่าน",
+    "submitLabel": "เข้าสู่ระบบ",
+    "noAccountQuestion": "ยังไม่มีบัญชี?",
+    "chooseOtherAccountType": "← เลือกประเภทบัญชีอื่น"
+  },
+  "LoginPage": {
+    "orgTitle": "เข้าสู่ระบบสำหรับหน่วยงาน",
+    "orgDescription": "สำหรับบริษัทและหน่วยงานที่ติดตามและเสนอราคา TOR",
+    "adminTitle": "เข้าสู่ระบบผู้ดูแลระบบ",
+    "adminDescription": "สำหรับผู้ดูแลระบบ TorFinder เท่านั้น",
+    "pageTitle": "เข้าสู่ระบบ",
+    "pageSubtitle": "เลือกประเภทบัญชีที่ต้องการเข้าสู่ระบบ"
+  },
+  "LoginAdminPage": {
+    "title": "เข้าสู่ระบบผู้ดูแลระบบ",
+    "description": "สำหรับผู้ดูแลระบบ TorFinder เท่านั้น",
+    "switchLabel": "เข้าสู่ระบบหน่วยงานแทน →"
+  },
+  "LoginOrganizationPage": {
+    "badge": "หน่วยงาน / บริษัท",
+    "title": "เข้าสู่ระบบสำหรับหน่วยงาน",
+    "description": "ติดตามและจับคู่โอกาส TOR ที่ตรงกับบริษัทของคุณ",
+    "switchLabel": "เข้าสู่ระบบผู้ดูแลระบบแทน →",
+    "signupLabel": "สมัครสมาชิกหน่วยงาน"
+  },
+  "SignupOrganizationPage": {
+    "defaultCompanyName": "บริษัทของคุณ",
+    "badge": "หน่วยงาน / บริษัท",
+    "title": "สมัครสมาชิกหน่วยงาน",
+    "description": "กรอกข้อมูลบริษัท จากนั้นทีมผู้ดูแลระบบจะตรวจสอบและอนุมัติบัญชีของคุณ",
+    "accountInfoHeading": "ข้อมูลบัญชี",
+    "companyEmailLabel": "อีเมลบริษัท",
+    "passwordLabel": "รหัสผ่าน",
+    "companyInfoHeading": "ข้อมูลบริษัท",
+    "companyNameLabel": "ชื่อบริษัท",
+    "companyNamePlaceholder": "บริษัท ตัวอย่าง จำกัด",
+    "taxIdLabel": "เลขทะเบียนนิติบุคคล",
+    "taxIdPlaceholder": "เลข 13 หลัก",
+    "contactNameLabel": "ชื่อผู้ติดต่อ",
+    "contactNamePlaceholder": "ชื่อ-นามสกุล",
+    "phoneLabel": "เบอร์โทรศัพท์",
+    "specialtyLabel": "ความเชี่ยวชาญ",
+    "specialtyPlaceholder": "เช่น Cloud Platform, HealthTech",
+    "companySizeLabel": "ขนาดบริษัท",
+    "addressLabel": "ที่อยู่บริษัท",
+    "addressPlaceholder": "เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์",
+    "submitLabel": "ส่งข้อมูลเพื่อขออนุมัติ",
+    "hasAccountQuestion": "มีบัญชีอยู่แล้ว?",
+    "loginLinkLabel": "เข้าสู่ระบบ"
+  },
+  "SignupPendingPage": {
+    "defaultCompanyName": "บริษัทของคุณ",
+    "title": "รอการอนุมัติจากผู้ดูแลระบบ",
+    "pendingMessage": "บัญชีของ <bold>{name}</bold> ถูกส่งเรียบร้อยแล้ว ทีมผู้ดูแลระบบจะตรวจสอบข้อมูลและแจ้งผลผ่านอีเมลภายใน 1-2 วันทำการ",
+    "backToLogin": "← กลับหน้าเข้าสู่ระบบ"
+  },
+  "SavedPage": {
+    "savedListTitle": "รายการที่บันทึกไว้",
+    "savedListDescription": "TOR ที่คุณบันทึกไว้เพื่อติดตามภายหลัง",
+    "orgPageTitle": "รายการที่บันทึก",
+    "emptyTitle": "ยังไม่มีรายการที่บันทึกไว้",
+    "emptyDescription": "กดไอคอนบันทึกที่การ์ด TOR ในหน้าค้นหาเพื่อบันทึกไว้ที่นี่",
+    "goToSearchCta": "ไปหน้าค้นหา TOR",
+    "daysLeft": "เหลือ {days} วัน",
+    "viewDetailsCta": "ดูรายละเอียด",
+    "removeAriaLabel": "เอาออกจากรายการที่บันทึก"
+  },
+  "ProfilePage": {
+    "pageTitle": "โปรไฟล์บริษัท",
+    "pageDescription": "ข้อมูลนี้ใช้คำนวณคะแนนความเหมาะสม (match score) กับ TOR ใหม่ที่เข้ามา",
+    "accountInfoSectionTitle": "ข้อมูลบัญชี",
+    "companyEmailLabel": "อีเมลบริษัท",
+    "phoneLabel": "เบอร์โทรศัพท์",
+    "companyInfoSectionTitle": "ข้อมูลบริษัท",
+    "companyNameLabel": "ชื่อบริษัท",
+    "taxIdLabel": "เลขทะเบียนนิติบุคคล",
+    "contactNameLabel": "ชื่อผู้ติดต่อ",
+    "specialtyLabel": "ความเชี่ยวชาญ",
+    "sizeLabel": "ขนาดบริษัท",
+    "addressLabel": "ที่อยู่บริษัท",
+    "techStackDescription": "เลือกเทคโนโลยีที่บริษัทถนัด ใช้จับคู่กับแท็กของ TOR",
+    "companyNameFallback": "ชื่อบริษัท",
+    "specialtyFallback": "ความเชี่ยวชาญ",
+    "profileCompletenessLabel": "ความสมบูรณ์ของโปรไฟล์",
+    "saveButton": "บันทึกโปรไฟล์",
+    "savedConfirmation": "บันทึกแล้ว"
+  },
+  "NotificationsPage": {
+    "pageTitle": "การแจ้งเตือน",
+    "unreadCountDescription": "{count} รายการที่ยังไม่ได้อ่าน",
+    "allReadDescription": "อ่านครบทุกรายการแล้ว",
+    "markAllReadButton": "ทำเครื่องหมายว่าอ่านแล้วทั้งหมด",
+    "emptyFilterState": "ไม่มีการแจ้งเตือนในหมวดนี้"
+  },
+  "PublicPage": {
+    "pageTitle": "ค้นหาประกาศ TOR ซอฟต์แวร์",
+    "pageDescription": "ค้นหาและติดตามโครงการจัดซื้อจัดจ้างด้านซอฟต์แวร์ของ กทม. พร้อมร่วมแสดงความคิดเห็นในระยะร่าง TOR",
+    "resultsCountMobile": "พบ {count} รายการ",
+    "filtersButton": "ตัวกรอง",
+    "clearAllFilters": "ล้างทั้งหมด",
+    "searchLabel": "ค้นหา",
+    "searchInputPlaceholder": "คำค้นหา, เลขที่โครงการ...",
+    "filterStageTitle": "สถานะโครงการ",
+    "filterBudgetTitle": "งบประมาณ",
+    "filterAgencyTitle": "หน่วยงาน (กทม.)",
+    "filterTagTitle": "หมวดหมู่ / เทคโนโลยี",
+    "budgetRangeUnder5m": "ต่ำกว่า 5 ล้านบาท",
+    "budgetRange5to10m": "5 - 10 ล้านบาท",
+    "budgetRange10to20m": "10 - 20 ล้านบาท",
+    "budgetRangeOver20m": "มากกว่า 20 ล้านบาท",
+    "resultsCount": "พบ <strong>{count}</strong> รายการ",
+    "emptyStateTitle": "ไม่พบโครงการที่ค้นหา",
+    "emptyStateDescription": "ลองปรับเปลี่ยนคำค้นหา หรือเอาตัวกรองออก",
+    "clearAllFiltersButton": "ล้างตัวกรองทั้งหมด",
+    "budgetHighBadge": "งบสูงผิดปกติ",
+    "budgetLowBadge": "งบต่ำผิดปกติ",
+    "budgetNormalBadge": "งบปกติ",
+    "vendorMismatchBadge": "ผู้ชนะไม่ตรงสเปก",
+    "newBadge": "ใหม่",
+    "urgentBadge": "ใกล้หมดเขต",
+    "daysLeftLabel": "เหลือ {days} วัน",
+    "budgetLabel": "งบประมาณโครงการ",
+    "saveAriaLabel": "บันทึก",
+    "unsaveAriaLabel": "เอาออกจากรายการที่บันทึก",
+    "feedbackCountLabel": "มี {count} ความคิดเห็น",
+    "closeFeedbackButton": "ปิดกล่องข้อความ",
+    "openFeedbackButton": "แสดงความคิดเห็น",
+    "viewDetails": "ดูรายละเอียด",
+    "feedbackFormLabel": "ร่วมแสดงความคิดเห็น (Draft TOR)",
+    "feedbackPlaceholder": "ระบุข้อเสนอแนะ ข้อกังวล หรือความคิดเห็น เพื่อให้โครงการเกิดความโปร่งใสและเป็นธรรมที่สุด...",
+    "feedbackDisclaimer": "* ความคิดเห็นของคุณจะถูกตรวจสอบก่อนแสดงผลต่อสาธารณะ",
+    "cancelButton": "ยกเลิก",
+    "submitFeedbackButton": "ส่งความเห็น"
+  },
+  "TorDetailPage": {
+    "backToSearch": "กลับไปค้นหา TOR",
+    "feedbackOpenUntil": "เปิดรับความคิดเห็น ถึง {date}",
+    "urgentBadge": "ใกล้หมดเขต",
+    "newBadge": "ใหม่",
+    "saveButton": "บันทึก",
+    "viewOriginalEgp": "ดูต้นฉบับ e-GP",
+    "aiAnalyzedBy": "วิเคราะห์โดย Vertex AI อัตโนมัติ",
+    "aiExtractedFrom": "สกัดข้อมูลจาก TOR PDF · ความเชื่อมั่น 94%",
+    "scopeOfWork": "ขอบเขตงาน",
+    "qualifications": "คุณสมบัติผู้เสนอ",
+    "deliverables": "สิ่งที่ต้องส่งมอบ",
+    "relatedTechnologies": "เทคโนโลยีที่เกี่ยวข้อง",
+    "shareFeedback": "ร่วมแสดงความคิดเห็น",
+    "feedbackWindowInfo": "ช่วงรับฟังเปิดถึง {date} · มีผู้ยื่นแล้ว {count} ราย",
+    "feedbackTextareaPlaceholder": "ข้อเสนอแนะหรือความคิดเห็นเกี่ยวกับขอบเขตงานหรือเงื่อนไขนี้...",
+    "feedbackModerationNote": "ความคิดเห็นจะถูกตรวจสอบก่อนแสดงผลต่อสาธารณะ",
+    "submitFeedbackButton": "ส่งความคิดเห็น",
+    "awardedVendorTitle": "ผู้ชนะการเสนอราคา",
+    "vendorRiskWarning": "ระบบพบความเสี่ยง: ความเชี่ยวชาญอาจไม่สอดคล้องกับขอบเขตงาน",
+    "budgetLabel": "งบประมาณ",
+    "deadlineLabel": "กำหนดส่ง",
+    "daysLeftLabel": "เหลือ {days} วัน",
+    "contractPeriodLabel": "ระยะเวลาสัญญา",
+    "matchedCompaniesLabel": "บริษัทที่จับคู่แล้ว",
+    "companiesCount": "{count} บริษัท",
+    "priceBenchmarkTitle": "ราคากลาง (AI ประเมิน)",
+    "budgetHighBadge": "งบสูงผิดปกติ",
+    "budgetLowBadge": "งบต่ำผิดปกติ",
+    "budgetNormalBadge": "งบปกติ",
+    "publishedInfo": "ประกาศเมื่อ {date} · แหล่งข้อมูล e-GP"
+  },
+  "OwnerPage": {
+    "stagePillAll": "ทั้งหมด",
+    "stagePillFeedback": "รับความคิดเห็น",
+    "stagePillPublished": "ประกาศ TOR",
+    "pageTitle": "โครงการของฉัน",
+    "pageDescription": "{torCount} TOR · {matchedCount} บริษัทจับคู่ · {pendingCount} รอตรวจสอบ",
+    "publishNewTor": "เผยแพร่ TOR ใหม่",
+    "pendingReviewSection": "รอตรวจสอบ",
+    "approveButton": "อนุมัติ",
+    "rejectButton": "ปฏิเสธ",
+    "torListSection": "รายการ TOR",
+    "searchProjectsPlaceholder": "ค้นหาโครงการ...",
+    "itemsCount": "{count} รายการ",
+    "noItemsFound": "ไม่พบรายการ",
+    "rowSubtitle": "{agency} · {companiesCount} บริษัท · {feedbackCount} ความคิดเห็น",
+    "daysSuffix": "{days} วัน",
+    "viewTor": "ดู TOR",
+    "companiesTabLabel": "บริษัท ({count})",
+    "feedbackTabLabel": "ความคิดเห็น ({count})",
+    "noMatchedCompanies": "ยังไม่มีบริษัทที่จับคู่",
+    "noFeedback": "ยังไม่มีความคิดเห็น"
+  },
+  "AdminOverviewPage": {
+    "title": "ภาพรวม",
+    "description": "ตรวจสอบสุขภาพ Pipeline การดึงและจำแนกข้อมูล TOR",
+    "scrapeHistoryHeading": "ประวัติการดึงข้อมูล (7 วันล่าสุด)",
+    "newItemsCount": "+{count} รายการใหม่",
+    "noNewItems": "ไม่มีรายการใหม่",
+    "classificationHeading": "ผลการจำแนกประเภท (Vertex AI)"
+  },
+  "AdminAccountsPage": {
+    "title": "บัญชีรออนุมัติ",
+    "description": "ตรวจสอบและอนุมัติบัญชีบริษัทที่สมัครเข้ามาใหม่",
+    "emptyState": "ไม่มีบัญชีรออนุมัติ",
+    "submittedInfo": "สมัครเมื่อ {date}",
+    "rejectAction": "ปฏิเสธ",
+    "approveAction": "อนุมัติ",
+    "companyDetailsHeading": "รายละเอียดบริษัท",
+    "taxIdLabel": "เลขทะเบียนนิติบุคคล",
+    "contactNameLabel": "ชื่อผู้ติดต่อ",
+    "phoneLabel": "เบอร์โทรศัพท์",
+    "addressLabel": "ที่อยู่บริษัท"
+  },
+  "AdminAuditPage": {
+    "description": "ประวัติการทำงานของระบบและผู้ดูแลระบบทั้งหมด",
+    "typeAuto": "อัตโนมัติ",
+    "typeManual": "ผู้ดูแล"
+  },
+  "AdminCompaniesPage": {
+    "title": "จัดการบริษัท",
+    "description": "บริษัทที่ผ่านการอนุมัติและใช้งานระบบอยู่ในปัจจุบัน",
+    "searchPlaceholder": "ค้นหาชื่อบริษัทหรืออีเมล...",
+    "emptyState": "ไม่พบบริษัทที่ค้นหา",
+    "joinedOn": "เข้าร่วมเมื่อ {date}",
+    "followingCount": "ติดตาม {count} TOR",
+    "suspendAction": "ระงับการใช้งาน",
+    "reactivateAction": "เปิดใช้งานอีกครั้ง"
+  },
+  "AdminModerationPage": {
+    "title": "กลั่นกรองความคิดเห็น",
+    "description": "ตรวจสอบและอนุมัติความคิดเห็นสาธารณะที่ส่งเข้ามาต่อ TOR แต่ละรายการ",
+    "rejectAction": "ปฏิเสธ",
+    "approveAction": "อนุมัติ"
+  },
+  "AdminUsersPage": {
+    "title": "จัดการผู้ใช้งาน",
+    "description": "ผู้ใช้งานทั้งหมดในระบบ ทั้งฝั่งบริษัทและผู้ดูแลระบบ",
+    "searchPlaceholder": "ค้นหาชื่อ, อีเมล, หรือบริษัท...",
+    "emptyState": "ไม่พบผู้ใช้งานที่ค้นหา",
+    "lastActiveInfo": "ใช้งานล่าสุด {date}",
+    "suspendAction": "ระงับบัญชี",
+    "reactivateAction": "เปิดใช้งานอีกครั้ง"
+  },
+  "OpportunityCard": {
+    "newBadge": "ใหม่",
+    "feedbackOpenBadge": "รับความคิดเห็น",
+    "daysLeftLabel": "เหลือ {days} วัน",
+    "unsaveAriaLabel": "ยกเลิกบันทึก",
+    "saveAriaLabel": "บันทึก",
+    "viewDetails": "ดูรายละเอียด"
+  },
+  "OpportunityList": {
+    "searchPlaceholder": "ค้นหาโครงการ หน่วยงาน หรือเทคโนโลยี...",
+    "searchAriaLabel": "ค้นหา TOR",
+    "filtersAriaLabel": "ตัวกรอง",
+    "itemsCount": "{count} รายการ",
+    "emptyTitle": "ไม่พบรายการที่ตรงกัน",
+    "emptyDescription": "ลองเปลี่ยนคำค้นหาหรือตัวกรอง",
+    "clearFilters": "ล้างตัวกรอง"
+  },
+  "DashboardSidebar": {
+    "upcomingDeadlinesTitle": "กำหนดส่งใกล้ถึง",
+    "daysAbbrev": "{days}ว",
+    "companyProfileTitle": "โปรไฟล์บริษัท",
+    "profileItemCompanyName": "ชื่อบริษัท",
+    "profileItemExpertise": "ความเชี่ยวชาญ",
+    "profileItemCompanySize": "ขนาดบริษัท",
+    "addTechStack": "เพิ่ม Tech Stack",
+    "savedTitle": "บันทึกไว้",
+    "noSavedItems": "ยังไม่มีรายการที่บันทึก",
+    "savedSummary": "มี <strong>{count} รายการ</strong> ที่กำลังพิจารณาอยู่"
+  }
+}
