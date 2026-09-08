@@ -43,6 +43,8 @@ export function SignInForm({
   const Icon = ICONS[icon];
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const badgeCls =
     tone === "danger" ? "bg-danger-soft text-danger" : "bg-accent-soft text-accent-text";
@@ -51,9 +53,31 @@ export function SignInForm({
       ? "bg-danger hover:bg-danger/90"
       : "bg-accent hover:bg-accent-dark";
 
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    router.push(redirectTo);
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error ?? "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่");
+        return;
+      }
+
+      router.push(redirectTo);
+      router.refresh();
+    } catch {
+      setError("เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -81,6 +105,8 @@ export function SignInForm({
               <span className="mb-2 block text-sm font-medium text-ink">{t("emailLabel")}</span>
               <input
                 type="email"
+                required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
@@ -91,6 +117,8 @@ export function SignInForm({
               <span className="mb-2 block text-sm font-medium text-ink">{t("passwordLabel")}</span>
               <input
                 type="password"
+                required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -98,11 +126,18 @@ export function SignInForm({
               />
             </label>
 
+            {error && (
+              <p role="alert" className="rounded-lg bg-danger-soft px-4 py-2.5 text-sm text-danger">
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              className={`flex h-12 w-full items-center justify-center rounded-lg text-base font-semibold text-white transition-colors ${buttonCls}`}
+              disabled={isSubmitting}
+              className={`flex h-12 w-full items-center justify-center rounded-lg text-base font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${buttonCls}`}
             >
-              {t("submitLabel")}
+              {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </button>
           </form>
         </div>

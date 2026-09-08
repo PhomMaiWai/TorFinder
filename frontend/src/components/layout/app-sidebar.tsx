@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ClipboardList,
   LayoutDashboard,
+  LogOut,
   Menu,
   MessageSquare,
   Search,
@@ -16,9 +17,10 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+type SessionUser = { name: string; email: string; role: "admin" | "org" };
 
 import { PENDING_ACCOUNTS } from "@/data/admin";
 import { NOTIFICATIONS } from "@/data/notifications";
@@ -151,8 +153,36 @@ function NavLinks({
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const t = useTranslations("AppShell");
   const pathname = usePathname();
+  const router = useRouter();
   const isAdmin = pathname.startsWith("/admin");
   const nav = isAdmin ? getAdminNav(t) : getOrgNav(t);
+
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : { user: null }))
+      .then((data) => {
+        if (!cancelled) setUser(data.user);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
 
   return (
     <div className="flex h-full flex-col bg-[#f5f5f4]">
@@ -200,19 +230,27 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* User */}
       <div className="shrink-0 border-t border-zinc-200/80 p-3">
-        <button className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-zinc-200/50">
+        <div className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-zinc-600 ring-1 ring-zinc-200">
-            A
+            {(user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : "..."))[0]}
           </span>
-          <div className="min-w-0 text-left">
+          <div className="min-w-0 flex-1 text-left">
             <p className="truncate text-sm font-medium text-ink">
-              {isAdmin ? t("adminRoleLabel") : "Arun Digital"}
+              {user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : "กำลังโหลด...")}
             </p>
-            <p className="truncate text-xs text-ink-muted">
-              {isAdmin ? "admin@bma.go.th" : "Co., Ltd"}
-            </p>
+            <p className="truncate text-xs text-ink-muted">{user?.email ?? ""}</p>
           </div>
-        </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            aria-label="ออกจากระบบ"
+            title="ออกจากระบบ"
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
       </div>
     </div>
   );
