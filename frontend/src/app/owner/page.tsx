@@ -2,6 +2,7 @@
 
 import { FileText } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import {
@@ -21,13 +22,17 @@ import { FEEDBACK_ENTRIES, MATCHED_COMPANIES } from "@/data/tor-details";
 
 type TabKey = "companies" | "feedback";
 
-const STAGE_PILLS = [
-  { id: "ทั้งหมด", label: "ทั้งหมด" },
-  { id: "เปิดรับฟังความคิดเห็น", label: "รับความคิดเห็น" },
-  { id: "ประกาศ TOR", label: "ประกาศ TOR" },
-];
+function getStagePills(t: (key: string) => string) {
+  return [
+    { id: "ทั้งหมด", label: t("stagePillAll") },
+    { id: "เปิดรับฟังความคิดเห็น", label: t("stagePillFeedback") },
+    { id: "ประกาศ TOR", label: t("stagePillPublished") },
+  ];
+}
 
 export default function OwnerPage() {
+  const t = useTranslations("OwnerPage");
+  const STAGE_PILLS = getStagePills(t);
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState("ทั้งหมด");
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -55,14 +60,18 @@ export default function OwnerPage() {
   return (
     <AppShell>
       <PageHeader
-        title="โครงการของฉัน"
-        description={`${OPPORTUNITIES.length} TOR · ${totalMatched} บริษัทจับคู่ · ${pendingFeedback.length} รอตรวจสอบ`}
-        action={<PrimaryButton href="/public">เผยแพร่ TOR ใหม่</PrimaryButton>}
+        title={t("pageTitle")}
+        description={t("pageDescription", {
+          torCount: OPPORTUNITIES.length,
+          matchedCount: totalMatched,
+          pendingCount: pendingFeedback.length,
+        })}
+        action={<PrimaryButton href="/public">{t("publishNewTor")}</PrimaryButton>}
       />
 
       <PageBody>
         {pendingFeedback.length > 0 && (
-          <Section title="รอตรวจสอบ">
+          <Section title={t("pendingReviewSection")}>
             <ItemList>
               {pendingFeedback.map((f) => {
                 const tor = OPPORTUNITIES.find((o) => o.id === f.torId);
@@ -80,10 +89,10 @@ export default function OwnerPage() {
                     <p className="mt-2 text-sm leading-relaxed text-zinc-500">{f.text}</p>
                     <div className="mt-3 flex gap-2">
                       <button className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-dark">
-                        อนุมัติ
+                        {t("approveButton")}
                       </button>
                       <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
-                        ปฏิเสธ
+                        {t("rejectButton")}
                       </button>
                     </div>
                   </div>
@@ -93,21 +102,21 @@ export default function OwnerPage() {
           </Section>
         )}
 
-        <Section title="รายการ TOR">
+        <Section title={t("torListSection")}>
           <FilterBar
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder="ค้นหาโครงการ..."
+            searchPlaceholder={t("searchProjectsPlaceholder")}
             pills={STAGE_PILLS}
             activePill={stage}
             onPillChange={setStage}
           />
 
-          <p className="mt-3 text-xs text-zinc-400">{filtered.length} รายการ</p>
+          <p className="mt-3 text-xs text-zinc-400">{t("itemsCount", { count: filtered.length })}</p>
 
           <div className="mt-3">
             {filtered.length === 0 ? (
-              <EmptyState title="ไม่พบรายการ" />
+              <EmptyState title={t("noItemsFound")} />
             ) : (
               <ItemList>
                 {filtered.map((opp) => {
@@ -124,12 +133,16 @@ export default function OwnerPage() {
                       icon={<FileText size={15} className="text-zinc-400" />}
                       iconBg="bg-zinc-100"
                       title={opp.title}
-                      subtitle={`${opp.agency} · ${companies.length} บริษัท · ${feedback.length} ความคิดเห็น`}
+                      subtitle={t("rowSubtitle", {
+                        agency: opp.agency,
+                        companiesCount: companies.length,
+                        feedbackCount: feedback.length,
+                      })}
                       trailing={
                         <div className="flex items-center gap-3">
                           <StatusBadge label={opp.stage} />
                           <span className="text-xs tabular-nums text-zinc-400">
-                            {opp.daysLeft} วัน
+                            {t("daysSuffix", { days: opp.daysLeft })}
                           </span>
                         </div>
                       }
@@ -139,7 +152,7 @@ export default function OwnerPage() {
                           onClick={(e) => e.stopPropagation()}
                           className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
                         >
-                          ดู TOR
+                          {t("viewTor")}
                         </Link>
                       }
                       expandedContent={
@@ -148,8 +161,8 @@ export default function OwnerPage() {
                             <div className="flex gap-4 border-b border-zinc-100 px-4 pl-[4.25rem]">
                               {(
                                 [
-                                  { key: "companies", label: `บริษัท (${companies.length})` },
-                                  { key: "feedback", label: `ความคิดเห็น (${feedback.length})` },
+                                  { key: "companies", label: t("companiesTabLabel", { count: companies.length }) },
+                                  { key: "feedback", label: t("feedbackTabLabel", { count: feedback.length }) },
                                 ] as const
                               ).map(({ key, label }) => (
                                 <button
@@ -172,7 +185,7 @@ export default function OwnerPage() {
                             <div className="space-y-2 p-4 pl-[4.25rem]">
                               {currentTab === "companies" &&
                                 (companies.length === 0 ? (
-                                  <p className="text-sm text-zinc-400">ยังไม่มีบริษัทที่จับคู่</p>
+                                  <p className="text-sm text-zinc-400">{t("noMatchedCompanies")}</p>
                                 ) : (
                                   companies.map((c) => (
                                     <div
@@ -199,7 +212,7 @@ export default function OwnerPage() {
 
                               {currentTab === "feedback" &&
                                 (feedback.length === 0 ? (
-                                  <p className="text-sm text-zinc-400">ยังไม่มีความคิดเห็น</p>
+                                  <p className="text-sm text-zinc-400">{t("noFeedback")}</p>
                                 ) : (
                                   feedback.map((f) => (
                                     <div

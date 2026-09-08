@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Noto_Sans_Thai } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 
 import "./globals.css";
 
@@ -14,23 +16,32 @@ const notoSansThai = Noto_Sans_Thai({
   weight: ["400", "500", "600", "700"],
 });
 
-export const metadata: Metadata = {
-  title: "TorFinder — ค้นหา TOR ซอฟต์แวร์ BMA",
-  description:
-    "แพลตฟอร์มรวบรวม วิเคราะห์ และจับคู่ประกาศ TOR ด้านซอฟต์แวร์ของกรุงเทพมหานคร",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
     <html
-      lang="th"
+      lang={locale}
       className={`${geistSans.variable} ${notoSansThai.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }

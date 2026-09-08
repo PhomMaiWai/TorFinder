@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { OpportunityCard } from "@/components/dashboard/opportunity-card";
 import { OPPORTUNITY_FILTERS } from "@/data/opportunities";
@@ -25,6 +26,7 @@ export function OpportunityList({
   onSaveToggle,
   onClearFilters,
 }: OpportunityListProps) {
+  const t = useTranslations("OpportunityList");
   return (
     <section>
       {/* Search */}
@@ -34,8 +36,8 @@ export function OpportunityList({
           className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="ค้นหาโครงการ หน่วยงาน หรือเทคโนโลยี..."
-          aria-label="ค้นหา TOR"
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchAriaLabel")}
         />
       </label>
 
@@ -43,7 +45,7 @@ export function OpportunityList({
       <div
         className="mt-4 flex items-center justify-between border-b border-border"
         role="tablist"
-        aria-label="ตัวกรอง"
+        aria-label={t("filtersAriaLabel")}
       >
         <div className="flex gap-5 overflow-x-auto [scrollbar-width:none]">
           {OPPORTUNITY_FILTERS.map((filter) => (
@@ -63,7 +65,7 @@ export function OpportunityList({
           ))}
         </div>
         <span className="shrink-0 text-sm text-ink-muted max-sm:hidden">
-          {opportunities.length} รายการ
+          {t("itemsCount", { count: opportunities.length })}
         </span>
       </div>
 
@@ -81,15 +83,15 @@ export function OpportunityList({
         {opportunities.length === 0 && (
           <div className="rounded-xl border border-dashed border-border bg-white py-16 text-center">
             <Search size={28} className="mx-auto mb-3 text-ink-subtle opacity-40" />
-            <p className="text-sm font-semibold text-ink">ไม่พบรายการที่ตรงกัน</p>
+            <p className="text-sm font-semibold text-ink">{t("emptyTitle")}</p>
             <p className="mt-1 text-sm text-ink-muted">
-              ลองเปลี่ยนคำค้นหาหรือตัวกรอง
+              {t("emptyDescription")}
             </p>
             <button
               onClick={onClearFilters}
               className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
             >
-              ล้างตัวกรอง
+              {t("clearFilters")}
             </button>
           </div>
         )}

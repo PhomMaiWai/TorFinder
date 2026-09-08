@@ -1,12 +1,14 @@
 "use client";
 
 import { Ban, CheckCircle2, Mail, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { ADMIN_COMPANIES } from "@/data/admin";
 
 export default function AdminCompaniesPage() {
+  const t = useTranslations("AdminCompaniesPage");
   const [companies, setCompanies] = useState(ADMIN_COMPANIES);
   const [query, setQuery] = useState("");
 
@@ -25,8 +27,8 @@ export default function AdminCompaniesPage() {
 
   return (
     <AdminPageShell
-      title="จัดการบริษัท"
-      description="บริษัทที่ผ่านการอนุมัติและใช้งานระบบอยู่ในปัจจุบัน"
+      title={t("title")}
+      description={t("description")}
     >
       <div className="mb-5">
         <label className="relative block max-w-sm">
@@ -37,7 +39,7 @@ export default function AdminCompaniesPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหาชื่อบริษัทหรืออีเมล..."
+            placeholder={t("searchPlaceholder")}
             className="h-10 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
           />
         </label>
@@ -45,7 +47,7 @@ export default function AdminCompaniesPage() {
 
       <div className="overflow-hidden rounded-xl border border-border bg-white divide-y divide-border">
         {filtered.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-ink-muted">ไม่พบบริษัทที่ค้นหา</p>
+          <p className="px-5 py-10 text-center text-sm text-ink-muted">{t("emptyState")}</p>
         ) : (
           filtered.map((c) => (
             <div
@@ -70,7 +72,8 @@ export default function AdminCompaniesPage() {
                 </div>
                 <h3 className="text-sm font-semibold text-ink">{c.name}</h3>
                 <p className="mt-1 text-xs text-ink-muted">
-                  {c.specialty} · {c.size} · เข้าร่วมเมื่อ {c.joinedAt} · ติดตาม {c.torCount} TOR
+                  {c.specialty} · {c.size} · {t("joinedOn", { date: c.joinedAt })} ·{" "}
+                  {t("followingCount", { count: c.torCount })}
                 </p>
               </div>
 
@@ -85,12 +88,12 @@ export default function AdminCompaniesPage() {
                 {c.status === "ใช้งาน" ? (
                   <>
                     <Ban size={14} />
-                    ระงับการใช้งาน
+                    {t("suspendAction")}
                   </>
                 ) : (
                   <>
                     <CheckCircle2 size={14} />
-                    เปิดใช้งานอีกครั้ง
+                    {t("reactivateAction")}
                   </>
                 )}
               </button>

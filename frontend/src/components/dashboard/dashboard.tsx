@@ -9,6 +9,7 @@ import {
   Search,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/layout/app-sidebar";
@@ -31,6 +32,7 @@ function OpportunityCard({
   isSaved: boolean;
   onSaveToggle: (id: number, event: React.MouseEvent) => void;
 }) {
+  const t = useTranslations("Dashboard");
   const isUrgent = opportunity.daysLeft <= 7;
   const isHighMatch = opportunity.match >= 90;
 
@@ -66,13 +68,13 @@ function OpportunityCard({
               </span>
               {opportunity.isNew && (
                 <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
-                  ใหม่
+                  {t("newBadge")}
                 </span>
               )}
               {isUrgent && (
                 <span className="flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
                   <div className="size-1.5 animate-pulse rounded-full bg-red-500" />
-                  ใกล้หมดเขต
+                  {t("urgentBadge")}
                 </span>
               )}
             </div>
@@ -105,7 +107,7 @@ function OpportunityCard({
               }`}
             >
               <Clock size={15} className={isUrgent ? "text-red-500" : "text-zinc-400"} />
-              เหลือ {opportunity.daysLeft} วัน
+              {t("daysLeftLabel", { days: opportunity.daysLeft })}
             </span>
           </div>
 
@@ -132,7 +134,7 @@ function OpportunityCard({
             {/* Actions */}
             <div className="flex items-center gap-2">
               <button
-                aria-label={isSaved ? "ยกเลิกบันทึก" : "บันทึก"}
+                aria-label={isSaved ? t("unsaveAriaLabel") : t("saveAriaLabel")}
                 className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors ${
                   isSaved
                     ? "bg-accent-soft text-accent"
@@ -141,13 +143,13 @@ function OpportunityCard({
                 onClick={(event) => onSaveToggle(opportunity.id, event)}
               >
                 <Bookmark size={14} fill={isSaved ? "currentColor" : "none"} />
-                {isSaved ? "บันทึกแล้ว" : "บันทึก"}
+                {isSaved ? t("savedButtonText") : t("saveButtonText")}
               </button>
               <Link
                 href={`/tor/${opportunity.id}`}
                 className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-900 px-3 text-[13px] font-medium text-white transition-colors hover:bg-zinc-800"
               >
-                ดูรายละเอียด
+                {t("viewDetails")}
               </Link>
             </div>
           </div>
@@ -160,6 +162,7 @@ function OpportunityCard({
 /* ── Right sidebar panels ────────────────────────── */
 
 function DeadlinePanel({ opportunities }: { opportunities: Opportunity[] }) {
+  const t = useTranslations("Dashboard");
   const byDeadline = [...opportunities]
     .sort((a, b) => a.daysLeft - b.daysLeft)
     .slice(0, 5);
@@ -167,7 +170,7 @@ function DeadlinePanel({ opportunities }: { opportunities: Opportunity[] }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-white">
       <div className="border-b border-border px-4 py-3">
-        <p className="text-sm font-semibold text-ink">กำหนดส่งใกล้ถึง</p>
+        <p className="text-sm font-semibold text-ink">{t("deadlinePanelTitle")}</p>
       </div>
       <div className="divide-y divide-border">
         {byDeadline.map((opp) => (
@@ -189,7 +192,7 @@ function DeadlinePanel({ opportunities }: { opportunities: Opportunity[] }) {
                   : "bg-surface-alt text-ink-muted"
               }`}
             >
-              {opp.daysLeft}ว
+              {t("daysAbbrev", { days: opp.daysLeft })}
             </span>
           </Link>
         ))}
@@ -199,11 +202,12 @@ function DeadlinePanel({ opportunities }: { opportunities: Opportunity[] }) {
 }
 
 function ProfilePanel() {
+  const t = useTranslations("Dashboard");
   const items = [
-    { label: "ชื่อบริษัท", done: true },
-    { label: "ความเชี่ยวชาญ", done: true },
+    { label: t("profileItemCompanyName"), done: true },
+    { label: t("profileItemExpertise"), done: true },
     { label: "Tech Stack", done: false },
-    { label: "ขนาดบริษัท", done: true },
+    { label: t("profileItemCompanySize"), done: true },
   ];
   const percent = Math.round(
     (items.filter((item) => item.done).length / items.length) * 100,
@@ -212,14 +216,14 @@ function ProfilePanel() {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-white">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <p className="text-sm font-semibold text-ink">โปรไฟล์บริษัท</p>
+        <p className="text-sm font-semibold text-ink">{t("companyProfileTitle")}</p>
         <Link href="/profile" className="text-xs font-medium text-accent hover:text-accent-dark">
-          แก้ไข
+          {t("editLink")}
         </Link>
       </div>
       <div className="p-4">
         <div className="mb-3 flex items-center justify-between text-sm">
-          <span className="text-ink-muted">ความสมบูรณ์</span>
+          <span className="text-ink-muted">{t("completionLabel")}</span>
           <span className="font-bold text-ink">{percent}%</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-alt">
@@ -245,7 +249,7 @@ function ProfilePanel() {
           href="/profile"
           className="mt-4 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-border text-xs font-medium text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
         >
-          ตั้งค่าโปรไฟล์
+          {t("setupProfileLink")}
         </Link>
       </div>
     </div>
@@ -255,6 +259,7 @@ function ProfilePanel() {
 /* ── Dashboard ───────────────────────────────────── */
 
 export function Dashboard({ opportunities }: DashboardProps) {
+  const t = useTranslations("Dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<OpportunityFilter>(DEFAULT_FILTER);
   const [savedIds, setSavedIds] = useState<number[]>(INITIAL_SAVED);
@@ -288,7 +293,7 @@ export function Dashboard({ opportunities }: DashboardProps) {
     setSavedIds((previous) =>
       wasSaved ? previous.filter((savedId) => savedId !== id) : [...previous, id],
     );
-    setToastMessage(wasSaved ? "นำออกจากรายการที่บันทึกแล้ว" : "บันทึกโอกาสนี้แล้ว");
+    setToastMessage(wasSaved ? t("toastRemoved") : t("toastSaved"));
     window.setTimeout(() => setToastMessage(""), 2400);
   }
 
@@ -304,32 +309,32 @@ export function Dashboard({ opportunities }: DashboardProps) {
                   Arun Digital Co., Ltd
                 </p>
                 <h1 className="text-2xl font-bold tracking-tight text-zinc-950">
-                  ภาพรวมระบบ
+                  {t("overviewTitle")}
                 </h1>
                 <p className="mt-1.5 max-w-xl text-sm text-zinc-500">
-                  โอกาส TOR ที่ตรงกับโปรไฟล์บริษัท จัดลำดับตามความเหมาะสมและกำหนดส่ง เพื่อให้คุณไม่พลาดโครงการสำคัญของกรุงเทพมหานคร
+                  {t("overviewDescription")}
                 </p>
               </div>
 
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex flex-col items-end">
                   <span className="text-lg font-bold text-zinc-900 leading-none">{opportunities.length}</span>
-                  <span className="mt-1 text-[11px] font-medium text-zinc-500">ทั้งหมด</span>
+                  <span className="mt-1 text-[11px] font-medium text-zinc-500">{t("statTotal")}</span>
                 </div>
                 <div className="h-8 w-px bg-zinc-200" />
                 <div className="flex flex-col items-end">
                   <span className="text-lg font-bold text-accent leading-none">{highMatchCount}</span>
-                  <span className="mt-1 text-[11px] font-medium text-zinc-500">Match สูง</span>
+                  <span className="mt-1 text-[11px] font-medium text-zinc-500">{t("statHighMatch")}</span>
                 </div>
                 <div className="h-8 w-px bg-zinc-200" />
                 <div className="flex flex-col items-end">
                   <span className="text-lg font-bold text-red-500 leading-none">{urgentCount}</span>
-                  <span className="mt-1 text-[11px] font-medium text-zinc-500">ใกล้หมดเขต</span>
+                  <span className="mt-1 text-[11px] font-medium text-zinc-500">{t("statUrgent")}</span>
                 </div>
                 <div className="h-8 w-px bg-zinc-200" />
                 <div className="flex flex-col items-end">
                   <span className="text-lg font-bold text-zinc-900 leading-none">{savedIds.length}</span>
-                  <span className="mt-1 text-[11px] font-medium text-zinc-500">บันทึกไว้</span>
+                  <span className="mt-1 text-[11px] font-medium text-zinc-500">{t("statSaved")}</span>
                 </div>
               </div>
             </div>
@@ -345,7 +350,7 @@ export function Dashboard({ opportunities }: DashboardProps) {
                 className="min-w-0 flex-1 bg-transparent text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="ค้นหาโครงการ หน่วยงาน หรือเทคโนโลยี..."
+                placeholder={t("searchPlaceholder")}
               />
             </div>
             
@@ -375,17 +380,22 @@ export function Dashboard({ opportunities }: DashboardProps) {
             <section>
               {/* List Header */}
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-zinc-800">โอกาสที่แนะนำ</h2>
+                <h2 className="text-sm font-semibold text-zinc-800">{t("recommendedTitle")}</h2>
                 <div className="flex items-center gap-3">
                   <p className="text-[13px] text-zinc-500">
-                    พบ <span className="font-semibold text-zinc-900">{filtered.length}</span> รายการ
+                    {t.rich("resultsCount", {
+                      count: filtered.length,
+                      strong: (chunks) => (
+                        <span className="font-semibold text-zinc-900">{chunks}</span>
+                      ),
+                    })}
                   </p>
                   <div className="h-4 w-px bg-zinc-200" />
                   <Link
                     href="/public"
                     className="flex items-center gap-1 text-[13px] font-medium text-accent hover:text-accent-dark"
                   >
-                    ดูโอกาสใหม่ <ExternalLink size={13} />
+                    {t("viewNewOpportunities")} <ExternalLink size={13} />
                   </Link>
                 </div>
               </div>
@@ -395,8 +405,8 @@ export function Dashboard({ opportunities }: DashboardProps) {
                 {filtered.length === 0 ? (
                   <div className="px-5 py-20 text-center">
                     <Search size={28} className="mx-auto mb-3 text-zinc-300" />
-                    <p className="text-base font-medium text-zinc-700">ไม่พบรายการที่ตรงกัน</p>
-                    <p className="mt-1 text-[13px] text-zinc-500">ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
+                    <p className="text-base font-medium text-zinc-700">{t("emptyStateTitle")}</p>
+                    <p className="mt-1 text-[13px] text-zinc-500">{t("emptyStateDescription")}</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-zinc-100">

@@ -2,6 +2,7 @@
 
 import { Building2, ShieldAlert, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type SubmitEvent, useState } from "react";
 
@@ -37,6 +38,7 @@ export function SignInForm({
   signupLabel,
   tone = "accent",
 }: SignInFormProps) {
+  const t = useTranslations("SignInForm");
   const router = useRouter();
   const Icon = ICONS[icon];
   const [email, setEmail] = useState("");
@@ -100,7 +102,7 @@ export function SignInForm({
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-ink">อีเมล</span>
+              <span className="mb-2 block text-sm font-medium text-ink">{t("emailLabel")}</span>
               <input
                 type="email"
                 required
@@ -112,7 +114,7 @@ export function SignInForm({
               />
             </label>
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-ink">รหัสผ่าน</span>
+              <span className="mb-2 block text-sm font-medium text-ink">{t("passwordLabel")}</span>
               <input
                 type="password"
                 required
@@ -142,7 +144,7 @@ export function SignInForm({
 
         {signupHref && signupLabel && (
           <p className="mt-6 text-center text-sm text-ink-muted">
-            ยังไม่มีบัญชี?{" "}
+            {t("noAccountQuestion")}{" "}
             <Link href={signupHref} className="font-medium text-accent hover:text-accent-dark">
               {signupLabel}
             </Link>
@@ -151,7 +153,7 @@ export function SignInForm({
 
         <div className="mt-4 flex items-center justify-between text-sm">
           <Link href="/login" className="font-medium text-ink-muted hover:text-ink">
-            ← เลือกประเภทบัญชีอื่น
+            {t("chooseOtherAccountType")}
           </Link>
           <Link href={switchHref} className="font-medium text-accent hover:text-accent-dark">
             {switchLabel}

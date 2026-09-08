@@ -1,9 +1,13 @@
+import { useTranslations } from "next-intl";
+
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { AUDIT_LOG } from "@/data/admin";
 
 export default function AdminAuditPage() {
+  const t = useTranslations("AdminAuditPage");
+
   return (
-    <AdminPageShell title="Audit Log" description="ประวัติการทำงานของระบบและผู้ดูแลระบบทั้งหมด">
+    <AdminPageShell title="Audit Log" description={t("description")}>
       <div className="rounded-xl border border-border bg-white overflow-hidden">
         <div className="divide-y divide-border">
           {AUDIT_LOG.map((log) => (
@@ -18,7 +22,7 @@ export default function AdminAuditPage() {
                     : "bg-surface-alt text-ink-muted"
                 }`}
               >
-                {log.type === "auto" ? "อัตโนมัติ" : "ผู้ดูแล"}
+                {log.type === "auto" ? t("typeAuto") : t("typeManual")}
               </span>
 
               <div className="min-w-0 flex-1">

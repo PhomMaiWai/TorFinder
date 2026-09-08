@@ -20,6 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -42,6 +43,7 @@ export default async function TorDetailPage({
 
   if (!opportunity || !detail) notFound();
 
+  const t = await getTranslations("TorDetailPage");
   const isPublished = opportunity.stage === "ประกาศ TOR";
   const isFeedbackOpen = !!detail.feedbackDeadline;
   const isUrgent = opportunity.daysLeft <= 7;
@@ -57,7 +59,7 @@ export default async function TorDetailPage({
             className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
           >
             <ArrowLeft size={16} />
-            กลับไปค้นหา TOR
+            {t("backToSearch")}
           </Link>
 
           <div className="mb-8">
@@ -72,18 +74,18 @@ export default async function TorDetailPage({
               {isFeedbackOpen && (
                 <span className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-semibold text-green-700">
                   <span className="size-1.5 animate-pulse rounded-full bg-green-500" />
-                  เปิดรับความคิดเห็น ถึง {detail.feedbackDeadline}
+                  {t("feedbackOpenUntil", { date: detail.feedbackDeadline ?? "" })}
                 </span>
               )}
               {isUrgent && (
                 <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
                   <div className="size-1.5 animate-pulse rounded-full bg-red-500" />
-                  ใกล้หมดเขต
+                  {t("urgentBadge")}
                 </span>
               )}
               {opportunity.isNew && (
                 <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
-                  ใหม่
+                  {t("newBadge")}
                 </span>
               )}
             </div>
@@ -102,7 +104,7 @@ export default async function TorDetailPage({
               <div className="flex shrink-0 items-center gap-2">
                 <button className="flex h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-600 shadow-sm transition-colors hover:bg-zinc-50">
                   <Bookmark size={15} />
-                  <span className="hidden sm:inline">บันทึก</span>
+                  <span className="hidden sm:inline">{t("saveButton")}</span>
                 </button>
                 <a
                   href={detail.sourceUrl}
@@ -111,7 +113,7 @@ export default async function TorDetailPage({
                   className="flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark"
                 >
                   <ExternalLink size={15} />
-                  ดูต้นฉบับ e-GP
+                  {t("viewOriginalEgp")}
                 </a>
               </div>
             </div>
@@ -125,10 +127,10 @@ export default async function TorDetailPage({
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-accent-text">
-                    วิเคราะห์โดย Vertex AI อัตโนมัติ
+                    {t("aiAnalyzedBy")}
                   </p>
                   <p className="text-xs text-zinc-500">
-                    สกัดข้อมูลจาก TOR PDF · ความเชื่อมั่น 94%
+                    {t("aiExtractedFrom")}
                   </p>
                 </div>
               </div>
@@ -136,7 +138,7 @@ export default async function TorDetailPage({
               <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-zinc-900">
                   <FileText size={18} className="text-zinc-400" />
-                  ขอบเขตงาน
+                  {t("scopeOfWork")}
                 </h2>
                 <p className="text-[15px] leading-relaxed text-zinc-600">{detail.scope}</p>
               </div>
@@ -144,7 +146,7 @@ export default async function TorDetailPage({
               <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900">
                   <Shield size={18} className="text-zinc-400" />
-                  คุณสมบัติผู้เสนอ
+                  {t("qualifications")}
                 </h2>
                 <ul className="space-y-3">
                   {detail.qualifications.map((q) => (
@@ -159,7 +161,7 @@ export default async function TorDetailPage({
               <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900">
                   <ListChecks size={18} className="text-zinc-400" />
-                  สิ่งที่ต้องส่งมอบ
+                  {t("deliverables")}
                 </h2>
                 <ol className="space-y-2.5">
                   {detail.deliverables.map((d, i) => (
@@ -174,7 +176,7 @@ export default async function TorDetailPage({
               </div>
 
               <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-3 text-lg font-bold text-zinc-900">เทคโนโลยีที่เกี่ยวข้อง</h2>
+                <h2 className="mb-3 text-lg font-bold text-zinc-900">{t("relatedTechnologies")}</h2>
                 <div className="flex flex-wrap gap-2">
                   {opportunity.tags.map((tag) => (
                     <span
@@ -191,23 +193,25 @@ export default async function TorDetailPage({
                 <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                   <h2 className="mb-1 flex items-center gap-2 text-lg font-bold text-zinc-900">
                     <MessageSquare size={18} className="text-zinc-400" />
-                    ร่วมแสดงความคิดเห็น
+                    {t("shareFeedback")}
                   </h2>
                   <p className="mb-4 text-sm text-zinc-500">
-                    ช่วงรับฟังเปิดถึง {detail.feedbackDeadline} · มีผู้ยื่นแล้ว{" "}
-                    {detail.feedbackCount} ราย
+                    {t("feedbackWindowInfo", {
+                      date: detail.feedbackDeadline ?? "",
+                      count: detail.feedbackCount,
+                    })}
                   </p>
                   <textarea
                     className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 shadow-sm outline-none placeholder:text-zinc-400 focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
                     rows={4}
-                    placeholder="ข้อเสนอแนะหรือความคิดเห็นเกี่ยวกับขอบเขตงานหรือเงื่อนไขนี้..."
+                    placeholder={t("feedbackTextareaPlaceholder")}
                   />
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
                     <p className="text-xs text-zinc-500">
-                      ความคิดเห็นจะถูกตรวจสอบก่อนแสดงผลต่อสาธารณะ
+                      {t("feedbackModerationNote")}
                     </p>
                     <button className="h-9 shrink-0 rounded-lg bg-accent px-5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark">
-                      ส่งความคิดเห็น
+                      {t("submitFeedbackButton")}
                     </button>
                   </div>
                 </div>
@@ -220,7 +224,7 @@ export default async function TorDetailPage({
                   <div className="border-b border-zinc-100 bg-zinc-50/50 p-4">
                     <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-900">
                       <Award size={16} className="text-zinc-400" />
-                      ผู้ชนะการเสนอราคา
+                      {t("awardedVendorTitle")}
                     </h3>
                   </div>
                   <div className="p-4">
@@ -237,7 +241,7 @@ export default async function TorDetailPage({
                               Capability Match: {detail.awardedVendor.matchScore}%
                             </p>
                             <p className="mt-1 text-[12px] font-medium text-red-600">
-                              ระบบพบความเสี่ยง: ความเชี่ยวชาญอาจไม่สอดคล้องกับขอบเขตงาน
+                              {t("vendorRiskWarning")}
                             </p>
                             <ul className="mt-2 space-y-1.5">
                               {detail.awardedVendor.mismatchReasons.map((reason) => (
@@ -261,7 +265,7 @@ export default async function TorDetailPage({
                     <Banknote size={18} />
                   </span>
                   <div>
-                    <p className="text-xs font-medium text-zinc-500">งบประมาณ</p>
+                    <p className="text-xs font-medium text-zinc-500">{t("budgetLabel")}</p>
                     <p className="text-base font-bold text-zinc-900">{opportunity.budget}</p>
                   </div>
                 </div>
@@ -271,14 +275,14 @@ export default async function TorDetailPage({
                     <Clock size={18} />
                   </span>
                   <div>
-                    <p className="text-xs font-medium text-zinc-500">กำหนดส่ง</p>
+                    <p className="text-xs font-medium text-zinc-500">{t("deadlineLabel")}</p>
                     <p
                       className={`text-base font-bold ${isUrgent ? "text-red-600" : "text-zinc-900"}`}
                     >
                       {opportunity.deadline}
                     </p>
                     <p className={`text-xs ${isUrgent ? "text-red-500" : "text-zinc-500"}`}>
-                      เหลือ {opportunity.daysLeft} วัน
+                      {t("daysLeftLabel", { days: opportunity.daysLeft })}
                     </p>
                   </div>
                 </div>
@@ -288,7 +292,7 @@ export default async function TorDetailPage({
                     <Calendar size={18} />
                   </span>
                   <div>
-                    <p className="text-xs font-medium text-zinc-500">ระยะเวลาสัญญา</p>
+                    <p className="text-xs font-medium text-zinc-500">{t("contractPeriodLabel")}</p>
                     <p className="text-base font-bold text-zinc-900">{detail.contractPeriod}</p>
                   </div>
                 </div>
@@ -298,9 +302,9 @@ export default async function TorDetailPage({
                     <Users size={18} />
                   </span>
                   <div>
-                    <p className="text-xs font-medium text-zinc-500">บริษัทที่จับคู่แล้ว</p>
+                    <p className="text-xs font-medium text-zinc-500">{t("matchedCompaniesLabel")}</p>
                     <p className="text-base font-bold text-zinc-900">
-                      {detail.matchedCompaniesCount} บริษัท
+                      {t("companiesCount", { count: detail.matchedCompaniesCount })}
                     </p>
                   </div>
                 </div>
@@ -308,23 +312,23 @@ export default async function TorDetailPage({
 
               <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-zinc-900">ราคากลาง (AI ประเมิน)</h3>
+                  <h3 className="text-sm font-bold text-zinc-900">{t("priceBenchmarkTitle")}</h3>
                   {detail.budgetStatus === "สูงกว่าปกติ" && (
                     <span className="flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 border border-red-100">
                       <TrendingUp size={12} />
-                      งบสูงผิดปกติ
+                      {t("budgetHighBadge")}
                     </span>
                   )}
                   {detail.budgetStatus === "ต่ำกว่าปกติ" && (
                     <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 border border-amber-100">
                       <TrendingDown size={12} />
-                      งบต่ำผิดปกติ
+                      {t("budgetLowBadge")}
                     </span>
                   )}
                   {detail.budgetStatus === "ปกติ" && (
                     <span className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700 border border-green-100">
                       <CheckCircle2 size={12} />
-                      งบปกติ
+                      {t("budgetNormalBadge")}
                     </span>
                   )}
                 </div>
@@ -332,7 +336,7 @@ export default async function TorDetailPage({
               </div>
 
               <p className="px-1 text-xs text-zinc-400">
-                ประกาศเมื่อ {detail.publishedAt} · แหล่งข้อมูล e-GP
+                {t("publishedInfo", { date: detail.publishedAt })}
               </p>
             </aside>
           </div>

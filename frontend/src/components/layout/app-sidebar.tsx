@@ -42,47 +42,51 @@ const PENDING_FEEDBACK_COUNT = FEEDBACK_ENTRIES.filter(
   (f) => f.status === "รอตรวจสอบ",
 ).length;
 
-const ORG_NAV: { section: string | null; links: NavLink[] }[] = [
-  {
-    section: null,
-    links: [
-      { label: "ภาพรวม", href: "/dashboard", icon: LayoutDashboard },
-      { label: "ค้นหา TOR", href: "/public", icon: Search },
-      { label: "รายการที่บันทึก", href: "/saved?scope=org", icon: Bookmark },
-      { label: "โปรไฟล์บริษัท", href: "/profile", icon: Building2 },
-      {
-        label: "การแจ้งเตือน",
-        href: "/notifications",
-        icon: Bell,
-        badge: UNREAD_NOTIFICATIONS || undefined,
-      },
-    ],
-  },
-];
+function getOrgNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
+  return [
+    {
+      section: null,
+      links: [
+        { label: t("navOverview"), href: "/dashboard", icon: LayoutDashboard },
+        { label: t("navSearchTor"), href: "/public", icon: Search },
+        { label: t("navSavedList"), href: "/saved?scope=org", icon: Bookmark },
+        { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
+        {
+          label: t("navNotifications"),
+          href: "/notifications",
+          icon: Bell,
+          badge: UNREAD_NOTIFICATIONS || undefined,
+        },
+      ],
+    },
+  ];
+}
 
-const ADMIN_NAV: { section: string | null; links: NavLink[] }[] = [
-  {
-    section: null,
-    links: [
-      { label: "ภาพรวม", href: "/admin", icon: Activity },
-      {
-        label: "บัญชีรออนุมัติ",
-        href: "/admin/accounts",
-        icon: UserCheck,
-        badge: PENDING_ACCOUNTS_COUNT || undefined,
-      },
-      {
-        label: "กลั่นกรองความคิดเห็น",
-        href: "/admin/moderation",
-        icon: MessageSquare,
-        badge: PENDING_FEEDBACK_COUNT || undefined,
-      },
-      { label: "จัดการบริษัท", href: "/admin/companies", icon: Building2 },
-      { label: "จัดการผู้ใช้งาน", href: "/admin/users", icon: Users },
-      { label: "Audit Log", href: "/admin/audit", icon: ClipboardList },
-    ],
-  },
-];
+function getAdminNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
+  return [
+    {
+      section: null,
+      links: [
+        { label: t("navOverview"), href: "/admin", icon: Activity },
+        {
+          label: t("navPendingAccounts"),
+          href: "/admin/accounts",
+          icon: UserCheck,
+          badge: PENDING_ACCOUNTS_COUNT || undefined,
+        },
+        {
+          label: t("navModeration"),
+          href: "/admin/moderation",
+          icon: MessageSquare,
+          badge: PENDING_FEEDBACK_COUNT || undefined,
+        },
+        { label: t("navManageCompanies"), href: "/admin/companies", icon: Building2 },
+        { label: t("navManageUsers"), href: "/admin/users", icon: Users },
+        { label: t("navAuditLog"), href: "/admin/audit", icon: ClipboardList },
+      ],
+    },
+  ];
+}
 
 function NavLinks({
   nav,
@@ -100,8 +104,10 @@ function NavLinks({
     return pathname === path || pathname.startsWith(path + "/");
   }
 
+  const t = useTranslations("AppShell");
+
   return (
-    <nav className="flex-1 overflow-y-auto px-3" aria-label="เมนูหลัก">
+    <nav className="flex-1 overflow-y-auto px-3" aria-label={t("mainNavAriaLabel")}>
       {nav.map(({ section, links }, i) => (
         <div key={i} className={i > 0 ? "mt-5" : ""}>
           {section && (
@@ -145,10 +151,11 @@ function NavLinks({
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useTranslations("AppShell");
   const pathname = usePathname();
   const router = useRouter();
   const isAdmin = pathname.startsWith("/admin");
-  const nav = isAdmin ? ADMIN_NAV : ORG_NAV;
+  const nav = isAdmin ? getAdminNav(t) : getOrgNav(t);
 
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -200,7 +207,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-3 pb-3">
         <div className="flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-white px-3 py-2 text-sm text-ink-subtle shadow-sm">
           <Search size={14} />
-          <span className="flex-1">ค้นหา...</span>
+          <span className="flex-1">{t("searchPlaceholder")}</span>
           <kbd className="rounded border border-border bg-surface-alt px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
             ⌘K
           </kbd>
@@ -217,7 +224,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-zinc-100 hover:text-ink"
         >
           <ArrowLeft size={15} className="opacity-60" />
-          กลับหน้าหลัก
+          {t("backToHome")}
         </Link>
       </div>
 
@@ -250,6 +257,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("AppShell");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -278,7 +286,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             className="grid size-9 place-items-center rounded-lg text-ink-muted hover:bg-surface-alt"
             onClick={() => setMobileOpen(true)}
-            aria-label="เปิดเมนู"
+            aria-label={t("openMenuAriaLabel")}
           >
             <Menu size={20} />
           </button>

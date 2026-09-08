@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { type SubmitEvent, useState } from "react";
 
 import { PageBody, PageHeader, Section } from "@/components/layout/app-page";
@@ -23,6 +24,7 @@ export default function ProfilePage() {
   const [size, setSize] = useState<CompanySize>(COMPANY_PROFILE.size);
   const [techStack, setTechStack] = useState<string[]>(COMPANY_PROFILE.techStack);
   const [saved, setSaved] = useState(false);
+  const t = useTranslations("ProfilePage");
 
   const percent = Math.round(
     (
@@ -56,18 +58,18 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <PageHeader
-        title="โปรไฟล์บริษัท"
-        description="ข้อมูลนี้ใช้คำนวณคะแนนความเหมาะสม (match score) กับ TOR ใหม่ที่เข้ามา"
+        title={t("pageTitle")}
+        description={t("pageDescription")}
       />
 
       <PageBody>
         <form onSubmit={handleSave} className="grid gap-8 lg:grid-cols-[1fr_300px]">
         <div className="space-y-8">
-          <Section title="ข้อมูลบัญชี">
+          <Section title={t("accountInfoSectionTitle")}>
             <div className="grid gap-4 rounded-xl border border-border bg-white p-5 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  อีเมลบริษัท
+                  {t("companyEmailLabel")}
                 </span>
                 <input
                   type="email"
@@ -78,7 +80,7 @@ export default function ProfilePage() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  เบอร์โทรศัพท์
+                  {t("phoneLabel")}
                 </span>
                 <input
                   value={phone}
@@ -89,11 +91,11 @@ export default function ProfilePage() {
             </div>
           </Section>
 
-          <Section title="ข้อมูลบริษัท">
+          <Section title={t("companyInfoSectionTitle")}>
             <div className="grid gap-4 rounded-xl border border-border bg-white p-5 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  ชื่อบริษัท
+                  {t("companyNameLabel")}
                 </span>
                 <input
                   value={name}
@@ -103,7 +105,7 @@ export default function ProfilePage() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  เลขทะเบียนนิติบุคคล
+                  {t("taxIdLabel")}
                 </span>
                 <input
                   value={taxId}
@@ -113,7 +115,7 @@ export default function ProfilePage() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  ชื่อผู้ติดต่อ
+                  {t("contactNameLabel")}
                 </span>
                 <input
                   value={contactName}
@@ -123,7 +125,7 @@ export default function ProfilePage() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  ความเชี่ยวชาญ
+                  {t("specialtyLabel")}
                 </span>
                 <input
                   value={specialty}
@@ -133,7 +135,7 @@ export default function ProfilePage() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  ขนาดบริษัท
+                  {t("sizeLabel")}
                 </span>
                 <select
                   value={size}
@@ -149,7 +151,7 @@ export default function ProfilePage() {
               </label>
               <label className="block sm:col-span-2">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  ที่อยู่บริษัท
+                  {t("addressLabel")}
                 </span>
                 <textarea
                   value={address}
@@ -164,7 +166,7 @@ export default function ProfilePage() {
           <Section title="Tech Stack">
             <div className="rounded-xl border border-border bg-white p-5">
               <p className="mb-3 text-sm text-ink-muted">
-                เลือกเทคโนโลยีที่บริษัทถนัด ใช้จับคู่กับแท็กของ TOR
+                {t("techStackDescription")}
               </p>
               <div className="flex flex-wrap gap-2">
                 {TECH_STACK_OPTIONS.map((tag) => {
@@ -196,15 +198,15 @@ export default function ProfilePage() {
               {name.trim().charAt(0) || "A"}
             </span>
             <p className="truncate text-sm font-semibold text-ink">
-              {name.trim() || "ชื่อบริษัท"}
+              {name.trim() || t("companyNameFallback")}
             </p>
             <p className="mt-0.5 truncate text-xs text-ink-muted">
-              {specialty.trim() || "ความเชี่ยวชาญ"}
+              {specialty.trim() || t("specialtyFallback")}
             </p>
 
             <div className="mt-4 text-left">
               <div className="mb-1.5 flex items-center justify-between text-xs">
-                <span className="text-ink-muted">ความสมบูรณ์ของโปรไฟล์</span>
+                <span className="text-ink-muted">{t("profileCompletenessLabel")}</span>
                 <span className="font-bold text-ink">{percent}%</span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-surface-alt">
@@ -220,10 +222,10 @@ export default function ProfilePage() {
             type="submit"
             className="flex h-10 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
           >
-            บันทึกโปรไฟล์
+            {t("saveButton")}
           </button>
           {saved && (
-            <p className="text-center text-sm font-medium text-success">บันทึกแล้ว</p>
+            <p className="text-center text-sm font-medium text-success">{t("savedConfirmation")}</p>
           )}
         </aside>
         </form>

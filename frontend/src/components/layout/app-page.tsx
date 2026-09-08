@@ -1,5 +1,6 @@
 import { ChevronDown, Search } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 /* ── Page header (Baserow-style) ─────────────────── */
 
@@ -145,11 +146,12 @@ type FilterBarProps = {
 export function FilterBar({
   search,
   onSearchChange,
-  searchPlaceholder = "ค้นหา...",
+  searchPlaceholder,
   pills,
   activePill,
   onPillChange,
 }: FilterBarProps) {
+  const t = useTranslations("Common");
   return (
     <div className="flex flex-wrap items-center gap-3">
       <label className="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 focus-within:border-accent/40 focus-within:ring-2 focus-within:ring-accent/10">
@@ -158,7 +160,7 @@ export function FilterBar({
           className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={searchPlaceholder}
+          placeholder={searchPlaceholder ?? t("searchPlaceholder")}
         />
       </label>
       {pills && onPillChange && (

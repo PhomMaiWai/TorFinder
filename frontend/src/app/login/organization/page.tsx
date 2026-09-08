@@ -1,17 +1,21 @@
+import { useTranslations } from "next-intl";
+
 import { SignInForm } from "@/components/auth/sign-in-form";
 
 export default function OrganizationLoginPage() {
+  const t = useTranslations("LoginOrganizationPage");
+
   return (
     <SignInForm
       icon="building"
-      badge="หน่วยงาน / บริษัท"
-      title="เข้าสู่ระบบสำหรับหน่วยงาน"
-      description="ติดตามและจับคู่โอกาส TOR ที่ตรงกับบริษัทของคุณ"
+      badge={t("badge")}
+      title={t("title")}
+      description={t("description")}
       redirectTo="/dashboard"
       switchHref="/login/admin"
-      switchLabel="เข้าสู่ระบบผู้ดูแลระบบแทน →"
+      switchLabel={t("switchLabel")}
       signupHref="/signup/organization"
-      signupLabel="สมัครสมาชิกหน่วยงาน"
+      signupLabel={t("signupLabel")}
     />
   );
 }

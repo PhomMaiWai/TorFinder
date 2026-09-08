@@ -1,12 +1,14 @@
 "use client";
 
 import { Ban, CheckCircle2, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { ADMIN_USERS } from "@/data/admin";
 
 export default function AdminUsersPage() {
+  const t = useTranslations("AdminUsersPage");
   const [users, setUsers] = useState(ADMIN_USERS);
   const [query, setQuery] = useState("");
 
@@ -25,8 +27,8 @@ export default function AdminUsersPage() {
 
   return (
     <AdminPageShell
-      title="จัดการผู้ใช้งาน"
-      description="ผู้ใช้งานทั้งหมดในระบบ ทั้งฝั่งบริษัทและผู้ดูแลระบบ"
+      title={t("title")}
+      description={t("description")}
     >
       <div className="mb-5">
         <label className="relative block max-w-sm">
@@ -37,7 +39,7 @@ export default function AdminUsersPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหาชื่อ, อีเมล, หรือบริษัท..."
+            placeholder={t("searchPlaceholder")}
             className="h-10 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
           />
         </label>
@@ -45,7 +47,7 @@ export default function AdminUsersPage() {
 
       <div className="overflow-hidden rounded-xl border border-border bg-white divide-y divide-border">
         {filtered.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-ink-muted">ไม่พบผู้ใช้งานที่ค้นหา</p>
+          <p className="px-5 py-10 text-center text-sm text-ink-muted">{t("emptyState")}</p>
         ) : (
           filtered.map((u) => (
             <div
@@ -79,7 +81,7 @@ export default function AdminUsersPage() {
                 </div>
                 <h3 className="text-sm font-semibold text-ink">{u.name}</h3>
                 <p className="mt-1 text-xs text-ink-muted">
-                  {u.email} · {u.company} · ใช้งานล่าสุด {u.lastActive}
+                  {u.email} · {u.company} · {t("lastActiveInfo", { date: u.lastActive })}
                 </p>
               </div>
 
@@ -90,12 +92,12 @@ export default function AdminUsersPage() {
                 {u.status === "ใช้งาน" ? (
                   <>
                     <Ban size={14} />
-                    ระงับบัญชี
+                    {t("suspendAction")}
                   </>
                 ) : (
                   <>
                     <CheckCircle2 size={14} />
-                    เปิดใช้งานอีกครั้ง
+                    {t("reactivateAction")}
                   </>
                 )}
               </button>
