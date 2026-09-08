@@ -18,11 +18,45 @@ export default function OrganizationSignupPage() {
   const [address, setAddress] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [size, setSize] = useState<CompanySize>(COMPANY_SIZE_OPTIONS[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    const name = companyName.trim() || "บริษัทของคุณ";
-    router.push(`/signup/pending?name=${encodeURIComponent(name)}`);
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          companyName,
+          taxId,
+          contactName,
+          phone,
+          address,
+          specialty,
+          size,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      const name = companyName.trim() || "บริษัทของคุณ";
+      router.push(`/signup/pending?name=${encodeURIComponent(name)}`);
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -149,11 +183,18 @@ export default function OrganizationSignupPage() {
               </label>
             </div>
 
+            {error && (
+              <p className="rounded-lg bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="flex h-12 w-full items-center justify-center rounded-lg bg-accent text-base font-semibold text-white transition-colors hover:bg-accent-dark"
+              disabled={isSubmitting}
+              className="flex h-12 w-full items-center justify-center rounded-lg bg-accent text-base font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
-              ส่งข้อมูลเพื่อขออนุมัติ
+              {isSubmitting ? "กำลังส่งข้อมูล..." : "ส่งข้อมูลเพื่อขออนุมัติ"}
             </button>
           </form>
         </div>
