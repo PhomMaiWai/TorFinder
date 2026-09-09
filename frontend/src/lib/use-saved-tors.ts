@@ -9,18 +9,21 @@ import { useSyncExternalStore } from "react";
  */
 export type SavedTorsScope = "public" | "org";
 
+/** Mock records are keyed by number, records from the backend by ObjectId string. */
+export type TorId = string | number;
+
 const STORAGE_KEYS: Record<SavedTorsScope, string> = {
   public: "torr:saved-tors:public",
   org: "torr:saved-tors:org",
 };
 
-const EMPTY_SNAPSHOT: number[] = [];
+const EMPTY_SNAPSHOT: TorId[] = [];
 
-function readFromStorage(storageKey: string): number[] {
+function readFromStorage(storageKey: string): TorId[] {
   if (typeof window === "undefined") return EMPTY_SNAPSHOT;
   try {
     const raw = window.localStorage.getItem(storageKey);
-    return raw ? (JSON.parse(raw) as number[]) : EMPTY_SNAPSHOT;
+    return raw ? (JSON.parse(raw) as TorId[]) : EMPTY_SNAPSHOT;
   } catch {
     return EMPTY_SNAPSHOT;
   }
@@ -28,7 +31,7 @@ function readFromStorage(storageKey: string): number[] {
 
 function createStore(storageKey: string) {
   let listeners: Array<() => void> = [];
-  let cachedSnapshot: number[] = readFromStorage(storageKey);
+  let cachedSnapshot: TorId[] = readFromStorage(storageKey);
 
   function subscribe(callback: () => void) {
     listeners.push(callback);
@@ -41,7 +44,7 @@ function createStore(storageKey: string) {
     return cachedSnapshot;
   }
 
-  function toggle(id: number) {
+  function toggle(id: TorId) {
     cachedSnapshot = cachedSnapshot.includes(id)
       ? cachedSnapshot.filter((savedId) => savedId !== id)
       : [...cachedSnapshot, id];
@@ -64,7 +67,7 @@ function getStore(scope: SavedTorsScope) {
   return store;
 }
 
-function getServerSnapshot(): number[] {
+function getServerSnapshot(): TorId[] {
   return EMPTY_SNAPSHOT;
 }
 

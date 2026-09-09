@@ -5,7 +5,9 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
 import { env } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
+import { EgpModule } from "./egp/egp.module";
 import { HealthController } from "./health.controller";
+import { TorModule } from "./tor/tor.module";
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { HealthController } from "./health.controller";
     ]),
     DatabaseModule,
     AuthModule,
+    TorModule,
+    EgpModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

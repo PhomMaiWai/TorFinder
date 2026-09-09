@@ -21,6 +21,26 @@ function optionalNumber(name: string, fallback: number): number {
   return parsed;
 }
 
+/**
+ * Departments to pull announcements for, as "deptId:ชื่อหน่วยงาน" pairs joined by
+ * "|". An RSS item carries no agency name, so it can only come from knowing which
+ * deptId was queried. Empty means the nationwide feed.
+ */
+function egpDepartments(): { deptId: string; agency: string }[] {
+  const raw = process.env.EGP_DEPARTMENTS?.trim();
+  if (!raw) return [];
+
+  return raw.split("|").map((entry) => {
+    const [id, ...name] = entry.split(":");
+    const deptId = id?.trim() ?? "";
+    const agency = name.join(":").trim();
+    if (!deptId || !agency) {
+      throw new Error(`EGP_DEPARTMENTS entry must be "deptId:ชื่อหน่วยงาน", got "${entry}"`);
+    }
+    return { deptId, agency };
+  });
+}
+
 export const env = {
   isProduction,
   port: optionalNumber("PORT", 4000),
@@ -34,5 +54,12 @@ export const env = {
     // Login is brute-forceable, so it gets its own tighter budget.
     authTtlMs: optionalNumber("AUTH_THROTTLE_TTL_MS", 60_000),
     authLimit: optionalNumber("AUTH_THROTTLE_LIMIT", 5),
+  },
+  egp: {
+    feedUrl:
+      process.env.EGP_FEED_URL ??
+      "https://process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml",
+    departments: egpDepartments(),
+    timeoutMs: optionalNumber("EGP_TIMEOUT_MS", 20_000),
   },
 };
