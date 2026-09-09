@@ -13,6 +13,12 @@ export class MatchingController {
     return this.matching.rankForTor(id);
   }
 
+  /** Recompute and store every record's budget verdict. */
+  @Post("budget/refresh")
+  refreshBudgets() {
+    return this.matching.refreshBudgetStatuses();
+  }
+
   /** How this announcement's budget compares with similar ones. */
   @Get("tor/:id/budget")
   budget(@Param("id") id: string) {

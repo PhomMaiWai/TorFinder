@@ -8,6 +8,7 @@ import { env } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
 import { AiModule } from "./ai/ai.module";
 import { EgpModule } from "./egp/egp.module";
+import { FeedbackModule } from "./feedback/feedback.module";
 import { MatchingModule } from "./matching/matching.module";
 import { HealthController } from "./health.controller";
 import { TorModule } from "./tor/tor.module";
@@ -23,6 +24,7 @@ import { TorModule } from "./tor/tor.module";
     TorModule,
     AiModule,
     EgpModule,
+    FeedbackModule,
     MatchingModule,
   ],
   controllers: [HealthController],

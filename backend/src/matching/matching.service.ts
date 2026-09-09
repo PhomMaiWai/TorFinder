@@ -1,13 +1,15 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { ObjectId } from "mongodb";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { AnyBulkWriteOperation, ObjectId } from "mongodb";
 
-import { DatabaseService } from "../database/database.service";
+import { DatabaseService, TorDoc } from "../database/database.service";
 import { assessBudget, BudgetAssessment } from "./budget-analysis";
 import { rankCompanies, scoreMatch } from "./matching.scoring";
 import { MatchCandidate, MatchResult, RankedCompany } from "./matching.types";
 
 @Injectable()
 export class MatchingService {
+  private readonly logger = new Logger(MatchingService.name);
+
   constructor(private readonly db: DatabaseService) {}
 
   /** Approved organizations ranked against one announcement, best first. */
@@ -63,6 +65,46 @@ export class MatchingService {
       { ...tor, documentBudget: tor.extraction?.budgetAmount ?? null },
       all.map((peer) => (peer._id.equals(tor._id) ? { ...peer, budgetAmount: undefined } : peer)),
     );
+  }
+
+  /**
+   * Recomputes every record's budget verdict and stores it, so listings can
+   * badge a card without judging 265 announcements per page view. The verdict
+   * depends on the whole corpus, so it is refreshed after an import rather than
+   * written once — a new announcement can move the percentile another sits at.
+   */
+  async refreshBudgetStatuses(): Promise<{ assessed: number; flagged: number }> {
+    const projection = { title: 1, summary: 1, tags: 1, budgetAmount: 1, extraction: 1 };
+    const all = await this.db.tors.find({}, { projection }).toArray();
+    const priced = all.filter((tor) => tor.budgetAmount);
+
+    const writes: AnyBulkWriteOperation<TorDoc>[] = priced.map((tor) => {
+      const { status } = assessBudget(
+        { ...tor, documentBudget: tor.extraction?.budgetAmount ?? null },
+        priced.map((peer) => (peer._id.equals(tor._id) ? { ...peer, budgetAmount: undefined } : peer)),
+      );
+
+      // "ไม่ประเมิน" isn't a status a badge can show; leaving the field unset is
+      // how a record says nothing rather than saying "normal" without evidence.
+      return {
+        updateOne: {
+          filter: { _id: tor._id },
+          update:
+            status === "ไม่ประเมิน"
+              ? { $unset: { budgetStatus: "" } }
+              : { $set: { budgetStatus: status } },
+        },
+      };
+    });
+
+    if (writes.length === 0) return { assessed: 0, flagged: 0 };
+    await this.db.tors.bulkWrite(writes, { ordered: false });
+
+    const flagged = await this.db.tors.countDocuments({
+      budgetStatus: { $in: ["สูงกว่าปกติ", "ต่ำกว่าปกติ"] },
+    });
+    this.logger.log(`Budget statuses refreshed: ${writes.length} assessed, ${flagged} flagged`);
+    return { assessed: writes.length, flagged };
   }
 
   private async findTor(id: string) {
