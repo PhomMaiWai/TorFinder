@@ -28,7 +28,8 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { SaveTorButton } from "@/components/public/save-tor-button";
 import { FEEDBACK_ENTRIES, MATCHED_COMPANIES, TOR_DETAILS } from "@/data/tor-details";
-import { fetchBudgetAssessment, fetchMatchedCompanies } from "@/lib/tor-api";
+import { FeedbackForm } from "@/components/public/feedback-form";
+import { fetchBudgetAssessment, fetchFeedback, fetchMatchedCompanies } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
 import { isKnown, stageBadgeCls } from "@/lib/tor-ui";
 
@@ -55,9 +56,13 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
 
   // Only real records carry a budget verdict; the showcase ones aren't in the
   // corpus it compares against.
-  const [budgetAssessment, rankedCompanies] = tor.sourceRef
-    ? await Promise.all([fetchBudgetAssessment(tor.id), fetchMatchedCompanies(tor.id)])
-    : [null, []];
+  const [budgetAssessment, rankedCompanies, publishedFeedback] = tor.sourceRef
+    ? await Promise.all([
+        fetchBudgetAssessment(tor.id),
+        fetchMatchedCompanies(tor.id),
+        fetchFeedback(tor.id),
+      ])
+    : [null, [], []];
   const extraction = tor.extraction;
 
   // Showcase records carry hand-written scope/qualification detail; imported
@@ -485,6 +490,43 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                     ))}
                   </ul>
                 </section>
+              )}
+
+              {publishedFeedback.length > 0 && (
+                <section className={CARD}>
+                  <h2 className={HEADING}>
+                    <MessageSquare size={18} className="text-zinc-400" />
+                    {t("feedbackListHeading")}
+                  </h2>
+                  <ul className="space-y-4">
+                    {publishedFeedback.map((entry) => (
+                      <li key={entry.id} className="rounded-lg bg-zinc-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-zinc-900">{entry.author}</p>
+                          <span className="text-xs text-zinc-400">
+                            {thaiDate(entry.createdAt) ?? ""}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 text-sm leading-relaxed text-zinc-600">{entry.text}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Comments are only useful while the terms can still change. */}
+              {tor.sourceRef && tor.stage === "เปิดรับฟังความคิดเห็น" && (
+                <FeedbackForm
+                  torId={tor.id}
+                  labels={{
+                    heading: t("shareFeedback"),
+                    authorPlaceholder: t("feedbackAuthorPlaceholder"),
+                    textPlaceholder: t("feedbackTextareaPlaceholder"),
+                    submit: t("submitFeedbackButton"),
+                    moderationNote: t("feedbackModerationNote"),
+                    submitted: t("feedbackSubmitted"),
+                  }}
+                />
               )}
 
               {feedback.length > 0 && (

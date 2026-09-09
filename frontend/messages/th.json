@@ -381,7 +381,9 @@
     "budgetAssessmentNote": "ประเมินจากการเปรียบเทียบกับประกาศลักษณะเดียวกันในระบบ เป็นข้อสังเกตเพื่อการตรวจสอบ ไม่ใช่ข้อสรุปว่ามีความผิดปกติ",
     "extractionHeading": "รายละเอียดที่อ่านจากเอกสาร",
     "extractionDisclaimer": "สกัดโดยอัตโนมัติจากเอกสารประกาศด้วย {model} — โปรดตรวจสอบกับเอกสารต้นฉบับก่อนใช้อ้างอิง",
-    "documentBudgetLabel": "วงเงินตามเอกสาร"
+    "documentBudgetLabel": "วงเงินตามเอกสาร",
+    "feedbackAuthorPlaceholder": "ชื่อผู้แสดงความคิดเห็น (ไม่ระบุก็ได้)",
+    "feedbackSubmitted": "ส่งความคิดเห็นแล้ว รอเจ้าหน้าที่ตรวจสอบก่อนเผยแพร่"
   },
   "OwnerPage": {
     "stagePillAll": "ทั้งหมด",
@@ -403,7 +405,8 @@
     "companiesTabLabel": "บริษัท ({count})",
     "feedbackTabLabel": "ความคิดเห็น ({count})",
     "noMatchedCompanies": "ยังไม่มีบริษัทที่จับคู่",
-    "noFeedback": "ยังไม่มีความคิดเห็น"
+    "noFeedback": "ยังไม่มีความคิดเห็น",
+    "loadingPanel": "กำลังโหลด..."
   },
   "AdminOverviewPage": {
     "title": "ภาพรวม",
@@ -451,7 +454,8 @@
     "title": "กลั่นกรองความคิดเห็น",
     "description": "ตรวจสอบและอนุมัติความคิดเห็นสาธารณะที่ส่งเข้ามาต่อ TOR แต่ละรายการ",
     "rejectAction": "ปฏิเสธ",
-    "approveAction": "อนุมัติ"
+    "approveAction": "อนุมัติ",
+    "emptyQueue": "ยังไม่มีความคิดเห็นให้ตรวจสอบ"
   },
   "AdminUsersPage": {
     "title": "จัดการผู้ใช้งาน",

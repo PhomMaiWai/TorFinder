@@ -67,3 +67,13 @@ export type MatchedCompany = {
   reasons: string[];
   gaps: string[];
 };
+
+export type TorFeedback = {
+  id: string;
+  torId: string;
+  author: string;
+  text: string;
+  status: "รอตรวจสอบ" | "อนุมัติ" | "ปฏิเสธ";
+  createdAt: string;
+  reviewedAt?: string;
+};

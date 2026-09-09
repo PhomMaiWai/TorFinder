@@ -1,4 +1,4 @@
-import type { BudgetAssessment, MatchedCompany, TorRecord } from "@/types/tor";
+import type { BudgetAssessment, MatchedCompany, TorFeedback, TorRecord } from "@/types/tor";
 
 /** `source` omitted lists both admin-entered and e-GP records. */
 export async function fetchTorList(
@@ -36,6 +36,15 @@ export async function fetchBudgetAssessment(id: string): Promise<BudgetAssessmen
 /** Approved organizations ranked against this announcement. */
 export async function fetchMatchedCompanies(id: string): Promise<MatchedCompany[]> {
   const res = await fetch(`${process.env.BACKEND_URL}/api/matching/tor/${id}/companies`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** Comments a moderator has published on one announcement. */
+export async function fetchFeedback(torId: string): Promise<TorFeedback[]> {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${torId}/feedback`, {
     cache: "no-store",
   });
   if (!res.ok) return [];
