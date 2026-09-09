@@ -6,7 +6,7 @@ export function HeroSection() {
   const t = useTranslations("LandingHero");
 
   return (
-    <section className="bg-white py-24 sm:py-32">
+    <section className="bg-surface py-24 sm:py-32">
       <div className="mx-auto max-w-6xl px-6 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-alt px-4 py-1.5 text-sm font-medium text-ink-muted">
           <Zap size={14} className="text-accent" />

@@ -1,21 +1,22 @@
 "use client";
 
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
-import { Sun, Moon } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 
+import { useTheme } from "@/lib/theme-context";
+
+/**
+ * Reads the theme from the app's own provider rather than a library: the
+ * provider is what writes the `.dark` class the design tokens key off, and it
+ * shares the storage key with the pre-hydration script in the root layout.
+ */
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <button
       type="button"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-ink transition-colors hover:bg-surface-alt dark:border-border dark:bg-transparent"
+      onClick={toggleTheme}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-ink transition-colors hover:bg-surface-alt"
       aria-label="Toggle theme"
     >
       {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}

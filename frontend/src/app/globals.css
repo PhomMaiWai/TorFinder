@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-noto-thai), var(--font-geist-sans), sans-serif;
+}
 
+/*
+ * Plain @theme (not inline) so color utilities compile to var(--color-x)
+ * instead of a hardcoded hex value — required for the .dark overrides
+ * below to actually take effect at runtime.
+ */
+@theme {
   /* ── Neutrals (zinc-based, slightly warm) ────────── */
   --color-ink:        #18181b;   /* zinc-900  */
   --color-ink-muted:  #71717a;   /* zinc-500  */
@@ -35,6 +44,24 @@
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(6px); }
+}
+
+/* ── Dark mode overrides ──────────────────────────── */
+.dark {
+  --color-ink:        #f4f4f5;   /* zinc-100 */
+  --color-ink-muted:  #a1a1aa;   /* zinc-400 */
+  --color-ink-subtle: #71717a;   /* zinc-500 */
+
+  --color-surface:      #18181b;  /* zinc-900 */
+  --color-surface-alt:  #27272a;  /* zinc-800 */
+  --color-border:       #3f3f46;  /* zinc-700 */
+
+  --color-accent-soft: #4c0519;   /* rose-950 */
+  --color-accent-text: #fecdd3;   /* rose-200 */
+
+  --color-danger-soft: #450a0a;
+  --color-success-soft:#052e16;
+  --color-warn-soft:   #451a03;
 }
 
 @layer base {
