@@ -7,7 +7,7 @@
     "start": "node dist/main.js",
     "dev": "nest start --watch",
     "lint": "eslint .",
-    "test:e2e": "node --test \"test/**/*.test.mjs\""
+    "test:e2e": "node --test --test-concurrency=1 \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
