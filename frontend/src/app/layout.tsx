@@ -3,6 +3,8 @@ import { Geist, Noto_Sans_Thai } from "next/font/google";
 
 import "./globals.css";
 
+import { ThemeProvider } from "@/lib/theme-context";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -30,7 +32,9 @@ export default function RootLayout({
       lang="th"
       className={`${geistSans.variable} ${notoSansThai.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
