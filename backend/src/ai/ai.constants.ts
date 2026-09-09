@@ -18,6 +18,12 @@ export const AI_REQUEST = {
    */
   thinkingBudget: 4096,
   maxRetries: 3,
+  /**
+   * Model calls one batch may spend. Extraction costs real money per document,
+   * so a run is capped rather than left to drain the budget on a bad day; the
+   * rest is picked up by the next run.
+   */
+  maxCallsPerRun: 25,
 } as const;
 
 /**

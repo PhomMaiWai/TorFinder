@@ -13,6 +13,12 @@ export class MatchingController {
     return this.matching.rankForTor(id);
   }
 
+  /** How this announcement's budget compares with similar ones. */
+  @Get("tor/:id/budget")
+  budget(@Param("id") id: string) {
+    return this.matching.assessBudgetForTor(id);
+  }
+
   /** Score a profile the caller supplies, without it having to be an account yet. */
   @Post("tor/:id/score")
   score(@Param("id") id: string, @Body() dto: ScoreMatchDto) {

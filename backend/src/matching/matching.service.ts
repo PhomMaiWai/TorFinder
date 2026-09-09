@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 
 import { DatabaseService } from "../database/database.service";
+import { assessBudget, BudgetAssessment } from "./budget-analysis";
 import { rankCompanies, scoreMatch } from "./matching.scoring";
 import { MatchCandidate, MatchResult, RankedCompany } from "./matching.types";
 
@@ -40,6 +41,28 @@ export class MatchingService {
   /** One company against one announcement — the org's own "do I fit this?" view. */
   async scoreForTor(torId: string, company: MatchCandidate): Promise<MatchResult> {
     return scoreMatch(await this.findTor(torId), company);
+  }
+
+  /**
+   * How this announcement's budget compares with announcements about the same
+   * kind of work. Every imported record is loaded because the comparison set is
+   * the whole corpus — a few hundred rows, cheap enough to read per request and
+   * always current, where a stored benchmark would go stale after each sync.
+   */
+  async assessBudgetForTor(torId: string): Promise<BudgetAssessment> {
+    if (!ObjectId.isValid(torId)) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    const projection = { title: 1, summary: 1, tags: 1, budgetAmount: 1, extraction: 1 };
+    const [tor, all] = await Promise.all([
+      this.db.tors.findOne({ _id: new ObjectId(torId) }, { projection }),
+      this.db.tors.find({ budgetAmount: { $gt: 0 } }, { projection }).toArray(),
+    ]);
+    if (!tor) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    return assessBudget(
+      { ...tor, documentBudget: tor.extraction?.budgetAmount ?? null },
+      all.map((peer) => (peer._id.equals(tor._id) ? { ...peer, budgetAmount: undefined } : peer)),
+    );
   }
 
   private async findTor(id: string) {

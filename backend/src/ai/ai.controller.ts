@@ -25,6 +25,12 @@ export class AiController {
     };
   }
 
+  /** Read everything still unextracted, up to this run's call budget. */
+  @Post("extract")
+  extractPending() {
+    return this.extraction.extractPending();
+  }
+
   /** Read one announcement's document now, rather than waiting for a batch. */
   @Post("extract/:torId")
   extract(@Param("torId") torId: string) {

@@ -55,6 +55,8 @@ export type TorDoc = {
    * is inferred, and the difference has to survive all the way to the reader.
    */
   extraction?: StoredExtraction;
+  /** Why the document couldn't be read, when it couldn't. */
+  extractionFailure?: { reason: string; failedAt: Date };
   /** e-GP's own project number, printed on every announcement of the project. */
   projectNumber?: string;
   /** Raw budget in baht, next to the formatted `budget` string. */

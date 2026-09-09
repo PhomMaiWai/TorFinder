@@ -375,7 +375,13 @@
     "companySizeLabel": "{size} size",
     "matchScoreValue": "{score}%",
     "feedbackListHeading": "Public feedback",
-    "documentsHeading": "All announcement documents"
+    "documentsHeading": "All announcement documents",
+    "budgetAssessmentHeading": "Budget assessment",
+    "budgetMedianLabel": "Median {median} across {count} comparable projects",
+    "budgetAssessmentNote": "Compared with similar announcements in the system. An observation for review, not a finding of wrongdoing.",
+    "extractionHeading": "Details read from the document",
+    "extractionDisclaimer": "Extracted automatically from the announcement document with {model} — check against the original before relying on it.",
+    "documentBudgetLabel": "Budget stated in the document"
   },
   "OwnerPage": {
     "stagePillAll": "All",

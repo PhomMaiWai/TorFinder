@@ -375,7 +375,13 @@
     "companySizeLabel": "ขนาด{size}",
     "matchScoreValue": "{score}%",
     "feedbackListHeading": "ความคิดเห็นจากสาธารณะ",
-    "documentsHeading": "เอกสารประกาศทั้งหมด"
+    "documentsHeading": "เอกสารประกาศทั้งหมด",
+    "budgetAssessmentHeading": "การประเมินวงเงิน",
+    "budgetMedianLabel": "ค่ากลาง {median} จาก {count} โครงการที่นำมาเทียบ",
+    "budgetAssessmentNote": "ประเมินจากการเปรียบเทียบกับประกาศลักษณะเดียวกันในระบบ เป็นข้อสังเกตเพื่อการตรวจสอบ ไม่ใช่ข้อสรุปว่ามีความผิดปกติ",
+    "extractionHeading": "รายละเอียดที่อ่านจากเอกสาร",
+    "extractionDisclaimer": "สกัดโดยอัตโนมัติจากเอกสารประกาศด้วย {model} — โปรดตรวจสอบกับเอกสารต้นฉบับก่อนใช้อ้างอิง",
+    "documentBudgetLabel": "วงเงินตามเอกสาร"
   },
   "OwnerPage": {
     "stagePillAll": "ทั้งหมด",

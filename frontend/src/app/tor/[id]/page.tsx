@@ -16,6 +16,7 @@ import {
   Package,
   Scale,
   Shield,
+  Sparkles,
   Trophy,
   Users,
 } from "lucide-react";
@@ -27,10 +28,17 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { SaveTorButton } from "@/components/public/save-tor-button";
 import { FEEDBACK_ENTRIES, MATCHED_COMPANIES, TOR_DETAILS } from "@/data/tor-details";
+import { fetchBudgetAssessment, fetchMatchedCompanies } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
 import { isKnown, stageBadgeCls } from "@/lib/tor-ui";
 
 const CARD = "rounded-xl border border-zinc-200 bg-white p-6 shadow-sm";
+
+const THB = new Intl.NumberFormat("th-TH", {
+  style: "currency",
+  currency: "THB",
+  maximumFractionDigits: 0,
+});
 const HEADING = "mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900";
 
 function thaiDate(value: string | null | undefined): string | null {
@@ -44,6 +52,13 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const [tor, t] = await Promise.all([getTorById(id), getTranslations("TorDetailPage")]);
   if (!tor) notFound();
+
+  // Only real records carry a budget verdict; the showcase ones aren't in the
+  // corpus it compares against.
+  const [budgetAssessment, rankedCompanies] = tor.sourceRef
+    ? await Promise.all([fetchBudgetAssessment(tor.id), fetchMatchedCompanies(tor.id)])
+    : [null, []];
+  const extraction = tor.extraction;
 
   // Showcase records carry hand-written scope/qualification detail; imported
   // announcements don't, so those sections fall back to what e-GP returned.
@@ -194,6 +209,122 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                 </section>
               )}
 
+              {budgetAssessment && budgetAssessment.status !== "ไม่ประเมิน" && (
+                <section className={CARD}>
+                  <h2 className={HEADING}>
+                    <Scale size={18} className="text-zinc-400" />
+                    {t("budgetAssessmentHeading")}
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span
+                      className={`rounded-full px-3 py-1 text-[13px] font-semibold ${
+                        budgetAssessment.status === "ปกติ"
+                          ? "bg-success-soft text-success"
+                          : "bg-warn-soft text-warn"
+                      }`}
+                    >
+                      {budgetAssessment.status}
+                    </span>
+                    {budgetAssessment.median !== null && (
+                      <span className="text-sm text-zinc-500">
+                        {t("budgetMedianLabel", {
+                          median: THB.format(budgetAssessment.median),
+                          count: budgetAssessment.peerCount,
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  <ul className="mt-3 space-y-1.5">
+                    {budgetAssessment.notes.map((note) => (
+                      <li key={note} className="text-sm leading-relaxed text-zinc-600">
+                        {note}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 border-t border-zinc-100 pt-3 text-xs leading-relaxed text-zinc-400">
+                    {t("budgetAssessmentNote")}
+                  </p>
+                </section>
+              )}
+
+              {extraction && (
+                <section className={CARD}>
+                  <h2 className={HEADING}>
+                    <Sparkles size={18} className="text-zinc-400" />
+                    {t("extractionHeading")}
+                  </h2>
+                  <p className="mb-4 rounded-lg bg-zinc-50 px-3 py-2 text-xs leading-relaxed text-zinc-500">
+                    {t("extractionDisclaimer", { model: extraction.model })}
+                  </p>
+
+                  {extraction.scope && (
+                    <div className="mb-4">
+                      <h3 className="mb-1 text-sm font-semibold text-zinc-900">{t("scopeOfWork")}</h3>
+                      <p className="text-[15px] leading-relaxed text-zinc-600">{extraction.scope}</p>
+                    </div>
+                  )}
+
+                  {extraction.qualifications.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="mb-1.5 text-sm font-semibold text-zinc-900">
+                        {t("qualifications")}
+                      </h3>
+                      <ul className="space-y-1.5">
+                        {extraction.qualifications.map((q) => (
+                          <li key={q} className="flex items-start gap-2 text-sm text-zinc-600">
+                            <Check size={15} className="mt-0.5 shrink-0 text-accent" />
+                            {q}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {extraction.deliverables.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="mb-1.5 text-sm font-semibold text-zinc-900">
+                        {t("deliverables")}
+                      </h3>
+                      <ul className="space-y-1.5">
+                        {extraction.deliverables.map((d) => (
+                          <li key={d} className="flex items-start gap-2 text-sm text-zinc-600">
+                            <ListChecks size={15} className="mt-0.5 shrink-0 text-zinc-400" />
+                            {d}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <dl className="grid gap-3 border-t border-zinc-100 pt-3 sm:grid-cols-3">
+                    {extraction.budgetAmount !== null && (
+                      <div>
+                        <dt className="text-xs text-zinc-500">{t("documentBudgetLabel")}</dt>
+                        <dd className="mt-0.5 text-sm font-medium text-zinc-900">
+                          {THB.format(extraction.budgetAmount)}
+                        </dd>
+                      </div>
+                    )}
+                    {extraction.contractPeriod && (
+                      <div>
+                        <dt className="text-xs text-zinc-500">{t("contractPeriodLabel")}</dt>
+                        <dd className="mt-0.5 text-sm font-medium text-zinc-900">
+                          {extraction.contractPeriod}
+                        </dd>
+                      </div>
+                    )}
+                    {extraction.deadline && (
+                      <div>
+                        <dt className="text-xs text-zinc-500">{t("deadlineLabel")}</dt>
+                        <dd className="mt-0.5 text-sm font-medium text-zinc-900">
+                          {thaiDate(extraction.deadline)}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </section>
+              )}
+
               {detail && (
                 <>
                   <section className={CARD}>
@@ -283,6 +414,49 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                       </ul>
                     </div>
                   )}
+                </section>
+              )}
+
+              {rankedCompanies.length > 0 && (
+                <section className={CARD}>
+                  <h2 className={HEADING}>
+                    <Users size={18} className="text-zinc-400" />
+                    {t("matchedCompaniesHeading")}
+                  </h2>
+                  <ul className="divide-y divide-zinc-100">
+                    {rankedCompanies.map((company) => (
+                      <li key={company.companyName} className="py-3 first:pt-0 last:pb-0">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-zinc-900">
+                              {company.companyName}
+                            </p>
+                            <p className="mt-0.5 text-xs text-zinc-500">
+                              {company.specialty} · {t("companySizeLabel", { size: company.size })}
+                            </p>
+                          </div>
+                          <span className="rounded-md bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent">
+                            {t("matchScoreValue", { score: company.score })}
+                          </span>
+                        </div>
+                        {/* Why it ranked here — a score with no reason is just a number. */}
+                        {[...company.reasons, ...company.gaps].length > 0 && (
+                          <ul className="mt-1.5 space-y-0.5">
+                            {company.reasons.map((reason) => (
+                              <li key={reason} className="text-xs text-zinc-500">
+                                · {reason}
+                              </li>
+                            ))}
+                            {company.gaps.map((gap) => (
+                              <li key={gap} className="text-xs text-warn">
+                                · {gap}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               )}
 

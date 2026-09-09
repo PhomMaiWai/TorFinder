@@ -19,3 +19,12 @@ export type StoredExtraction = TorExtraction & {
   extractedAt: Date;
   version: number;
 };
+
+/** What one batch run got through. */
+export type ExtractionRunResult = {
+  attempted: number;
+  extracted: number;
+  /** Records e-GP publishes no readable file for — nothing to retry. */
+  skipped: number;
+  failed: number;
+};

@@ -4,15 +4,35 @@ import { ObjectId } from "mongodb";
 import { env } from "../config/env";
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { AI_REQUEST, EXTRACTION_INSTRUCTION, EXTRACTION_SCHEMA, EXTRACTION_VERSION } from "./ai.constants";
-import { StoredExtraction } from "./ai.types";
+import { ExtractionRunResult, StoredExtraction } from "./ai.types";
 import { isUseful, parseExtraction } from "./tor-extraction";
 import { VertexClient } from "./vertex.client";
 
 const PDF_MIME = "application/pdf";
 
 /** e-GP serves documents under /api/file/; everything else is a web page. */
+const FILE_PATH = "/api/file/";
+
 function isFileUrl(url: string): boolean {
-  return url.includes("/api/file/");
+  return url.includes(FILE_PATH);
+}
+
+/**
+ * Which announcement is worth reading, best first. A project publishes several
+ * and they are not equally useful: the draft bidding document carries the scope
+ * of work and the bidder qualifications, the invitation carries a summary, and
+ * the award notice is barely more than a winner's name — picking the newest
+ * file would land on the award notice almost every time.
+ */
+const DOCUMENT_PRIORITY = [
+  ["ร่างเอกสารประกวดราคา", "ร่างขอบเขตของงาน", "tor"],
+  ["ประกาศเชิญชวน", "ประกวดราคา"],
+] as const;
+
+function documentRank(label: string): number {
+  const name = label.toLowerCase();
+  const rank = DOCUMENT_PRIORITY.findIndex((terms) => terms.some((term) => name.includes(term)));
+  return rank === -1 ? DOCUMENT_PRIORITY.length : rank;
 }
 
 @Injectable()
@@ -65,6 +85,67 @@ export class ExtractionService {
   }
 
   /**
+   * Extracts everything that hasn't been read yet, newest announcements first,
+   * up to this run's call budget. One document failing — a dead link, a scan
+   * the model can't read — is recorded on that record and the run carries on;
+   * a batch that stops at the first bad PDF would never get through a backlog.
+   */
+  async extractPending(limit = AI_REQUEST.maxCallsPerRun): Promise<ExtractionRunResult> {
+    // Records without a downloadable file are excluded here rather than tried
+    // and failed: e-GP leaves the file path empty on most announcements, and
+    // letting those through would spend the run's budget on nothing.
+    const pending = await this.db.tors
+      .find(
+        {
+          "documents.url": { $regex: FILE_PATH },
+          $or: [
+            { extraction: { $exists: false } },
+            { "extraction.version": { $lt: EXTRACTION_VERSION } },
+          ],
+        },
+        { projection: { _id: 1 }, sort: { createdAt: -1 }, limit },
+      )
+      .toArray();
+
+    const result: ExtractionRunResult = { attempted: 0, extracted: 0, skipped: 0, failed: 0 };
+
+    for (const { _id } of pending) {
+      result.attempted++;
+      try {
+        await this.extractForTor(_id.toString());
+        result.extracted++;
+      } catch (error) {
+        // "Nothing readable here" is a property of the announcement, not a
+        // failure worth retrying every run.
+        if (error instanceof NotFoundException) {
+          result.skipped++;
+        } else {
+          result.failed++;
+        }
+        await this.recordFailure(_id, error);
+      }
+    }
+
+    this.logger.log(
+      `Extraction run: ${result.extracted} extracted, ${result.failed} failed of ${result.attempted}`,
+    );
+    return result;
+  }
+
+  /**
+   * Marks why a record couldn't be read, so a permanently broken document isn't
+   * retried on every single run and a person can see what went wrong.
+   */
+  private async recordFailure(id: ObjectId, error: unknown): Promise<void> {
+    const reason = error instanceof Error ? error.message : String(error);
+    await this.db.tors.updateOne(
+      { _id: id },
+      { $set: { extractionFailure: { reason: reason.slice(0, 500), failedAt: new Date() } } },
+    );
+    this.logger.warn(`Extraction failed for ${id.toString()}: ${reason}`);
+  }
+
+  /**
    * The document to read. e-GP publishes several announcements per project and
    * only some of them link to an actual file — the rest point at the project's
    * listing page, which has nothing to extract. The newest real file wins
@@ -72,8 +153,12 @@ export class ExtractionService {
    * records imported before the document list existed.
    */
   private documentUrlFor(tor: TorDoc): string | null {
-    const file = tor.documents?.find((doc) => isFileUrl(doc.url));
-    if (file) return file.url;
+    // Only announcements that actually expose a file can be read; e-GP leaves
+    // the file path empty on many of them and the link falls back to a web page.
+    const files = (tor.documents ?? []).filter((doc) => isFileUrl(doc.url));
+    const best = files.sort((a, b) => documentRank(a.label) - documentRank(b.label))[0];
+    if (best) return best.url;
+
     return tor.sourceUrl && isFileUrl(tor.sourceUrl) ? tor.sourceUrl : null;
   }
 
@@ -96,6 +181,13 @@ export class ExtractionService {
   private async fetchPdf(url: string): Promise<Buffer> {
     const res = await fetch(url, { signal: AbortSignal.timeout(AI_REQUEST.timeoutMs) });
     if (!res.ok) throw new NotFoundException(`ดาวน์โหลดเอกสารไม่สำเร็จ (${res.status})`);
+
+    // Checked before reading the body: a 50 MB scan is worth refusing at the
+    // header, not after it has been pulled down the wire.
+    const declared = Number(res.headers.get("content-length") ?? 0);
+    if (declared > AI_REQUEST.maxDocumentBytes) {
+      throw new NotFoundException(`เอกสารใหญ่เกินกำหนด (${declared} bytes)`);
+    }
 
     // e-GP serves an HTML error page with a 200 when a file is missing, so the
     // content type is checked rather than trusted.
