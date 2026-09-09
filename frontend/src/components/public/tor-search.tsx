@@ -23,6 +23,9 @@ import { isKnown, stageBadgeCls } from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
 import type { TorRecord } from "@/types/tor";
 
+import { AgencyFilter } from "./agency-filter";
+import { FilterCheckbox } from "./filter-checkbox";
+
 const STAGES = ["เปิดรับฟังความคิดเห็น", "ประกาศ TOR", "ประกาศผู้ชนะ"];
 const PER_PAGE = 10;
 
@@ -59,33 +62,14 @@ function CheckboxFilter({
       <div className="space-y-2.5">
         {options.map((opt) => (
           <label key={opt} className="flex cursor-pointer items-start gap-3">
-            <div className="relative mt-0.5 flex items-center">
-              <input
-                type="checkbox"
-                className="peer size-4 cursor-pointer appearance-none rounded border border-zinc-300 bg-white transition-all checked:border-accent checked:bg-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            <span className="mt-0.5">
+              <FilterCheckbox
                 checked={selected.includes(opt)}
-                onChange={(e) => {
-                  if (e.target.checked) onChange([...selected, opt]);
-                  else onChange(selected.filter((x) => x !== opt));
-                }}
+                onChange={(checked) =>
+                  onChange(checked ? [...selected, opt] : selected.filter((x) => x !== opt))
+                }
               />
-              <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-3 w-3"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-              </div>
-            </div>
+            </span>
             <span className="text-[13px] leading-snug text-zinc-600">{opt}</span>
           </label>
         ))}
@@ -298,10 +282,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   const t = useTranslations("PublicPage");
 
   // Filter options come from what was actually announced, not a fixed list.
-  const agencies = useMemo(
-    () => [...new Set(tors.map((t) => t.agency))].sort(),
-    [tors],
-  );
+  const agencies = useMemo(() => tors.map((t) => t.agency), [tors]);
   const tags = useMemo(() => [...new Set(tors.flatMap((t) => t.tags))].sort(), [tors]);
 
   const filtered = useMemo(() => {
@@ -441,9 +422,9 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
 
           <div className="mb-7 h-px w-full bg-zinc-100" />
 
-          <CheckboxFilter
+          <AgencyFilter
             title={t("filterAgencyTitle")}
-            options={agencies}
+            agencies={agencies}
             selected={selectedAgencies}
             onChange={setSelectedAgencies}
           />

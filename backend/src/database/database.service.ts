@@ -4,7 +4,7 @@ import { Collection, MongoClient } from "mongodb";
 import { hashPassword } from "../common/password";
 import { env } from "../config/env";
 import { TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor/tor.constants";
-import { SEED_TORS, SEED_USERS } from "./seed-data";
+import { SEED_USERS } from "./seed-data";
 
 export const ACCOUNT_STATUSES = ["pending", "approved", "rejected"] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
@@ -46,7 +46,28 @@ export type TorDoc = {
   createdAt: Date;
   /** Set only on records imported from e-GP; absent on admin-entered ones. */
   sourceRef?: string;
+  /** The record's own document when e-GP has one; otherwise the project's listing page. */
   sourceUrl?: string;
+  /** e-GP's own project number, printed on every announcement of the project. */
+  projectNumber?: string;
+  /** Raw budget in baht, next to the formatted `budget` string. */
+  budgetAmount?: number;
+  /** Every announcement e-GP holds for the project, newest first. */
+  documents?: { label: string; publishedAt: Date | null; url: string }[];
+  /** Structured facts the portal has on file for the project — real, not inferred. */
+  procurementMethod?: string;
+  procurementType?: string;
+  goodsCategory?: string;
+  contractStatus?: string;
+  /**
+   * Set once the e-GP document link and procurement facts have actually been
+   * fetched (even if the portal had none to give). Absent means enrichment was
+   * skipped — budget ran out, or the request timed out — so it's retried on the
+   * next sync instead of being treated as "already have this".
+   */
+  enrichedAt?: Date;
+  /** Which generation of enrichment produced the fields above (see EgpService). */
+  enrichVersion?: number;
 };
 
 @Injectable()
@@ -84,13 +105,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Demo data so a fresh checkout shows the same thing for everyone. Each set is
-   * seeded only when its collection is empty, so restarts never duplicate it and
-   * anything you create by hand is left alone.
+   * Demo accounts only, and only when the collection is empty. TOR records are
+   * never seeded: the public pages show real e-GP announcements, so fake ones
+   * would be indistinguishable from the imported data.
    */
   private async seed(): Promise<void> {
     if (!env.seedDemoData) return;
-    await Promise.all([this.seedUsers(), this.seedTors()]);
+    await this.seedUsers();
   }
 
   private async seedUsers(): Promise<void> {
@@ -105,19 +126,5 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     await this.users.insertMany(docs);
     this.logger.log(`Seeded ${docs.length} demo users`);
-  }
-
-  private async seedTors(): Promise<void> {
-    if ((await this.tors.countDocuments()) > 0) return;
-
-    const dayMs = 24 * 60 * 60 * 1000;
-    const docs = SEED_TORS.map(({ daysAgo, ...tor }) => ({
-      ...tor,
-      match: 0,
-      createdAt: new Date(Date.now() - daysAgo * dayMs),
-    }));
-
-    await this.tors.insertMany(docs);
-    this.logger.log(`Seeded ${docs.length} demo TOR records`);
   }
 }

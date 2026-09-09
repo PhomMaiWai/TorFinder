@@ -9,7 +9,8 @@ export type TorDetailData = {
   feedbackDeadline: string | null;
   feedbackCount: number;
   matchedCompaniesCount: number;
-  sourceUrl: string;
+  /** Only set when a specific document exists — the general portal homepage isn't "the" source of any one TOR. */
+  sourceUrl?: string;
   publishedAt: string;
   awardedVendor?: {
     name: string;
@@ -44,7 +45,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: "18 ส.ค. 2569",
     feedbackCount: 3,
     matchedCompaniesCount: 14,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "5 ส.ค. 2569",
   },
   {
@@ -70,7 +70,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: null,
     feedbackCount: 0,
     matchedCompaniesCount: 22,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "8 ส.ค. 2569",
   },
   {
@@ -96,7 +95,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: null,
     feedbackCount: 1,
     matchedCompaniesCount: 8,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "3 ส.ค. 2569",
     awardedVendor: {
       name: "บริษัท เว็บดีไซน์ แอนด์ เดฟ จำกัด",
@@ -130,7 +128,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: "2 ก.ย. 2569",
     feedbackCount: 5,
     matchedCompaniesCount: 18,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "9 ส.ค. 2569",
   },
   {
@@ -151,7 +148,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: null,
     feedbackCount: 0,
     matchedCompaniesCount: 5,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "1 ส.ค. 2569",
     awardedVendor: {
       name: "บริษัท เอ บี ซี คอนสตรัคชั่น จำกัด",
@@ -185,7 +181,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: "25 ส.ค. 2569",
     feedbackCount: 2,
     matchedCompaniesCount: 11,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "13 ส.ค. 2569",
   },
   {
@@ -209,7 +204,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: null,
     feedbackCount: 0,
     matchedCompaniesCount: 9,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "10 ส.ค. 2569",
   },
   {
@@ -234,7 +228,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: "5 ก.ย. 2569",
     feedbackCount: 1,
     matchedCompaniesCount: 7,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "12 ส.ค. 2569",
   },
   {
@@ -257,7 +250,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     feedbackDeadline: null,
     feedbackCount: 0,
     matchedCompaniesCount: 6,
-    sourceUrl: "https://www.egp.cgd.go.th/",
     publishedAt: "2 ส.ค. 2569",
     awardedVendor: {
       name: "บริษัท กรีน เว็บ สตูดิโอ จำกัด",

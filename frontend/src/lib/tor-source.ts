@@ -3,10 +3,16 @@ import { fetchTor, fetchTorList } from "@/lib/tor-api";
 import type { Opportunity } from "@/types/opportunity";
 import type { TorRecord } from "@/types/tor";
 
+/** The list endpoint caps a page at 100. */
+const PAGE_SIZE = 100;
+
+/** Enough for the whole Bangkok e-GP import; a guard against looping forever. */
+const MAX_PAGES = 50;
+
 /**
- * The public pages show the seeded showcase records alongside whatever admins
- * created or imported, so mock ids are namespaced to never collide with an
- * ObjectId. Bare numeric ids still resolve, since older links use those.
+ * Records still held in `data/opportunities.ts`. The public pages read the
+ * database now; these only remain so links from the pages that haven't been
+ * migrated yet (dashboard, owner, landing preview) still resolve.
  */
 const MOCK_PREFIX = "mock-";
 
@@ -15,17 +21,28 @@ function toRecord(opportunity: Opportunity): TorRecord {
   return { ...rest, id: `${MOCK_PREFIX}${id}`, createdAt: "" };
 }
 
-export const MOCK_TORS: TorRecord[] = OPPORTUNITIES.map(toRecord);
+const MOCK_TORS: TorRecord[] = OPPORTUNITIES.map(toRecord);
 
 export function mockNumericId(id: string): number | null {
   const raw = id.startsWith(MOCK_PREFIX) ? id.slice(MOCK_PREFIX.length) : id;
   return /^\d+$/.test(raw) ? Number(raw) : null;
 }
 
-/** Showcase records plus what admins entered by hand — e-GP imports stay out. */
+/**
+ * Everything in the database — announcements imported from e-GP included. The
+ * search page filters and counts client-side, so it needs the whole set, not
+ * just the first page the endpoint will hand out.
+ */
 export async function getAllTors(): Promise<TorRecord[]> {
-  const created = await fetchTorList(1, 100, "manual");
-  return [...MOCK_TORS, ...created];
+  const all: TorRecord[] = [];
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const batch = await fetchTorList(page, PAGE_SIZE);
+    all.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+  }
+
+  return all;
 }
 
 export async function getTorById(id: string): Promise<TorRecord | null> {
