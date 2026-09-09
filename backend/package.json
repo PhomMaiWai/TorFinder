@@ -6,7 +6,8 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "dev": "nest start --watch",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:e2e": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
