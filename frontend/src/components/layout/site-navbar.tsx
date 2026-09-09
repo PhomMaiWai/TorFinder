@@ -1,11 +1,12 @@
 "use client";
 
-import { Bell, Bookmark, Menu, X } from "lucide-react";
+import { Bell, Bookmark, Menu, Moon, Sun, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { PUBLIC_NOTICES } from "@/data/public-notices";
 import { useSavedTors } from "@/lib/use-saved-tors";
+import { useTheme } from "@/lib/theme-context";
 
 const NAV_LINKS = [
   { label: "ค้นหา TOR", href: "/public" },
@@ -30,11 +31,12 @@ export function SiteNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [noticesOpen, setNoticesOpen] = useState(false);
   const { savedIds } = useSavedTors();
+  const { theme, toggleTheme } = useTheme();
 
   const noticesRef = useClickOutside(() => setNoticesOpen(false));
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-white">
+    <header className="sticky top-0 z-50 border-b border-border bg-surface">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2" aria-label="TorFinder">
           <span className="flex size-7 items-center justify-center rounded-md bg-accent text-[11px] font-bold text-white">
@@ -56,6 +58,14 @@ export function SiteNavbar() {
         </nav>
 
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={toggleTheme}
+            className="grid size-9 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
+            aria-label={theme === "dark" ? "สลับเป็นโหมดสว่าง" : "สลับเป็นโหมดมืด"}
+          >
+            {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
           <Link
             href="/saved"
             className="relative grid size-9 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
@@ -80,7 +90,7 @@ export function SiteNavbar() {
             </button>
 
             {noticesOpen && (
-              <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-border bg-white p-2 shadow-lg">
+              <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-border bg-surface p-2 shadow-lg">
                 <p className="px-2.5 py-1.5 text-xs font-semibold tracking-wide text-ink-subtle uppercase">
                   ประกาศล่าสุด
                 </p>
@@ -120,7 +130,7 @@ export function SiteNavbar() {
       </div>
 
       {mobileOpen && (
-        <nav className="border-t border-border bg-white px-6 py-2 md:hidden">
+        <nav className="border-t border-border bg-surface px-6 py-2 md:hidden">
           {NAV_LINKS.map(({ label, href }) => (
             <Link
               key={label}
