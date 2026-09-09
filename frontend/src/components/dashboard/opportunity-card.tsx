@@ -1,5 +1,6 @@
 import { Bookmark, Building2, Clock } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { Opportunity } from "@/types/opportunity";
 
@@ -29,6 +30,7 @@ export function OpportunityCard({
   isSaved,
   onSaveToggle,
 }: OpportunityCardProps) {
+  const t = useTranslations("OpportunityCard");
   const {
     id, title, agency, budget, daysLeft,
     match, tags, stage, summary, isNew,
@@ -67,13 +69,13 @@ export function OpportunityCard({
             </span>
             {isNew && (
               <span className="rounded-md bg-surface-alt px-2 py-0.5 text-xs font-medium text-ink-muted">
-                ใหม่
+                {t("newBadge")}
               </span>
             )}
             {isFeedbackOpen && (
               <span className="flex items-center gap-1 rounded-md bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">
                 <span className="size-1 rounded-full bg-success" />
-                รับความคิดเห็น
+                {t("feedbackOpenBadge")}
               </span>
             )}
           </div>
@@ -102,7 +104,7 @@ export function OpportunityCard({
             }`}
           >
             <Clock size={12} className="shrink-0" />
-            เหลือ {daysLeft} วัน
+            {t("daysLeftLabel", { days: daysLeft })}
           </span>
         </div>
 
@@ -132,7 +134,7 @@ export function OpportunityCard({
                   ? "border-accent/30 bg-accent-soft text-accent"
                   : "border-border text-ink-muted hover:border-accent/30 hover:bg-accent-soft hover:text-accent"
               }`}
-              aria-label={isSaved ? "ยกเลิกบันทึก" : "บันทึก"}
+              aria-label={isSaved ? t("unsaveAriaLabel") : t("saveAriaLabel")}
             >
               <Bookmark size={13} fill={isSaved ? "currentColor" : "none"} />
             </button>
@@ -140,7 +142,7 @@ export function OpportunityCard({
               href={`/tor/${id}`}
               className="flex h-8 items-center rounded-lg bg-accent px-3.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
             >
-              ดูรายละเอียด
+              {t("viewDetails")}
             </Link>
           </div>
         </div>

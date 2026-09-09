@@ -1,22 +1,28 @@
 import { Building2, ChevronRight, ShieldAlert } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
-const ROLES = [
-  {
-    href: "/login/organization",
-    icon: Building2,
-    title: "เข้าสู่ระบบสำหรับหน่วยงาน",
-    description: "สำหรับบริษัทและหน่วยงานที่ติดตามและเสนอราคา TOR",
-  },
-  {
-    href: "/login/admin",
-    icon: ShieldAlert,
-    title: "เข้าสู่ระบบผู้ดูแลระบบ",
-    description: "สำหรับผู้ดูแลระบบ TorFinder เท่านั้น",
-  },
-];
+function getRoles(t: (key: string) => string) {
+  return [
+    {
+      href: "/login/organization",
+      icon: Building2,
+      title: t("orgTitle"),
+      description: t("orgDescription"),
+    },
+    {
+      href: "/login/admin",
+      icon: ShieldAlert,
+      title: t("adminTitle"),
+      description: t("adminDescription"),
+    },
+  ];
+}
 
 export default function LoginChoicePage() {
+  const t = useTranslations("LoginPage");
+  const ROLES = getRoles(t);
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface-alt px-6 py-12">
       <div className="w-full max-w-xl">
@@ -27,9 +33,9 @@ export default function LoginChoicePage() {
           <span className="text-xl font-bold tracking-tight text-ink">TorFinder</span>
         </Link>
 
-        <h1 className="mb-2 text-center text-3xl font-bold text-ink">เข้าสู่ระบบ</h1>
+        <h1 className="mb-2 text-center text-3xl font-bold text-ink">{t("pageTitle")}</h1>
         <p className="mb-10 text-center text-base text-ink-muted">
-          เลือกประเภทบัญชีที่ต้องการเข้าสู่ระบบ
+          {t("pageSubtitle")}
         </p>
 
         <div className="space-y-4">

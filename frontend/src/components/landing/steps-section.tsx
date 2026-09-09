@@ -1,34 +1,38 @@
-const STEPS = [
-  {
-    number: "01",
-    title: "กรอกโปรไฟล์บริษัท",
-    description:
-      "ระบุทักษะเทคโนโลยี ขนาดองค์กร และความเชี่ยวชาญ ใช้เวลาไม่ถึง 5 นาที",
-  },
-  {
-    number: "02",
-    title: "AI วิเคราะห์และจับคู่",
-    description:
-      "ระบบสแกน TOR ใหม่ทุกวัน เปรียบเทียบกับโปรไฟล์ และคำนวณคะแนนความเหมาะสม",
-  },
-  {
-    number: "03",
-    title: "รับโอกาสและยื่นข้อเสนอ",
-    description:
-      "รับการแจ้งเตือน ดูรายละเอียดที่ AI สรุปให้แล้ว และยื่นข้อเสนอก่อนคู่แข่ง",
-  },
-];
+import { useTranslations } from "next-intl";
+
+function getSteps(t: (key: string) => string) {
+  return [
+    {
+      number: "01",
+      title: t("step1Title"),
+      description: t("step1Description"),
+    },
+    {
+      number: "02",
+      title: t("step2Title"),
+      description: t("step2Description"),
+    },
+    {
+      number: "03",
+      title: t("step3Title"),
+      description: t("step3Description"),
+    },
+  ];
+}
 
 export function StepsSection() {
+  const t = useTranslations("LandingSteps");
+  const STEPS = getSteps(t);
+
   return (
     <section id="how-it-works" className="bg-surface-alt py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-14 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-            เริ่มต้นภายใน 3 ขั้นตอน
+            {t("heading")}
           </h2>
           <p className="mt-3 text-base text-ink-muted">
-            ง่าย รวดเร็ว ไม่ต้องการความรู้ด้านเทคนิค
+            {t("subheading")}
           </p>
         </div>
 

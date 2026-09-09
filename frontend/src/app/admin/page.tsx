@@ -1,12 +1,15 @@
 import { AlertTriangle, Check, FileText, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { CLASSIFICATION_STATS, PIPELINE_METRICS, SCRAPE_HISTORY } from "@/data/admin";
 
 export default function AdminOverviewPage() {
+  const t = useTranslations("AdminOverviewPage");
+
   return (
-    <AdminPageShell title="ภาพรวม" description="ตรวจสอบสุขภาพ Pipeline การดึงและจำแนกข้อมูล TOR">
+    <AdminPageShell title={t("title")} description={t("description")}>
       <div className="space-y-6">
         <div className="flex justify-end gap-3">
           <Link
@@ -14,14 +17,14 @@ export default function AdminOverviewPage() {
             className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface-alt"
           >
             <FileText size={16} />
-            รายการ TOR
+            {t("torListCta")}
           </Link>
           <Link
             href="/admin/tor/new"
             className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
           >
             <Plus size={16} />
-            เพิ่มรายการ TOR
+            {t("createTorCta")}
           </Link>
         </div>
 
@@ -50,7 +53,7 @@ export default function AdminOverviewPage() {
 
         {/* Scrape history */}
         <div className="rounded-xl border border-border bg-white p-6">
-          <h2 className="mb-4 text-base font-bold text-ink">ประวัติการดึงข้อมูล (7 วันล่าสุด)</h2>
+          <h2 className="mb-4 text-base font-bold text-ink">{t("scrapeHistoryHeading")}</h2>
           <div className="space-y-2">
             {SCRAPE_HISTORY.map((row) => (
               <div
@@ -59,7 +62,9 @@ export default function AdminOverviewPage() {
               >
                 <span className="text-ink-muted">{row.date}</span>
                 <span className="font-medium text-ink">
-                  {row.newCount > 0 ? `+${row.newCount} รายการใหม่` : "ไม่มีรายการใหม่"}
+                  {row.newCount > 0
+                    ? t("newItemsCount", { count: row.newCount })
+                    : t("noNewItems")}
                 </span>
                 <span
                   className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
@@ -78,7 +83,7 @@ export default function AdminOverviewPage() {
 
         {/* AI Classification */}
         <div className="rounded-xl border border-border bg-white p-6">
-          <h2 className="mb-4 text-base font-bold text-ink">ผลการจำแนกประเภท (Vertex AI)</h2>
+          <h2 className="mb-4 text-base font-bold text-ink">{t("classificationHeading")}</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {CLASSIFICATION_STATS.map(({ label, count, pct }) => (
               <div key={label} className="rounded-lg border border-border p-4">

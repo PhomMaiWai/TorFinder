@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { Opportunity } from "@/types/opportunity";
 
@@ -8,12 +9,13 @@ type DashboardSidebarProps = {
 };
 
 export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarProps) {
+  const t = useTranslations("DashboardSidebar");
   return (
     <aside className="space-y-4 lg:sticky lg:top-[calc(theme(spacing.14)+1px)]">
       {/* Upcoming deadlines */}
       <div className="rounded-xl border border-border bg-white">
         <div className="border-b border-border px-5 py-4">
-          <p className="text-sm font-semibold text-ink">กำหนดส่งใกล้ถึง</p>
+          <p className="text-sm font-semibold text-ink">{t("upcomingDeadlinesTitle")}</p>
         </div>
         <div className="divide-y divide-border">
           {byDeadline.map((opp) => (
@@ -37,7 +39,7 @@ export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarPro
                     : "bg-surface-alt text-ink-muted"
                 }`}
               >
-                {opp.daysLeft}ว
+                {t("daysAbbrev", { days: opp.daysLeft })}
               </span>
             </Link>
           ))}
@@ -47,7 +49,7 @@ export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarPro
       {/* Company profile */}
       <div className="rounded-xl border border-border bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm font-semibold text-ink">โปรไฟล์บริษัท</p>
+          <p className="text-sm font-semibold text-ink">{t("companyProfileTitle")}</p>
           <span className="text-sm font-bold text-accent">80%</span>
         </div>
 
@@ -57,10 +59,10 @@ export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarPro
 
         <div className="mt-4 space-y-2">
           {[
-            { label: "ชื่อบริษัท", done: true },
-            { label: "ความเชี่ยวชาญ", done: true },
+            { label: t("profileItemCompanyName"), done: true },
+            { label: t("profileItemExpertise"), done: true },
             { label: "Tech Stack", done: false },
-            { label: "ขนาดบริษัท", done: true },
+            { label: t("profileItemCompanySize"), done: true },
           ].map(({ label, done }) => (
             <div key={label} className="flex items-center gap-2 text-sm">
               <span
@@ -80,20 +82,23 @@ export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarPro
         </div>
 
         <button className="mt-4 w-full rounded-lg border border-border py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink">
-          เพิ่ม Tech Stack
+          {t("addTechStack")}
         </button>
       </div>
 
       {/* Quick links */}
       <div className="rounded-xl border border-border bg-white p-5">
-        <p className="mb-3 text-sm font-semibold text-ink">บันทึกไว้</p>
+        <p className="mb-3 text-sm font-semibold text-ink">{t("savedTitle")}</p>
         {savedCount === 0 ? (
-          <p className="text-sm text-ink-muted">ยังไม่มีรายการที่บันทึก</p>
+          <p className="text-sm text-ink-muted">{t("noSavedItems")}</p>
         ) : (
           <p className="text-sm text-ink-muted">
-            มี{" "}
-            <span className="font-semibold text-ink">{savedCount} รายการ</span>{" "}
-            ที่กำลังพิจารณาอยู่
+            {t.rich("savedSummary", {
+              count: savedCount,
+              strong: (chunks) => (
+                <span className="font-semibold text-ink">{chunks}</span>
+              ),
+            })}
           </p>
         )}
       </div>

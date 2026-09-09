@@ -1,11 +1,11 @@
-const STATS = [
-  { value: "200+", label: "TOR ซอฟต์แวร์ต่อปี" },
-  { value: "40+", label: "หน่วยงาน BMA" },
-  { value: "฿450M+", label: "มูลค่าตลาดต่อปี" },
-  { value: "ทุก 24 ชม.", label: "รอบอัปเดตข้อมูล" },
-];
+import { useTranslations } from "next-intl";
+
+type Stat = { value: string; label: string };
 
 export function StatsBar() {
+  const t = useTranslations("LandingStats");
+  const STATS = t.raw("items") as Stat[];
+
   return (
     <section className="border-y border-border bg-surface-alt">
       <div className="mx-auto max-w-6xl px-6 py-10">

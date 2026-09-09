@@ -2,12 +2,14 @@
 
 import { Building2 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type SubmitEvent, useState } from "react";
 
 import { COMPANY_SIZE_OPTIONS, type CompanySize } from "@/data/company-profile";
 
 export default function OrganizationSignupPage() {
+  const t = useTranslations("SignupOrganizationPage");
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
   const [taxId, setTaxId] = useState("");
@@ -21,7 +23,7 @@ export default function OrganizationSignupPage() {
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    const name = companyName.trim() || "บริษัทของคุณ";
+    const name = companyName.trim() || t("defaultCompanyName");
     router.push(`/signup/pending?name=${encodeURIComponent(name)}`);
   }
 
@@ -38,20 +40,20 @@ export default function OrganizationSignupPage() {
         <div className="rounded-2xl border border-border bg-white p-10">
           <span className="mb-4 inline-flex items-center gap-1.5 rounded-md bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent-text">
             <Building2 size={15} />
-            หน่วยงาน / บริษัท
+            {t("badge")}
           </span>
-          <h1 className="text-2xl font-bold text-ink">สมัครสมาชิกหน่วยงาน</h1>
+          <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
           <p className="mt-1.5 text-base text-ink-muted">
-            กรอกข้อมูลบริษัท จากนั้นทีมผู้ดูแลระบบจะตรวจสอบและอนุมัติบัญชีของคุณ
+            {t("description")}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             <p className="text-xs font-semibold tracking-wide text-ink-subtle uppercase">
-              ข้อมูลบัญชี
+              {t("accountInfoHeading")}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-ink">อีเมลบริษัท</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("companyEmailLabel")}</span>
                 <input
                   type="email"
                   value={email}
@@ -61,7 +63,7 @@ export default function OrganizationSignupPage() {
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-ink">รหัสผ่าน</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("passwordLabel")}</span>
                 <input
                   type="password"
                   value={password}
@@ -73,40 +75,40 @@ export default function OrganizationSignupPage() {
             </div>
 
             <p className="pt-2 text-xs font-semibold tracking-wide text-ink-subtle uppercase">
-              ข้อมูลบริษัท
+              {t("companyInfoHeading")}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-ink">ชื่อบริษัท</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("companyNameLabel")}</span>
                 <input
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="บริษัท ตัวอย่าง จำกัด"
+                  placeholder={t("companyNamePlaceholder")}
                   className="h-12 w-full rounded-lg border border-border px-4 text-base text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
                 />
               </label>
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-ink">
-                  เลขทะเบียนนิติบุคคล
+                  {t("taxIdLabel")}
                 </span>
                 <input
                   value={taxId}
                   onChange={(e) => setTaxId(e.target.value)}
-                  placeholder="เลข 13 หลัก"
+                  placeholder={t("taxIdPlaceholder")}
                   className="h-12 w-full rounded-lg border border-border px-4 text-base text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-ink">ชื่อผู้ติดต่อ</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("contactNameLabel")}</span>
                 <input
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
-                  placeholder="ชื่อ-นามสกุล"
+                  placeholder={t("contactNamePlaceholder")}
                   className="h-12 w-full rounded-lg border border-border px-4 text-base text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-ink">เบอร์โทรศัพท์</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("phoneLabel")}</span>
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -115,16 +117,16 @@ export default function OrganizationSignupPage() {
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-ink">ความเชี่ยวชาญ</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("specialtyLabel")}</span>
                 <input
                   value={specialty}
                   onChange={(e) => setSpecialty(e.target.value)}
-                  placeholder="เช่น Cloud Platform, HealthTech"
+                  placeholder={t("specialtyPlaceholder")}
                   className="h-12 w-full rounded-lg border border-border px-4 text-base text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-ink">ขนาดบริษัท</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("companySizeLabel")}</span>
                 <select
                   value={size}
                   onChange={(e) => setSize(e.target.value as CompanySize)}
@@ -138,11 +140,11 @@ export default function OrganizationSignupPage() {
                 </select>
               </label>
               <label className="block sm:col-span-2">
-                <span className="mb-2 block text-sm font-medium text-ink">ที่อยู่บริษัท</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("addressLabel")}</span>
                 <textarea
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"
+                  placeholder={t("addressPlaceholder")}
                   rows={2}
                   className="w-full resize-none rounded-lg border border-border px-4 py-3 text-base text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
                 />
@@ -153,15 +155,15 @@ export default function OrganizationSignupPage() {
               type="submit"
               className="flex h-12 w-full items-center justify-center rounded-lg bg-accent text-base font-semibold text-white transition-colors hover:bg-accent-dark"
             >
-              ส่งข้อมูลเพื่อขออนุมัติ
+              {t("submitLabel")}
             </button>
           </form>
         </div>
 
         <p className="mt-6 text-center text-sm text-ink-muted">
-          มีบัญชีอยู่แล้ว?{" "}
+          {t("hasAccountQuestion")}{" "}
           <Link href="/login/organization" className="font-medium text-accent hover:text-accent-dark">
-            เข้าสู่ระบบ
+            {t("loginLinkLabel")}
           </Link>
         </p>
       </div>

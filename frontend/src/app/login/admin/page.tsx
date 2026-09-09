@@ -1,15 +1,19 @@
+import { useTranslations } from "next-intl";
+
 import { SignInForm } from "@/components/auth/sign-in-form";
 
 export default function AdminLoginPage() {
+  const t = useTranslations("LoginAdminPage");
+
   return (
     <SignInForm
       icon="shield"
       badge="Admin"
-      title="เข้าสู่ระบบผู้ดูแลระบบ"
-      description="สำหรับผู้ดูแลระบบ TorFinder เท่านั้น"
+      title={t("title")}
+      description={t("description")}
       redirectTo="/admin"
       switchHref="/login/organization"
-      switchLabel="เข้าสู่ระบบหน่วยงานแทน →"
+      switchLabel={t("switchLabel")}
       tone="danger"
     />
   );

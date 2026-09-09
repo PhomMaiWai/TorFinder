@@ -10,6 +10,7 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  LogOut,
   Menu,
   MessageSquare,
   Plus,
@@ -18,8 +19,10 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+type SessionUser = { name: string; email: string; role: "admin" | "org" };
 
 import { PENDING_ACCOUNTS } from "@/data/admin";
 import { NOTIFICATIONS } from "@/data/notifications";
@@ -41,49 +44,53 @@ const PENDING_FEEDBACK_COUNT = FEEDBACK_ENTRIES.filter(
   (f) => f.status === "รอตรวจสอบ",
 ).length;
 
-const ORG_NAV: { section: string | null; links: NavLink[] }[] = [
-  {
-    section: null,
-    links: [
-      { label: "ภาพรวม", href: "/dashboard", icon: LayoutDashboard },
-      { label: "ค้นหา TOR", href: "/public", icon: Search },
-      { label: "รายการที่บันทึก", href: "/saved?scope=org", icon: Bookmark },
-      { label: "โปรไฟล์บริษัท", href: "/profile", icon: Building2 },
-      {
-        label: "การแจ้งเตือน",
-        href: "/notifications",
-        icon: Bell,
-        badge: UNREAD_NOTIFICATIONS || undefined,
-      },
-    ],
-  },
-];
+function getOrgNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
+  return [
+    {
+      section: null,
+      links: [
+        { label: t("navOverview"), href: "/dashboard", icon: LayoutDashboard },
+        { label: t("navSearchTor"), href: "/public", icon: Search },
+        { label: t("navSavedList"), href: "/saved?scope=org", icon: Bookmark },
+        { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
+        {
+          label: t("navNotifications"),
+          href: "/notifications",
+          icon: Bell,
+          badge: UNREAD_NOTIFICATIONS || undefined,
+        },
+      ],
+    },
+  ];
+}
 
-const ADMIN_NAV: { section: string | null; links: NavLink[] }[] = [
-  {
-    section: null,
-    links: [
-      { label: "ภาพรวม", href: "/admin", icon: Activity },
-      { label: "รายการ TOR", href: "/admin/tor", icon: FileText },
-      { label: "เพิ่มรายการ TOR", href: "/admin/tor/new", icon: Plus },
-      {
-        label: "บัญชีรออนุมัติ",
-        href: "/admin/accounts",
-        icon: UserCheck,
-        badge: PENDING_ACCOUNTS_COUNT || undefined,
-      },
-      {
-        label: "กลั่นกรองความคิดเห็น",
-        href: "/admin/moderation",
-        icon: MessageSquare,
-        badge: PENDING_FEEDBACK_COUNT || undefined,
-      },
-      { label: "จัดการบริษัท", href: "/admin/companies", icon: Building2 },
-      { label: "จัดการผู้ใช้งาน", href: "/admin/users", icon: Users },
-      { label: "Audit Log", href: "/admin/audit", icon: ClipboardList },
-    ],
-  },
-];
+function getAdminNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
+  return [
+    {
+      section: null,
+      links: [
+        { label: t("navOverview"), href: "/admin", icon: Activity },
+        { label: t("navTorList"), href: "/admin/tor", icon: FileText },
+        { label: t("navCreateTor"), href: "/admin/tor/new", icon: Plus },
+        {
+          label: t("navPendingAccounts"),
+          href: "/admin/accounts",
+          icon: UserCheck,
+          badge: PENDING_ACCOUNTS_COUNT || undefined,
+        },
+        {
+          label: t("navModeration"),
+          href: "/admin/moderation",
+          icon: MessageSquare,
+          badge: PENDING_FEEDBACK_COUNT || undefined,
+        },
+        { label: t("navManageCompanies"), href: "/admin/companies", icon: Building2 },
+        { label: t("navManageUsers"), href: "/admin/users", icon: Users },
+        { label: t("navAuditLog"), href: "/admin/audit", icon: ClipboardList },
+      ],
+    },
+  ];
+}
 
 function NavLinks({
   nav,
@@ -101,8 +108,10 @@ function NavLinks({
     return pathname === path || pathname.startsWith(path + "/");
   }
 
+  const t = useTranslations("AppShell");
+
   return (
-    <nav className="flex-1 overflow-y-auto px-3" aria-label="เมนูหลัก">
+    <nav className="flex-1 overflow-y-auto px-3" aria-label={t("mainNavAriaLabel")}>
       {nav.map(({ section, links }, i) => (
         <div key={i} className={i > 0 ? "mt-5" : ""}>
           {section && (
@@ -146,9 +155,38 @@ function NavLinks({
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useTranslations("AppShell");
   const pathname = usePathname();
+  const router = useRouter();
   const isAdmin = pathname.startsWith("/admin");
-  const nav = isAdmin ? ADMIN_NAV : ORG_NAV;
+  const nav = isAdmin ? getAdminNav(t) : getOrgNav(t);
+
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : { user: null }))
+      .then((data) => {
+        if (!cancelled) setUser(data.user);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
 
   return (
     <div className="flex h-full flex-col bg-[#f5f5f4]">
@@ -173,7 +211,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-3 pb-3">
         <div className="flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-white px-3 py-2 text-sm text-ink-subtle shadow-sm">
           <Search size={14} />
-          <span className="flex-1">ค้นหา...</span>
+          <span className="flex-1">{t("searchPlaceholder")}</span>
           <kbd className="rounded border border-border bg-surface-alt px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
             ⌘K
           </kbd>
@@ -190,31 +228,40 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-zinc-100 hover:text-ink"
         >
           <ArrowLeft size={15} className="opacity-60" />
-          กลับหน้าหลัก
+          {t("backToHome")}
         </Link>
       </div>
 
       {/* User */}
       <div className="shrink-0 border-t border-zinc-200/80 p-3">
-        <button className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-zinc-200/50">
+        <div className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-zinc-600 ring-1 ring-zinc-200">
-            A
+            {(user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : "..."))[0]}
           </span>
-          <div className="min-w-0 text-left">
+          <div className="min-w-0 flex-1 text-left">
             <p className="truncate text-sm font-medium text-ink">
-              {isAdmin ? "ผู้ดูแลระบบ" : "Arun Digital"}
+              {user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : "กำลังโหลด...")}
             </p>
-            <p className="truncate text-xs text-ink-muted">
-              {isAdmin ? "admin@bma.go.th" : "Co., Ltd"}
-            </p>
+            <p className="truncate text-xs text-ink-muted">{user?.email ?? ""}</p>
           </div>
-        </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            aria-label="ออกจากระบบ"
+            title="ออกจากระบบ"
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("AppShell");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -243,7 +290,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             className="grid size-9 place-items-center rounded-lg text-ink-muted hover:bg-surface-alt"
             onClick={() => setMobileOpen(true)}
-            aria-label="เปิดเมนู"
+            aria-label={t("openMenuAriaLabel")}
           >
             <Menu size={20} />
           </button>

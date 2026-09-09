@@ -10,6 +10,7 @@ import {
   ListChecks,
   Shield,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -17,26 +18,30 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { SaveTorButton } from "@/components/public/save-tor-button";
 import { TOR_DETAILS } from "@/data/tor-details";
-import { isKnown, stageBadgeCls } from "@/lib/tor-ui";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
-
-function thaiDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "ไม่ระบุ";
-  return date.toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" });
-}
+import { isKnown, stageBadgeCls } from "@/lib/tor-ui";
 
 export default async function TorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const tor = await getTorById(id);
+  const [tor, t] = await Promise.all([getTorById(id), getTranslations("TorDetailPage")]);
   if (!tor) notFound();
 
-  const hasDeadline = isKnown(tor.deadline);
   // Showcase records carry hand-written scope/qualification detail; imported
   // announcements don't, so those sections simply don't render for them.
   const numericId = mockNumericId(id);
   const detail = numericId === null ? null : TOR_DETAILS.find((d) => d.id === numericId);
   const sourceUrl = tor.sourceUrl ?? detail?.sourceUrl;
+  const hasDeadline = isKnown(tor.deadline);
+
+  const publishedAt =
+    detail?.publishedAt ??
+    (Number.isNaN(new Date(tor.createdAt).getTime())
+      ? t("unknownValue")
+      : new Date(tor.createdAt).toLocaleDateString("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }));
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
@@ -49,7 +54,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
             className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
           >
             <ArrowLeft size={16} />
-            กลับไปค้นหา TOR
+            {t("backToSearch")}
           </Link>
 
           <div className="mb-8">
@@ -61,7 +66,12 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               </span>
               {tor.sourceRef && (
                 <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
-                  ข้อมูลจากระบบ e-GP
+                  {t("importedFromEgp")}
+                </span>
+              )}
+              {tor.isNew && (
+                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
+                  {t("newBadge")}
                 </span>
               )}
             </div>
@@ -78,7 +88,11 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                <SaveTorButton torId={tor.id} />
+                <SaveTorButton
+                  torId={tor.id}
+                  saveLabel={t("saveButton")}
+                  savedLabel={t("savedButton")}
+                />
                 {sourceUrl && (
                   <a
                     href={sourceUrl}
@@ -87,7 +101,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                     className="flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark"
                   >
                     <ExternalLink size={15} />
-                    ดูต้นฉบับ e-GP
+                    {t("viewOriginalEgp")}
                   </a>
                 )}
               </div>
@@ -99,20 +113,20 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-zinc-900">
                   <FileText size={18} className="text-zinc-400" />
-                  รายละเอียดประกาศ
+                  {t("announcementDetail")}
                 </h2>
                 <p className="text-[15px] leading-relaxed text-zinc-600">{tor.summary}</p>
 
                 {!detail && sourceUrl && (
                   <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-zinc-500">
-                    ขอบเขตงาน คุณสมบัติผู้เสนอ และกำหนดการยื่นข้อเสนอ อยู่ในเอกสารประกาศฉบับเต็ม{" "}
+                    {t("fullDocumentNote")}{" "}
                     <a
                       href={sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-medium text-accent hover:text-accent-dark"
                     >
-                      เปิดเอกสาร
+                      {t("openDocument")}
                     </a>
                   </p>
                 )}
@@ -123,7 +137,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                   <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-zinc-900">
                       <FileText size={18} className="text-zinc-400" />
-                      ขอบเขตงาน
+                      {t("scopeOfWork")}
                     </h2>
                     <p className="text-[15px] leading-relaxed text-zinc-600">{detail.scope}</p>
                   </div>
@@ -131,7 +145,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                   <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900">
                       <Shield size={18} className="text-zinc-400" />
-                      คุณสมบัติผู้เสนอ
+                      {t("qualifications")}
                     </h2>
                     <ul className="space-y-3">
                       {detail.qualifications.map((q) => (
@@ -149,7 +163,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                   <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900">
                       <ListChecks size={18} className="text-zinc-400" />
-                      สิ่งที่ต้องส่งมอบ
+                      {t("deliverables")}
                     </h2>
                     <ol className="space-y-2.5">
                       {detail.deliverables.map((d, i) => (
@@ -167,7 +181,9 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
 
               {tor.tags.length > 0 && (
                 <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-                  <h2 className="mb-3 text-lg font-bold text-zinc-900">วิธีจัดหา / หมวดหมู่</h2>
+                  <h2 className="mb-3 text-lg font-bold text-zinc-900">
+                    {t("relatedTechnologies")}
+                  </h2>
                   <div className="flex flex-wrap gap-2">
                     {tor.tags.map((tag) => (
                       <span
@@ -186,21 +202,17 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <InfoRow
                   icon={Banknote}
-                  label="งบประมาณโครงการ"
+                  label={t("budgetLabel")}
                   value={tor.budget}
                   muted={!isKnown(tor.budget)}
                 />
                 <InfoRow
                   icon={Clock}
-                  label="วันที่ปิดรับ"
-                  value={hasDeadline ? tor.deadline : "ไม่ระบุ"}
+                  label={t("deadlineLabel")}
+                  value={hasDeadline ? tor.deadline : t("unknownValue")}
                   muted={!hasDeadline}
                 />
-                <InfoRow
-                  icon={Calendar}
-                  label="วันที่ประกาศ"
-                  value={detail?.publishedAt ?? thaiDate(tor.createdAt)}
-                />
+                <InfoRow icon={Calendar} label={t("publishedAtLabel")} value={publishedAt} />
               </div>
             </aside>
           </div>
@@ -224,7 +236,7 @@ function InfoRow({
   muted?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-3 border-b border-zinc-100 py-3 last:border-0 last:pb-0 first:pt-0">
+    <div className="flex items-start gap-3 border-b border-zinc-100 py-3 first:pt-0 last:border-0 last:pb-0">
       <Icon size={16} className="mt-0.5 shrink-0 text-zinc-400" />
       <div className="min-w-0">
         <p className="text-xs text-zinc-500">{label}</p>
