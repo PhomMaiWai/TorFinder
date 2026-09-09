@@ -1,9 +1,10 @@
-import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
+
+import { getMongoClient } from "@/lib/mongodb";
 
 export async function GET() {
   try {
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db("torfinder");
     const collections = await db.listCollections().toArray();
     return NextResponse.json({ success: true, collections });

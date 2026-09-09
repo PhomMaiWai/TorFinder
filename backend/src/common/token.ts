@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { env } from "../config/env";
 
@@ -20,4 +20,20 @@ export function createSessionToken(payload: Omit<SessionPayload, "exp">): string
   const body: SessionPayload = { ...payload, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE };
   const data = Buffer.from(JSON.stringify(body)).toString("base64url");
   return `${data}.${sign(data)}`;
+}
+
+export function verifySessionToken(token: string | undefined): SessionPayload | null {
+  const [data, signature] = token?.split(".") ?? [];
+  if (!data || !signature) return null;
+
+  const expected = Buffer.from(sign(data));
+  const received = Buffer.from(signature);
+  if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null;
+
+  try {
+    const payload = JSON.parse(Buffer.from(data, "base64url").toString()) as SessionPayload;
+    return payload.exp > Math.floor(Date.now() / 1000) ? payload : null;
+  } catch {
+    return null;
+  }
 }

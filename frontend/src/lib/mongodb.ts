@@ -1,29 +1,26 @@
 import { MongoClient } from "mongodb";
 
-if (!process.env.MONGODB_URI) {
-  throw new Error("Missing MONGODB_URI in .env.local");
-}
-
-const uri = process.env.MONGODB_URI;
 const options = {};
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
+// Connecting at module scope would run during `next build` (and throw when
+// MONGODB_URI isn't set there), so the client is created on first use instead.
+let clientPromise: Promise<MongoClient> | undefined;
 
-if (process.env.NODE_ENV === "development") {
-  // Prevents multiple connections during hot-reload in dev
-  const globalWithMongo = global as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>;
-  };
-
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
+export function getMongoClient(): Promise<MongoClient> {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("Missing MONGODB_URI in .env.local");
   }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-}
 
-export default clientPromise;
+  if (process.env.NODE_ENV === "development") {
+    // Prevents multiple connections during hot-reload in dev
+    const globalWithMongo = global as typeof globalThis & {
+      _mongoClientPromise?: Promise<MongoClient>;
+    };
+    globalWithMongo._mongoClientPromise ??= new MongoClient(uri, options).connect();
+    return globalWithMongo._mongoClientPromise;
+  }
+
+  clientPromise ??= new MongoClient(uri, options).connect();
+  return clientPromise;
+}

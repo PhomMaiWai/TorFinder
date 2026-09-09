@@ -1,10 +1,12 @@
 "use client";
 
-import { Building2, ShieldAlert, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Building2, ShieldAlert, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type SubmitEvent, useState } from "react";
+
+import { PasswordInput } from "@/components/ui/password-input";
 
 const ICONS = {
   building: Building2,
@@ -39,6 +41,7 @@ export function SignInForm({
   tone = "accent",
 }: SignInFormProps) {
   const t = useTranslations("SignInForm");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const Icon = ICONS[icon];
   const [email, setEmail] = useState("");
@@ -115,14 +118,14 @@ export function SignInForm({
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-ink">{t("passwordLabel")}</span>
-              <input
-                type="password"
+              <PasswordInput
                 required
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="h-12 w-full rounded-lg border border-border px-4 text-base text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                showLabel={tc("showPassword")}
+                hideLabel={tc("hidePassword")}
               />
             </label>
 
@@ -159,6 +162,14 @@ export function SignInForm({
             {switchLabel}
           </Link>
         </div>
+
+        <Link
+          href="/"
+          className="mt-6 flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+        >
+          <ArrowLeft size={15} />
+          {tc("backToHome")}
+        </Link>
       </div>
     </main>
   );

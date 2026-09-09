@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -8,6 +8,7 @@ import { Suspense } from "react";
 
 function PendingCard() {
   const t = useTranslations("SignupPendingPage");
+  const tc = useTranslations("Common");
   const params = useSearchParams();
   const name = params.get("name") ?? t("defaultCompanyName");
 
@@ -33,12 +34,21 @@ function PendingCard() {
         </p>
       </div>
 
-      <Link
-        href="/login"
-        className="mt-6 inline-block text-sm font-medium text-accent hover:text-accent-dark"
-      >
-        {t("backToLogin")}
-      </Link>
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <Link
+          href="/login"
+          className="text-sm font-medium text-accent hover:text-accent-dark"
+        >
+          {t("backToLogin")}
+        </Link>
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+        >
+          <ArrowLeft size={15} />
+          {tc("backToHome")}
+        </Link>
+      </div>
     </div>
   );
 }

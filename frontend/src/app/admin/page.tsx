@@ -1,5 +1,6 @@
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle, Check, FileText, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { CLASSIFICATION_STATS, PIPELINE_METRICS, SCRAPE_HISTORY } from "@/data/admin";
@@ -10,6 +11,23 @@ export default function AdminOverviewPage() {
   return (
     <AdminPageShell title={t("title")} description={t("description")}>
       <div className="space-y-6">
+        <div className="flex justify-end gap-3">
+          <Link
+            href="/admin/tor"
+            className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface-alt"
+          >
+            <FileText size={16} />
+            {t("torListCta")}
+          </Link>
+          <Link
+            href="/admin/tor/new"
+            className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+          >
+            <Plus size={16} />
+            {t("createTorCta")}
+          </Link>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PIPELINE_METRICS.map(({ label, value, sub, icon: Icon, tone }) => (
             <div key={label} className="rounded-xl border border-border bg-white p-5">

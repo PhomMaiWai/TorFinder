@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 import { PUBLIC_NOTICES } from "@/data/public-notices";
 import { useSavedTors } from "@/lib/use-saved-tors";
+import { homeFor, useSession } from "@/lib/use-session";
 
 function useClickOutside(onOutside: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -26,6 +27,7 @@ function useClickOutside(onOutside: () => void) {
 
 export function SiteNavbar() {
   const t = useTranslations("Navbar");
+  const session = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [noticesOpen, setNoticesOpen] = useState(false);
   const { savedIds } = useSavedTors();
@@ -103,18 +105,31 @@ export function SiteNavbar() {
             )}
           </div>
 
-          <Link
-            href="/login"
-            className="hidden px-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink md:block"
-          >
-            {t("login")}
-          </Link>
-          <Link
-            href="/dashboard"
-            className="hidden h-9 items-center rounded-lg bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-dark md:flex"
-          >
-            {t("getStarted")}
-          </Link>
+          {session === undefined ? (
+            <span className="hidden h-9 w-40 animate-pulse rounded-lg bg-surface-alt md:block" />
+          ) : session ? (
+            <Link
+              href={homeFor(session.role)}
+              className="hidden h-9 max-w-52 items-center truncate rounded-lg bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-dark md:flex"
+            >
+              {session.name}
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden px-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink md:block"
+              >
+                {t("login")}
+              </Link>
+              <Link
+                href="/dashboard"
+                className="hidden h-9 items-center rounded-lg bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-dark md:flex"
+              >
+                {t("getStarted")}
+              </Link>
+            </>
+          )}
 
           <button
             className="grid size-9 place-items-center rounded-lg text-ink-muted hover:bg-surface-alt md:hidden"
@@ -139,15 +154,26 @@ export function SiteNavbar() {
             </Link>
           ))}
           <div className="flex gap-3 border-t border-border py-3">
-            <Link href="/login" className="flex-1 py-2 text-center text-sm text-ink-muted">
-              {t("login")}
-            </Link>
-            <Link
-              href="/dashboard"
-              className="flex flex-1 items-center justify-center rounded-lg bg-accent py-2 text-sm font-semibold text-white"
-            >
-              {t("getStarted")}
-            </Link>
+            {session ? (
+              <Link
+                href={homeFor(session.role)}
+                className="flex flex-1 items-center justify-center truncate rounded-lg bg-accent py-2 text-sm font-semibold text-white"
+              >
+                {session.name}
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="flex-1 py-2 text-center text-sm text-ink-muted">
+                  {t("login")}
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="flex flex-1 items-center justify-center rounded-lg bg-accent py-2 text-sm font-semibold text-white"
+                >
+                  {t("getStarted")}
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       )}

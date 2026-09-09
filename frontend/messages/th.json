@@ -4,7 +4,10 @@
     "description": "แพลตฟอร์มรวบรวม วิเคราะห์ และจับคู่ประกาศ TOR ด้านซอฟต์แวร์ของกรุงเทพมหานคร"
   },
   "Common": {
-    "searchPlaceholder": "ค้นหา..."
+    "searchPlaceholder": "ค้นหา...",
+    "showPassword": "แสดงรหัสผ่าน",
+    "hidePassword": "ซ่อนรหัสผ่าน",
+    "backToHome": "กลับหน้าหลัก"
   },
   "Navbar": {
     "navSearch": "ค้นหา TOR",
@@ -57,7 +60,9 @@
     "searchPlaceholder": "ค้นหา...",
     "backToHome": "กลับหน้าหลัก",
     "adminRoleLabel": "ผู้ดูแลระบบ",
-    "openMenuAriaLabel": "เปิดเมนู"
+    "openMenuAriaLabel": "เปิดเมนู",
+    "navTorList": "รายการ TOR",
+    "navCreateTor": "เพิ่มรายการ TOR"
   },
   "Dashboard": {
     "newBadge": "ใหม่",
@@ -213,7 +218,19 @@
     "addressPlaceholder": "เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์",
     "submitLabel": "ส่งข้อมูลเพื่อขออนุมัติ",
     "hasAccountQuestion": "มีบัญชีอยู่แล้ว?",
-    "loginLinkLabel": "เข้าสู่ระบบ"
+    "loginLinkLabel": "เข้าสู่ระบบ",
+    "confirmPasswordLabel": "ยืนยันรหัสผ่าน",
+    "errorEmail": "รูปแบบอีเมลไม่ถูกต้อง",
+    "errorPasswordLength": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+    "errorPasswordMismatch": "รหัสผ่านยืนยันไม่ตรงกัน",
+    "errorPhone": "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก",
+    "errorRequired": "กรุณากรอกข้อมูลนี้",
+    "progressLabel": "กรอกแล้ว {done} จาก {total} ช่องที่จำเป็น",
+    "progressComplete": "กรอกข้อมูลครบแล้ว พร้อมส่งคำขอ",
+    "taxIdCounter": "{count}/13 หลัก",
+    "phoneCounter": "{count}/10 หลัก",
+    "errorTaxIdLength": "เลขประจำตัวผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก",
+    "warnTaxIdChecksum": "เลขนี้ไม่ผ่านการตรวจหลักสุดท้าย ลองตรวจทานอีกครั้ง (ส่งได้ตามปกติ)"
   },
   "SignupPendingPage": {
     "defaultCompanyName": "บริษัทของคุณ",
@@ -230,7 +247,8 @@
     "goToSearchCta": "ไปหน้าค้นหา TOR",
     "daysLeft": "เหลือ {days} วัน",
     "viewDetailsCta": "ดูรายละเอียด",
-    "removeAriaLabel": "เอาออกจากรายการที่บันทึก"
+    "removeAriaLabel": "เอาออกจากรายการที่บันทึก",
+    "deadlineUnknown": "ไม่ระบุวันปิดรับ"
   },
   "ProfilePage": {
     "pageTitle": "โปรไฟล์บริษัท",
@@ -297,7 +315,15 @@
     "feedbackPlaceholder": "ระบุข้อเสนอแนะ ข้อกังวล หรือความคิดเห็น เพื่อให้โครงการเกิดความโปร่งใสและเป็นธรรมที่สุด...",
     "feedbackDisclaimer": "* ความคิดเห็นของคุณจะถูกตรวจสอบก่อนแสดงผลต่อสาธารณะ",
     "cancelButton": "ยกเลิก",
-    "submitFeedbackButton": "ส่งความเห็น"
+    "submitFeedbackButton": "ส่งความเห็น",
+    "deadlineUnknown": "ไม่ระบุวันปิดรับ",
+    "announcementDocument": "เอกสารประกาศ",
+    "prevPage": "ก่อนหน้า",
+    "nextPage": "ถัดไป",
+    "pageIndicator": "หน้า {page} จาก {total}",
+    "noRecordsTitle": "ยังไม่มีประกาศในระบบ",
+    "noRecordsDescription": "ผู้ดูแลระบบต้องเพิ่มรายการ TOR เข้ามาก่อน",
+    "filterMethodTitle": "วิธีจัดหา / หมวดหมู่"
   },
   "TorDetailPage": {
     "backToSearch": "กลับไปค้นหา TOR",
@@ -329,7 +355,14 @@
     "budgetHighBadge": "งบสูงผิดปกติ",
     "budgetLowBadge": "งบต่ำผิดปกติ",
     "budgetNormalBadge": "งบปกติ",
-    "publishedInfo": "ประกาศเมื่อ {date} · แหล่งข้อมูล e-GP"
+    "publishedInfo": "ประกาศเมื่อ {date} · แหล่งข้อมูล e-GP",
+    "announcementDetail": "รายละเอียดประกาศ",
+    "importedFromEgp": "ข้อมูลจากระบบ e-GP",
+    "unknownValue": "ไม่ระบุ",
+    "publishedAtLabel": "วันที่ประกาศ",
+    "savedButton": "บันทึกแล้ว",
+    "fullDocumentNote": "ขอบเขตงาน คุณสมบัติผู้เสนอ และกำหนดการยื่นข้อเสนอ อยู่ในเอกสารประกาศฉบับเต็ม",
+    "openDocument": "เปิดเอกสาร"
   },
   "OwnerPage": {
     "stagePillAll": "ทั้งหมด",
@@ -359,7 +392,9 @@
     "scrapeHistoryHeading": "ประวัติการดึงข้อมูล (7 วันล่าสุด)",
     "newItemsCount": "+{count} รายการใหม่",
     "noNewItems": "ไม่มีรายการใหม่",
-    "classificationHeading": "ผลการจำแนกประเภท (Vertex AI)"
+    "classificationHeading": "ผลการจำแนกประเภท (Vertex AI)",
+    "torListCta": "รายการ TOR",
+    "createTorCta": "เพิ่มรายการ TOR"
   },
   "AdminAccountsPage": {
     "title": "บัญชีรออนุมัติ",
@@ -372,7 +407,11 @@
     "taxIdLabel": "เลขทะเบียนนิติบุคคล",
     "contactNameLabel": "ชื่อผู้ติดต่อ",
     "phoneLabel": "เบอร์โทรศัพท์",
-    "addressLabel": "ที่อยู่บริษัท"
+    "addressLabel": "ที่อยู่บริษัท",
+    "statusPending": "รอตรวจสอบ",
+    "statusApproved": "อนุมัติ",
+    "statusRejected": "ปฏิเสธ",
+    "reviewFailed": "อัปเดตสถานะไม่สำเร็จ"
   },
   "AdminAuditPage": {
     "description": "ประวัติการทำงานของระบบและผู้ดูแลระบบทั้งหมด",

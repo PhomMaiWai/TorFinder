@@ -8,14 +8,17 @@ import {
   Building2,
   ChevronDown,
   ClipboardList,
+  FileText,
   LayoutDashboard,
   LogOut,
   Menu,
   MessageSquare,
+  Plus,
   Search,
   UserCheck,
   Users,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -68,6 +71,8 @@ function getAdminNav(t: (key: string) => string): { section: string | null; link
       section: null,
       links: [
         { label: t("navOverview"), href: "/admin", icon: Activity },
+        { label: t("navTorList"), href: "/admin/tor", icon: FileText },
+        { label: t("navCreateTor"), href: "/admin/tor/new", icon: Plus },
         {
           label: t("navPendingAccounts"),
           href: "/admin/accounts",
@@ -100,7 +105,7 @@ function NavLinks({
 
   function isActive(href: string) {
     const path = href.split("?")[0];
-    if (path === "/dashboard" || path === "/admin") return pathname === path;
+    if (path === "/dashboard" || path === "/admin" || path === "/admin/tor") return pathname === path;
     return pathname === path || pathname.startsWith(path + "/");
   }
 
