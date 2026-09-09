@@ -1,6 +1,8 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { Collection, MongoClient } from "mongodb";
+import { Collection, MongoClient, ObjectId } from "mongodb";
 
+import { StoredExtraction } from "../ai/ai.types";
+import { FeedbackStatus } from "../feedback/feedback.constants";
 import { hashPassword } from "../common/password";
 import { env } from "../config/env";
 import { TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor/tor.constants";
@@ -48,6 +50,14 @@ export type TorDoc = {
   sourceRef?: string;
   /** The record's own document when e-GP has one; otherwise the project's listing page. */
   sourceUrl?: string;
+  /**
+   * What a model read out of the announcement document. Kept in its own field,
+   * never merged into the ones above: those are what an agency published, this
+   * is inferred, and the difference has to survive all the way to the reader.
+   */
+  extraction?: StoredExtraction;
+  /** Why the document couldn't be read, when it couldn't. */
+  extractionFailure?: { reason: string; failedAt: Date };
   /** e-GP's own project number, printed on every announcement of the project. */
   projectNumber?: string;
   /** Raw budget in baht, next to the formatted `budget` string. */
@@ -70,6 +80,17 @@ export type TorDoc = {
   enrichVersion?: number;
 };
 
+/** A public comment on one announcement, shown only once it is approved. */
+export type FeedbackDoc = {
+  torId: ObjectId;
+  /** Whatever the commenter typed; anonymous comments get a fallback name. */
+  author: string;
+  text: string;
+  status: FeedbackStatus;
+  createdAt: Date;
+  reviewedAt?: Date;
+};
+
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
@@ -77,16 +98,22 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   users!: Collection<UserDoc>;
   tors!: Collection<TorDoc>;
+  feedback!: Collection<FeedbackDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
     this.users = this.client.db().collection<UserDoc>("users");
     this.tors = this.client.db().collection<TorDoc>("tors");
+    this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.tors.createIndex({ createdAt: -1 });
     // Makes the e-GP import idempotent: re-running it updates instead of duplicating.
     await this.tors.createIndex({ sourceRef: 1 }, { unique: true, sparse: true });
+    // The two ways comments are read: under one announcement, and in the
+    // moderation queue.
+    await this.feedback.createIndex({ torId: 1, createdAt: -1 });
+    await this.feedback.createIndex({ status: 1, createdAt: -1 });
     await this.backfillAccountStatus();
     await this.seed();
   }

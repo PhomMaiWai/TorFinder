@@ -375,7 +375,15 @@
     "companySizeLabel": "{size} size",
     "matchScoreValue": "{score}%",
     "feedbackListHeading": "Public feedback",
-    "documentsHeading": "All announcement documents"
+    "documentsHeading": "All announcement documents",
+    "budgetAssessmentHeading": "Budget assessment",
+    "budgetMedianLabel": "Median {median} across {count} comparable projects",
+    "budgetAssessmentNote": "Compared with similar announcements in the system. An observation for review, not a finding of wrongdoing.",
+    "extractionHeading": "Details read from the document",
+    "extractionDisclaimer": "Extracted automatically from the announcement document with {model} — check against the original before relying on it.",
+    "documentBudgetLabel": "Budget stated in the document",
+    "feedbackAuthorPlaceholder": "Your name (optional)",
+    "feedbackSubmitted": "Comment received — it will appear once a moderator approves it."
   },
   "OwnerPage": {
     "stagePillAll": "All",
@@ -397,7 +405,8 @@
     "companiesTabLabel": "Companies ({count})",
     "feedbackTabLabel": "Comments ({count})",
     "noMatchedCompanies": "No matched companies yet",
-    "noFeedback": "No comments yet"
+    "noFeedback": "No comments yet",
+    "loadingPanel": "Loading…"
   },
   "AdminOverviewPage": {
     "title": "Overview",
@@ -445,7 +454,8 @@
     "title": "Moderate Feedback",
     "description": "Review and approve public feedback submitted for each TOR",
     "rejectAction": "Reject",
-    "approveAction": "Approve"
+    "approveAction": "Approve",
+    "emptyQueue": "No comments to review"
   },
   "AdminUsersPage": {
     "title": "Manage Users",

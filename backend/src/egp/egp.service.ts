@@ -4,6 +4,7 @@ import { env } from "../config/env";
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { EgpClient } from "./egp.client";
 import { EGP_ANNOUNCE_TYPES, EGP_SEARCH_KEYWORDS, EgpAnnounceType } from "./egp.constants";
+import { MatchingService } from "../matching/matching.service";
 import { isSoftwareProject } from "./egp.filter";
 import { EgpAnnouncement, EgpProject, EgpProjectDetail } from "./egp.types";
 
@@ -76,6 +77,7 @@ export class EgpService {
   constructor(
     private readonly db: DatabaseService,
     private readonly client: EgpClient,
+    private readonly matching: MatchingService,
   ) {}
 
   /**
@@ -156,6 +158,9 @@ export class EgpService {
     );
 
     await this.purgeNonSoftware();
+    // The verdict is relative to every other announcement, so an import that
+    // adds or removes records invalidates the stored ones.
+    await this.matching.refreshBudgetStatuses();
 
     this.logger.log(`e-GP sync: ${result.upsertedCount} new, ${result.modifiedCount} updated`);
     return {

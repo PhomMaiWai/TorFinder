@@ -46,6 +46,17 @@ export const env = {
     authLimit: optionalNumber("AUTH_THROTTLE_LIMIT", 5),
   },
   /**
+   * Vertex AI. Credentials are never configured here — the SDK reads
+   * Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS, or the
+   * host's service account). An empty project id leaves extraction switched
+   * off, so the app runs fine without GCP.
+   */
+  ai: {
+    projectId: process.env.VERTEX_PROJECT_ID ?? "",
+    location: process.env.VERTEX_LOCATION ?? "asia-southeast1",
+    model: process.env.VERTEX_MODEL ?? "gemini-2.5-flash",
+  },
+  /**
    * Only the knobs an operator would turn without a redeploy. Everything else
    * about the import — the portal's URLs, the search keywords, per-request
    * timeouts — is code, and lives in egp/egp.constants.ts.

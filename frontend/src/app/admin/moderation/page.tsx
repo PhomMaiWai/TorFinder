@@ -1,80 +1,32 @@
-"use client";
-
-import { Check, X } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { getTranslations } from "next-intl/server";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
-import { OPPORTUNITIES } from "@/data/opportunities";
-import { FEEDBACK_ENTRIES } from "@/data/tor-details";
+import { ModerationList } from "@/components/admin/moderation-list";
+import { fetchFeedbackQueue } from "@/lib/feedback-api";
+import { fetchTorList } from "@/lib/tor-api";
 
-export default function AdminModerationPage() {
-  const t = useTranslations("AdminModerationPage");
-  const [feedbackItems, setFeedbackItems] = useState(FEEDBACK_ENTRIES);
+export default async function AdminModerationPage() {
+  const [feedback, tors, t] = await Promise.all([
+    fetchFeedbackQueue(),
+    // Comments carry a TOR id, not a title; the list is fetched once and used
+    // as a lookup rather than asking the API per comment.
+    fetchTorList(1, 100),
+    getTranslations("AdminModerationPage"),
+  ]);
 
-  function updateFeedbackStatus(id: number, status: "อนุมัติ" | "ปฏิเสธ") {
-    setFeedbackItems((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status } : f)),
-    );
-  }
+  const titles = Object.fromEntries(tors.map((tor) => [tor.id, tor.title]));
 
   return (
-    <AdminPageShell
-      title={t("title")}
-      description={t("description")}
-    >
-      <div className="space-y-3">
-        {feedbackItems.map((f) => {
-          const tor = OPPORTUNITIES.find((o) => o.id === f.torId);
-          return (
-            <div key={f.id} className="rounded-xl border border-border bg-white p-5">
-              <div className="flex items-start justify-between gap-4 max-sm:flex-col">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-md px-2.5 py-1 text-xs font-medium ${
-                        f.status === "อนุมัติ"
-                          ? "bg-success-soft text-success"
-                          : f.status === "ปฏิเสธ"
-                            ? "bg-danger-soft text-danger"
-                            : "bg-warn-soft text-warn"
-                      }`}
-                    >
-                      {f.status}
-                    </span>
-                    <span className="text-xs text-ink-muted">
-                      {f.author} · {f.submittedAt}
-                    </span>
-                  </div>
-                  <p className="text-xs text-ink-muted">
-                    TOR: <span className="font-medium text-ink">{tor?.title ?? `#${f.torId}`}</span>
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-muted">{f.text}</p>
-                </div>
-
-                {f.status === "รอตรวจสอบ" && (
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      onClick={() => updateFeedbackStatus(f.id, "ปฏิเสธ")}
-                      className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
-                    >
-                      <X size={14} />
-                      {t("rejectAction")}
-                    </button>
-                    <button
-                      onClick={() => updateFeedbackStatus(f.id, "อนุมัติ")}
-                      className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
-                    >
-                      <Check size={14} />
-                      {t("approveAction")}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <AdminPageShell title={t("title")} description={t("description")}>
+      <ModerationList
+        items={feedback}
+        titles={titles}
+        labels={{
+          approve: t("approveAction"),
+          reject: t("rejectAction"),
+          empty: t("emptyQueue"),
+        }}
+      />
     </AdminPageShell>
   );
 }

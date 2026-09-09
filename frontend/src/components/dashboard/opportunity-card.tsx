@@ -2,10 +2,10 @@ import { Bookmark, Building2, Clock } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-import type { Opportunity } from "@/types/opportunity";
+import type { ScoredTor } from "@/types/tor";
 
 type OpportunityCardProps = {
-  opportunity: Opportunity;
+  opportunity: ScoredTor;
   isSaved: boolean;
   onSaveToggle: (id: number) => void;
 };
@@ -33,7 +33,7 @@ export function OpportunityCard({
   const t = useTranslations("OpportunityCard");
   const {
     id, title, agency, budget, daysLeft,
-    match, tags, stage, summary, isNew,
+    match, matchReasons, tags, stage, summary, isNew,
   } = opportunity;
 
   const isUrgent = daysLeft <= 7;
@@ -112,6 +112,12 @@ export function OpportunityCard({
         <p className="mt-2.5 text-sm leading-relaxed text-ink-muted line-clamp-2">
           {summary}
         </p>
+
+        {/* Why this scored where it did — a percentage on its own tells a
+            vendor nothing about whether to bid. */}
+        {matchReasons.length > 0 && (
+          <p className="mt-2 text-xs leading-relaxed text-accent-text">{matchReasons[0]}</p>
+        )}
 
         {/* Row 5: tags + actions */}
         <div className="mt-4 flex items-center justify-between gap-3">

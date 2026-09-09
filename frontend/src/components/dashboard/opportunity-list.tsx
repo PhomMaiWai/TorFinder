@@ -3,10 +3,11 @@ import { useTranslations } from "next-intl";
 
 import { OpportunityCard } from "@/components/dashboard/opportunity-card";
 import { OPPORTUNITY_FILTERS } from "@/data/opportunities";
-import type { Opportunity, OpportunityFilter } from "@/types/opportunity";
+import type { OpportunityFilter } from "@/types/opportunity";
+import type { ScoredTor } from "@/types/tor";
 
 type OpportunityListProps = {
-  opportunities: Opportunity[];
+  opportunities: ScoredTor[];
   searchQuery: string;
   activeFilter: OpportunityFilter;
   savedIds: number[];
