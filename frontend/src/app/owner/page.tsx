@@ -1,4 +1,5 @@
 import { OwnerContent } from "@/components/owner/owner-content";
+import { fetchDeletedTors } from "@/lib/tor-admin-api";
 import { getAllTors } from "@/lib/tor-source";
 
 async function fetchFeedbackCounts(): Promise<Record<string, number>> {
@@ -8,7 +9,11 @@ async function fetchFeedbackCounts(): Promise<Record<string, number>> {
 }
 
 export default async function OwnerPage() {
-  const [tors, feedbackCounts] = await Promise.all([getAllTors(), fetchFeedbackCounts()]);
+  const [tors, deletedTors, feedbackCounts] = await Promise.all([
+    getAllTors(),
+    fetchDeletedTors(),
+    fetchFeedbackCounts(),
+  ]);
 
-  return <OwnerContent tors={tors} feedbackCounts={feedbackCounts} />;
+  return <OwnerContent tors={tors} deletedTors={deletedTors} feedbackCounts={feedbackCounts} />;
 }

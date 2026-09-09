@@ -98,6 +98,8 @@ export class ExtractionService {
       .find(
         {
           "documents.url": { $regex: FILE_PATH },
+          // No point spending a model call on an announcement nobody can see.
+          deletedAt: { $exists: false },
           $or: [
             { extraction: { $exists: false } },
             { "extraction.version": { $lt: EXTRACTION_VERSION } },

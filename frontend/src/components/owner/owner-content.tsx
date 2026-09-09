@@ -1,9 +1,9 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText, RotateCcw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import {
   EmptyState,
@@ -17,6 +17,7 @@ import {
   StatusBadge,
 } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
+import { hideTor, unhideTor } from "@/app/owner/actions";
 import { isKnown } from "@/lib/tor-ui";
 import type { MatchedCompany, TorFeedback, TorRecord } from "@/types/tor";
 
@@ -62,9 +63,12 @@ function usePanel(torId: string | null) {
 
 export function OwnerContent({
   tors,
+  deletedTors,
   feedbackCounts,
 }: {
   tors: TorRecord[];
+  /** Hidden announcements, for the restore list. Empty unless the caller is an admin. */
+  deletedTors: TorRecord[];
   /** Approved comments per announcement, so a row can show a count unopened. */
   feedbackCounts: Record<string, number>;
 }) {
@@ -74,6 +78,10 @@ export function OwnerContent({
   const [stage, setStage] = useState("ทั้งหมด");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [tabMap, setTabMap] = useState<Record<string, TabKey>>({});
+  // Deleting is one click away from destroying a public notice, so the row asks
+  // once before it happens.
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const panels = usePanel(expandedId);
 
   const q = search.trim().toLowerCase();
@@ -150,13 +158,51 @@ export function OwnerContent({
                         </div>
                       }
                       actions={
-                        <Link
-                          href={`/tor/${tor.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
-                        >
-                          {t("viewTor")}
-                        </Link>
+                        <>
+                          <Link
+                            href={`/tor/${tor.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                          >
+                            {t("viewTor")}
+                          </Link>
+                          {confirmingDeleteId === tor.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                disabled={isPending}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmingDeleteId(null);
+                                  if (expandedId === tor.id) setExpandedId(null);
+                                  startTransition(() => void hideTor(tor.id));
+                                }}
+                                className="flex h-8 items-center rounded-lg bg-danger px-2.5 text-xs font-semibold text-white hover:bg-danger/90 disabled:opacity-50"
+                              >
+                                {t("confirmDelete")}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmingDeleteId(null);
+                                }}
+                                className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                              >
+                                {t("cancelDelete")}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirmingDeleteId(tor.id);
+                              }}
+                              className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-danger-soft hover:text-danger"
+                            >
+                              <Trash2 size={13} />
+                              {t("deleteAction")}
+                            </button>
+                          )}
+                        </>
                       }
                       expandedContent={
                         isExpanded ? (
@@ -262,6 +308,35 @@ export function OwnerContent({
             )}
           </div>
         </Section>
+
+        {deletedTors.length > 0 && (
+          <Section title={t("trashTitle", { count: deletedTors.length })}>
+            <ItemList>
+              {deletedTors.map((tor) => (
+                <ItemRow
+                  key={tor.id}
+                  icon={<FileText size={15} className="text-zinc-400" />}
+                  iconBg="bg-zinc-100"
+                  title={tor.title}
+                  subtitle={tor.agency}
+                  actions={
+                    <button
+                      disabled={isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startTransition(() => void unhideTor(tor.id));
+                      }}
+                      className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50"
+                    >
+                      <RotateCcw size={13} />
+                      {t("restoreAction")}
+                    </button>
+                  }
+                />
+              ))}
+            </ItemList>
+          </Section>
+        )}
       </PageBody>
     </AppShell>
   );

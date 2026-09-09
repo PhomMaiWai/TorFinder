@@ -59,7 +59,12 @@ export class MatchingService {
       size: user.company.size,
     };
 
-    const tors = await this.db.tors.find({}).sort({ createdAt: -1 }).toArray();
+    // A hidden announcement is not an opportunity: it must not be ranked,
+    // suggested, or counted anywhere a vendor can see it.
+    const tors = await this.db.tors
+      .find({ deletedAt: { $exists: false } })
+      .sort({ createdAt: -1 })
+      .toArray();
 
     return tors
       .map(({ _id, ...tor }) => {
@@ -87,7 +92,9 @@ export class MatchingService {
     const projection = { title: 1, summary: 1, tags: 1, budgetAmount: 1, extraction: 1 };
     const [tor, all] = await Promise.all([
       this.db.tors.findOne({ _id: new ObjectId(torId) }, { projection }),
-      this.db.tors.find({ budgetAmount: { $gt: 0 } }, { projection }).toArray(),
+      this.db.tors
+        .find({ budgetAmount: { $gt: 0 }, deletedAt: { $exists: false } }, { projection })
+        .toArray(),
     ]);
     if (!tor) throw new NotFoundException("ไม่พบรายการ TOR");
 
@@ -105,7 +112,7 @@ export class MatchingService {
    */
   async refreshBudgetStatuses(): Promise<{ assessed: number; flagged: number }> {
     const projection = { title: 1, summary: 1, tags: 1, budgetAmount: 1, extraction: 1 };
-    const all = await this.db.tors.find({}, { projection }).toArray();
+    const all = await this.db.tors.find({ deletedAt: { $exists: false } }, { projection }).toArray();
     const priced = all.filter((tor) => tor.budgetAmount);
 
     const writes: AnyBulkWriteOperation<TorDoc>[] = priced.map((tor) => {
