@@ -1,7 +1,7 @@
 name: Auth flow CI/CD
 
-# Guards the signup/login flow end to end: lint + build both apps, run the
-# backend auth integration tests against a real MongoDB, then prove the
+# Guards the core API end to end: lint + build both apps, run the backend
+# integration tests (auth + TOR CRUD) against a real MongoDB, then prove the
 # deployable Docker images still build.
 
 on:
@@ -49,6 +49,9 @@ jobs:
       EGP_POLL_MINUTES: "0"
       EGP_POLL_ON_STARTUP: "false"
       VERTEX_PROJECT_ID: ""
+      # Generous general limit so the full suite fits one 60s window; only the
+      # auth brute-force test cares about the (separate, tighter) login limit.
+      THROTTLE_LIMIT: "300"
       # The auth integration test relies on this exact limit for its
       # brute-force assertion.
       AUTH_THROTTLE_LIMIT: "30"
@@ -89,7 +92,7 @@ jobs:
           echo "backend did not become healthy in time"
           exit 1
 
-      - name: Run signup/login integration tests
+      - name: Run integration tests (auth + TOR CRUD)
         run: npm run test:e2e
 
       - name: Backend log
