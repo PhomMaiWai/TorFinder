@@ -8,6 +8,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "incremental": true,
+    // Kept inside outDir: nest's deleteOutDir wipes dist on every start, and a
+    // build-info file that survives that makes tsc skip emitting anything.
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

@@ -362,7 +362,20 @@
     "publishedAtLabel": "Published on",
     "savedButton": "Saved",
     "fullDocumentNote": "Scope of work, bidder qualifications and submission dates are in the full announcement document.",
-    "openDocument": "Open document"
+    "openDocument": "Open document",
+    "procurementDetailsHeading": "From the official record",
+    "procurementMethodLabel": "Procurement method",
+    "procurementTypeLabel": "Work type",
+    "goodsCategoryLabel": "Category",
+    "contractStatusLabel": "Status",
+    "viewDocumentPdf": "View original document (PDF)",
+    "projectNumberLabel": "Project number",
+    "vendorMatchScore": "Match {score}%",
+    "matchedCompaniesHeading": "Matched companies",
+    "companySizeLabel": "{size} size",
+    "matchScoreValue": "{score}%",
+    "feedbackListHeading": "Public feedback",
+    "documentsHeading": "All announcement documents"
   },
   "OwnerPage": {
     "stagePillAll": "All",

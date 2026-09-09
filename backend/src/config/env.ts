@@ -29,26 +29,6 @@ function optionalNumber(name: string, fallback: number): number {
   return parsed;
 }
 
-/**
- * Departments to pull announcements for, as "deptId:ชื่อหน่วยงาน" pairs joined by
- * "|". An RSS item carries no agency name, so it can only come from knowing which
- * deptId was queried. Empty means the nationwide feed.
- */
-function egpDepartments(): { deptId: string; agency: string }[] {
-  const raw = process.env.EGP_DEPARTMENTS?.trim();
-  if (!raw) return [];
-
-  return raw.split("|").map((entry) => {
-    const [id, ...name] = entry.split(":");
-    const deptId = id?.trim() ?? "";
-    const agency = name.join(":").trim();
-    if (!deptId || !agency) {
-      throw new Error(`EGP_DEPARTMENTS entry must be "deptId:ชื่อหน่วยงาน", got "${entry}"`);
-    }
-    return { deptId, agency };
-  });
-}
-
 export const env = {
   isProduction,
   port: optionalNumber("PORT", 4000),
@@ -76,11 +56,24 @@ export const env = {
     location: process.env.VERTEX_LOCATION ?? "asia-southeast1",
     model: process.env.VERTEX_MODEL ?? "gemini-2.5-flash",
   },
+  /**
+   * Only the knobs an operator would turn without a redeploy. Everything else
+   * about the import — the portal's URLs, the search keywords, per-request
+   * timeouts — is code, and lives in egp/egp.constants.ts.
+   */
   egp: {
-    feedUrl:
-      process.env.EGP_FEED_URL ??
-      "https://process.gprocurement.go.th/EPROCRssFeedWeb/egpannouncerss.xml",
-    departments: egpDepartments(),
-    timeoutMs: optionalNumber("EGP_TIMEOUT_MS", 20_000),
+    // Import depth per announcement type. e-GP holds thousands of projects, so a
+    // sync takes the newest pages rather than the whole archive.
+    maxPages: optionalNumber("EGP_MAX_PAGES", 2),
+    // Requests in flight against the portal — lower it if it starts rate-limiting.
+    concurrency: optionalNumber("EGP_CONCURRENCY", 5),
+    // Background refresh. 0 turns polling off and leaves the admin button as the
+    // only way to import.
+    pollMinutes: optionalNumber("EGP_POLL_MINUTES", 360),
+    pollOnStartup: (process.env.EGP_POLL_ON_STARTUP ?? "true") === "true",
+    // Wall-clock cap on the enrichment phase: if the portal is slow the sync
+    // still finishes on time with whatever it managed, and anything skipped is
+    // retried on the next run (see EgpService.enrichedSourceRefs).
+    enrichBudgetMs: optionalNumber("EGP_ENRICH_BUDGET_MS", 45_000),
   },
 };

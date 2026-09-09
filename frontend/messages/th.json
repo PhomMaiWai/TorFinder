@@ -362,7 +362,20 @@
     "publishedAtLabel": "วันที่ประกาศ",
     "savedButton": "บันทึกแล้ว",
     "fullDocumentNote": "ขอบเขตงาน คุณสมบัติผู้เสนอ และกำหนดการยื่นข้อเสนอ อยู่ในเอกสารประกาศฉบับเต็ม",
-    "openDocument": "เปิดเอกสาร"
+    "openDocument": "เปิดเอกสาร",
+    "procurementDetailsHeading": "รายละเอียดจากเอกสารต้นฉบับ",
+    "procurementMethodLabel": "วิธีจัดหา",
+    "procurementTypeLabel": "ประเภทงาน",
+    "goodsCategoryLabel": "หมวดพัสดุ",
+    "contractStatusLabel": "สถานะการดำเนินการ",
+    "viewDocumentPdf": "ดูเอกสารต้นฉบับ (PDF)",
+    "projectNumberLabel": "เลขที่โครงการ",
+    "vendorMatchScore": "ความสอดคล้อง {score}%",
+    "matchedCompaniesHeading": "บริษัทที่ระบบจับคู่ได้",
+    "companySizeLabel": "ขนาด{size}",
+    "matchScoreValue": "{score}%",
+    "feedbackListHeading": "ความคิดเห็นจากสาธารณะ",
+    "documentsHeading": "เอกสารประกาศทั้งหมด"
   },
   "OwnerPage": {
     "stagePillAll": "ทั้งหมด",

@@ -10,6 +10,11 @@ import { VertexClient } from "./vertex.client";
 
 const PDF_MIME = "application/pdf";
 
+/** e-GP serves documents under /api/file/; everything else is a web page. */
+function isFileUrl(url: string): boolean {
+  return url.includes("/api/file/");
+}
+
 @Injectable()
 export class ExtractionService {
   private readonly logger = new Logger(ExtractionService.name);
@@ -60,11 +65,16 @@ export class ExtractionService {
   }
 
   /**
-   * The document to read. Announcements imported from e-GP carry a link to
-   * their own file; without one there is nothing to extract from.
+   * The document to read. e-GP publishes several announcements per project and
+   * only some of them link to an actual file — the rest point at the project's
+   * listing page, which has nothing to extract. The newest real file wins
+   * (`documents` is stored newest-first), and `sourceUrl` is the fallback for
+   * records imported before the document list existed.
    */
   private documentUrlFor(tor: TorDoc): string | null {
-    return tor.sourceUrl ?? null;
+    const file = tor.documents?.find((doc) => isFileUrl(doc.url));
+    if (file) return file.url;
+    return tor.sourceUrl && isFileUrl(tor.sourceUrl) ? tor.sourceUrl : null;
   }
 
   /**
