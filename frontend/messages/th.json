@@ -406,7 +406,12 @@
     "feedbackTabLabel": "ความคิดเห็น ({count})",
     "noMatchedCompanies": "ยังไม่มีบริษัทที่จับคู่",
     "noFeedback": "ยังไม่มีความคิดเห็น",
-    "loadingPanel": "กำลังโหลด..."
+    "loadingPanel": "กำลังโหลด...",
+    "deleteAction": "ลบ",
+    "confirmDelete": "ยืนยันลบ?",
+    "cancelDelete": "ยกเลิก",
+    "restoreAction": "กู้คืน",
+    "trashTitle": "ถังขยะ ({count})"
   },
   "AdminOverviewPage": {
     "title": "ภาพรวม",

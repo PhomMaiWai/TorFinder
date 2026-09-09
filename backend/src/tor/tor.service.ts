@@ -19,7 +19,9 @@ export class TorService {
   }
 
   async findAll(page = 1, pageSize = 20, source?: TorSource) {
-    const filter: Filter<TorDoc> = {};
+    // Deleted records stay in the collection but out of every listing except
+    // the one that exists to restore them.
+    const filter: Filter<TorDoc> = { deletedAt: { $exists: false } };
     if (source) filter.sourceRef = { $exists: source === "egp" };
 
     const docs = await this.db.tors
@@ -35,6 +37,42 @@ export class TorService {
     const doc = ObjectId.isValid(id) ? await this.db.tors.findOne({ _id: new ObjectId(id) }) : null;
     if (!doc) throw new NotFoundException("ไม่พบรายการ TOR");
     const { _id, ...rest } = doc;
+    return { id: _id.toString(), ...rest };
+  }
+
+  /** Hidden announcements, newest first — the restore view. */
+  async findDeleted() {
+    const docs = await this.db.tors
+      .find({ deletedAt: { $exists: true } })
+      .sort({ deletedAt: -1 })
+      .toArray();
+    return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+  }
+
+  /**
+   * Hides an announcement without destroying it. Nothing about a public
+   * procurement notice should be unrecoverable by a single click, so the record
+   * keeps its data and only gains a timestamp.
+   */
+  async softDelete(id: string) {
+    return this.setDeletedAt(id, new Date());
+  }
+
+  async restore(id: string) {
+    return this.setDeletedAt(id, null);
+  }
+
+  private async setDeletedAt(id: string, deletedAt: Date | null) {
+    if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    const result = await this.db.tors.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      deletedAt ? { $set: { deletedAt } } : { $unset: { deletedAt: "" } },
+      { returnDocument: "after" },
+    );
+    if (!result) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    const { _id, ...rest } = result;
     return { id: _id.toString(), ...rest };
   }
 

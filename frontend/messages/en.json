@@ -406,7 +406,12 @@
     "feedbackTabLabel": "Comments ({count})",
     "noMatchedCompanies": "No matched companies yet",
     "noFeedback": "No comments yet",
-    "loadingPanel": "Loading…"
+    "loadingPanel": "Loading…",
+    "deleteAction": "Delete",
+    "confirmDelete": "Confirm?",
+    "cancelDelete": "Cancel",
+    "restoreAction": "Restore",
+    "trashTitle": "Trash ({count})"
   },
   "AdminOverviewPage": {
     "title": "Overview",

@@ -25,6 +25,8 @@ export type TorRecord = {
   budgetAmount?: number;
   /** Every announcement e-GP holds for the project, newest first. */
   documents?: { label: string; publishedAt: string | null; url: string }[];
+  /** Set while the announcement is hidden from listings; absent when live. */
+  deletedAt?: string;
   /** Present once a model has read the announcement document. */
   extraction?: TorExtraction;
   /** Structured procurement facts e-GP has on file — real, not inferred. */

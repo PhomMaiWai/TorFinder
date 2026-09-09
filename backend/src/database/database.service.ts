@@ -46,6 +46,12 @@ export type TorDoc = {
   summary: string;
   budgetStatus?: (typeof TOR_BUDGET_STATUSES)[number];
   createdAt: Date;
+  /**
+   * Set when an announcement is hidden from the listings. A soft delete rather
+   * than a real one: these records are public procurement notices, so removing
+   * one has to be reversible and has to leave a trace.
+   */
+  deletedAt?: Date;
   /** Set only on records imported from e-GP; absent on admin-entered ones. */
   sourceRef?: string;
   /** The record's own document when e-GP has one; otherwise the project's listing page. */
