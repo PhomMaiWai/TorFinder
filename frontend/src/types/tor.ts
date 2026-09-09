@@ -77,3 +77,10 @@ export type TorFeedback = {
   createdAt: string;
   reviewedAt?: string;
 };
+
+/** An announcement scored for one company — what the dashboard ranks by. */
+export type ScoredTor = TorRecord & {
+  match: number;
+  matchReasons: string[];
+  matchGaps: string[];
+};

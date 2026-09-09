@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-import type { Opportunity } from "@/types/opportunity";
+import type { ScoredTor } from "@/types/tor";
 
 type DashboardSidebarProps = {
   savedCount: number;
-  byDeadline: Opportunity[];
+  byDeadline: ScoredTor[];
 };
 
 export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarProps) {

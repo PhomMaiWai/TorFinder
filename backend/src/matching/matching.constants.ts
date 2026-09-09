@@ -22,10 +22,18 @@ export const SKILL_KEYWORDS: Record<string, string[]> = {
  * How large a project each company size is credible for, in baht. Above the
  * ceiling the score is discounted rather than zeroed: a small firm can still
  * win a large contract, it is just a weaker match.
+ *
+ * Sign-up records headcount ("11-50 คน") while the demo data says "กลาง", so
+ * both spellings map onto the same ceiling — a size the table doesn't know
+ * would otherwise silently score as mid-sized.
  */
 export const SIZE_CEILING: Record<string, number> = {
+  "1-10 คน": 5_000_000,
   เล็ก: 5_000_000,
+  "11-50 คน": 20_000_000,
   กลาง: 20_000_000,
+  "51-200 คน": 60_000_000,
+  "200+ คน": Number.POSITIVE_INFINITY,
   ใหญ่: Number.POSITIVE_INFINITY,
 };
 

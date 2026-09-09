@@ -14,12 +14,21 @@ import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/layout/app-sidebar";
 import { OPPORTUNITY_FILTERS } from "@/data/opportunities";
-import type { Opportunity, OpportunityFilter } from "@/types/opportunity";
+import type { OpportunityFilter } from "@/types/opportunity";
+import type { ScoredTor } from "@/types/tor";
 
-type DashboardProps = { opportunities: Opportunity[] };
+type DashboardProps = { opportunities: ScoredTor[] };
 
 const DEFAULT_FILTER: OpportunityFilter = "ทั้งหมด";
 const INITIAL_SAVED = [3];
+
+/**
+ * What counts as a strong match. Scoring is deterministic and conservative — a
+ * company that covers every skill at a credible size lands in the nineties,
+ * while a solid, ordinary fit sits in the sixties — so the "high match" filter
+ * is set where real scores actually separate.
+ */
+const HIGH_MATCH = 60;
 
 /* ── Opportunity item only ───────────────────────── */
 
@@ -28,13 +37,13 @@ function OpportunityCard({
   isSaved,
   onSaveToggle,
 }: {
-  opportunity: Opportunity;
+  opportunity: ScoredTor;
   isSaved: boolean;
   onSaveToggle: (id: number, event: React.MouseEvent) => void;
 }) {
   const t = useTranslations("Dashboard");
   const isUrgent = opportunity.daysLeft <= 7;
-  const isHighMatch = opportunity.match >= 90;
+  const isHighMatch = opportunity.match >= HIGH_MATCH;
 
   return (
     <article className="group relative rounded-xl border border-zinc-200 bg-white p-5 transition-all duration-200 hover:border-zinc-300 hover:shadow-[0_8px_30px_rgb(24,24,27/6%)]">
@@ -161,7 +170,7 @@ function OpportunityCard({
 
 /* ── Right sidebar panels ────────────────────────── */
 
-function DeadlinePanel({ opportunities }: { opportunities: Opportunity[] }) {
+function DeadlinePanel({ opportunities }: { opportunities: ScoredTor[] }) {
   const t = useTranslations("Dashboard");
   const byDeadline = [...opportunities]
     .sort((a, b) => a.daysLeft - b.daysLeft)
@@ -275,7 +284,7 @@ export function Dashboard({ opportunities }: DashboardProps) {
       const matchesSearch = !query || text.includes(query);
       const matchesFilter =
         activeFilter === DEFAULT_FILTER ||
-        (activeFilter === "ตรงกับคุณสูง" && opportunity.match >= 90) ||
+        (activeFilter === "ตรงกับคุณสูง" && opportunity.match >= HIGH_MATCH) ||
         opportunity.stage === activeFilter;
 
       return matchesSearch && matchesFilter;
@@ -283,7 +292,9 @@ export function Dashboard({ opportunities }: DashboardProps) {
   }, [activeFilter, opportunities, searchQuery]);
 
   const urgentCount = opportunities.filter((opportunity) => opportunity.daysLeft <= 7).length;
-  const highMatchCount = opportunities.filter((opportunity) => opportunity.match >= 90).length;
+  const highMatchCount = opportunities.filter(
+    (opportunity) => opportunity.match >= HIGH_MATCH,
+  ).length;
 
   function handleSaveToggle(id: number, event: React.MouseEvent) {
     event.preventDefault();

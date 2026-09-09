@@ -7,7 +7,30 @@ type ScorableTor = {
   summary: string;
   tags: string[];
   budget: string;
+  /**
+   * What a model read out of the announcement document. A title says "จ้างพัฒนา
+   * ระบบ"; the document says which technologies and qualifications it actually
+   * calls for, which is what decides whether a company fits.
+   */
+  extraction?: {
+    scope?: string | null;
+    qualifications?: string[];
+    deliverables?: string[];
+  } | null;
 };
+
+/** Everything about the work the wording can be read from. */
+function torText(tor: ScorableTor): string {
+  const extracted = tor.extraction;
+  return [
+    tor.title,
+    tor.summary,
+    tor.tags.join(" "),
+    extracted?.scope ?? "",
+    extracted?.qualifications?.join(" ") ?? "",
+    extracted?.deliverables?.join(" ") ?? "",
+  ].join(" ");
+}
 
 const SKILL_LABELS: Record<string, string> = {
   web: "เว็บแอปพลิเคชัน",
@@ -46,7 +69,7 @@ export function budgetOf(budget: string): number | null {
  * same, and every point is traceable to a rule a person can argue with.
  */
 export function scoreMatch(tor: ScorableTor, company: MatchCandidate): MatchResult {
-  const needed = skillsOf(`${tor.title} ${tor.summary} ${tor.tags.join(" ")}`);
+  const needed = skillsOf(torText(tor));
   const offered = skillsOf(company.specialty);
 
   const matched = [...needed].filter((skill) => offered.has(skill));
@@ -63,6 +86,7 @@ export function scoreMatch(tor: ScorableTor, company: MatchCandidate): MatchResu
   // Direct word overlap between the specialty and the title — catches domain
   // wording the skill vocabulary doesn't cover yet.
   const wordingFit = wordOverlap(company.specialty, tor.title);
+  const readFromDocument = Boolean(tor.extraction?.scope || tor.extraction?.qualifications?.length);
 
   const score = Math.round(
     100 * (WEIGHTS.skills * skillFit + WEIGHTS.size * sizeFit + WEIGHTS.wording * wordingFit),
@@ -76,6 +100,9 @@ export function scoreMatch(tor: ScorableTor, company: MatchCandidate): MatchResu
   }
   if (budget !== null && budget <= ceiling) {
     reasons.push(`ขนาดบริษัท (${company.size}) สอดคล้องกับวงเงินโครงการ`);
+  }
+  if (readFromDocument) {
+    reasons.push("ประเมินจากขอบเขตงานที่อ่านได้จากเอกสารประกาศ");
   }
   if (missing.length) {
     gaps.push(`ยังไม่พบประสบการณ์ด้าน: ${missing.map(labelFor).join(", ")}`);

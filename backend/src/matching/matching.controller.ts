@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
+
+import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
 
 import { ScoreMatchDto } from "./dto/score-match.dto";
 import { MatchingService } from "./matching.service";
@@ -6,6 +8,17 @@ import { MatchingService } from "./matching.service";
 @Controller("matching")
 export class MatchingController {
   constructor(private readonly matching: MatchingService) {}
+
+  /**
+   * Announcements ranked for the caller's own company. The identity comes from
+   * the session, never from a parameter, so one account cannot ask for another's
+   * matches.
+   */
+  @Get("opportunities")
+  @UseGuards(SessionGuard)
+  opportunities(@Req() request: AuthenticatedRequest) {
+    return this.matching.rankOpportunitiesFor(request.session.sub);
+  }
 
   /** Companies an agency could expect to bid, ranked. */
   @Get("tor/:id/companies")

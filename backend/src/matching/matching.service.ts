@@ -40,6 +40,36 @@ export class MatchingService {
     return rankCompanies(tor, candidates);
   }
 
+  /**
+   * Every announcement scored for one account's own company, best fit first.
+   * This is the dashboard's whole point: a vendor should not have to read 265
+   * notices to find the handful that suit them.
+   */
+  async rankOpportunitiesFor(userId: string, limit = 100) {
+    if (!ObjectId.isValid(userId)) throw new NotFoundException("ไม่พบบัญชีผู้ใช้");
+
+    const user = await this.db.users.findOne({ _id: new ObjectId(userId) });
+    if (!user?.company) {
+      throw new NotFoundException("บัญชีนี้ยังไม่มีข้อมูลบริษัท");
+    }
+
+    const company: MatchCandidate = {
+      companyName: user.company.companyName,
+      specialty: user.company.specialty,
+      size: user.company.size,
+    };
+
+    const tors = await this.db.tors.find({}).sort({ createdAt: -1 }).toArray();
+
+    return tors
+      .map(({ _id, ...tor }) => {
+        const { score, reasons, gaps } = scoreMatch(tor, company);
+        return { id: _id.toString(), ...tor, match: score, matchReasons: reasons, matchGaps: gaps };
+      })
+      .sort((a, b) => b.match - a.match)
+      .slice(0, limit);
+  }
+
   /** One company against one announcement — the org's own "do I fit this?" view. */
   async scoreForTor(torId: string, company: MatchCandidate): Promise<MatchResult> {
     return scoreMatch(await this.findTor(torId), company);

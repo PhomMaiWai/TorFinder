@@ -1,6 +1,8 @@
 import { Dashboard } from "@/components/dashboard/dashboard";
-import { OPPORTUNITIES } from "@/data/opportunities";
+import { fetchRankedOpportunities } from "@/lib/opportunities-api";
 
-export default function DashboardPage() {
-  return <Dashboard opportunities={OPPORTUNITIES} />;
+export default async function DashboardPage() {
+  const opportunities = await fetchRankedOpportunities();
+
+  return <Dashboard opportunities={opportunities} />;
 }
