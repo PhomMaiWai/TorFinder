@@ -4,7 +4,10 @@
     "description": "A platform to collect, analyze, and match Bangkok Metropolitan Administration software TOR announcements."
   },
   "Common": {
-    "searchPlaceholder": "Search..."
+    "searchPlaceholder": "Search...",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "backToHome": "Back to home"
   },
   "Navbar": {
     "navSearch": "Search TORs",
@@ -215,7 +218,19 @@
     "addressPlaceholder": "House no., street, sub-district, district, province, postal code",
     "submitLabel": "Submit for approval",
     "hasAccountQuestion": "Already have an account?",
-    "loginLinkLabel": "Sign in"
+    "loginLinkLabel": "Sign in",
+    "confirmPasswordLabel": "Confirm password",
+    "errorEmail": "That email address isn't valid",
+    "errorPasswordLength": "Password must be at least 8 characters",
+    "errorPasswordMismatch": "Passwords don't match",
+    "errorPhone": "Phone number must be 10 digits",
+    "errorRequired": "This field is required",
+    "progressLabel": "{done} of {total} required fields completed",
+    "progressComplete": "All set — ready to submit",
+    "taxIdCounter": "{count}/13 digits",
+    "phoneCounter": "{count}/10 digits",
+    "errorTaxIdLength": "Tax ID must be 13 digits",
+    "warnTaxIdChecksum": "This number fails its check digit — worth double-checking (you can still submit)"
   },
   "SignupPendingPage": {
     "defaultCompanyName": "Your company",
@@ -392,7 +407,11 @@
     "taxIdLabel": "Tax Registration Number",
     "contactNameLabel": "Contact Name",
     "phoneLabel": "Phone Number",
-    "addressLabel": "Company Address"
+    "addressLabel": "Company Address",
+    "statusPending": "Pending review",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "reviewFailed": "Could not update the account status"
   },
   "AdminAuditPage": {
     "description": "Complete activity history for the system and administrators",

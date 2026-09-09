@@ -17,6 +17,9 @@ services:
       - MONGODB_URI=mongodb://torr:torr@db:27017/torr?authSource=admin
       - SESSION_SECRET=${SESSION_SECRET:-dev-only-insecure-secret-change-me}
       - FRONTEND_ORIGIN=http://localhost:3000
+      # The image runs with NODE_ENV=production, so demo data is opted into here.
+      # Set SEED_DEMO_DATA=false to start from an empty database.
+      - SEED_DEMO_DATA=${SEED_DEMO_DATA:-true}
     depends_on:
       db:
         condition: service_healthy

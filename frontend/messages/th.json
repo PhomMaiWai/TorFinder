@@ -4,7 +4,10 @@
     "description": "แพลตฟอร์มรวบรวม วิเคราะห์ และจับคู่ประกาศ TOR ด้านซอฟต์แวร์ของกรุงเทพมหานคร"
   },
   "Common": {
-    "searchPlaceholder": "ค้นหา..."
+    "searchPlaceholder": "ค้นหา...",
+    "showPassword": "แสดงรหัสผ่าน",
+    "hidePassword": "ซ่อนรหัสผ่าน",
+    "backToHome": "กลับหน้าหลัก"
   },
   "Navbar": {
     "navSearch": "ค้นหา TOR",
@@ -215,7 +218,19 @@
     "addressPlaceholder": "เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์",
     "submitLabel": "ส่งข้อมูลเพื่อขออนุมัติ",
     "hasAccountQuestion": "มีบัญชีอยู่แล้ว?",
-    "loginLinkLabel": "เข้าสู่ระบบ"
+    "loginLinkLabel": "เข้าสู่ระบบ",
+    "confirmPasswordLabel": "ยืนยันรหัสผ่าน",
+    "errorEmail": "รูปแบบอีเมลไม่ถูกต้อง",
+    "errorPasswordLength": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+    "errorPasswordMismatch": "รหัสผ่านยืนยันไม่ตรงกัน",
+    "errorPhone": "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก",
+    "errorRequired": "กรุณากรอกข้อมูลนี้",
+    "progressLabel": "กรอกแล้ว {done} จาก {total} ช่องที่จำเป็น",
+    "progressComplete": "กรอกข้อมูลครบแล้ว พร้อมส่งคำขอ",
+    "taxIdCounter": "{count}/13 หลัก",
+    "phoneCounter": "{count}/10 หลัก",
+    "errorTaxIdLength": "เลขประจำตัวผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก",
+    "warnTaxIdChecksum": "เลขนี้ไม่ผ่านการตรวจหลักสุดท้าย ลองตรวจทานอีกครั้ง (ส่งได้ตามปกติ)"
   },
   "SignupPendingPage": {
     "defaultCompanyName": "บริษัทของคุณ",
@@ -392,7 +407,11 @@
     "taxIdLabel": "เลขทะเบียนนิติบุคคล",
     "contactNameLabel": "ชื่อผู้ติดต่อ",
     "phoneLabel": "เบอร์โทรศัพท์",
-    "addressLabel": "ที่อยู่บริษัท"
+    "addressLabel": "ที่อยู่บริษัท",
+    "statusPending": "รอตรวจสอบ",
+    "statusApproved": "อนุมัติ",
+    "statusRejected": "ปฏิเสธ",
+    "reviewFailed": "อัปเดตสถานะไม่สำเร็จ"
   },
   "AdminAuditPage": {
     "description": "ประวัติการทำงานของระบบและผู้ดูแลระบบทั้งหมด",

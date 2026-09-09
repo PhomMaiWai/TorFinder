@@ -1,4 +1,4 @@
-import { Building2, ChevronRight, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Building2, ChevronRight, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -21,6 +21,7 @@ function getRoles(t: (key: string) => string) {
 
 export default function LoginChoicePage() {
   const t = useTranslations("LoginPage");
+  const tc = useTranslations("Common");
   const ROLES = getRoles(t);
 
   return (
@@ -59,6 +60,13 @@ export default function LoginChoicePage() {
             </Link>
           ))}
         </div>
+        <Link
+          href="/"
+          className="mt-8 flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+        >
+          <ArrowLeft size={15} />
+          {tc("backToHome")}
+        </Link>
       </div>
     </main>
   );
