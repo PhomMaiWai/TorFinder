@@ -113,7 +113,7 @@ export function SummaryGrid({ children }: { children: React.ReactNode }) {
 /* ── Section ─────────────────────────────────────── */
 
 type SectionProps = {
-  title: string;
+  title?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
 };
