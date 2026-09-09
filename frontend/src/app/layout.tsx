@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import { Geist, Noto_Sans_Thai } from "next/font/google";
+import Script from "next/script";
 
 import "./globals.css";
 
 import { ThemeProvider } from "@/lib/theme-context";
+
+const THEME_INIT_SCRIPT = `
+  try {
+    if (localStorage.getItem("torr:theme") === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+  } catch (e) {}
+`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +42,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${notoSansThai.variable}`}
     >
       <body>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {THEME_INIT_SCRIPT}
+        </Script>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
