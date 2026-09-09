@@ -23,8 +23,15 @@ function toRecord(opportunity: Opportunity): TorRecord {
 
 const MOCK_TORS: TorRecord[] = OPPORTUNITIES.map(toRecord);
 
+/**
+ * The showcase record an id points at, or null for a real one. The prefix is
+ * required: a database id is 24 hex characters, which can legitimately be all
+ * digits, and treating one of those as a showcase record would paste
+ * hand-written scope and feedback onto a genuine announcement.
+ */
 export function mockNumericId(id: string): number | null {
-  const raw = id.startsWith(MOCK_PREFIX) ? id.slice(MOCK_PREFIX.length) : id;
+  if (!id.startsWith(MOCK_PREFIX)) return null;
+  const raw = id.slice(MOCK_PREFIX.length);
   return /^\d+$/.test(raw) ? Number(raw) : null;
 }
 
