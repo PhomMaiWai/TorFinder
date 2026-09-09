@@ -23,6 +23,7 @@ type SignInFormProps = {
   signupHref?: string;
   signupLabel?: string;
   tone?: "accent" | "danger";
+  authEndpoint?: string;
 };
 
 export function SignInForm({
@@ -36,11 +37,14 @@ export function SignInForm({
   signupHref,
   signupLabel,
   tone = "accent",
+  authEndpoint,
 }: SignInFormProps) {
   const router = useRouter();
   const Icon = ICONS[icon];
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const badgeCls =
     tone === "danger" ? "bg-danger-soft text-danger" : "bg-accent-soft text-accent-text";
@@ -49,9 +53,37 @@ export function SignInForm({
       ? "bg-danger hover:bg-danger/90"
       : "bg-accent hover:bg-accent-dark";
 
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    router.push(redirectTo);
+
+    if (!authEndpoint) {
+      router.push(redirectTo);
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch(authEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      router.push(redirectTo);
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -96,11 +128,18 @@ export function SignInForm({
               />
             </label>
 
+            {error && (
+              <p className="rounded-lg bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              className={`flex h-12 w-full items-center justify-center rounded-lg text-base font-semibold text-white transition-colors ${buttonCls}`}
+              disabled={isSubmitting}
+              className={`flex h-12 w-full items-center justify-center rounded-lg text-base font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${buttonCls}`}
             >
-              เข้าสู่ระบบ
+              {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </button>
           </form>
         </div>

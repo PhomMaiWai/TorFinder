@@ -8,6 +8,7 @@ export default function OrganizationLoginPage() {
       title="เข้าสู่ระบบสำหรับหน่วยงาน"
       description="ติดตามและจับคู่โอกาส TOR ที่ตรงกับบริษัทของคุณ"
       redirectTo="/dashboard"
+      authEndpoint="/api/auth/login"
       switchHref="/login/admin"
       switchLabel="เข้าสู่ระบบผู้ดูแลระบบแทน →"
       signupHref="/signup/organization"
