@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export function CtaSection() {
   return (
-    <section className="bg-ink py-20 sm:py-24">
+    <section className="bg-zinc-900 py-20 sm:py-24">
       <div className="mx-auto max-w-2xl px-6 text-center">
         <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
           พร้อมเริ่มต้นแล้วหรือยัง?
