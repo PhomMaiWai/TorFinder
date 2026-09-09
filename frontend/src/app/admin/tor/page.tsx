@@ -1,7 +1,9 @@
 import { ChevronLeft, ChevronRight, Plus, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
+import { DeleteTorButton } from "@/components/admin/delete-tor-button";
 import { AdminPageShell } from "@/components/layout/admin-page";
+import { fetchDeletedTors } from "@/lib/tor-admin-api";
 import { fetchTorList } from "@/lib/tor-api";
 import { stageBadgeCls } from "@/lib/tor-ui";
 
@@ -13,7 +15,15 @@ const TABS = [
   { id: "manual", label: "สร้างเอง" },
   { id: "egp", label: "จาก e-GP" },
   { id: "all", label: "ทั้งหมด" },
+  { id: "deleted", label: "ถังขยะ" },
 ] as const;
+
+const DELETE_LABELS = {
+  delete: "ลบ",
+  confirm: "ยืนยันลบ?",
+  cancel: "ยกเลิก",
+  restore: "กู้คืน",
+};
 
 export default async function AdminTorListPage({
   searchParams,
@@ -22,8 +32,17 @@ export default async function AdminTorListPage({
 }) {
   const { page: pageParam, source: sourceParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
-  const source = sourceParam === "egp" || sourceParam === "all" ? sourceParam : "manual";
-  const tors = await fetchTorList(page, PAGE_SIZE, source === "all" ? undefined : source);
+  const source =
+    sourceParam === "egp" || sourceParam === "all" || sourceParam === "deleted"
+      ? sourceParam
+      : "manual";
+
+  // The trash has its own guarded route; the rest of the tabs are one listing
+  // with a source filter.
+  const isTrash = source === "deleted";
+  const tors = isTrash
+    ? await fetchDeletedTors()
+    : await fetchTorList(page, PAGE_SIZE, source === "all" ? undefined : source);
 
   return (
     <AdminPageShell title="รายการ TOR" description="รายการ TOR ทั้งหมดในระบบ">
@@ -66,7 +85,9 @@ export default async function AdminTorListPage({
 
         <div className="overflow-hidden rounded-xl border border-border bg-white">
           {tors.length === 0 ? (
-            <p className="p-6 text-sm text-ink-muted">ยังไม่มีรายการ TOR</p>
+            <p className="p-6 text-sm text-ink-muted">
+              {isTrash ? "ถังขยะว่าง" : "ยังไม่มีรายการ TOR"}
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -92,9 +113,19 @@ export default async function AdminTorListPage({
                     </td>
                     <td className="px-5 py-3 text-ink-muted">{tor.deadline}</td>
                     <td className="px-5 py-3 text-right">
-                      <Link href={`/admin/tor/${tor.id}`} className="font-medium text-accent hover:text-accent-dark">
-                        ดูรายละเอียด
-                      </Link>
+                      <span className="inline-flex items-center gap-4">
+                        <Link
+                          href={`/admin/tor/${tor.id}`}
+                          className="font-medium text-accent hover:text-accent-dark"
+                        >
+                          ดูรายละเอียด
+                        </Link>
+                        <DeleteTorButton
+                          torId={tor.id}
+                          deleted={isTrash}
+                          labels={DELETE_LABELS}
+                        />
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -103,7 +134,7 @@ export default async function AdminTorListPage({
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className={`flex items-center justify-between ${isTrash ? "hidden" : ""}`}>
           <Link
             href={`/admin/tor?source=${source}&page=${Math.max(1, page - 1)}`}
             aria-disabled={page <= 1}
