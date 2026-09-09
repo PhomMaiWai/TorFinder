@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { Collection, MongoClient } from "mongodb";
 
+import { StoredExtraction } from "../ai/ai.types";
 import { hashPassword } from "../common/password";
 import { env } from "../config/env";
 import { TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor/tor.constants";
@@ -47,6 +48,12 @@ export type TorDoc = {
   /** Set only on records imported from e-GP; absent on admin-entered ones. */
   sourceRef?: string;
   sourceUrl?: string;
+  /**
+   * What a model read out of the announcement document. Kept in its own field,
+   * never merged into the ones above: those are what an agency published, this
+   * is inferred, and the difference has to survive all the way to the reader.
+   */
+  extraction?: StoredExtraction;
 };
 
 @Injectable()

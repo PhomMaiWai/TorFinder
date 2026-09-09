@@ -26,6 +26,10 @@ services:
 
   db:
     image: mongo:7
+    # Exposed so the app can also be run straight from the shell (npm run dev)
+    # with only the database in Docker.
+    ports:
+      - "27017:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=torr
       - MONGO_INITDB_ROOT_PASSWORD=torr

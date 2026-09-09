@@ -6,7 +6,9 @@ import { AccountsModule } from "./accounts/accounts.module";
 import { AuthModule } from "./auth/auth.module";
 import { env } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
+import { AiModule } from "./ai/ai.module";
 import { EgpModule } from "./egp/egp.module";
+import { MatchingModule } from "./matching/matching.module";
 import { HealthController } from "./health.controller";
 import { TorModule } from "./tor/tor.module";
 
@@ -19,7 +21,9 @@ import { TorModule } from "./tor/tor.module";
     AuthModule,
     AccountsModule,
     TorModule,
+    AiModule,
     EgpModule,
+    MatchingModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

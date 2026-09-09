@@ -1,3 +1,11 @@
+// Local runs read backend/.env; in Docker the values come from the service's
+// `environment:` instead and there is no file to load.
+try {
+  process.loadEnvFile();
+} catch {
+  // No .env — real environment variables (or the dev defaults below) apply.
+}
+
 const isProduction = process.env.NODE_ENV === "production";
 
 // Fails fast in production if a real secret/connection string was never set,
@@ -56,6 +64,17 @@ export const env = {
     // Login is brute-forceable, so it gets its own tighter budget.
     authTtlMs: optionalNumber("AUTH_THROTTLE_TTL_MS", 60_000),
     authLimit: optionalNumber("AUTH_THROTTLE_LIMIT", 5),
+  },
+  /**
+   * Vertex AI. Credentials are never configured here — the SDK reads
+   * Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS, or the
+   * host's service account). An empty project id leaves extraction switched
+   * off, so the app runs fine without GCP.
+   */
+  ai: {
+    projectId: process.env.VERTEX_PROJECT_ID ?? "",
+    location: process.env.VERTEX_LOCATION ?? "asia-southeast1",
+    model: process.env.VERTEX_MODEL ?? "gemini-2.5-flash",
   },
   egp: {
     feedUrl:
