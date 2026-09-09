@@ -1,6 +1,7 @@
 "use client";
 
 import { Bookmark, Building2, Clock, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -22,31 +23,32 @@ function SavedList({
   showHeader?: boolean;
 }) {
   const { savedIds, toggleSaved } = useSavedTors(scope);
-  const savedTors = tors.filter((t) => savedIds.includes(t.id));
+  const t = useTranslations("SavedPage");
+  const savedTors = tors.filter((tor) => savedIds.includes(tor.id));
 
   return (
     <>
       {showHeader && (
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
-            รายการที่บันทึกไว้
+            {t("savedListTitle")}
           </h1>
-          <p className="mt-2 text-[15px] text-zinc-500">TOR ที่คุณบันทึกไว้เพื่อติดตามภายหลัง</p>
+          <p className="mt-2 text-[15px] text-zinc-500">{t("savedListDescription")}</p>
         </div>
       )}
 
       {savedTors.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-transparent py-24 text-center">
           <Bookmark size={32} className="mx-auto mb-4 text-zinc-300" />
-          <h3 className="text-base font-semibold text-zinc-900">ยังไม่มีรายการที่บันทึกไว้</h3>
+          <h3 className="text-base font-semibold text-zinc-900">{t("emptyTitle")}</h3>
           <p className="mt-1 text-[15px] text-zinc-500">
-            กดไอคอนบันทึกที่การ์ด TOR ในหน้าค้นหาเพื่อบันทึกไว้ที่นี่
+            {t("emptyDescription")}
           </p>
           <Link
             href="/public"
             className="mt-4 inline-block rounded-lg bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            ไปหน้าค้นหา TOR
+            {t("goToSearchCta")}
           </Link>
         </div>
       ) : (
@@ -69,7 +71,7 @@ function SavedList({
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Clock size={15} className="text-zinc-400" />
-                    {isKnown(tor.deadline) ? `เหลือ ${tor.daysLeft} วัน` : "ไม่ระบุวันปิดรับ"}
+                    {isKnown(tor.deadline) ? t("daysLeft", { days: tor.daysLeft }) : t("deadlineUnknown")}
                   </span>
                   <span className="font-semibold text-zinc-900">{tor.budget}</span>
                 </div>
@@ -80,11 +82,11 @@ function SavedList({
                   href={`/tor/${tor.id}`}
                   className="rounded-lg bg-zinc-900 px-4 py-2 text-[13px] font-medium text-white hover:bg-zinc-800"
                 >
-                  ดูรายละเอียด
+                  {t("viewDetailsCta")}
                 </Link>
                 <button
                   onClick={() => toggleSaved(tor.id)}
-                  aria-label="เอาออกจากรายการที่บันทึก"
+                  aria-label={t("removeAriaLabel")}
                   className="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-danger"
                 >
                   <X size={16} />
@@ -100,12 +102,13 @@ function SavedList({
 
 export function SavedContent({ tors }: { tors: TorRecord[] }) {
   const params = useSearchParams();
+  const t = useTranslations("SavedPage");
   const scope: SavedTorsScope = params.get("scope") === "org" ? "org" : "public";
 
   if (scope === "org") {
     return (
       <AppShell>
-        <PageHeader title="รายการที่บันทึก" description="TOR ที่คุณบันทึกไว้เพื่อติดตามภายหลัง" />
+        <PageHeader title={t("orgPageTitle")} description={t("savedListDescription")} />
         <PageBody>
           <SavedList tors={tors} scope="org" showHeader={false} />
         </PageBody>

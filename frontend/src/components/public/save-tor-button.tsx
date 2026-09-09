@@ -4,7 +4,15 @@ import { Bookmark } from "lucide-react";
 
 import { useSavedTors } from "@/lib/use-saved-tors";
 
-export function SaveTorButton({ torId }: { torId: string }) {
+export function SaveTorButton({
+  torId,
+  saveLabel,
+  savedLabel,
+}: {
+  torId: string;
+  saveLabel: string;
+  savedLabel: string;
+}) {
   const { savedIds, toggleSaved } = useSavedTors();
   const isSaved = savedIds.includes(torId);
 
@@ -18,7 +26,7 @@ export function SaveTorButton({ torId }: { torId: string }) {
       }`}
     >
       <Bookmark size={15} fill={isSaved ? "currentColor" : "none"} />
-      <span className="hidden sm:inline">{isSaved ? "บันทึกแล้ว" : "บันทึก"}</span>
+      <span className="hidden sm:inline">{isSaved ? savedLabel : saveLabel}</span>
     </button>
   );
 }

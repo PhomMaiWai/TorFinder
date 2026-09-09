@@ -16,6 +16,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { isKnown, stageBadgeCls } from "@/lib/tor-ui";
@@ -26,11 +27,11 @@ const STAGES = ["เปิดรับฟังความคิดเห็น
 const PER_PAGE = 10;
 
 const BUDGET_RANGES = [
-  { id: "under-5m", label: "ต่ำกว่า 5 ล้านบาท", min: 0, max: 5_000_000 },
-  { id: "5m-10m", label: "5 - 10 ล้านบาท", min: 5_000_000, max: 10_000_000 },
-  { id: "10m-20m", label: "10 - 20 ล้านบาท", min: 10_000_000, max: 20_000_000 },
-  { id: "over-20m", label: "มากกว่า 20 ล้านบาท", min: 20_000_000, max: Infinity },
-];
+  { id: "under-5m", labelKey: "budgetRangeUnder5m", min: 0, max: 5_000_000 },
+  { id: "5m-10m", labelKey: "budgetRange5to10m", min: 5_000_000, max: 10_000_000 },
+  { id: "10m-20m", labelKey: "budgetRange10to20m", min: 10_000_000, max: 20_000_000 },
+  { id: "over-20m", labelKey: "budgetRangeOver20m", min: 20_000_000, max: Infinity },
+] as const;
 
 /** null when the announcement doesn't state a budget, so it can't match a range. */
 function parseBudget(budget: string): number | null {
@@ -112,6 +113,7 @@ function PublicTorCard({
   isSaved: boolean;
   onToggleSave: () => void;
 }) {
+  const t = useTranslations("PublicPage");
   const isFeedbackStage = tor.stage === "เปิดรับฟังความคิดเห็น";
   const hasDeadline = isKnown(tor.deadline);
   const isUrgent = hasDeadline && tor.daysLeft <= 7;
@@ -129,36 +131,36 @@ function PublicTorCard({
             {tor.budgetStatus === "สูงกว่าปกติ" && (
               <span className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700">
                 <TrendingUp size={12} />
-                งบสูงผิดปกติ
+                {t("budgetHighBadge")}
               </span>
             )}
             {tor.budgetStatus === "ต่ำกว่าปกติ" && (
               <span className="flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
                 <TrendingDown size={12} />
-                งบต่ำผิดปกติ
+                {t("budgetLowBadge")}
               </span>
             )}
             {tor.budgetStatus === "ปกติ" && (
               <span className="flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700">
                 <CheckCircle2 size={12} />
-                งบปกติ
+                {t("budgetNormalBadge")}
               </span>
             )}
             {tor.hasVendorMismatch && (
               <span className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700">
                 <AlertTriangle size={12} />
-                ผู้ชนะไม่ตรงสเปก
+                {t("vendorMismatchBadge")}
               </span>
             )}
             {tor.isNew && (
               <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
-                ใหม่
+                {t("newBadge")}
               </span>
             )}
             {isUrgent && (
               <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
                 <div className="size-1.5 animate-pulse rounded-full bg-red-500" />
-                ใกล้หมดเขต
+                {t("urgentBadge")}
               </span>
             )}
           </div>
@@ -174,7 +176,7 @@ function PublicTorCard({
               className={`flex items-center gap-1.5 ${isUrgent ? "font-medium text-red-600" : ""}`}
             >
               <Clock size={15} className={isUrgent ? "text-red-500" : "text-zinc-400"} />
-              {hasDeadline ? `เหลือ ${tor.daysLeft} วัน` : "ไม่ระบุวันปิดรับ"}
+              {hasDeadline ? t("daysLeftLabel", { days: tor.daysLeft }) : t("deadlineUnknown")}
             </span>
           </div>
 
@@ -195,12 +197,12 @@ function PublicTorCard({
         <div className="flex shrink-0 flex-col items-start justify-between border-t border-zinc-100 pt-5 sm:w-[220px] sm:items-end sm:border-none sm:pl-6 sm:pt-0">
           <div className="mb-4 flex w-full items-start justify-between gap-3 sm:mb-0 sm:flex-col sm:items-end">
             <div className="sm:text-right">
-              <div className="mb-1 text-xs font-medium text-zinc-500">งบประมาณโครงการ</div>
+              <div className="mb-1 text-xs font-medium text-zinc-500">{t("budgetLabel")}</div>
               <div className="text-[17px] font-bold text-zinc-900">{tor.budget}</div>
             </div>
             <button
               onClick={onToggleSave}
-              aria-label={isSaved ? "เอาออกจากรายการที่บันทึก" : "บันทึก"}
+              aria-label={isSaved ? t("unsaveAriaLabel") : t("saveAriaLabel")}
               className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors sm:mt-1 ${
                 isSaved
                   ? "bg-accent-soft text-accent"
@@ -218,14 +220,14 @@ function PublicTorCard({
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-100 py-2 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
               >
                 <MessageSquare size={14} />
-                {isFeedbackOpen ? "ปิดกล่องข้อความ" : "แสดงความคิดเห็น"}
+                {isFeedbackOpen ? t("closeFeedbackButton") : t("openFeedbackButton")}
               </button>
             )}
             <Link
               href={`/tor/${tor.id}`}
               className="flex w-full items-center justify-center rounded-lg bg-zinc-900 py-2 text-[13px] font-medium text-white transition-colors hover:bg-zinc-800"
             >
-              ดูรายละเอียด
+              {t("viewDetails")}
             </Link>
             {/* e-GP occasionally publishes an announcement with an empty link, so
                 only offer the document when there really is one to open. */}
@@ -237,7 +239,7 @@ function PublicTorCard({
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-200 py-2 text-[13px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
               >
                 <ExternalLink size={14} />
-                เอกสารประกาศ
+                {t("announcementDocument")}
               </a>
             )}
           </div>
@@ -247,31 +249,31 @@ function PublicTorCard({
       {isFeedbackOpen && (
         <div className="border-t border-zinc-100 bg-zinc-50/50 p-5 sm:p-6">
           <label className="mb-2 block text-sm font-semibold text-zinc-900">
-            ร่วมแสดงความคิดเห็น (Draft TOR)
+            {t("feedbackFormLabel")}
           </label>
           <textarea
             className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 shadow-sm outline-none placeholder:text-zinc-400 focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
             rows={3}
             value={feedbackText}
             onChange={(e) => onFeedbackChange(e.target.value)}
-            placeholder="ระบุข้อเสนอแนะ ข้อกังวล หรือความคิดเห็น เพื่อให้โครงการเกิดความโปร่งใสและเป็นธรรมที่สุด..."
+            placeholder={t("feedbackPlaceholder")}
           />
           <div className="mt-3 flex items-center justify-between">
             <p className="text-[11px] text-zinc-500">
-              * ความคิดเห็นของคุณจะถูกตรวจสอบก่อนแสดงผลต่อสาธารณะ
+              {t("feedbackDisclaimer")}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={onToggleFeedback}
                 className="rounded-lg px-4 py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
               >
-                ยกเลิก
+                {t("cancelButton")}
               </button>
               <button
                 onClick={onSubmitFeedback}
                 className="rounded-lg bg-accent px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-accent-dark"
               >
-                ส่งความเห็น
+                {t("submitFeedbackButton")}
               </button>
             </div>
           </div>
@@ -293,6 +295,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   const [feedbackText, setFeedbackText] = useState("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const { savedIds, toggleSaved } = useSavedTors();
+  const t = useTranslations("PublicPage");
 
   // Filter options come from what was actually announced, not a fixed list.
   const agencies = useMemo(
@@ -365,13 +368,15 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   return (
     <div className="flex flex-col items-start gap-8 lg:flex-row">
       <div className="flex w-full items-center justify-between lg:hidden">
-        <span className="text-sm font-semibold text-zinc-800">พบ {filtered.length} รายการ</span>
+        <span className="text-sm font-semibold text-zinc-800">
+          {t("resultsCountMobile", { count: filtered.length })}
+        </span>
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
           className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm"
         >
           <SlidersHorizontal size={16} />
-          ตัวกรอง
+          {t("filtersButton")}
         </button>
       </div>
 
@@ -383,20 +388,20 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-base font-bold text-zinc-900">
-              <SlidersHorizontal size={18} /> ตัวกรอง
+              <SlidersHorizontal size={18} /> {t("filtersButton")}
             </h2>
             {hasActiveFilters && (
               <button
                 onClick={clearAllFilters}
                 className="text-[13px] font-medium text-accent hover:text-accent-dark"
               >
-                ล้างทั้งหมด
+                {t("clearAllFilters")}
               </button>
             )}
           </div>
 
           <div className="mb-7">
-            <label className="mb-3 block text-sm font-bold text-zinc-900">ค้นหา</label>
+            <label className="mb-3 block text-sm font-bold text-zinc-900">{t("searchLabel")}</label>
             <div className="relative">
               <Search
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
@@ -406,7 +411,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="คำค้นหา, เลขที่โครงการ..."
+                placeholder={t("searchInputPlaceholder")}
                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2.5 pl-10 pr-4 text-[13px] text-zinc-900 outline-none transition-colors focus:border-accent/40 focus:bg-white focus:ring-2 focus:ring-accent/20"
               />
             </div>
@@ -415,7 +420,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
           <div className="mb-7 h-px w-full bg-zinc-100" />
 
           <CheckboxFilter
-            title="สถานะโครงการ"
+            title={t("filterStageTitle")}
             options={STAGES}
             selected={selectedStages}
             onChange={setSelectedStages}
@@ -424,12 +429,12 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
           <div className="mb-7 h-px w-full bg-zinc-100" />
 
           <CheckboxFilter
-            title="งบประมาณ"
-            options={BUDGET_RANGES.map((r) => r.label)}
-            selected={selectedBudgets.map((id) => BUDGET_RANGES.find((r) => r.id === id)!.label)}
+            title={t("filterBudgetTitle")}
+            options={BUDGET_RANGES.map((r) => t(r.labelKey))}
+            selected={selectedBudgets.map((id) => t(BUDGET_RANGES.find((r) => r.id === id)!.labelKey))}
             onChange={(labels) =>
               setSelectedBudgets(
-                BUDGET_RANGES.filter((r) => labels.includes(r.label)).map((r) => r.id),
+                BUDGET_RANGES.filter((r) => labels.includes(t(r.labelKey))).map((r) => r.id),
               )
             }
           />
@@ -437,7 +442,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
           <div className="mb-7 h-px w-full bg-zinc-100" />
 
           <CheckboxFilter
-            title="หน่วยงาน"
+            title={t("filterAgencyTitle")}
             options={agencies}
             selected={selectedAgencies}
             onChange={setSelectedAgencies}
@@ -446,7 +451,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
           <div className="mb-7 h-px w-full bg-zinc-100" />
 
           <CheckboxFilter
-            title="วิธีจัดหา / หมวดหมู่"
+            title={t("filterMethodTitle")}
             options={tags}
             selected={selectedTags}
             onChange={setSelectedTags}
@@ -457,29 +462,32 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
       <div className="min-w-0 flex-1">
         <div className="mb-5 hidden items-center justify-between lg:flex">
           <h2 className="text-[15px] font-semibold text-zinc-800">
-            พบ <span className="text-zinc-950">{filtered.length}</span> รายการ
+            {t.rich("resultsCount", {
+              count: filtered.length,
+              strong: (chunks) => <span className="text-zinc-950">{chunks}</span>,
+            })}
           </h2>
         </div>
 
         {tors.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-300 py-24 text-center">
             <AlertTriangle size={32} className="mx-auto mb-4 text-zinc-300" />
-            <h3 className="text-base font-semibold text-zinc-900">ยังไม่มีประกาศในระบบ</h3>
+            <h3 className="text-base font-semibold text-zinc-900">{t("noRecordsTitle")}</h3>
             <p className="mt-1 text-[15px] text-zinc-500">
-              ผู้ดูแลระบบต้องดึงประกาศจาก e-GP เข้ามาก่อน
+              {t("noRecordsDescription")}
             </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-300 py-24 text-center">
             <Search size={32} className="mx-auto mb-4 text-zinc-300" />
-            <h3 className="text-base font-semibold text-zinc-900">ไม่พบโครงการที่ค้นหา</h3>
-            <p className="mt-1 text-[15px] text-zinc-500">ลองปรับเปลี่ยนคำค้นหา หรือเอาตัวกรองออก</p>
+            <h3 className="text-base font-semibold text-zinc-900">{t("emptyStateTitle")}</h3>
+            <p className="mt-1 text-[15px] text-zinc-500">{t("emptyStateDescription")}</p>
             {hasActiveFilters && (
               <button
                 onClick={clearAllFilters}
                 className="mt-4 rounded-lg bg-zinc-100 px-5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200"
               >
-                ล้างตัวกรองทั้งหมด
+                {t("clearAllFiltersButton")}
               </button>
             )}
           </div>
@@ -507,24 +515,24 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
             ))}
 
             {pageCount > 1 && (
-              <nav className="flex items-center justify-between pt-2" aria-label="เปลี่ยนหน้า">
+              <nav className="flex items-center justify-between pt-2" aria-label={t("pageIndicator", { page, total: pageCount })}>
                 <button
                   onClick={() => setPage((p) => p - 1)}
                   disabled={page === 1}
                   className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <ChevronLeft size={16} />
-                  ก่อนหน้า
+                  {t("prevPage")}
                 </button>
                 <span className="text-sm text-zinc-500">
-                  หน้า <span className="font-semibold text-zinc-900">{page}</span> จาก {pageCount}
+                  {t("pageIndicator", { page, total: pageCount })}
                 </span>
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page === pageCount}
                   className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  ถัดไป
+                  {t("nextPage")}
                   <ChevronRight size={16} />
                 </button>
               </nav>

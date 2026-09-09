@@ -57,7 +57,9 @@
     "searchPlaceholder": "Search...",
     "backToHome": "Back to home",
     "adminRoleLabel": "Administrator",
-    "openMenuAriaLabel": "Open menu"
+    "openMenuAriaLabel": "Open menu",
+    "navTorList": "TOR list",
+    "navCreateTor": "Add TOR"
   },
   "Dashboard": {
     "newBadge": "New",
@@ -230,7 +232,8 @@
     "goToSearchCta": "Go to TOR search",
     "daysLeft": "{days} days left",
     "viewDetailsCta": "View details",
-    "removeAriaLabel": "Remove from saved list"
+    "removeAriaLabel": "Remove from saved list",
+    "deadlineUnknown": "No closing date given"
   },
   "ProfilePage": {
     "pageTitle": "Company Profile",
@@ -297,7 +300,15 @@
     "feedbackPlaceholder": "Enter suggestions, concerns, or comments to make this project as transparent and fair as possible...",
     "feedbackDisclaimer": "* Your comment will be reviewed before being shown publicly",
     "cancelButton": "Cancel",
-    "submitFeedbackButton": "Submit comment"
+    "submitFeedbackButton": "Submit comment",
+    "deadlineUnknown": "No closing date given",
+    "announcementDocument": "Announcement document",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageIndicator": "Page {page} of {total}",
+    "noRecordsTitle": "No announcements yet",
+    "noRecordsDescription": "An administrator needs to add TOR records first.",
+    "filterMethodTitle": "Procurement method / category"
   },
   "TorDetailPage": {
     "backToSearch": "Back to TOR search",
@@ -329,7 +340,14 @@
     "budgetHighBadge": "Unusually high budget",
     "budgetLowBadge": "Unusually low budget",
     "budgetNormalBadge": "Normal budget",
-    "publishedInfo": "Published on {date} · Source: e-GP"
+    "publishedInfo": "Published on {date} · Source: e-GP",
+    "announcementDetail": "Announcement detail",
+    "importedFromEgp": "From the e-GP system",
+    "unknownValue": "Not specified",
+    "publishedAtLabel": "Published on",
+    "savedButton": "Saved",
+    "fullDocumentNote": "Scope of work, bidder qualifications and submission dates are in the full announcement document.",
+    "openDocument": "Open document"
   },
   "OwnerPage": {
     "stagePillAll": "All",
@@ -359,7 +377,9 @@
     "scrapeHistoryHeading": "Scrape History (Last 7 Days)",
     "newItemsCount": "+{count} new items",
     "noNewItems": "No new items",
-    "classificationHeading": "Classification Results (Vertex AI)"
+    "classificationHeading": "Classification Results (Vertex AI)",
+    "torListCta": "TOR list",
+    "createTorCta": "Add TOR"
   },
   "AdminAccountsPage": {
     "title": "Pending Accounts",

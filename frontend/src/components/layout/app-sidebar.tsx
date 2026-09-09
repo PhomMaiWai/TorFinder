@@ -18,6 +18,7 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

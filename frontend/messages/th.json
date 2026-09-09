@@ -57,7 +57,9 @@
     "searchPlaceholder": "ค้นหา...",
     "backToHome": "กลับหน้าหลัก",
     "adminRoleLabel": "ผู้ดูแลระบบ",
-    "openMenuAriaLabel": "เปิดเมนู"
+    "openMenuAriaLabel": "เปิดเมนู",
+    "navTorList": "รายการ TOR",
+    "navCreateTor": "เพิ่มรายการ TOR"
   },
   "Dashboard": {
     "newBadge": "ใหม่",
@@ -230,7 +232,8 @@
     "goToSearchCta": "ไปหน้าค้นหา TOR",
     "daysLeft": "เหลือ {days} วัน",
     "viewDetailsCta": "ดูรายละเอียด",
-    "removeAriaLabel": "เอาออกจากรายการที่บันทึก"
+    "removeAriaLabel": "เอาออกจากรายการที่บันทึก",
+    "deadlineUnknown": "ไม่ระบุวันปิดรับ"
   },
   "ProfilePage": {
     "pageTitle": "โปรไฟล์บริษัท",
@@ -297,7 +300,15 @@
     "feedbackPlaceholder": "ระบุข้อเสนอแนะ ข้อกังวล หรือความคิดเห็น เพื่อให้โครงการเกิดความโปร่งใสและเป็นธรรมที่สุด...",
     "feedbackDisclaimer": "* ความคิดเห็นของคุณจะถูกตรวจสอบก่อนแสดงผลต่อสาธารณะ",
     "cancelButton": "ยกเลิก",
-    "submitFeedbackButton": "ส่งความเห็น"
+    "submitFeedbackButton": "ส่งความเห็น",
+    "deadlineUnknown": "ไม่ระบุวันปิดรับ",
+    "announcementDocument": "เอกสารประกาศ",
+    "prevPage": "ก่อนหน้า",
+    "nextPage": "ถัดไป",
+    "pageIndicator": "หน้า {page} จาก {total}",
+    "noRecordsTitle": "ยังไม่มีประกาศในระบบ",
+    "noRecordsDescription": "ผู้ดูแลระบบต้องเพิ่มรายการ TOR เข้ามาก่อน",
+    "filterMethodTitle": "วิธีจัดหา / หมวดหมู่"
   },
   "TorDetailPage": {
     "backToSearch": "กลับไปค้นหา TOR",
@@ -329,7 +340,14 @@
     "budgetHighBadge": "งบสูงผิดปกติ",
     "budgetLowBadge": "งบต่ำผิดปกติ",
     "budgetNormalBadge": "งบปกติ",
-    "publishedInfo": "ประกาศเมื่อ {date} · แหล่งข้อมูล e-GP"
+    "publishedInfo": "ประกาศเมื่อ {date} · แหล่งข้อมูล e-GP",
+    "announcementDetail": "รายละเอียดประกาศ",
+    "importedFromEgp": "ข้อมูลจากระบบ e-GP",
+    "unknownValue": "ไม่ระบุ",
+    "publishedAtLabel": "วันที่ประกาศ",
+    "savedButton": "บันทึกแล้ว",
+    "fullDocumentNote": "ขอบเขตงาน คุณสมบัติผู้เสนอ และกำหนดการยื่นข้อเสนอ อยู่ในเอกสารประกาศฉบับเต็ม",
+    "openDocument": "เปิดเอกสาร"
   },
   "OwnerPage": {
     "stagePillAll": "ทั้งหมด",
@@ -359,7 +377,9 @@
     "scrapeHistoryHeading": "ประวัติการดึงข้อมูล (7 วันล่าสุด)",
     "newItemsCount": "+{count} รายการใหม่",
     "noNewItems": "ไม่มีรายการใหม่",
-    "classificationHeading": "ผลการจำแนกประเภท (Vertex AI)"
+    "classificationHeading": "ผลการจำแนกประเภท (Vertex AI)",
+    "torListCta": "รายการ TOR",
+    "createTorCta": "เพิ่มรายการ TOR"
   },
   "AdminAccountsPage": {
     "title": "บัญชีรออนุมัติ",
