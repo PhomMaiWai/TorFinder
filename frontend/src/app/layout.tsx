@@ -51,6 +51,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       className={`${geistSans.variable} ${notoSansThai.variable}`}
+      suppressHydrationWarning
     >
       <body>
         <Script id="theme-init" strategy="beforeInteractive">
