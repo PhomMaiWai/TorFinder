@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText, RotateCcw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -32,16 +32,21 @@ export default function OwnerPage() {
   const [stage, setStage] = useState("ทั้งหมด");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [tabMap, setTabMap] = useState<Record<number, TabKey>>({});
+  // TODO: swap for a real DELETE /api/tor/:id call once the team settles on a backend architecture (see branch fork note).
+  const [deletedIds, setDeletedIds] = useState<Set<number>>(new Set());
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
 
   const totalMatched = Object.values(MATCHED_COMPANIES).reduce((s, c) => s + c.length, 0);
   const pendingFeedback = FEEDBACK_ENTRIES.filter((f) => f.status === "รอตรวจสอบ");
 
   const q = search.trim().toLowerCase();
   const filtered = OPPORTUNITIES.filter((opp) => {
+    if (deletedIds.has(opp.id)) return false;
     const matchSearch = !q || `${opp.title} ${opp.agency}`.toLowerCase().includes(q);
     const matchStage = stage === "ทั้งหมด" || opp.stage === stage;
     return matchSearch && matchStage;
   });
+  const deletedOpportunities = OPPORTUNITIES.filter((opp) => deletedIds.has(opp.id));
 
   function toggleExpand(id: number) {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -50,6 +55,20 @@ export default function OwnerPage() {
 
   function setTab(id: number, tab: TabKey) {
     setTabMap((prev) => ({ ...prev, [id]: tab }));
+  }
+
+  function deleteOpportunity(id: number) {
+    setDeletedIds((prev) => new Set(prev).add(id));
+    setConfirmingDeleteId(null);
+    if (expandedId === id) setExpandedId(null);
+  }
+
+  function restoreOpportunity(id: number) {
+    setDeletedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   }
 
   return (
@@ -134,13 +153,48 @@ export default function OwnerPage() {
                         </div>
                       }
                       actions={
-                        <Link
-                          href={`/tor/${opp.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
-                        >
-                          ดู TOR
-                        </Link>
+                        <>
+                          <Link
+                            href={`/tor/${opp.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                          >
+                            ดู TOR
+                          </Link>
+                          {confirmingDeleteId === opp.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteOpportunity(opp.id);
+                                }}
+                                className="flex h-8 items-center rounded-lg bg-danger px-2.5 text-xs font-semibold text-white hover:bg-danger/90"
+                              >
+                                ยืนยันลบ?
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmingDeleteId(null);
+                                }}
+                                className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                              >
+                                ยกเลิก
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirmingDeleteId(opp.id);
+                              }}
+                              className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-danger-soft hover:text-danger"
+                            >
+                              <Trash2 size={13} />
+                              ลบ
+                            </button>
+                          )}
+                        </>
                       }
                       expandedContent={
                         isExpanded ? (
@@ -227,6 +281,34 @@ export default function OwnerPage() {
             )}
           </div>
         </Section>
+
+        {deletedOpportunities.length > 0 && (
+          <Section title={`ถังขยะ (${deletedOpportunities.length})`}>
+            <ItemList>
+              {deletedOpportunities.map((opp) => (
+                <ItemRow
+                  key={opp.id}
+                  icon={<FileText size={15} className="text-zinc-400" />}
+                  iconBg="bg-zinc-100"
+                  title={opp.title}
+                  subtitle={opp.agency}
+                  actions={
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        restoreOpportunity(opp.id);
+                      }}
+                      className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                    >
+                      <RotateCcw size={13} />
+                      กู้คืน
+                    </button>
+                  }
+                />
+              ))}
+            </ItemList>
+          </Section>
+        )}
       </PageBody>
     </AppShell>
   );
