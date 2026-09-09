@@ -20,4 +20,14 @@ export type TorRecord = {
   /** Present only on records imported from the e-GP announcement feed. */
   sourceRef?: string;
   sourceUrl?: string;
+  /** e-GP's project number, printed on every announcement of the project. */
+  projectNumber?: string;
+  budgetAmount?: number;
+  /** Every announcement e-GP holds for the project, newest first. */
+  documents?: { label: string; publishedAt: string | null; url: string }[];
+  /** Structured procurement facts e-GP has on file — real, not inferred. */
+  procurementMethod?: string;
+  procurementType?: string;
+  goodsCategory?: string;
+  contractStatus?: string;
 };
