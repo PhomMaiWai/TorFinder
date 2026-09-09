@@ -20,7 +20,7 @@ import type { ScoredTor } from "@/types/tor";
 type DashboardProps = { opportunities: ScoredTor[] };
 
 const DEFAULT_FILTER: OpportunityFilter = "ทั้งหมด";
-const INITIAL_SAVED = [3];
+const INITIAL_SAVED: string[] = [];
 
 /**
  * What counts as a strong match. Scoring is deterministic and conservative — a
@@ -39,7 +39,7 @@ function OpportunityCard({
 }: {
   opportunity: ScoredTor;
   isSaved: boolean;
-  onSaveToggle: (id: number, event: React.MouseEvent) => void;
+  onSaveToggle: (id: string, event: React.MouseEvent) => void;
 }) {
   const t = useTranslations("Dashboard");
   const isUrgent = opportunity.daysLeft <= 7;
@@ -271,7 +271,7 @@ export function Dashboard({ opportunities }: DashboardProps) {
   const t = useTranslations("Dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<OpportunityFilter>(DEFAULT_FILTER);
-  const [savedIds, setSavedIds] = useState<number[]>(INITIAL_SAVED);
+  const [savedIds, setSavedIds] = useState<string[]>(INITIAL_SAVED);
   const [toastMessage, setToastMessage] = useState("");
 
   const filtered = useMemo(() => {
@@ -296,7 +296,7 @@ export function Dashboard({ opportunities }: DashboardProps) {
     (opportunity) => opportunity.match >= HIGH_MATCH,
   ).length;
 
-  function handleSaveToggle(id: number, event: React.MouseEvent) {
+  function handleSaveToggle(id: string, event: React.MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
 

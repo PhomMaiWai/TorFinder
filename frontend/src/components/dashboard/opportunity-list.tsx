@@ -10,10 +10,10 @@ type OpportunityListProps = {
   opportunities: ScoredTor[];
   searchQuery: string;
   activeFilter: OpportunityFilter;
-  savedIds: number[];
+  savedIds: string[];
   onSearchChange: (query: string) => void;
   onFilterChange: (filter: OpportunityFilter) => void;
-  onSaveToggle: (id: number) => void;
+  onSaveToggle: (id: string) => void;
   onClearFilters: () => void;
 };
 

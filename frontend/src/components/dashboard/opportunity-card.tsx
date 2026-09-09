@@ -7,7 +7,7 @@ import type { ScoredTor } from "@/types/tor";
 type OpportunityCardProps = {
   opportunity: ScoredTor;
   isSaved: boolean;
-  onSaveToggle: (id: number) => void;
+  onSaveToggle: (id: string) => void;
 };
 
 function MatchBadge({ score }: { score: number }) {
