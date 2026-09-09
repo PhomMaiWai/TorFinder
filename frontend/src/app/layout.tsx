@@ -1,9 +1,24 @@
 import type { Metadata } from "next";
 import { Geist, Noto_Sans_Thai } from "next/font/google";
+import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 
 import "./globals.css";
+
+import { ThemeProvider } from "@/lib/theme-context";
+
+/**
+ * Applied before React hydrates, so a viewer who chose dark mode never sees a
+ * flash of the light theme while the bundle loads.
+ */
+const THEME_INIT_SCRIPT = `
+  try {
+    if (localStorage.getItem("torr:theme") === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+  } catch (e) {}
+`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,8 +53,11 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${notoSansThai.variable}`}
     >
       <body>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {THEME_INIT_SCRIPT}
+        </Script>
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <ThemeProvider>{children}</ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

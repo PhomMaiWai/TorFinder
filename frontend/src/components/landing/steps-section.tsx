@@ -40,7 +40,7 @@ export function StepsSection() {
           {STEPS.map((step) => (
             <div
               key={step.number}
-              className="rounded-xl border border-border bg-white p-6"
+              className="rounded-xl border border-border bg-surface p-6"
             >
               <p className="mb-4 text-5xl font-black tracking-tighter text-border">
                 {step.number}

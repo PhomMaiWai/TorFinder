@@ -31,30 +31,30 @@ export function PreviewSection() {
   }
 
   return (
-    <section id="preview" className="bg-zinc-50 py-24 sm:py-32">
+    <section id="preview" className="bg-surface-alt py-24 sm:py-32">
       <div className="mx-auto max-w-[1000px] px-6">
         <div className="mb-10 text-center sm:mb-14">
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             {t("heading")}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-[15px] text-zinc-500">
+          <p className="mx-auto mt-4 max-w-2xl text-[15px] text-ink-muted">
             {t("description")}
           </p>
         </div>
 
         {/* Mini Public Search Interface */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm sm:p-3">
+        <div className="rounded-2xl border border-border bg-surface p-2 shadow-sm sm:p-3">
           <div className="flex items-center gap-3 px-3 py-2">
-            <Search size={20} className="shrink-0 text-zinc-400" />
+            <Search size={20} className="shrink-0 text-ink-subtle" />
             <input
-              className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400"
+              className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-subtle"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("searchPlaceholder")}
             />
             <Link
               href="/public"
-              className="hidden h-10 shrink-0 items-center justify-center rounded-lg bg-zinc-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 sm:flex"
+              className="hidden h-10 shrink-0 items-center justify-center rounded-lg bg-ink px-5 text-sm font-semibold text-white transition-colors hover:bg-ink/90 sm:flex"
             >
               {t("searchAll")}
             </Link>
@@ -73,7 +73,7 @@ export function PreviewSection() {
             return (
               <article
                 key={tor.id}
-                className="group flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-300 hover:shadow-[0_4px_20px_rgb(24,24,27/5%)]"
+                className="group flex flex-col justify-between rounded-xl border border-border bg-surface p-5 transition-all hover:border-ink-subtle hover:shadow-[0_4px_20px_rgb(24,24,27/5%)]"
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -95,37 +95,37 @@ export function PreviewSection() {
                   </div>
 
                   <Link href={`/tor/${tor.id}`} className="mt-3 block group-hover:cursor-pointer">
-                    <h3 className="text-[17px] font-semibold leading-tight text-zinc-900 transition-colors group-hover:text-accent">
+                    <h3 className="text-[17px] font-semibold leading-tight text-ink transition-colors group-hover:text-accent">
                       {tor.title}
                     </h3>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-zinc-500">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-ink-muted">
                       <span className="flex items-center gap-1.5">
-                        <Building2 size={15} className="text-zinc-400" />
+                        <Building2 size={15} className="text-ink-subtle" />
                         {tor.agency}
                       </span>
-                      <span className="font-medium text-zinc-700">{tor.budget}</span>
+                      <span className="font-medium text-ink-muted">{tor.budget}</span>
                       <span
                         className={`flex items-center gap-1.5 ${
                           isUrgent ? "font-medium text-red-600" : ""
                         }`}
                       >
-                        <Clock size={15} className={isUrgent ? "text-red-500" : "text-zinc-400"} />
+                        <Clock size={15} className={isUrgent ? "text-red-500" : "text-ink-subtle"} />
                         {t("daysLeft", { count: tor.daysLeft })}
                       </span>
                     </div>
 
-                    <p className="mt-3.5 line-clamp-2 text-sm leading-relaxed text-zinc-500">
+                    <p className="mt-3.5 line-clamp-2 text-sm leading-relaxed text-ink-muted">
                       {tor.summary}
                     </p>
                   </Link>
                 </div>
 
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-zinc-100 pt-5">
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
                   <div className="flex items-center gap-2">
                     {approvedCount > 0 && (
-                      <span className="mr-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                        <MessageSquare size={13} className="text-zinc-400" />
+                      <span className="mr-2 flex items-center gap-1.5 text-xs font-medium text-ink-muted">
+                        <MessageSquare size={13} className="text-ink-subtle" />
                         {approvedCount}
                       </span>
                     )}
@@ -142,14 +142,14 @@ export function PreviewSection() {
                             setFeedbackText("");
                           }
                         }}
-                        className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-3 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
+                        className="flex h-8 items-center gap-1.5 rounded-lg bg-surface-alt px-3 text-xs font-medium text-ink-muted transition-colors hover:bg-border"
                       >
                         {isFeedbackOpen ? t("close") : t("showFeedback")}
                       </button>
                     )}
                     <Link
                       href={`/tor/${tor.id}`}
-                      className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-900 px-3 text-xs font-medium text-white transition-colors hover:bg-zinc-800"
+                      className="flex h-8 items-center gap-1.5 rounded-lg bg-ink px-3 text-xs font-medium text-white transition-colors hover:bg-ink/90"
                     >
                       {t("viewDetails")}
                     </Link>
@@ -157,9 +157,9 @@ export function PreviewSection() {
                 </div>
 
                 {isFeedbackOpen && (
-                  <div className="mt-4 rounded-xl bg-zinc-50 p-4 ring-1 ring-zinc-200/60">
+                  <div className="mt-4 rounded-xl bg-surface-alt p-4 ring-1 ring-border/60">
                     <textarea
-                      className="w-full rounded-lg border border-zinc-200 bg-white p-3 text-sm text-zinc-800 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-accent/20"
+                      className="w-full rounded-lg border border-border bg-surface p-3 text-sm text-ink outline-none placeholder:text-ink-subtle focus:ring-2 focus:ring-accent/20"
                       rows={2}
                       value={feedbackText}
                       onChange={(e) => setFeedbackText(e.target.value)}
@@ -168,7 +168,7 @@ export function PreviewSection() {
                     <div className="mt-2.5 flex justify-end gap-2">
                       <button
                         onClick={() => setFeedbackOpenId(null)}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface-alt hover:text-ink"
                       >
                         {t("cancel")}
                       </button>
@@ -187,15 +187,15 @@ export function PreviewSection() {
         </div>
 
         {items.length === 0 && (
-          <div className="mt-6 rounded-2xl border border-dashed border-zinc-200 bg-white py-16 text-center">
-            <p className="text-[15px] font-medium text-zinc-700">{t("noResults")}</p>
+          <div className="mt-6 rounded-2xl border border-dashed border-border bg-surface py-16 text-center">
+            <p className="text-[15px] font-medium text-ink-muted">{t("noResults")}</p>
           </div>
         )}
 
         <div className="mt-10 text-center">
           <Link
             href="/public"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-6 text-[15px] font-medium text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 hover:text-zinc-900"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-6 text-[15px] font-medium text-ink-muted shadow-sm transition-all hover:bg-surface-alt hover:text-ink"
           >
             {t("viewPublicPortal")}
             <ArrowRight size={16} />
