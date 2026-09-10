@@ -1,21 +1,45 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
+import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
 
 @Injectable()
 export class TorService {
   constructor(private readonly db: DatabaseService) {}
 
   async create(dto: CreateTorDto) {
+    const duplicate = await this.findLikelyDuplicate(dto.title, dto.agency);
+    if (duplicate) {
+      throw new ConflictException(
+        `มีรายการ TOR ที่คล้ายกันอยู่แล้ว: "${duplicate.title}" (${duplicate._id.toString()})`,
+      );
+    }
+
     const doc = { ...dto, match: 0, createdAt: new Date() };
     // insertOne mutates what it is given by adding _id — pass a copy so the
     // response keeps exposing only `id`.
     const { insertedId } = await this.db.tors.insertOne({ ...doc });
     return { id: insertedId.toString(), ...doc };
+  }
+
+  /**
+   * Admin-entered records have no project number to key off, so this is the
+   * best signal available: same-ish title, same-ish agency, against every
+   * live record regardless of which source created it.
+   */
+  private async findLikelyDuplicate(title: string, agency: string) {
+    const candidates = await this.db.tors
+      .find({ deletedAt: { $exists: false } }, { projection: { title: 1, agency: 1 } })
+      .toArray();
+
+    return candidates.find(
+      (candidate) =>
+        isLikelySameAgency(candidate.agency, agency) && isLikelyDuplicateTitle(candidate.title, title),
+    );
   }
 
   async findAll(page = 1, pageSize = 20, source?: TorSource) {
