@@ -269,7 +269,17 @@
     "specialtyFallback": "ความเชี่ยวชาญ",
     "profileCompletenessLabel": "ความสมบูรณ์ของโปรไฟล์",
     "saveButton": "บันทึกโปรไฟล์",
-    "savedConfirmation": "บันทึกแล้ว"
+    "savedConfirmation": "บันทึกแล้ว",
+    "pastExperienceSectionTitle": "ประสบการณ์ที่ผ่านมา",
+    "pastExperienceDescription": "สรุปโครงการที่บริษัทเคยทำ เพื่อช่วยจับคู่กับ TOR ที่คล้ายกัน",
+    "pastExperiencePlaceholder": "เช่น พัฒนาระบบบริการประชาชนให้หน่วยงานราชการจังหวัด ในปี 2568...",
+    "loadingMessage": "กำลังโหลดโปรไฟล์...",
+    "saveErrorMessage": "บันทึกไม่สำเร็จ กรุณาลองใหม่",
+    "companyNameFillInPlaceholder": "ชื่อบริษัท",
+    "taxIdPlaceholder": "เลข 13 หลัก",
+    "fillOnceNotice": "กรอกได้ครั้งเดียว หลังบันทึกแล้วจะแก้ไขไม่ได้อีก",
+    "errorTaxIdLength": "เลขประจำตัวผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก",
+    "warnTaxIdChecksum": "เลขนี้ไม่ผ่านการตรวจหลักสุดท้าย ลองตรวจทานอีกครั้ง (ส่งได้ตามปกติ)"
   },
   "NotificationsPage": {
     "pageTitle": "การแจ้งเตือน",
@@ -500,5 +510,14 @@
     "savedTitle": "บันทึกไว้",
     "noSavedItems": "ยังไม่มีรายการที่บันทึก",
     "savedSummary": "มี <strong>{count} รายการ</strong> ที่กำลังพิจารณาอยู่"
+  },
+  "GoogleCompleteSignupForm": {
+    "badge": "อีกขั้นตอนเดียว",
+    "title": "กรอกข้อมูลบริษัทให้ครบ",
+    "description": "ยืนยันบัญชี Google สำเร็จแล้ว กรุณากรอกข้อมูลบริษัทเพื่อให้ผู้ดูแลระบบตรวจสอบคำขอของคุณ",
+    "verifiedAs": "เข้าสู่ระบบด้วย {email}",
+    "submitLabel": "ส่งข้อมูลเพื่อขออนุมัติ",
+    "submitError": "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่",
+    "cancelLabel": "ยกเลิกและใช้บัญชีอื่น"
   }
 }

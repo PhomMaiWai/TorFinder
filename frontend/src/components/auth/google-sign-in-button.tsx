@@ -27,9 +27,16 @@ type GoogleSignInButtonProps = {
   onSuccess: () => void;
   /** A brand-new (or newly-linked) account that still needs admin approval. */
   onPending: (companyName: string) => void;
+  /** A Google identity we've never seen, with no account to link to — needs a company profile before it can go pending. */
+  onNeedsCompanyInfo: (info: { credential: string; email: string; name: string }) => void;
 };
 
-export function GoogleSignInButton({ onError, onSuccess, onPending }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({
+  onError,
+  onSuccess,
+  onPending,
+  onNeedsCompanyInfo,
+}: GoogleSignInButtonProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
 
   if (!CLIENT_ID) return null;
@@ -49,6 +56,14 @@ export function GoogleSignInButton({ onError, onSuccess, onPending }: GoogleSign
       }
       if (data.status === "pending") {
         onPending(data.companyName ?? "บริษัทของคุณ");
+        return;
+      }
+      if (data.status === "needs-company-info") {
+        onNeedsCompanyInfo({
+          credential: response.credential,
+          email: data.email ?? "",
+          name: data.name ?? "",
+        });
         return;
       }
       onSuccess();

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type SubmitEvent, useState } from "react";
 
+import { GoogleCompleteSignupForm } from "@/components/auth/google-complete-signup-form";
 import { GoogleSignInButton, isGoogleSignInEnabled } from "@/components/auth/google-sign-in-button";
 import { PasswordInput } from "@/components/ui/password-input";
 
@@ -52,6 +53,9 @@ export function SignInForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [googleSignup, setGoogleSignup] = useState<{ credential: string; email: string } | null>(
+    null,
+  );
 
   const badgeCls =
     tone === "danger" ? "bg-danger-soft text-danger" : "bg-accent-soft text-accent-text";
@@ -98,9 +102,18 @@ export function SignInForm({
     router.push(`/signup/pending?name=${encodeURIComponent(companyName)}`);
   }
 
+  function handleGoogleNeedsCompanyInfo(info: { credential: string; email: string }) {
+    setError(null);
+    setGoogleSignup(info);
+  }
+
+  function handleGoogleCompanySubmitted(companyName: string) {
+    router.push(`/signup/pending?name=${encodeURIComponent(companyName)}`);
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface-alt px-6 py-12">
-      <div className="w-full max-w-lg">
+      <div className={`w-full ${googleSignup ? "max-w-2xl" : "max-w-lg"}`}>
         <Link href="/" className="mb-10 flex items-center justify-center gap-2.5">
           <span className="flex size-11 items-center justify-center rounded-lg bg-accent text-base font-bold text-white">
             T
@@ -109,76 +122,91 @@ export function SignInForm({
         </Link>
 
         <div className="rounded-2xl border border-border bg-white p-10">
-          <span
-            className={`mb-4 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold ${badgeCls}`}
-          >
-            <Icon size={15} />
-            {badge}
-          </span>
-          <h1 className="text-2xl font-bold text-ink">{title}</h1>
-          <p className="mt-1.5 text-base text-ink-muted">{description}</p>
-
-          {error && (
-            <p role="alert" className="mt-5 rounded-lg bg-danger-soft px-4 py-2.5 text-sm text-danger">
-              {error}
-            </p>
-          )}
-
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-ink">{t("emailLabel")}</span>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                className="h-12 w-full rounded-lg border border-border px-4 text-base text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-ink">{t("passwordLabel")}</span>
-              <PasswordInput
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                showLabel={tc("showPassword")}
-                hideLabel={tc("hidePassword")}
-              />
-            </label>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`flex h-12 w-full items-center justify-center rounded-lg text-base font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${buttonCls}`}
-            >
-              {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-            </button>
-          </form>
-
-          {allowGoogleSignIn && isGoogleSignInEnabled && (
+          {googleSignup ? (
+            <GoogleCompleteSignupForm
+              credential={googleSignup.credential}
+              email={googleSignup.email}
+              onSubmitted={handleGoogleCompanySubmitted}
+              onCancel={() => setGoogleSignup(null)}
+            />
+          ) : (
             <>
-              <div className="mt-6 flex items-center gap-3">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-xs font-medium text-ink-subtle">{tc("orDivider")}</span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
+              <span
+                className={`mb-4 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold ${badgeCls}`}
+              >
+                <Icon size={15} />
+                {badge}
+              </span>
+              <h1 className="text-2xl font-bold text-ink">{title}</h1>
+              <p className="mt-1.5 text-base text-ink-muted">{description}</p>
 
-              <div className="mt-6 flex justify-center">
-                <GoogleSignInButton
-                  onError={setError}
-                  onSuccess={handleGoogleSuccess}
-                  onPending={handleGooglePending}
-                />
-              </div>
+              {error && (
+                <p
+                  role="alert"
+                  className="mt-5 rounded-lg bg-danger-soft px-4 py-2.5 text-sm text-danger"
+                >
+                  {error}
+                </p>
+              )}
+
+              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-ink">{t("emailLabel")}</span>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="h-12 w-full rounded-lg border border-border px-4 text-base text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-ink">{t("passwordLabel")}</span>
+                  <PasswordInput
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    showLabel={tc("showPassword")}
+                    hideLabel={tc("hidePassword")}
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`flex h-12 w-full items-center justify-center rounded-lg text-base font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${buttonCls}`}
+                >
+                  {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                </button>
+              </form>
+
+              {allowGoogleSignIn && isGoogleSignInEnabled && (
+                <>
+                  <div className="mt-6 flex items-center gap-3">
+                    <span className="h-px flex-1 bg-border" />
+                    <span className="text-xs font-medium text-ink-subtle">{tc("orDivider")}</span>
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <div className="mt-6 flex justify-center">
+                    <GoogleSignInButton
+                      onError={setError}
+                      onSuccess={handleGoogleSuccess}
+                      onPending={handleGooglePending}
+                      onNeedsCompanyInfo={handleGoogleNeedsCompanyInfo}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
 
-        {signupHref && signupLabel && (
+        {!googleSignup && signupHref && signupLabel && (
           <p className="mt-6 text-center text-sm text-ink-muted">
             {t("noAccountQuestion")}{" "}
             <Link href={signupHref} className="font-medium text-accent hover:text-accent-dark">
@@ -187,14 +215,16 @@ export function SignInForm({
           </p>
         )}
 
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <Link href="/login" className="font-medium text-ink-muted hover:text-ink">
-            {t("chooseOtherAccountType")}
-          </Link>
-          <Link href={switchHref} className="font-medium text-accent hover:text-accent-dark">
-            {switchLabel}
-          </Link>
-        </div>
+        {!googleSignup && (
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <Link href="/login" className="font-medium text-ink-muted hover:text-ink">
+              {t("chooseOtherAccountType")}
+            </Link>
+            <Link href={switchHref} className="font-medium text-accent hover:text-accent-dark">
+              {switchLabel}
+            </Link>
+          </div>
+        )}
 
         <Link
           href="/"
