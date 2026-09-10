@@ -1,17 +1,38 @@
+"use client";
+
 import { FileText, Info, Landmark, Tags } from "lucide-react";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
 
-import { createTorEntry } from "./actions";
+import { createTorEntry, type CreateTorState } from "./actions";
 
 const inputCls =
   "h-11 w-full rounded-lg border border-border px-4 text-sm text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10";
 
+const INITIAL_STATE: CreateTorState = {};
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="mt-4 flex h-11 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? "กำลังบันทึก..." : "บันทึกรายการ"}
+    </button>
+  );
+}
+
 export default function AdminCreateTorPage() {
+  const [state, formAction] = useActionState(createTorEntry, INITIAL_STATE);
+
   return (
     <AdminPageShell title="เพิ่มรายการ TOR" description="เพิ่มรายการ TOR เข้าระบบด้วยตนเอง">
-      <form action={createTorEntry} className="grid gap-6 lg:grid-cols-3">
+      <form action={formAction} className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Section icon={FileText} title="ข้อมูลโครงการ">
             <Field label="ชื่อโครงการ">
@@ -89,12 +110,13 @@ export default function AdminCreateTorPage() {
             </ul>
           </div>
 
-          <button
-            type="submit"
-            className="mt-4 flex h-11 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
-          >
-            บันทึกรายการ
-          </button>
+          {state.error && (
+            <p role="alert" className="mt-4 rounded-lg bg-danger-soft px-4 py-2.5 text-sm text-danger">
+              {state.error}
+            </p>
+          )}
+
+          <SubmitButton />
         </aside>
       </form>
     </AdminPageShell>
