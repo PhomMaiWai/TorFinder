@@ -19,6 +19,20 @@ export function normalizeForMatch(text: string): string {
 const MIN_CONTAINMENT_LENGTH = 10;
 const WORD_OVERLAP_THRESHOLD = 0.7;
 
+/**
+ * True if `shorter` sits inside `longer` on a real word boundary — not, say,
+ * "#1" inside "#10". A plain `String.includes` would call those a match.
+ */
+function isBoundaryContainment(shorter: string, longer: string): boolean {
+  const index = longer.indexOf(shorter);
+  if (index === -1) return false;
+
+  const startsAtBoundary = index === 0 || longer[index - 1] === " ";
+  const endIndex = index + shorter.length;
+  const endsAtBoundary = endIndex === longer.length || longer[endIndex] === " ";
+  return startsAtBoundary && endsAtBoundary;
+}
+
 function wordOverlap(a: string, b: string): number {
   const wordsA = new Set(a.split(" ").filter(Boolean));
   const wordsB = new Set(b.split(" ").filter(Boolean));
@@ -38,7 +52,7 @@ export function isLikelyDuplicateTitle(titleA: string, titleB: string): boolean 
   if (a === b) return true;
 
   const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
-  if (shorter.length >= MIN_CONTAINMENT_LENGTH && longer.includes(shorter)) return true;
+  if (shorter.length >= MIN_CONTAINMENT_LENGTH && isBoundaryContainment(shorter, longer)) return true;
 
   return wordOverlap(a, b) >= WORD_OVERLAP_THRESHOLD;
 }
@@ -52,6 +66,8 @@ export function isLikelySameAgency(agencyA: string, agencyB: string): boolean {
   const a = normalizeForMatch(agencyA);
   const b = normalizeForMatch(agencyB);
   if (!a || !b) return false;
+  if (a === b) return true;
 
-  return a === b || a.includes(b) || b.includes(a);
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  return isBoundaryContainment(shorter, longer);
 }
