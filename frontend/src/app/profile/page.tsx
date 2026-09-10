@@ -1,58 +1,155 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { AlertCircle, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { type SubmitEvent, useState } from "react";
+import { type SubmitEvent, useEffect, useState } from "react";
 
 import { PageBody, PageHeader, Section } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
-import {
-  COMPANY_PROFILE,
-  COMPANY_SIZE_OPTIONS,
-  TECH_STACK_OPTIONS,
-  type CompanySize,
-} from "@/data/company-profile";
+import { COMPANY_SIZE_OPTIONS, TECH_STACK_OPTIONS, type CompanySize } from "@/data/company-profile";
+import { formatTaxId, hasValidTaxIdChecksum, isValidTaxId } from "@/lib/thai-validation";
+
+const readOnlyInputCls =
+  "w-full rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-ink-muted outline-none";
+const inputCls =
+  "w-full rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10";
+
+type Account = {
+  email: string;
+  company?: {
+    companyName?: string;
+    taxId?: string;
+    contactName?: string;
+    phone?: string;
+    address?: string;
+    specialty?: string;
+    size?: string;
+    techStack?: string[];
+    pastExperience?: string;
+  };
+};
+
+async function fetchAccountProfile(): Promise<Account | null> {
+  const res = await fetch("/api/accounts/me", { cache: "no-store" });
+  return res.ok ? res.json() : null;
+}
 
 export default function ProfilePage() {
-  const [name, setName] = useState(COMPANY_PROFILE.name);
-  const [taxId, setTaxId] = useState(COMPANY_PROFILE.taxId);
-  const [email, setEmail] = useState(COMPANY_PROFILE.email);
-  const [contactName, setContactName] = useState(COMPANY_PROFILE.contactName);
-  const [phone, setPhone] = useState(COMPANY_PROFILE.phone);
-  const [address, setAddress] = useState(COMPANY_PROFILE.address);
-  const [specialty, setSpecialty] = useState(COMPANY_PROFILE.specialty);
-  const [size, setSize] = useState<CompanySize>(COMPANY_PROFILE.size);
-  const [techStack, setTechStack] = useState<string[]>(COMPANY_PROFILE.techStack);
-  const [saved, setSaved] = useState(false);
   const t = useTranslations("ProfilePage");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState(false);
+
+  const [companyName, setCompanyName] = useState("");
+  const [taxId, setTaxId] = useState("");
+  const [email, setEmail] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [specialty, setSpecialty] = useState("");
+  const [size, setSize] = useState<CompanySize>(COMPANY_SIZE_OPTIONS[0]);
+  const [techStack, setTechStack] = useState<string[]>([]);
+  const [pastExperience, setPastExperience] = useState("");
+  const [touchedTaxId, setTouchedTaxId] = useState(false);
+
+  // A Google sign-in never collects these, so they start blank on those
+  // accounts — the backend allows filling in whichever is still blank, then
+  // locks it. Whether each is locked is decided by what the server had at
+  // load time, not by what's currently typed into the field.
+  const [companyNameLocked, setCompanyNameLocked] = useState(true);
+  const [taxIdLocked, setTaxIdLocked] = useState(true);
+
+  function applyAccount(account: Account) {
+    setCompanyName(account.company?.companyName ?? "");
+    setTaxId(account.company?.taxId ?? "");
+    setEmail(account.email ?? "");
+    setContactName(account.company?.contactName ?? "");
+    setPhone(account.company?.phone ?? "");
+    setAddress(account.company?.address ?? "");
+    setSpecialty(account.company?.specialty ?? "");
+    setSize((account.company?.size as CompanySize) ?? COMPANY_SIZE_OPTIONS[0]);
+    setTechStack(account.company?.techStack ?? []);
+    setPastExperience(account.company?.pastExperience ?? "");
+    setCompanyNameLocked(!!account.company?.companyName);
+    setTaxIdLocked(!!account.company?.taxId);
+  }
+
+  useEffect(() => {
+    async function load() {
+      const account = await fetchAccountProfile();
+      if (account) applyAccount(account);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const percent = Math.round(
     (
       [
-        name.trim(),
-        taxId.trim(),
-        email.trim(),
         contactName.trim(),
         phone.trim(),
         address.trim(),
         specialty.trim(),
         size,
         techStack.length > 0 ? "x" : "",
+        pastExperience.trim(),
       ].filter(Boolean).length /
-        9
+        7
     ) * 100,
   );
 
+  const hasInvalidTaxId = !taxIdLocked && taxId.trim() !== "" && !isValidTaxId(taxId);
+
   function toggleTech(tag: string) {
-    setTechStack((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
+    setTechStack((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   }
 
-  function handleSave(event: SubmitEvent<HTMLFormElement>) {
+  async function handleSave(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSaving(true);
+    setError(false);
+
+    const res = await fetch("/api/accounts/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(companyNameLocked ? {} : { companyName }),
+        ...(taxIdLocked ? {} : { taxId }),
+        contactName,
+        phone,
+        address,
+        specialty,
+        size,
+        techStack,
+        pastExperience,
+      }),
+    });
+
+    setSaving(false);
+    if (!res.ok) {
+      setError(true);
+      return;
+    }
+    // Re-fetch rather than trust local state: if companyName/taxId just got
+    // filled in for the first time, the server has now locked them, and this
+    // is what actually reflects that.
+    const account = await fetchAccountProfile();
+    if (account) applyAccount(account);
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2400);
+  }
+
+  if (loading) {
+    return (
+      <AppShell>
+        <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
+        <PageBody>
+          <p className="text-sm text-ink-muted">{t("loadingMessage")}</p>
+        </PageBody>
+      </AppShell>
+    );
   }
 
   return (
@@ -71,12 +168,7 @@ export default function ProfilePage() {
                 <span className="mb-1.5 block text-sm font-medium text-ink">
                   {t("companyEmailLabel")}
                 </span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
-                />
+                <input type="email" value={email} readOnly disabled className={readOnlyInputCls} />
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
@@ -85,7 +177,7 @@ export default function ProfilePage() {
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                  className={inputCls}
                 />
               </label>
             </div>
@@ -98,10 +190,19 @@ export default function ProfilePage() {
                   {t("companyNameLabel")}
                 </span>
                 <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  readOnly={companyNameLocked}
+                  disabled={companyNameLocked}
+                  placeholder={companyNameLocked ? undefined : t("companyNameFillInPlaceholder")}
+                  className={companyNameLocked ? readOnlyInputCls : inputCls}
                 />
+                {!companyNameLocked && (
+                  <span className="mt-1.5 flex items-start gap-1 text-xs text-ink-subtle">
+                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                    {t("fillOnceNotice")}
+                  </span>
+                )}
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
@@ -109,9 +210,38 @@ export default function ProfilePage() {
                 </span>
                 <input
                   value={taxId}
-                  onChange={(e) => setTaxId(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                  onChange={(e) => setTaxId(taxIdLocked ? taxId : formatTaxId(e.target.value))}
+                  onBlur={() => setTouchedTaxId(true)}
+                  readOnly={taxIdLocked}
+                  disabled={taxIdLocked}
+                  inputMode={taxIdLocked ? undefined : "numeric"}
+                  placeholder={taxIdLocked ? undefined : t("taxIdPlaceholder")}
+                  className={
+                    !taxIdLocked && touchedTaxId && !isValidTaxId(taxId)
+                      ? `${inputCls} border-danger focus:border-danger`
+                      : taxIdLocked
+                        ? readOnlyInputCls
+                        : inputCls
+                  }
                 />
+                {!taxIdLocked && touchedTaxId && !isValidTaxId(taxId) && (
+                  <span className="mt-1.5 flex items-center gap-1 text-xs font-medium text-danger">
+                    <AlertCircle size={12} className="shrink-0" />
+                    {t("errorTaxIdLength")}
+                  </span>
+                )}
+                {!taxIdLocked && isValidTaxId(taxId) && !hasValidTaxIdChecksum(taxId) && (
+                  <span className="mt-1.5 flex items-start gap-1 text-xs font-medium text-warn">
+                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                    {t("warnTaxIdChecksum")}
+                  </span>
+                )}
+                {!taxIdLocked && !(touchedTaxId && !isValidTaxId(taxId)) && (
+                  <span className="mt-1.5 flex items-start gap-1 text-xs text-ink-subtle">
+                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                    {t("fillOnceNotice")}
+                  </span>
+                )}
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
@@ -120,7 +250,7 @@ export default function ProfilePage() {
                 <input
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                  className={inputCls}
                 />
               </label>
               <label className="block">
@@ -130,7 +260,7 @@ export default function ProfilePage() {
                 <input
                   value={specialty}
                   onChange={(e) => setSpecialty(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                  className={inputCls}
                 />
               </label>
               <label className="block">
@@ -140,7 +270,7 @@ export default function ProfilePage() {
                 <select
                   value={size}
                   onChange={(e) => setSize(e.target.value as CompanySize)}
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                  className={`${inputCls} bg-white`}
                 >
                   {COMPANY_SIZE_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
@@ -157,7 +287,7 @@ export default function ProfilePage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   rows={2}
-                  className="w-full resize-none rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+                  className={`${inputCls} resize-none`}
                 />
               </label>
             </div>
@@ -190,15 +320,28 @@ export default function ProfilePage() {
               </div>
             </div>
           </Section>
+
+          <Section title={t("pastExperienceSectionTitle")}>
+            <div className="rounded-xl border border-border bg-white p-5">
+              <p className="mb-3 text-sm text-ink-muted">{t("pastExperienceDescription")}</p>
+              <textarea
+                value={pastExperience}
+                onChange={(e) => setPastExperience(e.target.value)}
+                rows={4}
+                placeholder={t("pastExperiencePlaceholder")}
+                className={`${inputCls} resize-none`}
+              />
+            </div>
+          </Section>
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           <div className="rounded-xl border border-border bg-white p-5 text-center">
             <span className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-accent-soft text-lg font-bold text-accent-text">
-              {name.trim().charAt(0) || "A"}
+              {companyName.trim().charAt(0) || "A"}
             </span>
             <p className="truncate text-sm font-semibold text-ink">
-              {name.trim() || t("companyNameFallback")}
+              {companyName.trim() || t("companyNameFallback")}
             </p>
             <p className="mt-0.5 truncate text-xs text-ink-muted">
               {specialty.trim() || t("specialtyFallback")}
@@ -220,12 +363,16 @@ export default function ProfilePage() {
 
           <button
             type="submit"
-            className="flex h-10 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+            disabled={saving || hasInvalidTaxId}
+            className="flex h-10 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
             {t("saveButton")}
           </button>
           {saved && (
             <p className="text-center text-sm font-medium text-success">{t("savedConfirmation")}</p>
+          )}
+          {error && (
+            <p className="text-center text-sm font-medium text-danger">{t("saveErrorMessage")}</p>
           )}
         </aside>
         </form>

@@ -7,6 +7,7 @@ import { createSessionToken } from "../common/token";
 import { env } from "../config/env";
 import { DatabaseService, UserDoc } from "../database/database.service";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
+import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
 
@@ -65,8 +66,69 @@ export class AuthService {
   }
 
   async googleAuth({ credential }: GoogleAuthDto) {
-    // A malformed or expired token throws rather than failing gracefully —
-    // any rejection here means the same thing to the caller: not verified.
+    const { email, googleId, name } = await this.verifyGoogleCredential(credential);
+    const user = await this.findOrLinkGoogleUser(googleId, email);
+
+    if (!user) {
+      // A Google identity we've never seen, with no existing account to link
+      // to — Google only verifies who they are, not what company they run,
+      // so the account can't be created yet. The caller collects that next,
+      // via googleCompleteSignup().
+      return { status: "needs-company-info" as const, email, name: name ?? email };
+    }
+
+    if (user.status === "pending") {
+      return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
+    }
+
+    return this.issueSession(user);
+  }
+
+  /**
+   * Second half of a brand-new Google sign-up: identity was already verified
+   * by googleAuth(), and the caller has now supplied the company info Google
+   * never had. Re-verifies the credential rather than trusting a client-held
+   * claim of who they are.
+   */
+  async googleCompleteSignup({ credential, ...company }: GoogleCompleteSignupDto) {
+    const { email, googleId, name } = await this.verifyGoogleCredential(credential);
+    const user = await this.findOrLinkGoogleUser(googleId, email);
+
+    if (user) {
+      // Someone else finished signing this identity up in the meantime (a
+      // second tab, or an email/password signup that just got linked) — the
+      // company form on hand no longer applies, so report what's real.
+      if (user.status === "pending") {
+        return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
+      }
+      return this.issueSession(user);
+    }
+
+    const newUser: UserDoc = {
+      email,
+      name: name ?? company.companyName,
+      role: "org",
+      // Same as every other signup path: an admin decides from /admin/accounts.
+      status: "pending",
+      googleId,
+      createdAt: new Date(),
+      company,
+    };
+
+    try {
+      await this.db.users.insertOne(newUser);
+    } catch (error) {
+      if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) {
+        throw new ConflictException("อีเมลนี้ถูกใช้สมัครแล้ว");
+      }
+      throw error;
+    }
+
+    return { status: "pending" as const, companyName: company.companyName };
+  }
+
+  /** A malformed or expired token throws — any rejection here means "not verified". */
+  private async verifyGoogleCredential(credential: string) {
     const payload = await googleClient
       .verifyIdToken({ idToken: credential, audience: env.googleClientId })
       .then((ticket) => ticket.getPayload())
@@ -76,43 +138,19 @@ export class AuthService {
       throw new UnauthorizedException("ยืนยันบัญชี Google ไม่สำเร็จ");
     }
 
-    const email = payload.email.trim().toLowerCase();
-    const googleId = payload.sub;
+    return { email: payload.email.trim().toLowerCase(), googleId: payload.sub, name: payload.name };
+  }
 
-    let user = await this.db.users.findOne({ googleId });
+  /** Finds the account for this Google identity, linking it to a matching email/password account if one exists. */
+  private async findOrLinkGoogleUser(googleId: string, email: string) {
+    const user = await this.db.users.findOne({ googleId });
+    if (user) return user;
 
-    if (!user) {
-      // Not seen this Google account before — is there already an
-      // email/password account to link it to, instead of duplicating?
-      const existing = await this.db.users.findOne({ email });
-      if (existing) {
-        await this.db.users.updateOne({ _id: existing._id }, { $set: { googleId } });
-        user = { ...existing, googleId };
-      }
-    }
+    const existing = await this.db.users.findOne({ email });
+    if (!existing) return null;
 
-    if (!user) {
-      const newUser: UserDoc = {
-        email,
-        name: payload.name ?? email,
-        role: "org",
-        // Same as every other signup path: an admin decides from /admin/accounts.
-        status: "pending",
-        googleId,
-        createdAt: new Date(),
-      };
-      await this.db.users.insertOne(newUser);
-      // Newly created (or newly linked) — the caller has never seen a
-      // pending-review notice for this account before, so it should look
-      // like a fresh signup confirmation rather than a blocked sign-in.
-      return { status: "pending" as const, companyName: newUser.company?.companyName ?? newUser.name };
-    }
-
-    if (user.status === "pending") {
-      return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
-    }
-
-    return this.issueSession(user);
+    await this.db.users.updateOne({ _id: existing._id }, { $set: { googleId } });
+    return { ...existing, googleId };
   }
 
   private issueSession(user: WithId<UserDoc>) {

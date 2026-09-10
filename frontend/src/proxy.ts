@@ -12,7 +12,13 @@ const GUEST_ONLY_PREFIXES = ["/login", "/signup"];
  * and asking who you are all have to work before one exists. Approval is
  * enforced at login by the backend, so a token in hand already means approved.
  */
-const PUBLIC_API_ROUTES = ["/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/auth/google"];
+const PUBLIC_API_ROUTES = [
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/auth/me",
+  "/api/auth/google",
+  "/api/auth/google/complete",
+];
 
 /** Where a signed-in visitor belongs when they land somewhere they shouldn't be. */
 function homeFor(role: string): string {

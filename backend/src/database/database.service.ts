@@ -19,6 +19,10 @@ export type CompanyProfile = {
   address: string;
   specialty: string;
   size: string;
+  /** Skills/services the company can offer, shown on its profile. */
+  techStack?: string[];
+  /** Free-text summary of past projects — absent until the company fills it in. */
+  pastExperience?: string;
 };
 
 export type UserDoc = {

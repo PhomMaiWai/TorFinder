@@ -269,7 +269,17 @@
     "specialtyFallback": "Specialty",
     "profileCompletenessLabel": "Profile completeness",
     "saveButton": "Save profile",
-    "savedConfirmation": "Saved"
+    "savedConfirmation": "Saved",
+    "pastExperienceSectionTitle": "Past Experience",
+    "pastExperienceDescription": "Summarize projects your company has completed — this helps match you with similar TORs",
+    "pastExperiencePlaceholder": "e.g. Built a citizen service portal for a provincial government agency in 2025...",
+    "loadingMessage": "Loading profile...",
+    "saveErrorMessage": "Failed to save. Please try again.",
+    "companyNameFillInPlaceholder": "Company name",
+    "taxIdPlaceholder": "13-digit number",
+    "fillOnceNotice": "Can only be set once — locked after you save",
+    "errorTaxIdLength": "Tax ID must be 13 digits",
+    "warnTaxIdChecksum": "This number fails the check digit — worth double-checking (you can still save it)"
   },
   "NotificationsPage": {
     "pageTitle": "Notifications",
@@ -500,5 +510,14 @@
     "savedTitle": "Saved",
     "noSavedItems": "No saved items yet",
     "savedSummary": "You have <strong>{count} items</strong> under consideration"
+  },
+  "GoogleCompleteSignupForm": {
+    "badge": "One more step",
+    "title": "Complete your company profile",
+    "description": "Your Google account is verified. Fill in your company details so an admin can review your request.",
+    "verifiedAs": "Signed in as {email}",
+    "submitLabel": "Submit for approval",
+    "submitError": "Failed to submit. Please try again.",
+    "cancelLabel": "Cancel and use a different account"
   }
 }
