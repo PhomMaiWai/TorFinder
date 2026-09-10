@@ -1,7 +1,7 @@
 name: Auth flow CI/CD
 
 # Guards the core API end to end: lint + build both apps, run the backend
-# integration tests (auth + TOR CRUD + Google OAuth) against a real MongoDB,
+# integration tests (auth + TOR CRUD + match scoring) against a real MongoDB,
 # then prove the deployable Docker images still build.
 
 on:
@@ -92,9 +92,7 @@ jobs:
           echo "backend did not become healthy in time"
           exit 1
 
-      - name: Run integration tests (auth + TOR CRUD + data integration)
-        # The e-GP live-import test is opt-in (E2E_EGP_LIVE) and stays skipped
-        # here — CI keeps the portal importer idle (EGP_POLL_MINUTES=0).
+      - name: Run integration tests (auth + TOR CRUD + match scoring)
         run: npm run test:e2e
 
       - name: Backend log
