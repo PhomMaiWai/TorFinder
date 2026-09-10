@@ -3,6 +3,7 @@ import { Throttle } from "@nestjs/throttler";
 
 import { env } from "../config/env";
 import { AuthService } from "./auth.service";
+import { GoogleAuthDto } from "./dto/google-auth.dto";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
 
@@ -21,5 +22,12 @@ export class AuthController {
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post("google")
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  googleAuth(@Body() dto: GoogleAuthDto) {
+    return this.authService.googleAuth(dto);
   }
 }
