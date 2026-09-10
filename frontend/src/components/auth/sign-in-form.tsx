@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type SubmitEvent, useState } from "react";
 
+import { GoogleSignInButton, isGoogleSignInEnabled } from "@/components/auth/google-sign-in-button";
 import { PasswordInput } from "@/components/ui/password-input";
 
 const ICONS = {
@@ -26,6 +27,8 @@ type SignInFormProps = {
   signupHref?: string;
   signupLabel?: string;
   tone?: "accent" | "danger";
+  /** Google sign-in always creates an "org" account — hide it where that's wrong (e.g. admin login). */
+  allowGoogleSignIn?: boolean;
 };
 
 export function SignInForm({
@@ -39,6 +42,7 @@ export function SignInForm({
   signupHref,
   signupLabel,
   tone = "accent",
+  allowGoogleSignIn = true,
 }: SignInFormProps) {
   const t = useTranslations("SignInForm");
   const tc = useTranslations("Common");
@@ -83,6 +87,17 @@ export function SignInForm({
     }
   }
 
+  function handleGoogleSuccess() {
+    setError(null);
+    router.push(redirectTo);
+    router.refresh();
+  }
+
+  function handleGooglePending(companyName: string) {
+    setError(null);
+    router.push(`/signup/pending?name=${encodeURIComponent(companyName)}`);
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface-alt px-6 py-12">
       <div className="w-full max-w-lg">
@@ -102,6 +117,12 @@ export function SignInForm({
           </span>
           <h1 className="text-2xl font-bold text-ink">{title}</h1>
           <p className="mt-1.5 text-base text-ink-muted">{description}</p>
+
+          {error && (
+            <p role="alert" className="mt-5 rounded-lg bg-danger-soft px-4 py-2.5 text-sm text-danger">
+              {error}
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <label className="block">
@@ -129,12 +150,6 @@ export function SignInForm({
               />
             </label>
 
-            {error && (
-              <p role="alert" className="rounded-lg bg-danger-soft px-4 py-2.5 text-sm text-danger">
-                {error}
-              </p>
-            )}
-
             <button
               type="submit"
               disabled={isSubmitting}
@@ -143,6 +158,24 @@ export function SignInForm({
               {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </button>
           </form>
+
+          {allowGoogleSignIn && isGoogleSignInEnabled && (
+            <>
+              <div className="mt-6 flex items-center gap-3">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-ink-subtle">{tc("orDivider")}</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+
+              <div className="mt-6 flex justify-center">
+                <GoogleSignInButton
+                  onError={setError}
+                  onSuccess={handleGoogleSuccess}
+                  onPending={handleGooglePending}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {signupHref && signupLabel && (

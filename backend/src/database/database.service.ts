@@ -27,8 +27,11 @@ export type UserDoc = {
   role: "admin" | "org";
   /** Organizations sign themselves up and stay pending until an admin approves. */
   status: AccountStatus;
-  passwordHash: string;
-  passwordSalt: string;
+  /** Absent for accounts created via Google sign-in that never set a password. */
+  passwordHash?: string;
+  passwordSalt?: string;
+  /** Set once a Google account is created or linked; unique when present. */
+  googleId?: string;
   createdAt: Date;
   company?: CompanyProfile;
   reviewedAt?: Date;
@@ -113,6 +116,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
+    await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
     await this.tors.createIndex({ createdAt: -1 });
     // Makes the e-GP import idempotent: re-running it updates instead of duplicating.
     await this.tors.createIndex({ sourceRef: 1 }, { unique: true, sparse: true });

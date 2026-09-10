@@ -15,6 +15,7 @@ export default function AdminLoginPage() {
       switchHref="/login/organization"
       switchLabel={t("switchLabel")}
       tone="danger"
+      allowGoogleSignIn={false}
     />
   );
 }

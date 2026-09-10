@@ -34,6 +34,9 @@ export const env = {
   port: optionalNumber("PORT", 4000),
   mongodbUri: required("MONGODB_URI", "mongodb://localhost:27017/torr"),
   sessionSecret: required("SESSION_SECRET", "dev-only-insecure-secret-change-me"),
+  // Google Identity Services ID tokens are verified against this audience.
+  // Empty in dev disables Google sign-in rather than throwing on every request.
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   // Demo data is for local and staging; production starts from a clean database.
   seedDemoData: (process.env.SEED_DEMO_DATA ?? String(!isProduction)) === "true",
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
