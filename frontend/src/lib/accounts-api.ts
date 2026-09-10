@@ -19,6 +19,10 @@ export type OrgAccount = {
     address: string;
     specialty: string;
     size: string;
+    /** Skills/services the company offers — absent until it fills the profile in. */
+    techStack?: string[];
+    /** Free-text summary of past projects — absent until the company writes one. */
+    pastExperience?: string;
   };
 };
 

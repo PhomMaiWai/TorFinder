@@ -1,14 +1,18 @@
 "use client";
 
 import {
+  Briefcase,
   Building2,
   Check,
   CheckCircle2,
   ChevronDown,
+  Layers,
   Mail,
   MapPin,
   Phone,
+  Tag,
   User,
+  Users,
   XCircle,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -28,6 +32,26 @@ const STATUS_KEYS: Record<AccountStatus, string> = {
   rejected: "statusRejected",
   pending: "statusPending",
 };
+
+type Company = NonNullable<OrgAccount["company"]>;
+
+/**
+ * Share of the profile an org has filled in, over the same seven fields the
+ * org's own profile page scores itself on — so the admin sees the exact number
+ * the company does.
+ */
+function profileCompleteness(company: Company): number {
+  const filled = [
+    company.contactName?.trim(),
+    company.phone?.trim(),
+    company.address?.trim(),
+    company.specialty?.trim(),
+    company.size?.trim(),
+    company.techStack?.length ? "x" : "",
+    company.pastExperience?.trim(),
+  ].filter(Boolean).length;
+  return Math.round((filled / 7) * 100);
+}
 
 function ReviewButton({
   children,
@@ -142,24 +166,77 @@ export function AccountReviewList({
               </div>
             </div>
 
-            {isExpanded && company && (
-              <div className="border-t border-border bg-surface-alt/50 px-5 py-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-subtle">
-                  {t("companyDetailsHeading")}
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Detail icon={Building2} label={t("taxIdLabel")} value={company.taxId} />
-                  <Detail icon={User} label={t("contactNameLabel")} value={company.contactName} />
-                  <Detail icon={Phone} label={t("phoneLabel")} value={company.phone} />
-                  <div className="sm:col-span-2">
-                    <Detail icon={MapPin} label={t("addressLabel")} value={company.address} />
-                  </div>
-                </div>
-              </div>
-            )}
+            {isExpanded && company && <CompanyReviewDetail company={company} />}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function CompanyReviewDetail({ company }: { company: Company }) {
+  const t = useTranslations("AdminAccountsPage");
+  const percent = profileCompleteness(company);
+
+  return (
+    <div className="border-t border-border bg-surface-alt/50 px-5 py-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+          {t("companyDetailsHeading")}
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-xs text-ink-muted">{t("profileCompletenessLabel")}</span>
+          <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-alt">
+            <span
+              className="block h-full rounded-full bg-accent"
+              style={{ width: `${percent}%` }}
+            />
+          </span>
+          <span className="text-xs font-bold text-ink">{percent}%</span>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Detail icon={Building2} label={t("taxIdLabel")} value={company.taxId} />
+        <Detail icon={User} label={t("contactNameLabel")} value={company.contactName} />
+        <Detail icon={Phone} label={t("phoneLabel")} value={company.phone} />
+        <Detail icon={Tag} label={t("specialtyLabel")} value={company.specialty} />
+        <Detail icon={Users} label={t("sizeLabel")} value={company.size} />
+        <div className="sm:col-span-2">
+          <Detail icon={MapPin} label={t("addressLabel")} value={company.address} />
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-start gap-2">
+        <Layers size={14} className="mt-0.5 shrink-0 text-ink-subtle" />
+        <div className="min-w-0">
+          <p className="text-xs text-ink-muted">{t("techStackLabel")}</p>
+          {company.techStack && company.techStack.length > 0 ? (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {company.techStack.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-text"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-ink">{t("noneProvided")}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-start gap-2">
+        <Briefcase size={14} className="mt-0.5 shrink-0 text-ink-subtle" />
+        <div className="min-w-0">
+          <p className="text-xs text-ink-muted">{t("pastExperienceLabel")}</p>
+          <p className="mt-0.5 whitespace-pre-line text-sm text-ink">
+            {company.pastExperience?.trim() || t("noneProvided")}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

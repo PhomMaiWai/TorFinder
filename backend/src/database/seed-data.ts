@@ -32,6 +32,9 @@ export const SEED_USERS: SeedUser[] = [
       address: "42 อาคารอรุณทาวเวอร์ ถนนสาทรใต้ แขวงยานนาวา เขตสาทร กรุงเทพมหานคร 10120",
       specialty: "Web Application",
       size: "11-50 คน",
+      techStack: ["Next.js", "Web Application", "API", "UX/UI"],
+      pastExperience:
+        "พัฒนาระบบยื่นคำร้องออนไลน์ให้สำนักงานเขตกว่า 10 แห่ง และเว็บพอร์ทัลบริการประชาชนของหน่วยงานราชการส่วนกลาง รวมถึงงานปรับปรุงประสบการณ์ผู้ใช้ให้เว็บไซต์ภาครัฐผ่านเกณฑ์การเข้าถึง (WCAG)",
     },
   },
   // Left pending so /admin/accounts has something to review on a fresh install.
@@ -49,6 +52,9 @@ export const SEED_USERS: SeedUser[] = [
       address: "88 ถนนรัชดาภิเษก แขวงดินแดง เขตดินแดง กรุงเทพมหานคร 10400",
       specialty: "Cloud Platform",
       size: "11-50 คน",
+      techStack: ["Cloud", "Integration", "Security", "Dashboard"],
+      pastExperience:
+        "ย้ายระบบงานสารบรรณและระบบบริหารงบประมาณของหน่วยงานภาครัฐขึ้นคลาวด์ วางระบบเชื่อมต่อ API ระหว่างหน่วยงาน และดูแลงานด้านความมั่นคงปลอดภัยไซเบอร์ตามกรอบ พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล",
     },
   },
   {
@@ -65,6 +71,9 @@ export const SEED_USERS: SeedUser[] = [
       address: "9 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310",
       specialty: "Data Platform",
       size: "1-10 คน",
+      techStack: ["Data Platform", "Dashboard", "API"],
+      pastExperience:
+        "จัดทำแดชบอร์ดติดตามตัวชี้วัดและคลังข้อมูลให้สำนักยุทธศาสตร์ของหน่วยงานท้องถิ่น พร้อมวางกระบวนการรวมข้อมูลจากหลายแหล่งและ API เปิดเผยข้อมูลภาครัฐ (Open Data)",
     },
   },
 ];
