@@ -1,8 +1,8 @@
 name: Auth flow CI/CD
 
 # Guards the core API end to end: lint + build both apps, run the backend
-# integration tests (auth + TOR CRUD) against a real MongoDB, then prove the
-# deployable Docker images still build.
+# integration tests (auth + TOR CRUD + Google OAuth) against a real MongoDB,
+# then prove the deployable Docker images still build.
 
 on:
   push:
@@ -52,8 +52,8 @@ jobs:
       # Generous general limit so the full suite fits one 60s window; only the
       # auth brute-force test cares about the (separate, tighter) login limit.
       THROTTLE_LIMIT: "300"
-      # The auth integration test relies on this exact limit for its
-      # brute-force assertion.
+      # The auth and OAuth integration tests rely on this exact limit for their
+      # brute-force assertions (each auth route has its own limiter bucket).
       AUTH_THROTTLE_LIMIT: "30"
       AUTH_THROTTLE_TTL_MS: "60000"
       E2E_BASE_URL: http://localhost:4000
@@ -92,7 +92,7 @@ jobs:
           echo "backend did not become healthy in time"
           exit 1
 
-      - name: Run integration tests (auth + TOR CRUD)
+      - name: Run integration tests (auth + TOR CRUD + OAuth)
         run: npm run test:e2e
 
       - name: Backend log
