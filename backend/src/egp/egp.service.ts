@@ -7,6 +7,7 @@ import { EGP_ANNOUNCE_TYPES, EGP_SEARCH_KEYWORDS, EgpAnnounceType } from "./egp.
 import { MatchingService } from "../matching/matching.service";
 import { isSoftwareProject } from "./egp.filter";
 import { EgpAnnouncement, EgpProject, EgpProjectDetail } from "./egp.types";
+import { isLikelyDuplicateTitle, isLikelySameAgency } from "../tor/tor-dedup";
 
 /** What a project's own announcements and detail record contribute per type. */
 type ProjectEnrichment = {
@@ -100,7 +101,8 @@ export class EgpService {
     }
     if (projects.size === 0) return { fetched: 0, imported: 0, updated: 0, failed };
 
-    const docs = await this.withEnrichment([...projects.values()]);
+    const allDocs = await this.withEnrichment([...projects.values()]);
+    const docs = await this.excludeAdminDuplicates(allDocs);
 
     const result = await this.db.tors.bulkWrite(
       docs.map((doc) => {
@@ -164,11 +166,53 @@ export class EgpService {
 
     this.logger.log(`e-GP sync: ${result.upsertedCount} new, ${result.modifiedCount} updated`);
     return {
-      fetched: docs.length,
+      fetched: allDocs.length,
       imported: result.upsertedCount,
       updated: result.modifiedCount,
       failed,
     };
+  }
+
+  /**
+   * A project e-GP hasn't imported before might already be sitting in the
+   * database as something an admin typed in by hand — they have no project
+   * number to match on, so title + agency is the only signal available.
+   * Records already imported (an update, not an insert) are left alone; this
+   * only guards against creating a fresh duplicate of an admin's entry.
+   */
+  private async excludeAdminDuplicates(docs: ImportedTor[]): Promise<ImportedTor[]> {
+    const existingRefs = await this.db.tors
+      .find({ sourceRef: { $in: docs.map((doc) => doc.sourceRef) } }, { projection: { sourceRef: 1 } })
+      .toArray();
+    const knownRefs = new Set(existingRefs.map((doc) => doc.sourceRef));
+
+    const newDocs = docs.filter((doc) => !knownRefs.has(doc.sourceRef));
+    if (newDocs.length === 0) return docs;
+
+    const adminEntries = await this.db.tors
+      .find(
+        { sourceRef: { $exists: false }, deletedAt: { $exists: false } },
+        { projection: { title: 1, agency: 1 } },
+      )
+      .toArray();
+    if (adminEntries.length === 0) return docs;
+
+    const isAdminDuplicate = (doc: ImportedTor) =>
+      adminEntries.some(
+        (entry) => isLikelySameAgency(entry.agency, doc.agency) && isLikelyDuplicateTitle(entry.title, doc.title),
+      );
+
+    let skipped = 0;
+    const filtered = docs.filter((doc) => {
+      if (knownRefs.has(doc.sourceRef) || !isAdminDuplicate(doc)) return true;
+      skipped++;
+      return false;
+    });
+
+    if (skipped > 0) {
+      this.logger.log(`e-GP: skipped ${skipped} new project(s) already entered by an admin`);
+    }
+    return filtered;
   }
 
   /**
