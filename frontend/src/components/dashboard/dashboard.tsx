@@ -14,13 +14,13 @@ import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/layout/app-sidebar";
 import { OPPORTUNITY_FILTERS } from "@/data/opportunities";
+import { useSavedTors } from "@/lib/use-saved-tors";
 import type { OpportunityFilter } from "@/types/opportunity";
 import type { ScoredTor } from "@/types/tor";
 
 type DashboardProps = { opportunities: ScoredTor[] };
 
 const DEFAULT_FILTER: OpportunityFilter = "ทั้งหมด";
-const INITIAL_SAVED: string[] = [];
 
 /**
  * What counts as a strong match. Scoring is deterministic and conservative — a
@@ -271,7 +271,7 @@ export function Dashboard({ opportunities }: DashboardProps) {
   const t = useTranslations("Dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<OpportunityFilter>(DEFAULT_FILTER);
-  const [savedIds, setSavedIds] = useState<string[]>(INITIAL_SAVED);
+  const { savedIds, toggleSaved } = useSavedTors("org");
   const [toastMessage, setToastMessage] = useState("");
 
   const filtered = useMemo(() => {
@@ -301,9 +301,7 @@ export function Dashboard({ opportunities }: DashboardProps) {
     event.stopPropagation();
 
     const wasSaved = savedIds.includes(id);
-    setSavedIds((previous) =>
-      wasSaved ? previous.filter((savedId) => savedId !== id) : [...previous, id],
-    );
+    toggleSaved(id);
     setToastMessage(wasSaved ? t("toastRemoved") : t("toastSaved"));
     window.setTimeout(() => setToastMessage(""), 2400);
   }
