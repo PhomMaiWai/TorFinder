@@ -28,7 +28,7 @@ type SessionUser = { name: string; email: string; role: "admin" | "org" };
 import { PENDING_ACCOUNTS } from "@/data/admin";
 import { NOTIFICATIONS } from "@/data/notifications";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
-import { useSavedTors } from "@/lib/use-saved-tors";
+import { resetOrgSavedTors, useSavedTors } from "@/lib/use-saved-tors";
 
 type NavLink = {
   label: string;
@@ -182,6 +182,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     setIsLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+      resetOrgSavedTors();
       router.push("/login");
       router.refresh();
     } finally {
