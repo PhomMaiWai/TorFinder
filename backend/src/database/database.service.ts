@@ -104,6 +104,13 @@ export type FeedbackDoc = {
   reviewedAt?: Date;
 };
 
+/** One organization's bookmark of one TOR — the logged-in-only "saved" list. */
+export type SavedTorDoc = {
+  userId: ObjectId;
+  torId: ObjectId;
+  createdAt: Date;
+};
+
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
@@ -112,12 +119,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   users!: Collection<UserDoc>;
   tors!: Collection<TorDoc>;
   feedback!: Collection<FeedbackDoc>;
+  savedTors!: Collection<SavedTorDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
     this.users = this.client.db().collection<UserDoc>("users");
     this.tors = this.client.db().collection<TorDoc>("tors");
     this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
+    this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -128,6 +137,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // moderation queue.
     await this.feedback.createIndex({ torId: 1, createdAt: -1 });
     await this.feedback.createIndex({ status: 1, createdAt: -1 });
+    // Doubles as the natural key: a save is idempotent, never duplicated.
+    await this.savedTors.createIndex({ userId: 1, torId: 1 }, { unique: true });
     await this.backfillAccountStatus();
     await this.seed();
   }
