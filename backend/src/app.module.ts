@@ -11,6 +11,7 @@ import { EgpModule } from "./egp/egp.module";
 import { FeedbackModule } from "./feedback/feedback.module";
 import { MatchingModule } from "./matching/matching.module";
 import { HealthController } from "./health.controller";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { SavedTorsModule } from "./saved-tors/saved-tors.module";
 import { TorModule } from "./tor/tor.module";
 
@@ -28,6 +29,7 @@ import { TorModule } from "./tor/tor.module";
     FeedbackModule,
     MatchingModule,
     SavedTorsModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
