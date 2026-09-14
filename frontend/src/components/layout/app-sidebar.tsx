@@ -26,8 +26,8 @@ import { useEffect, useState } from "react";
 type SessionUser = { name: string; email: string; role: "admin" | "org" };
 
 import { PENDING_ACCOUNTS } from "@/data/admin";
-import { NOTIFICATIONS } from "@/data/notifications";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
+import { resetNotifications, useNotifications } from "@/lib/use-notifications";
 import { resetOrgSavedTors, useSavedTors } from "@/lib/use-saved-tors";
 
 type NavLink = {
@@ -37,7 +37,6 @@ type NavLink = {
   badge?: number;
 };
 
-const UNREAD_NOTIFICATIONS = NOTIFICATIONS.filter((n) => !n.read).length;
 const PENDING_ACCOUNTS_COUNT = PENDING_ACCOUNTS.filter(
   (a) => a.status === "รอตรวจสอบ",
 ).length;
@@ -58,7 +57,6 @@ function getOrgNav(t: (key: string) => string): { section: string | null; links:
           label: t("navNotifications"),
           href: "/notifications",
           icon: Bell,
-          badge: UNREAD_NOTIFICATIONS || undefined,
         },
       ],
     },
@@ -102,6 +100,8 @@ function NavLinks({
 }) {
   const pathname = usePathname();
   const { savedIds } = useSavedTors("org");
+  const { notifications } = useNotifications();
+  const unreadNotifications = notifications.filter((n) => !n.read).length;
 
   function isActive(href: string) {
     const path = href.split("?")[0];
@@ -121,7 +121,11 @@ function NavLinks({
           <ul className="space-y-0.5">
             {links.map(({ label, href, icon: Icon, badge: staticBadge }) => {
               const active = isActive(href);
-              const badge = href.startsWith("/saved") ? savedIds.length || undefined : staticBadge;
+              const badge = href.startsWith("/saved")
+                ? savedIds.length || undefined
+                : href === "/notifications"
+                  ? unreadNotifications || undefined
+                  : staticBadge;
               return (
                 <li key={href}>
                   <Link
@@ -183,6 +187,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       resetOrgSavedTors();
+      resetNotifications();
       router.push("/login");
       router.refresh();
     } finally {
