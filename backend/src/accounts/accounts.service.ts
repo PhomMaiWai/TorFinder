@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
 import { AccountStatus, DatabaseService, UserDoc } from "../database/database.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { ReviewAccountDto } from "./dto/review-account.dto";
 import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
 
@@ -17,7 +18,10 @@ const PUBLIC_FIELDS = {
 
 @Injectable()
 export class AccountsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async findAll(status?: AccountStatus) {
     const filter: Filter<UserDoc> = { role: "org" };
@@ -41,8 +45,32 @@ export class AccountsService {
     );
     if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
 
+    await this.notifyReviewDecision(result._id, status, result.company?.companyName ?? result.name);
+
     const { _id, ...rest } = result;
     return { id: _id.toString(), ...rest };
+  }
+
+  private async notifyReviewDecision(
+    userId: ObjectId,
+    status: Exclude<AccountStatus, "pending">,
+    companyName: string,
+  ) {
+    if (status === "approved") {
+      await this.notifications.create(
+        userId,
+        "approval",
+        "บัญชีของคุณได้รับการอนุมัติแล้ว",
+        `ผู้ดูแลระบบอนุมัติบัญชี ${companyName} เรียบร้อยแล้ว เข้าใช้งานได้ทันที`,
+      );
+      return;
+    }
+    await this.notifications.create(
+      userId,
+      "approval",
+      "บัญชีของคุณไม่ผ่านการอนุมัติ",
+      "บัญชีของคุณไม่ผ่านการอนุมัติ กรุณาติดต่อผู้ดูแลระบบ",
+    );
   }
 
   async findOwn(userId: string) {

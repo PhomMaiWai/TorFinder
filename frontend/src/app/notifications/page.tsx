@@ -1,7 +1,7 @@
 "use client";
 
 import { BellOff } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { PageBody, PageHeader } from "@/components/layout/app-page";
@@ -10,9 +10,9 @@ import {
   NOTIFICATION_FILTERS,
   NOTIFICATION_ICONS,
   NOTIFICATION_TONE,
-  NOTIFICATIONS,
   type NotificationType,
 } from "@/data/notifications";
+import { useNotifications } from "@/lib/use-notifications";
 
 type FilterId = "all" | "unread" | NotificationType;
 
@@ -24,7 +24,9 @@ const TONE_ICON_CLS = {
 
 export default function NotificationsPage() {
   const t = useTranslations("NotificationsPage");
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
+  const format = useFormatter();
+  const now = useNow({ updateInterval: 1000 * 30 });
+  const { notifications, markRead, markAllRead } = useNotifications();
   const [filter, setFilter] = useState<FilterId>("all");
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -33,16 +35,6 @@ export default function NotificationsPage() {
     if (filter === "unread") return !n.read;
     return n.type === filter;
   });
-
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }
-
-  function markRead(id: number) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-  }
 
   return (
     <AppShell>
@@ -122,7 +114,9 @@ export default function NotificationsPage() {
                     <p className="mt-0.5 text-sm text-ink-muted">{n.message}</p>
                   </div>
 
-                  <span className="shrink-0 text-xs text-ink-subtle">{n.time}</span>
+                  <span className="shrink-0 text-xs text-ink-subtle">
+                    {format.relativeTime(new Date(n.createdAt), now)}
+                  </span>
                 </button>
               );
             })}

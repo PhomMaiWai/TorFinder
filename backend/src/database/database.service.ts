@@ -111,6 +111,25 @@ export type SavedTorDoc = {
   createdAt: Date;
 };
 
+/**
+ * "match" and "feedback" don't have a producer yet — only account review
+ * ("approval") creates one today — but the type stays ready for when they do,
+ * the same way TorSource anticipates values before every source exists.
+ */
+export const NOTIFICATION_TYPES = ["match", "approval", "feedback", "system"] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export type NotificationDoc = {
+  userId: ObjectId;
+  type: NotificationType;
+  title: string;
+  message: string;
+  /** Set when the notification is about a specific announcement. */
+  torId?: ObjectId;
+  read: boolean;
+  createdAt: Date;
+};
+
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
@@ -120,6 +139,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   tors!: Collection<TorDoc>;
   feedback!: Collection<FeedbackDoc>;
   savedTors!: Collection<SavedTorDoc>;
+  notifications!: Collection<NotificationDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -127,6 +147,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.tors = this.client.db().collection<TorDoc>("tors");
     this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
     this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
+    this.notifications = this.client.db().collection<NotificationDoc>("notifications");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -139,6 +160,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.feedback.createIndex({ status: 1, createdAt: -1 });
     // Doubles as the natural key: a save is idempotent, never duplicated.
     await this.savedTors.createIndex({ userId: 1, torId: 1 }, { unique: true });
+    await this.notifications.createIndex({ userId: 1, createdAt: -1 });
     await this.backfillAccountStatus();
     await this.seed();
   }
