@@ -1,8 +1,8 @@
 name: Auth flow CI/CD
 
 # Guards the core API end to end: lint + build both apps, run the backend
-# integration tests (auth + TOR CRUD + match scoring) against a real MongoDB,
-# then prove the deployable Docker images still build.
+# integration tests (auth + TOR CRUD + match scoring + company profile/approval)
+# against a real MongoDB, then prove the deployable Docker images still build.
 
 on:
   push:
@@ -92,7 +92,7 @@ jobs:
           echo "backend did not become healthy in time"
           exit 1
 
-      - name: Run integration tests (auth + TOR CRUD + match scoring)
+      - name: Run integration tests (auth + TOR CRUD + match scoring + profile/approval)
         run: npm run test:e2e
 
       - name: Backend log
