@@ -558,5 +558,20 @@
     "submitLabel": "Submit for approval",
     "submitError": "Failed to submit. Please try again.",
     "cancelLabel": "Cancel and use a different account"
+  },
+  "ErrorState": {
+    "title": "This page didn't load",
+    "description": "Something went wrong on our side. Nothing of yours is lost — try again.",
+    "retry": "Try again",
+    "reference": "Reference"
+  },
+  "NotFoundPage": {
+    "title": "We couldn't find that page",
+    "description": "It may have moved or been removed. Try the announcement search instead.",
+    "cta": "Browse announcements"
+  },
+  "DashboardPage": {
+    "noMatchesYetTitle": "No announcements matched your company yet",
+    "noMatchesYetDescription": "Fill in your specialities and past work on the company profile and we'll rank what fits."
   }
 }

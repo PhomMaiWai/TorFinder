@@ -1,3 +1,4 @@
+import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { authHeaders } from "@/lib/session-headers";
 
 export type SyncRunStatus = "success" | "partial" | "failed";
@@ -45,9 +46,16 @@ export type DirectoryUser = {
 };
 
 /**
- * A dashboard is worth showing without the panel that failed, so a dead
- * endpoint reads as "nothing yet" rather than taking the whole page down.
+ * Read as an admin. A 403 is an answer — this account may not see the panel —
+ * and comes back empty; a backend that can't answer throws, because an admin
+ * reading "0 accounts" off a broken endpoint would act on a number that isn't
+ * true.
  */
+async function readAsAdmin<T>(path: string, whenForbidden: T): Promise<T> {
+  return orEmptyWhenAnswered(fetchJson<T>(path, { headers: await authHeaders() }), whenForbidden);
+}
+
+/** Before the very first sync has ever run there is nothing to report. */
 const NO_METRICS: EgpMetrics = {
   status: "idle",
   lastRunAt: null,
@@ -55,18 +63,10 @@ const NO_METRICS: EgpMetrics = {
   history: [],
 };
 
-async function getJson<T>(path: string, fallback: T): Promise<T> {
-  const res = await fetch(`${process.env.BACKEND_URL}${path}`, {
-    headers: await authHeaders(),
-    cache: "no-store",
-  });
-  if (!res.ok) return fallback;
-  return res.json();
-}
-
-export const fetchEgpMetrics = () => getJson<EgpMetrics>("/api/egp/metrics", NO_METRICS);
-export const fetchAuditFeed = () => getJson<AuditFeedEntry[]>("/api/audit", []);
-export const fetchUserDirectory = () => getJson<DirectoryUser[]>("/api/accounts/directory", []);
+export const fetchEgpMetrics = () => readAsAdmin<EgpMetrics>("/api/egp/metrics", NO_METRICS);
+export const fetchAuditFeed = () => readAsAdmin<AuditFeedEntry[]>("/api/audit", []);
+export const fetchUserDirectory = () =>
+  readAsAdmin<DirectoryUser[]>("/api/accounts/directory", []);
 
 async function setSuspended(id: string, suspended: boolean): Promise<void> {
   const res = await fetch(

@@ -1,3 +1,4 @@
+import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { cookies } from "next/headers";
 
 import { SESSION_COOKIE } from "@/lib/auth";
@@ -34,12 +35,10 @@ async function authHeaders(): Promise<HeadersInit> {
 
 export async function fetchAccounts(status?: AccountStatus): Promise<OrgAccount[]> {
   const query = status ? `?status=${status}` : "";
-  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts${query}`, {
-    headers: await authHeaders(),
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  return res.json();
+  return orEmptyWhenAnswered(
+    fetchJson<OrgAccount[]>(`/api/accounts${query}`, { headers: await authHeaders() }),
+    [],
+  );
 }
 
 export async function reviewAccount(id: string, status: Exclude<AccountStatus, "pending">) {

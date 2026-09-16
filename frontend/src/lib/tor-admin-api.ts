@@ -1,3 +1,4 @@
+import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { authHeaders } from "@/lib/session-headers";
 import type { TorRecord } from "@/types/tor";
 
@@ -6,12 +7,10 @@ import type { TorRecord } from "@/types/tor";
  * an admin — what was removed shouldn't be listed to everyone.
  */
 export async function fetchDeletedTors(): Promise<TorRecord[]> {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/deleted`, {
-    headers: await authHeaders(),
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  return res.json();
+  return orEmptyWhenAnswered(
+    fetchJson<TorRecord[]>("/api/tor/deleted", { headers: await authHeaders() }),
+    [],
+  );
 }
 
 export async function deleteTor(id: string): Promise<void> {
