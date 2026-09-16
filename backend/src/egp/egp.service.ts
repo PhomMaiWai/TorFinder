@@ -3,24 +3,17 @@ import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 import { mapWithLimit } from "../common/concurrency";
 import { SOFTWARE_SEARCH_KEYWORDS, isSoftwareProject } from "../common/software-filter";
 import { env } from "../config/env";
-import { DatabaseService, SyncRunDoc, SyncRunStatus, TorDoc } from "../database/database.service";
+import { DatabaseService, SyncRunDoc, SyncRunStatus } from "../database/database.service";
 import { EgpClient } from "./egp.client";
 import { EGP_ANNOUNCE_TYPES, EgpAnnounceType } from "./egp.constants";
 import { EgpAnnouncement, EgpProject, EgpProjectDetail } from "./egp.types";
+import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
+import { UNKNOWN, formatBaht } from "../tor/tor-normalize";
 
 /** What a project's own announcements and detail record contribute per type. */
 type ProjectEnrichment = {
   announcements: EgpAnnouncement[];
   detail: EgpProjectDetail | null;
-};
-
-type ImportedTor = TorDoc & { sourceRef: string };
-
-export type SyncResult = {
-  fetched: number;
-  imported: number;
-  updated: number;
-  failed: string[];
 };
 
 /** One run.service.recordRun() row, reshaped for the wire (ISO dates, no _id). */
@@ -49,8 +42,6 @@ export type EgpMetrics = {
 /** The admin dashboard shows a recent trend, not a full audit trail. */
 const METRICS_HISTORY_LIMIT = 20;
 
-const UNKNOWN = "ไม่ระบุ";
-
 /**
  * Bumped whenever enrichment starts collecting something new (currently the
  * announcement document list). Records enriched by an older version are
@@ -72,6 +63,7 @@ export class EgpService {
   constructor(
     private readonly client: EgpClient,
     private readonly importer: TorImportService,
+    private readonly db: DatabaseService,
   ) {}
 
   /**

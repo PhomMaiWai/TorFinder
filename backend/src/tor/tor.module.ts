@@ -8,7 +8,7 @@ import { TorImportService } from "./tor-import.service";
 import { TorService } from "./tor.service";
 
 @Module({
-  imports: [DatabaseModule, MatchingModule],
+  imports: [AuditModule, DatabaseModule, MatchingModule],
   controllers: [TorController],
   providers: [TorService, TorImportService],
   exports: [TorImportService],
