@@ -1,7 +1,7 @@
 import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 
 import { env } from "../config/env";
-import { DatabaseService, TorDoc } from "../database/database.service";
+import { DatabaseService, SyncRunDoc, TorDoc } from "../database/database.service";
 import { EgpClient } from "./egp.client";
 import { EGP_ANNOUNCE_TYPES, EGP_SEARCH_KEYWORDS, EgpAnnounceType } from "./egp.constants";
 import { MatchingService } from "../matching/matching.service";
@@ -87,10 +87,58 @@ export class EgpService {
    * identical results.
    */
   sync(): Promise<SyncResult> {
-    this.inFlight ??= this.runSync().finally(() => {
+    this.inFlight ??= this.runAndRecordSync().finally(() => {
       this.inFlight = null;
     });
     return this.inFlight;
+  }
+
+  /**
+   * Every call to sync() — scheduled or from the admin button — becomes one
+   * row in the dashboard's sync history, whether it succeeds, only partly
+   * succeeds (some feeds failed but data still came back), or throws outright.
+   */
+  private async runAndRecordSync(): Promise<SyncResult> {
+    const startedAt = new Date();
+    try {
+      const result = await this.runSync();
+      await this.recordRun(startedAt, result);
+      return result;
+    } catch (error) {
+      await this.recordRun(startedAt, null, error);
+      throw error;
+    }
+  }
+
+  private async recordRun(startedAt: Date, result: SyncResult | null, error?: unknown): Promise<void> {
+    const doc: SyncRunDoc = result
+      ? {
+          startedAt,
+          finishedAt: new Date(),
+          status: result.failed.length > 0 ? "partial" : "success",
+          fetched: result.fetched,
+          imported: result.imported,
+          updated: result.updated,
+          failedFeeds: result.failed,
+        }
+      : {
+          startedAt,
+          finishedAt: new Date(),
+          status: "failed",
+          fetched: 0,
+          imported: 0,
+          updated: 0,
+          failedFeeds: [],
+          error: error instanceof Error ? error.message : String(error),
+        };
+
+    // History is a courtesy to the dashboard, not the point of a sync — a
+    // failure to record it must never mask (or replace) the real outcome.
+    try {
+      await this.db.syncRuns.insertOne(doc);
+    } catch (insertError) {
+      this.logger.warn(`e-GP: failed to record sync run history: ${String(insertError)}`);
+    }
   }
 
   private async runSync(): Promise<SyncResult> {
