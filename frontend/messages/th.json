@@ -433,7 +433,31 @@
     "noNewItems": "ไม่มีรายการใหม่",
     "classificationHeading": "ผลการจำแนกประเภท (Vertex AI)",
     "torListCta": "รายการ TOR",
-    "createTorCta": "เพิ่มรายการ TOR"
+    "createTorCta": "เพิ่มรายการ TOR",
+    "pipelineStatusLabel": "สถานะ Pipeline",
+    "pipelineStatus": {
+      "success": "ปกติ",
+      "partial": "สำเร็จบางส่วน",
+      "failed": "ล้มเหลว",
+      "idle": "ยังไม่เคยรัน"
+    },
+    "lastRunAt": "ดึงข้อมูลล่าสุด {when}",
+    "neverRun": "ยังไม่เคยดึงข้อมูล",
+    "newTodayLabel": "TOR ใหม่วันนี้",
+    "importedTodaySub": "นับจากรอบที่รันวันนี้",
+    "pendingAccountsLabel": "บัญชีรออนุมัติ",
+    "pendingAccountsSub": "รอผู้ดูแลตรวจสอบ",
+    "pendingAccountsClear": "ตรวจครบแล้ว",
+    "totalUsersLabel": "ผู้ใช้งานทั้งหมด",
+    "suspendedSub": "ถูกระงับ {count} บัญชี",
+    "noneSuspended": "ไม่มีบัญชีถูกระงับ",
+    "noRunsYet": "ยังไม่มีประวัติการดึงข้อมูล",
+    "runFailedDetail": "ดึงข้อมูลไม่สำเร็จ",
+    "runStatus": {
+      "success": "สำเร็จ",
+      "partial": "บางส่วน",
+      "failed": "ล้มเหลว"
+    }
   },
   "AdminAccountsPage": {
     "title": "บัญชีรออนุมัติ",
@@ -461,7 +485,8 @@
   "AdminAuditPage": {
     "description": "ประวัติการทำงานของระบบและผู้ดูแลระบบทั้งหมด",
     "typeAuto": "อัตโนมัติ",
-    "typeManual": "ผู้ดูแล"
+    "typeManual": "ผู้ดูแล",
+    "emptyState": "ยังไม่มีประวัติการทำงาน"
   },
   "AdminCompaniesPage": {
     "title": "จัดการบริษัท",
@@ -487,7 +512,14 @@
     "emptyState": "ไม่พบผู้ใช้งานที่ค้นหา",
     "lastActiveInfo": "ใช้งานล่าสุด {date}",
     "suspendAction": "ระงับบัญชี",
-    "reactivateAction": "เปิดใช้งานอีกครั้ง"
+    "reactivateAction": "เปิดใช้งานอีกครั้ง",
+    "roleOwner": "เจ้าของบัญชี",
+    "roleAdmin": "ผู้ดูแลระบบ",
+    "statusActive": "ใช้งาน",
+    "statusSuspended": "ระงับ",
+    "statusPending": "รออนุมัติ",
+    "statusRejected": "ไม่อนุมัติ",
+    "neverSignedIn": "สมัครเมื่อ {date} · ยังไม่เคยเข้าใช้"
   },
   "OpportunityCard": {
     "newBadge": "ใหม่",
