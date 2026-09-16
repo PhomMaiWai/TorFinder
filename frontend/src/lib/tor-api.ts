@@ -1,10 +1,16 @@
-import type { BudgetAssessment, MatchedCompany, TorFeedback, TorRecord } from "@/types/tor";
+import type {
+  BudgetAssessment,
+  MatchedCompany,
+  TorFeedback,
+  TorRecord,
+  TorSource,
+} from "@/types/tor";
 
-/** `source` omitted lists both admin-entered and e-GP records. */
+/** `source` omitted lists every record, whoever entered or imported it. */
 export async function fetchTorList(
   page = 1,
   pageSize = 20,
-  source?: "manual" | "egp",
+  source?: TorSource,
 ): Promise<TorRecord[]> {
   const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (source) query.set("source", source);

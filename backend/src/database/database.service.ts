@@ -77,12 +77,22 @@ export type TorDoc = {
    * is inferred, and the difference has to survive all the way to the reader.
    */
   extraction?: StoredExtraction;
-  /** Why the document couldn't be read, when it couldn't. */
-  extractionFailure?: { reason: string; failedAt: Date };
+  /**
+   * Why the document couldn't be read, when it couldn't, and how many runs have
+   * tried — a dead link stops being retried, a slow day does not.
+   */
+  extractionFailure?: { reason: string; failedAt: Date; attempts: number };
   /** e-GP's own project number, printed on every announcement of the project. */
   projectNumber?: string;
   /** Raw budget in baht, next to the formatted `budget` string. */
   budgetAmount?: number;
+  /**
+   * What the winning bid came to, on the announcements that publish it. Never
+   * merged into `budget`: one is what an agency set aside beforehand, the other
+   * what the work was awarded for, and a reader comparing announcements has to
+   * be able to tell which number they are looking at.
+   */
+  awardedAmount?: number;
   /** Every announcement e-GP holds for the project, newest first. */
   documents?: { label: string; publishedAt: Date | null; url: string }[];
   /** Structured facts the portal has on file for the project — real, not inferred. */

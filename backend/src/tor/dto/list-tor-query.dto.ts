@@ -1,7 +1,10 @@
 import { Type } from "class-transformer";
 import { IsIn, IsInt, IsOptional, Max, Min } from "class-validator";
 
-export const TOR_SOURCES = ["manual", "egp"] as const;
+import { TOR_IMPORT_SOURCES } from "../tor.constants";
+
+/** "manual" is what an admin typed in; the rest are the portals we import from. */
+export const TOR_SOURCES = ["manual", ...TOR_IMPORT_SOURCES] as const;
 export type TorSource = (typeof TOR_SOURCES)[number];
 
 export class ListTorQueryDto {

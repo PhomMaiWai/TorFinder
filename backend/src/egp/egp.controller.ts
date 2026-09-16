@@ -7,7 +7,12 @@ import { EgpService } from "./egp.service";
 export class EgpController {
   constructor(private readonly egpService: EgpService) {}
 
+  /**
+   * Starting an import is privileged: it spends the portal's patience and
+   * rewrites what every visitor sees, so it takes an admin session.
+   */
   @Post("sync")
+  @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.OK)
   sync() {
     return this.egpService.sync();

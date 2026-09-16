@@ -2,17 +2,45 @@
 
 import { revalidatePath } from "next/cache";
 
-export async function syncFromEgp() {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/egp/sync`, {
+import { authHeaders } from "@/lib/session-headers";
+
+/** The portals an admin can pull from, named the way the failure is reported. */
+const SOURCES = {
+  egp: "ระบบ e-GP",
+  mea: "เว็บไซต์จัดซื้อจัดจ้าง กฟน.",
+  datagov: "ระบบข้อมูลเปิดภาครัฐ (data.go.th)",
+} as const;
+
+/**
+ * Imports read whole listings one page at a time and then the detail page of
+ * every new announcement, so they are slow by nature — but never unbounded.
+ */
+const TIMEOUT_MS = 180_000;
+
+async function sync(source: keyof typeof SOURCES): Promise<void> {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/${source}/sync`, {
     method: "POST",
+    // The import route is admin-guarded, so the session travels with it.
+    headers: await authHeaders(),
     cache: "no-store",
-    // The government feed is slow and pulled one department at a time.
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
   });
 
   if (!res.ok) {
-    throw new Error("ดึงประกาศจากระบบ e-GP ไม่สำเร็จ");
+    throw new Error(`ดึงประกาศจาก${SOURCES[source]}ไม่สำเร็จ`);
   }
 
   revalidatePath("/admin/tor");
+}
+
+export async function syncFromEgp() {
+  await sync("egp");
+}
+
+export async function syncFromMea() {
+  await sync("mea");
+}
+
+export async function syncFromDataGov() {
+  await sync("datagov");
 }

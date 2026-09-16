@@ -6,7 +6,31 @@ import { DatabaseService, TorDoc } from "../database/database.service";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
+import { TOR_STAGES } from "./tor.constants";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
+
+/**
+ * Where an announcement sits in its own lifecycle, as a number to sort on.
+ * TOR_STAGES is already in that order — a draft open for comment, an invitation
+ * still taking bids, an award that closed the whole thing — so the position in
+ * it is the rank.
+ *
+ * It matters more than it sounds: the portals publish award notices daily and
+ * drafts rarely, so ordering by date alone buries everything a company could
+ * actually bid on under announcements it has already lost — two thirds of the
+ * collection are awards, and they filled the whole first page.
+ *
+ * Computed per query rather than stored, which no index can serve. Fine for a
+ * collection this size; a much larger one would want the rank written onto the
+ * record at import time instead.
+ */
+const STAGE_RANK = {
+  $let: {
+    vars: { rank: { $indexOfArray: [TOR_STAGES, "$stage"] } },
+    // A stage from outside the list sorts last rather than silently first.
+    in: { $cond: [{ $lt: ["$$rank", 0] }, TOR_STAGES.length, "$$rank"] },
+  },
+};
 
 @Injectable()
 export class TorService {
@@ -50,13 +74,31 @@ export class TorService {
     // Deleted records stay in the collection but out of every listing except
     // the one that exists to restore them.
     const filter: Filter<TorDoc> = { deletedAt: { $exists: false } };
-    if (source) filter.sourceRef = { $exists: source === "egp" };
+    // Imported records carry their portal as the prefix of `sourceRef`, so the
+    // source is filtered on the same anchored prefix an index can serve.
+    if (source === "manual") filter.sourceRef = { $exists: false };
+    else if (source) filter.sourceRef = { $regex: `^${source}:` };
 
     const docs = await this.db.tors
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
+      .aggregate<TorDoc & { _id: ObjectId }>([
+        { $match: filter },
+        // Each stage numbered separately, newest first...
+        {
+          $setWindowFields: {
+            partitionBy: "$stage",
+            sortBy: { createdAt: -1 },
+            output: { stageSeq: { $documentNumber: {} } },
+          },
+        },
+        { $addFields: { stageRank: STAGE_RANK } },
+        // ...then read across the stages rather than down one: the newest of
+        // each, then the second newest of each. Every page carries all three,
+        // and within a round the ones still open come first.
+        { $sort: { stageSeq: 1, stageRank: 1 } },
+        { $skip: (page - 1) * pageSize },
+        { $limit: pageSize },
+        { $project: { stageSeq: 0, stageRank: 0 } },
+      ])
       .toArray();
     return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
   }

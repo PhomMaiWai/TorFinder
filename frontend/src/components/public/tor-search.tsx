@@ -19,7 +19,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
-import { isKnown, stageBadgeCls } from "@/lib/tor-ui";
+import { isKnown, stageBadgeCls, torAmount } from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
 import type { TorRecord } from "@/types/tor";
 
@@ -182,7 +182,7 @@ function PublicTorCard({
           <div className="mb-4 flex w-full items-start justify-between gap-3 sm:mb-0 sm:flex-col sm:items-end">
             <div className="sm:text-right">
               <div className="mb-1 text-xs font-medium text-zinc-500">{t("budgetLabel")}</div>
-              <div className="text-[17px] font-bold text-zinc-900">{tor.budget}</div>
+              <div className="text-[17px] font-bold text-zinc-900">{torAmount(tor).value}</div>
             </div>
             <button
               onClick={onToggleSave}

@@ -11,24 +11,6 @@ export const EGP_ENDPOINTS = {
   file: "https://egp2.bangkok.go.th/api/file",
 } as const;
 
-export const EGP_USER_AGENT = "TorFinder/1.0 (Kasetsart University project)";
-
-/**
- * The portal's text search runs once per keyword. These only decide what gets
- * *considered*; what actually gets imported is decided by egp.filter.ts, so the
- * two belong together rather than one being tunable from outside.
- */
-export const EGP_SEARCH_KEYWORDS = [
-  "ซอฟต์แวร์",
-  "ระบบสารสนเทศ",
-  "คอมพิวเตอร์",
-  "พัฒนาระบบ",
-  "เทคโนโลยีสารสนเทศ",
-  "ดิจิทัล",
-  "เว็บไซต์",
-  "ฐานข้อมูล",
-];
-
 /** Client behaviour, not deployment config: how one request is made. */
 export const EGP_REQUEST = {
   /** Results per search page — the portal's own maximum useful size. */
