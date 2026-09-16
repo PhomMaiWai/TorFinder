@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
-import { Request } from "express";
 
+import { AuthenticatedRequest } from "./session.guard";
 import { verifySessionToken } from "./token";
 
 /**
@@ -10,13 +10,16 @@ import { verifySessionToken } from "./token";
 @Injectable()
 export class AdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
     const session = scheme === "Bearer" ? verifySessionToken(token) : null;
 
     if (session?.role !== "admin") {
       throw new ForbiddenException("ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ");
     }
+    // Same attachment SessionGuard does — lets a handler attribute the action
+    // to this admin (see AuditService) without re-verifying the token itself.
+    request.session = session;
     return true;
   }
 }

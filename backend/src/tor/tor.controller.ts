@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 
 import { AdminGuard } from "../common/admin.guard";
+import { AuthenticatedRequest } from "../common/session.guard";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { ListTorQueryDto } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
@@ -47,13 +48,13 @@ export class TorController {
    */
   @Delete(":id")
   @UseGuards(AdminGuard)
-  remove(@Param("id") id: string) {
-    return this.torService.softDelete(id);
+  remove(@Param("id") id: string, @Req() request: AuthenticatedRequest) {
+    return this.torService.softDelete(id, request.session.email);
   }
 
   @Post(":id/restore")
   @UseGuards(AdminGuard)
-  restore(@Param("id") id: string) {
-    return this.torService.restore(id);
+  restore(@Param("id") id: string, @Req() request: AuthenticatedRequest) {
+    return this.torService.restore(id, request.session.email);
   }
 }

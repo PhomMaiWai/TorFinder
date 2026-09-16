@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { AuditModule } from "../audit/audit.module";
 import { DatabaseModule } from "../database/database.module";
 import { MatchingModule } from "../matching/matching.module";
 import { TorController } from "./tor.controller";

@@ -39,6 +39,14 @@ export type UserDoc = {
   createdAt: Date;
   company?: CompanyProfile;
   reviewedAt?: Date;
+  /**
+   * Orthogonal to `status`: an admin can suspend an already-approved account
+   * to block it from signing in without reversing the approval decision
+   * itself. Absent (not false) means never suspended.
+   */
+  suspended?: boolean;
+  /** Stamped on every successful login/Google sign-in — see AuthService.issueSession. */
+  lastLoginAt?: Date;
 };
 
 export type TorDoc = {
@@ -140,6 +148,43 @@ export type NotificationDoc = {
   createdAt: Date;
 };
 
+/**
+ * "failed" means the whole run threw (the portal was fully unreachable, or
+ * every feed errored) — "partial" is a run that still produced data but had
+ * some feeds fail along the way. The admin dashboard's sync history needs to
+ * tell those apart, not just pass/fail.
+ */
+export const SYNC_RUN_STATUSES = ["success", "partial", "failed"] as const;
+export type SyncRunStatus = (typeof SYNC_RUN_STATUSES)[number];
+
+/** One e-GP sync attempt — scheduled or triggered from the admin "sync now" button. */
+export type SyncRunDoc = {
+  startedAt: Date;
+  finishedAt: Date;
+  status: SyncRunStatus;
+  fetched: number;
+  imported: number;
+  updated: number;
+  /** Feed ids ("type/keyword") that errored during this run; empty on a clean success. */
+  failedFeeds: string[];
+  /** Set only when the run threw outright, i.e. status is "failed". */
+  error?: string;
+};
+
+/**
+ * One attributable admin action (approving an account, moderating a comment,
+ * hiding/restoring a TOR). Automatic pipeline events — e-GP syncs — are never
+ * duplicated in here; the audit feed reads those straight from `syncRuns` and
+ * merges them in at query time (see AuditService.findAll).
+ */
+export type AuditLogEntryDoc = {
+  /** The admin's email, from their session — never a display name someone can spoof. */
+  actor: string;
+  action: string;
+  detail: string;
+  createdAt: Date;
+};
+
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
@@ -150,6 +195,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   feedback!: Collection<FeedbackDoc>;
   savedTors!: Collection<SavedTorDoc>;
   notifications!: Collection<NotificationDoc>;
+  syncRuns!: Collection<SyncRunDoc>;
+  auditLogEntries!: Collection<AuditLogEntryDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -158,6 +205,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
     this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
     this.notifications = this.client.db().collection<NotificationDoc>("notifications");
+    this.syncRuns = this.client.db().collection<SyncRunDoc>("syncRuns");
+    this.auditLogEntries = this.client.db().collection<AuditLogEntryDoc>("auditLogEntries");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -171,6 +220,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // Doubles as the natural key: a save is idempotent, never duplicated.
     await this.savedTors.createIndex({ userId: 1, torId: 1 }, { unique: true });
     await this.notifications.createIndex({ userId: 1, createdAt: -1 });
+    // The only query pattern the admin dashboard needs: newest runs first.
+    await this.syncRuns.createIndex({ startedAt: -1 });
+    await this.auditLogEntries.createIndex({ createdAt: -1 });
     await this.backfillAccountStatus();
     await this.seed();
   }

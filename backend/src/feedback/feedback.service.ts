@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
+import { AuditService } from "../audit/audit.service";
 import { DatabaseService, FeedbackDoc } from "../database/database.service";
 import { CreateFeedbackDto } from "./dto/create-feedback.dto";
 import { FeedbackStatus } from "./feedback.constants";
@@ -8,9 +9,20 @@ import { FeedbackStatus } from "./feedback.constants";
 /** Shown in place of a name when someone comments without giving one. */
 const ANONYMOUS = "ประชาชนทั่วไป";
 
+/** Audit action label per moderation decision; a re-queue to "รอตรวจสอบ" logs nothing. */
+const REVIEW_AUDIT_ACTIONS: Partial<Record<FeedbackStatus, string>> = {
+  อนุมัติ: "อนุมัติความคิดเห็น",
+  ปฏิเสธ: "ปฏิเสธความคิดเห็น",
+};
+
+const AUDIT_DETAIL_MAX_LENGTH = 100;
+
 @Injectable()
 export class FeedbackService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly audit: AuditService,
+  ) {}
 
   /** Files a comment against an announcement. It stays unpublished until reviewed. */
   async create(torId: string, dto: CreateFeedbackDto) {
@@ -43,7 +55,7 @@ export class FeedbackService {
   }
 
   /** Publishes or rejects one comment. */
-  async review(id: string, status: FeedbackStatus) {
+  async review(id: string, status: FeedbackStatus, actor: string) {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบความคิดเห็น");
 
     const result = await this.db.feedback.findOneAndUpdate(
@@ -52,6 +64,15 @@ export class FeedbackService {
       { returnDocument: "after" },
     );
     if (!result) throw new NotFoundException("ไม่พบความคิดเห็น");
+
+    const action = REVIEW_AUDIT_ACTIONS[status];
+    if (action) {
+      const excerpt =
+        result.text.length > AUDIT_DETAIL_MAX_LENGTH
+          ? `${result.text.slice(0, AUDIT_DETAIL_MAX_LENGTH)}…`
+          : result.text;
+      await this.audit.record(actor, action, `${result.author}: ${excerpt}`);
+    }
 
     const { _id, torId, ...rest } = result;
     return { id: _id.toString(), torId: torId.toString(), ...rest };

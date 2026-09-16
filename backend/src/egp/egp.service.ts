@@ -3,8 +3,7 @@ import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 import { mapWithLimit } from "../common/concurrency";
 import { SOFTWARE_SEARCH_KEYWORDS, isSoftwareProject } from "../common/software-filter";
 import { env } from "../config/env";
-import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
-import { UNKNOWN, formatBaht } from "../tor/tor-normalize";
+import { DatabaseService, SyncRunDoc, SyncRunStatus, TorDoc } from "../database/database.service";
 import { EgpClient } from "./egp.client";
 import { EGP_ANNOUNCE_TYPES, EgpAnnounceType } from "./egp.constants";
 import { EgpAnnouncement, EgpProject, EgpProjectDetail } from "./egp.types";
@@ -14,6 +13,43 @@ type ProjectEnrichment = {
   announcements: EgpAnnouncement[];
   detail: EgpProjectDetail | null;
 };
+
+type ImportedTor = TorDoc & { sourceRef: string };
+
+export type SyncResult = {
+  fetched: number;
+  imported: number;
+  updated: number;
+  failed: string[];
+};
+
+/** One run.service.recordRun() row, reshaped for the wire (ISO dates, no _id). */
+export type SyncHistoryEntry = {
+  startedAt: string;
+  finishedAt: string;
+  status: SyncRunStatus;
+  fetched: number;
+  imported: number;
+  updated: number;
+  failedFeeds: string[];
+  /** Present only on a "failed" entry. */
+  error?: string;
+};
+
+export type EgpMetrics = {
+  /** "idle" only before the very first sync has ever run. */
+  status: SyncRunStatus | "idle";
+  lastRunAt: string | null;
+  /** Summed across every sync run that started today, not TorDoc.createdAt (see metrics()). */
+  importedToday: number;
+  /** Newest first, capped at METRICS_HISTORY_LIMIT runs. */
+  history: SyncHistoryEntry[];
+};
+
+/** The admin dashboard shows a recent trend, not a full audit trail. */
+const METRICS_HISTORY_LIMIT = 20;
+
+const UNKNOWN = "ไม่ระบุ";
 
 /**
  * Bumped whenever enrichment starts collecting something new (currently the
@@ -44,10 +80,100 @@ export class EgpService {
    * identical results.
    */
   sync(): Promise<SyncResult> {
-    this.inFlight ??= this.runSync().finally(() => {
+    this.inFlight ??= this.runAndRecordSync().finally(() => {
       this.inFlight = null;
     });
     return this.inFlight;
+  }
+
+  /** What the admin dashboard's pipeline card and sync-history table read. */
+  async metrics(): Promise<EgpMetrics> {
+    // Server-local midnight — every deployment of this project runs in a
+    // single timezone, so this is "today" for whoever's watching the
+    // dashboard, not necessarily Bangkok's calendar day if the host clock
+    // differs.
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [history, todaysRuns] = await Promise.all([
+      this.db.syncRuns.find().sort({ startedAt: -1 }).limit(METRICS_HISTORY_LIMIT).toArray(),
+      // Not folded into `history` above: a run older than the last
+      // METRICS_HISTORY_LIMIT would silently drop out of today's total on a
+      // busy day, even though it's still today.
+      this.db.syncRuns
+        .find({ startedAt: { $gte: startOfToday } }, { projection: { imported: 1 } })
+        .toArray(),
+    ]);
+    const [latest] = history;
+    // `TorDoc.createdAt` is the announcement's e-GP publish date, not when
+    // this app imported it (see toTorDoc) — importing a project published
+    // last month still counts here, which is the number a "did today's sync
+    // work" card actually needs.
+    const importedToday = todaysRuns.reduce((sum, run) => sum + run.imported, 0);
+
+    return {
+      status: latest?.status ?? "idle",
+      lastRunAt: latest ? latest.startedAt.toISOString() : null,
+      importedToday,
+      history: history.map((run) => ({
+        startedAt: run.startedAt.toISOString(),
+        finishedAt: run.finishedAt.toISOString(),
+        status: run.status,
+        fetched: run.fetched,
+        imported: run.imported,
+        updated: run.updated,
+        failedFeeds: run.failedFeeds,
+        ...(run.error ? { error: run.error } : {}),
+      })),
+    };
+  }
+
+  /**
+   * Every call to sync() — scheduled or from the admin button — becomes one
+   * row in the dashboard's sync history, whether it succeeds, only partly
+   * succeeds (some feeds failed but data still came back), or throws outright.
+   */
+  private async runAndRecordSync(): Promise<SyncResult> {
+    const startedAt = new Date();
+    try {
+      const result = await this.runSync();
+      await this.recordRun(startedAt, result);
+      return result;
+    } catch (error) {
+      await this.recordRun(startedAt, null, error);
+      throw error;
+    }
+  }
+
+  private async recordRun(startedAt: Date, result: SyncResult | null, error?: unknown): Promise<void> {
+    const doc: SyncRunDoc = result
+      ? {
+          startedAt,
+          finishedAt: new Date(),
+          status: result.failed.length > 0 ? "partial" : "success",
+          fetched: result.fetched,
+          imported: result.imported,
+          updated: result.updated,
+          failedFeeds: result.failed,
+        }
+      : {
+          startedAt,
+          finishedAt: new Date(),
+          status: "failed",
+          fetched: 0,
+          imported: 0,
+          updated: 0,
+          failedFeeds: [],
+          error: error instanceof Error ? error.message : String(error),
+        };
+
+    // History is a courtesy to the dashboard, not the point of a sync — a
+    // failure to record it must never mask (or replace) the real outcome.
+    try {
+      await this.db.syncRuns.insertOne(doc);
+    } catch (insertError) {
+      this.logger.warn(`e-GP: failed to record sync run history: ${String(insertError)}`);
+    }
   }
 
   private async runSync(): Promise<SyncResult> {

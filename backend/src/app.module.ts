@@ -3,6 +3,7 @@ import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 
 import { AccountsModule } from "./accounts/accounts.module";
+import { AuditModule } from "./audit/audit.module";
 import { AuthModule } from "./auth/auth.module";
 import { env } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
@@ -24,6 +25,7 @@ import { TorModule } from "./tor/tor.module";
     ]),
     DatabaseModule,
     AuthModule,
+    AuditModule,
     AccountsModule,
     TorModule,
     AiModule,

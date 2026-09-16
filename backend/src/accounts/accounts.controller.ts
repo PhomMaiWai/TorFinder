@@ -17,6 +17,13 @@ export class AccountsController {
     return this.accountsService.findAll(query.status);
   }
 
+  /** Every account, admin and org alike — the admin dashboard's user directory. */
+  @Get("directory")
+  @UseGuards(AdminGuard)
+  findAllUsers() {
+    return this.accountsService.findAllUsers();
+  }
+
   // Declared before ":id" below — otherwise that param route would swallow "/me".
   @Get("me")
   @UseGuards(SessionGuard)
@@ -32,7 +39,20 @@ export class AccountsController {
 
   @Patch(":id")
   @UseGuards(AdminGuard)
-  review(@Param("id") id: string, @Body() dto: ReviewAccountDto) {
-    return this.accountsService.review(id, dto);
+  review(@Param("id") id: string, @Body() dto: ReviewAccountDto, @Req() request: AuthenticatedRequest) {
+    return this.accountsService.review(id, dto, request.session.email);
+  }
+
+  /** Blocks sign-in on an already-approved account, without reversing its approval. */
+  @Patch(":id/suspend")
+  @UseGuards(AdminGuard)
+  suspend(@Param("id") id: string, @Req() request: AuthenticatedRequest) {
+    return this.accountsService.setSuspended(id, true, request.session.email);
+  }
+
+  @Patch(":id/reactivate")
+  @UseGuards(AdminGuard)
+  reactivate(@Param("id") id: string, @Req() request: AuthenticatedRequest) {
+    return this.accountsService.setSuspended(id, false, request.session.email);
   }
 }
