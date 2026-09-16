@@ -32,7 +32,7 @@ function optionalNumber(name: string, fallback: number): number {
 export const env = {
   isProduction,
   port: optionalNumber("PORT", 4000),
-  mongodbUri: required("MONGODB_URI", "mongodb://localhost:27017/torr"),
+  mongodbUri: required("MONGODB_URI", "mongodb://localhost:27017/torfinder"),
   sessionSecret: required("SESSION_SECRET", "dev-only-insecure-secret-change-me"),
   // Google Identity Services ID tokens are verified against this audience.
   // Empty in dev disables Google sign-in rather than throwing on every request.
@@ -58,6 +58,11 @@ export const env = {
     projectId: process.env.VERTEX_PROJECT_ID ?? "",
     location: process.env.VERTEX_LOCATION ?? "asia-southeast1",
     model: process.env.VERTEX_MODEL ?? "gemini-2.5-flash",
+    // Background reading of the documents the imports bring in. Off on startup
+    // by default: every run costs money, and a machine that restarts often
+    // would pay for it each time. Ignored entirely without a project id.
+    pollMinutes: optionalNumber("AI_POLL_MINUTES", 60),
+    pollOnStartup: process.env.AI_POLL_ON_STARTUP === "true",
   },
   /**
    * Only the knobs an operator would turn without a redeploy. Everything else
@@ -78,5 +83,23 @@ export const env = {
     // still finishes on time with whatever it managed, and anything skipped is
     // retried on the next run (see EgpService.enrichedSourceRefs).
     enrichBudgetMs: optionalNumber("EGP_ENRICH_BUDGET_MS", 45_000),
+  },
+  /**
+   * The agency's own procurement site. It publishes only its own announcements
+   * but adds the documents and the buying department e-GP leaves out, so it is
+   * polled on the same rhythm.
+   */
+  mea: {
+    pollMinutes: optionalNumber("MEA_POLL_MINUTES", 360),
+    pollOnStartup: (process.env.MEA_POLL_ON_STARTUP ?? "true") === "true",
+  },
+  /**
+   * The open-data portal republishes กรมบัญชีกลาง's procurement reports once a
+   * month, so polling it every few hours would only re-read what it already
+   * handed over. Daily is already ahead of the data.
+   */
+  datagov: {
+    pollMinutes: optionalNumber("DATAGOV_POLL_MINUTES", 1_440),
+    pollOnStartup: (process.env.DATAGOV_POLL_ON_STARTUP ?? "true") === "true",
   },
 };

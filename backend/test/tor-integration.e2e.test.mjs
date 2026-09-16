@@ -40,6 +40,7 @@ function makeToken(role, email) {
 }
 
 const ADMIN_TOKEN = makeToken("admin", "integration-admin@ci.test");
+const ORG_TOKEN = makeToken("org", "integration-org@ci.test");
 
 // TOR records are never seeded, so the only rows are ones the tests create.
 // Every fixture title carries this run id so a rerun against a persisted local
@@ -217,13 +218,25 @@ describe("GET /api/tor — manual vs e-GP source split", () => {
   });
 });
 
+describe("POST /api/egp/sync — admin only", () => {
+  it("forbids a request with no token (403)", async () => {
+    const res = await api("/egp/sync", { method: "POST" });
+    assert.equal(res.status, 403, "starting an import must take an admin session");
+  });
+
+  it("forbids an organization token (403)", async () => {
+    const res = await api("/egp/sync", { method: "POST", token: ORG_TOKEN });
+    assert.equal(res.status, 403);
+  });
+});
+
 describe("POST /api/egp/sync — live import contract (opt-in)", () => {
   // Off in CI: this reaches the real Bangkok e-GP portal. Run locally with
   // E2E_EGP_LIVE=1 to exercise it.
   const skip = process.env.E2E_EGP_LIVE !== "1";
 
   it("is routed and answers with a sync result or a portal-unavailable error", { skip, timeout: 180_000 }, async () => {
-    const res = await api("/egp/sync", { method: "POST" });
+    const res = await api("/egp/sync", { method: "POST", token: ADMIN_TOKEN });
 
     assert.notEqual(res.status, 404, "the sync endpoint should be mounted");
     assert.ok([200, 503].includes(res.status), `unexpected status ${res.status}: ${JSON.stringify(res.body)}`);

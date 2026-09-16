@@ -24,6 +24,25 @@ export const AI_REQUEST = {
    * rest is picked up by the next run.
    */
   maxCallsPerRun: 25,
+  /**
+   * Documents read at once. A scanned TOR can hold the model for a minute, and
+   * a run reading its whole budget one after another would still be going when
+   * the next one starts.
+   */
+  concurrency: 3,
+  /**
+   * Wall-clock cap on a run. Whatever it doesn't reach stays pending and is
+   * picked up next time, so a slow day degrades throughput instead of leaving
+   * a run hanging.
+   */
+  runBudgetMs: 10 * 60_000,
+  /**
+   * A document that failed is retried, but not on every run: a dead link and a
+   * scan the model can't read both fail identically, and retrying them every
+   * hour would spend the whole budget on the same handful of records forever.
+   */
+  retryAfterMs: 24 * 60 * 60_000,
+  maxAttempts: 3,
 } as const;
 
 /**

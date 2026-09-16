@@ -7,16 +7,32 @@ import { fetchDeletedTors } from "@/lib/tor-admin-api";
 import { fetchTorList } from "@/lib/tor-api";
 import { stageBadgeCls } from "@/lib/tor-ui";
 
-import { syncFromEgp } from "./actions";
+import { syncFromDataGov, syncFromEgp, syncFromMea } from "./actions";
 
 const PAGE_SIZE = 20;
 
 const TABS = [
   { id: "manual", label: "สร้างเอง" },
   { id: "egp", label: "จาก e-GP" },
+  { id: "mea", label: "จาก กฟน." },
+  { id: "datagov", label: "จาก data.go.th" },
   { id: "all", label: "ทั้งหมด" },
   { id: "deleted", label: "ถังขยะ" },
 ] as const;
+
+/** One button per portal, in the order their records outrank each other. */
+const IMPORTS = [
+  { label: "e-GP", action: syncFromEgp },
+  { label: "กฟน.", action: syncFromMea },
+  { label: "data.go.th", action: syncFromDataGov },
+] as const;
+
+
+type TabId = (typeof TABS)[number]["id"];
+
+/** Anything else in the query string — a stale link, a typo — falls back below. */
+const isTab = (value: string | undefined): value is TabId =>
+  TABS.some((tab) => tab.id === value);
 
 const DELETE_LABELS = {
   delete: "ลบ",
@@ -32,10 +48,7 @@ export default async function AdminTorListPage({
 }) {
   const { page: pageParam, source: sourceParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
-  const source =
-    sourceParam === "egp" || sourceParam === "all" || sourceParam === "deleted"
-      ? sourceParam
-      : "manual";
+  const source = isTab(sourceParam) ? sourceParam : "manual";
 
   // The trash has its own guarded route; the rest of the tabs are one listing
   // with a source filter.
@@ -63,16 +76,18 @@ export default async function AdminTorListPage({
               </Link>
             ))}
           </div>
-          <div className="flex gap-3">
-          <form action={syncFromEgp}>
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface-alt"
-            >
-              <RefreshCw size={16} />
-              ดึงประกาศจาก e-GP
-            </button>
-          </form>
+          <div className="flex flex-wrap gap-3">
+          {IMPORTS.map((portal) => (
+            <form key={portal.label} action={portal.action}>
+              <button
+                type="submit"
+                className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface-alt"
+              >
+                <RefreshCw size={16} />
+                ดึงจาก {portal.label}
+              </button>
+            </form>
+          ))}
           <Link
             href="/admin/tor/new"
             className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"

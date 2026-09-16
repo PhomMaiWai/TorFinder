@@ -357,6 +357,7 @@
     "awardedVendorTitle": "ผู้ชนะการเสนอราคา",
     "vendorRiskWarning": "ระบบพบความเสี่ยง: ความเชี่ยวชาญอาจไม่สอดคล้องกับขอบเขตงาน",
     "budgetLabel": "งบประมาณ",
+    "awardedLabel": "ราคาที่ตกลง",
     "deadlineLabel": "กำหนดส่ง",
     "daysLeftLabel": "เหลือ {days} วัน",
     "contractPeriodLabel": "ระยะเวลาสัญญา",

@@ -1,11 +1,11 @@
 import { Controller, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
 
 import { AdminGuard } from "../common/admin.guard";
-import { EgpService } from "./egp.service";
+import { MeaService } from "./mea.service";
 
-@Controller("egp")
-export class EgpController {
-  constructor(private readonly egpService: EgpService) {}
+@Controller("mea")
+export class MeaController {
+  constructor(private readonly meaService: MeaService) {}
 
   /**
    * Starting an import is privileged: it spends the portal's patience and
@@ -15,6 +15,6 @@ export class EgpController {
   @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.OK)
   sync() {
-    return this.egpService.sync();
+    return this.meaService.sync();
   }
 }
