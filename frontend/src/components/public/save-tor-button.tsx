@@ -22,7 +22,7 @@ export function SaveTorButton({
       className={`flex h-10 items-center gap-2 rounded-lg border px-4 text-sm font-medium shadow-sm transition-colors ${
         isSaved
           ? "border-accent/30 bg-accent-soft text-accent"
-          : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+          : "border-border bg-surface text-ink-muted hover:bg-surface-alt"
       }`}
     >
       <Bookmark size={15} fill={isSaved ? "currentColor" : "none"} />

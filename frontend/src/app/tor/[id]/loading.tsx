@@ -3,7 +3,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/skeleton";
 /** Mirrors the announcement page: the document on the left, its facts on the right. */
 export default function TorDetailLoading() {
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50">
+    <div className="flex min-h-screen flex-col bg-surface-alt">
       <main className="flex-1 py-8">
         <div className="mx-auto w-full max-w-[1400px] px-6 sm:px-8">
           <SkeletonScreen label="กำลังโหลดรายละเอียดประกาศ">
@@ -16,7 +16,7 @@ export default function TorDetailLoading() {
             <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
               <div className="space-y-4">
                 {Array.from({ length: 3 }, (_, i) => (
-                  <div key={i} className="space-y-3 rounded-xl border border-border bg-white p-6">
+                  <div key={i} className="space-y-3 rounded-xl border border-border bg-surface p-6">
                     <Skeleton className="h-5 w-40" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-11/12" />
@@ -25,7 +25,7 @@ export default function TorDetailLoading() {
                 ))}
               </div>
 
-              <div className="space-y-3 rounded-xl border border-border bg-white p-5">
+              <div className="space-y-3 rounded-xl border border-border bg-surface p-5">
                 {Array.from({ length: 5 }, (_, i) => (
                   <div key={i} className="flex items-start gap-3 border-b border-border pb-3 last:border-b-0">
                     <Skeleton className="size-4 shrink-0 rounded" />

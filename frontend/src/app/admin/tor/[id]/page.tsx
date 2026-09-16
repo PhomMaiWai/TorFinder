@@ -35,15 +35,15 @@ export default async function AdminTorDetailPage({
           </Link>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-6">
+        <div className="rounded-xl border border-border bg-surface p-6">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${stageBadgeCls(tor.stage)}`}
+              className={`rounded-full px-2.5 py-1 text-2xs font-semibold ${stageBadgeCls(tor.stage)}`}
             >
               {tor.stage}
             </span>
             {tor.sourceRef && (
-              <span className="rounded-full bg-surface-alt px-2.5 py-1 text-[11px] font-semibold text-ink-muted">
+              <span className="rounded-full bg-surface-alt px-2.5 py-1 text-2xs font-semibold text-ink-muted">
                 นำเข้าจากระบบ e-GP
               </span>
             )}

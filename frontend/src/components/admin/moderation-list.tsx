@@ -35,7 +35,7 @@ export function ModerationList({
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <div key={item.id} className="rounded-xl border border-border bg-white p-5">
+        <div key={item.id} className="rounded-xl border border-border bg-surface p-5">
           <div className="flex items-start justify-between gap-4 max-sm:flex-col">
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex flex-wrap items-center gap-2">

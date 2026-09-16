@@ -119,7 +119,7 @@ export function GoogleCompleteSignupForm({
           </span>
           {isComplete && <Check size={16} className="shrink-0 text-success" />}
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
           <div
             className={`h-full rounded-full transition-all ${isComplete ? "bg-success" : "bg-accent"}`}
             style={{ width: `${(filledCount / REQUIRED_FIELDS.length) * 100}%` }}
@@ -190,7 +190,7 @@ export function GoogleCompleteSignupForm({
             <select
               value={values.size}
               onChange={(e) => set("size", e.target.value)}
-              className={`${inputCls} border-border bg-white focus:border-accent/40`}
+              className={`${inputCls} border-border bg-surface focus:border-accent/40`}
             >
               {COMPANY_SIZE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>

@@ -12,6 +12,14 @@
  * below to actually take effect at runtime.
  */
 @theme {
+  /*
+   * The one step below Tailwind's scale, for the badges and meta lines that
+   * were reaching for text-[11px] — a size the design uses, not an exception.
+   * Everything else rounds onto the standard scale.
+   */
+  --text-2xs: 0.6875rem;      /* 11px */
+  --text-2xs--line-height: 1rem;
+
   /* ── Neutrals (zinc-based, slightly warm) ────────── */
   --color-ink:        #18181b;   /* zinc-900  */
   --color-ink-muted:  #71717a;   /* zinc-500  */

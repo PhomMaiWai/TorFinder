@@ -44,7 +44,7 @@ export default function LoginChoicePage() {
             <Link
               key={href}
               href={href}
-              className="group flex items-center gap-5 rounded-2xl border border-border bg-white p-6 transition-colors hover:border-accent/40"
+              className="group flex items-center gap-5 rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-accent/40"
             >
               <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-surface-alt">
                 <Icon size={24} className="text-ink-muted" />

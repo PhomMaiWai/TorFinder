@@ -97,7 +97,7 @@ export function AccountReviewList({
         const company = account.company;
 
         return (
-          <div key={account.id} className="rounded-xl border border-border bg-white">
+          <div key={account.id} className="rounded-xl border border-border bg-surface">
             <div
               role="button"
               tabIndex={0}

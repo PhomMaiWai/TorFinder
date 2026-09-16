@@ -20,7 +20,7 @@ export default async function AdminEditTorPage({ params }: { params: Promise<{ i
     <AdminPageShell title="แก้ไขรายการ TOR" description={tor.title}>
       <form
         action={updateWithId}
-        className="max-w-2xl space-y-5 rounded-xl border border-border bg-white p-6"
+        className="max-w-2xl space-y-5 rounded-xl border border-border bg-surface p-6"
       >
         <Field label="ชื่อโครงการ">
           <input name="title" required defaultValue={tor.title} className={inputCls} />

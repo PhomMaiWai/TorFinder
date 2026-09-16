@@ -40,12 +40,12 @@ export default function AdminCompaniesPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="h-10 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
+            className="h-10 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm text-ink outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10"
           />
         </label>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-white divide-y divide-border">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface divide-y divide-border">
         {filtered.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-ink-muted">{t("emptyState")}</p>
         ) : (

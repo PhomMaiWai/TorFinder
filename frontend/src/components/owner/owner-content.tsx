@@ -120,7 +120,7 @@ export function OwnerContent({
             onPillChange={setStage}
           />
 
-          <p className="mt-3 text-xs text-zinc-400">{t("itemsCount", { count: filtered.length })}</p>
+          <p className="mt-3 text-xs text-ink-subtle">{t("itemsCount", { count: filtered.length })}</p>
 
           <div className="mt-3">
             {filtered.length === 0 ? (
@@ -139,8 +139,8 @@ export function OwnerContent({
                       key={tor.id}
                       onClick={() => toggleExpand(tor.id)}
                       isOpen={isExpanded}
-                      icon={<FileText size={15} className="text-zinc-400" />}
-                      iconBg="bg-zinc-100"
+                      icon={<FileText size={15} className="text-ink-subtle" />}
+                      iconBg="bg-surface-alt"
                       title={tor.title}
                       subtitle={t("rowSubtitle", {
                         agency: tor.agency,
@@ -150,7 +150,7 @@ export function OwnerContent({
                       trailing={
                         <div className="flex items-center gap-3">
                           <StatusBadge label={tor.stage} />
-                          <span className="text-xs tabular-nums text-zinc-400">
+                          <span className="text-xs tabular-nums text-ink-subtle">
                             {isKnown(tor.deadline)
                               ? t("daysSuffix", { days: tor.daysLeft })
                               : tor.budget}
@@ -162,7 +162,7 @@ export function OwnerContent({
                           <Link
                             href={`/tor/${tor.id}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                            className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-ink-muted hover:bg-surface-alt hover:text-ink"
                           >
                             {t("viewTor")}
                           </Link>
@@ -185,7 +185,7 @@ export function OwnerContent({
                                   e.stopPropagation();
                                   setConfirmingDeleteId(null);
                                 }}
-                                className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                                className="flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-ink-muted hover:bg-surface-alt hover:text-ink"
                               >
                                 {t("cancelDelete")}
                               </button>
@@ -196,7 +196,7 @@ export function OwnerContent({
                                 e.stopPropagation();
                                 setConfirmingDeleteId(tor.id);
                               }}
-                              className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-danger-soft hover:text-danger"
+                              className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-ink-muted hover:bg-danger-soft hover:text-danger"
                             >
                               <Trash2 size={13} />
                               {t("deleteAction")}
@@ -206,8 +206,8 @@ export function OwnerContent({
                       }
                       expandedContent={
                         isExpanded ? (
-                          <div className="border-t border-zinc-100 bg-zinc-50">
-                            <div className="flex gap-4 border-b border-zinc-100 px-4 pl-[4.25rem]">
+                          <div className="border-t border-border bg-surface-alt">
+                            <div className="flex gap-4 border-b border-border px-4 pl-[4.25rem]">
                               {(
                                 [
                                   {
@@ -228,8 +228,8 @@ export function OwnerContent({
                                   }}
                                   className={`relative h-9 text-sm font-medium ${
                                     currentTab === key
-                                      ? "text-zinc-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-zinc-900"
-                                      : "text-zinc-400 hover:text-zinc-700"
+                                      ? "text-ink after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-ink"
+                                      : "text-ink-subtle hover:text-ink"
                                   }`}
                                 >
                                   {label}
@@ -238,33 +238,33 @@ export function OwnerContent({
                             </div>
 
                             <div className="space-y-2 p-4 pl-[4.25rem]">
-                              {!panel && <p className="text-sm text-zinc-400">{t("loadingPanel")}</p>}
+                              {!panel && <p className="text-sm text-ink-subtle">{t("loadingPanel")}</p>}
 
                               {panel &&
                                 currentTab === "companies" &&
                                 (companies.length === 0 ? (
-                                  <p className="text-sm text-zinc-400">{t("noMatchedCompanies")}</p>
+                                  <p className="text-sm text-ink-subtle">{t("noMatchedCompanies")}</p>
                                 ) : (
                                   companies.map((company) => (
                                     <div
                                       key={company.companyName}
-                                      className="rounded-lg border border-zinc-200 bg-white px-4 py-3"
+                                      className="rounded-lg border border-border bg-surface px-4 py-3"
                                     >
                                       <div className="flex items-center justify-between gap-3">
                                         <div className="flex min-w-0 items-center gap-3">
-                                          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-xs font-semibold text-zinc-600">
+                                          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-alt text-xs font-semibold text-ink-muted">
                                             {company.companyName.charAt(0)}
                                           </span>
                                           <div className="min-w-0">
-                                            <p className="text-sm font-medium text-zinc-900">
+                                            <p className="text-sm font-medium text-ink">
                                               {company.companyName}
                                             </p>
-                                            <p className="text-xs text-zinc-400">
+                                            <p className="text-xs text-ink-subtle">
                                               {company.specialty} · {company.size}
                                             </p>
                                           </div>
                                         </div>
-                                        <span className="text-sm font-semibold tabular-nums text-zinc-800">
+                                        <span className="text-sm font-semibold tabular-nums text-ink">
                                           {company.score}%
                                         </span>
                                       </div>
@@ -278,20 +278,20 @@ export function OwnerContent({
                               {panel &&
                                 currentTab === "feedback" &&
                                 (feedback.length === 0 ? (
-                                  <p className="text-sm text-zinc-400">{t("noFeedback")}</p>
+                                  <p className="text-sm text-ink-subtle">{t("noFeedback")}</p>
                                 ) : (
                                   feedback.map((entry) => (
                                     <div
                                       key={entry.id}
-                                      className="rounded-lg border border-zinc-200 bg-white p-4"
+                                      className="rounded-lg border border-border bg-surface p-4"
                                     >
                                       <div className="flex items-start justify-between gap-3">
-                                        <p className="text-sm font-medium text-zinc-900">
+                                        <p className="text-sm font-medium text-ink">
                                           {entry.author}
                                         </p>
-                                        <span className="text-xs text-zinc-400">{entry.status}</span>
+                                        <span className="text-xs text-ink-subtle">{entry.status}</span>
                                       </div>
-                                      <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+                                      <p className="mt-2 text-sm leading-relaxed text-ink-muted">
                                         {entry.text}
                                       </p>
                                     </div>
@@ -315,8 +315,8 @@ export function OwnerContent({
               {deletedTors.map((tor) => (
                 <ItemRow
                   key={tor.id}
-                  icon={<FileText size={15} className="text-zinc-400" />}
-                  iconBg="bg-zinc-100"
+                  icon={<FileText size={15} className="text-ink-subtle" />}
+                  iconBg="bg-surface-alt"
                   title={tor.title}
                   subtitle={tor.agency}
                   actions={
@@ -326,7 +326,7 @@ export function OwnerContent({
                         e.stopPropagation();
                         startTransition(() => void unhideTor(tor.id));
                       }}
-                      className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50"
+                      className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-ink-muted hover:bg-surface-alt hover:text-ink disabled:opacity-50"
                     >
                       <RotateCcw size={13} />
                       {t("restoreAction")}

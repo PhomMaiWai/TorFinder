@@ -33,14 +33,14 @@ import { fetchBudgetAssessment, fetchFeedback, fetchMatchedCompanies } from "@/l
 import { getTorById, mockNumericId } from "@/lib/tor-source";
 import { isKnown, stageBadgeCls, torAmount } from "@/lib/tor-ui";
 
-const CARD = "rounded-xl border border-zinc-200 bg-white p-6 shadow-sm";
+const CARD = "rounded-xl border border-border bg-surface p-6 shadow-sm";
 
 const THB = new Intl.NumberFormat("th-TH", {
   style: "currency",
   currency: "THB",
   maximumFractionDigits: 0,
 });
-const HEADING = "mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900";
+const HEADING = "mb-4 flex items-center gap-2 text-lg font-bold text-ink";
 
 function thaiDate(value: string | null | undefined): string | null {
   if (!value) return null;
@@ -91,14 +91,14 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
   const documents = tor.documents ?? [];
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50">
+    <div className="flex min-h-screen flex-col bg-surface-alt">
       <SiteNavbar />
 
       <main className="flex-1 py-8 sm:py-10">
         <div className="mx-auto w-full max-w-6xl px-6 sm:px-8">
           <Link
             href="/public"
-            className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+            className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
           >
             <ArrowLeft size={16} />
             {t("backToSearch")}
@@ -107,22 +107,22 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
           <div className="mb-8">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span
-                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
+                className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
               >
                 {tor.stage}
               </span>
               {tor.sourceRef && (
-                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
+                <span className="rounded-full bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted">
                   {t("importedFromEgp")}
                 </span>
               )}
               {tor.isNew && (
-                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
+                <span className="rounded-full bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted">
                   {t("newBadge")}
                 </span>
               )}
               {budgetStatus && budgetStatus !== "ปกติ" && (
-                <span className="rounded-full bg-warn-soft px-2.5 py-1 text-[11px] font-semibold text-warn">
+                <span className="rounded-full bg-warn-soft px-2.5 py-1 text-2xs font-semibold text-warn">
                   {budgetStatus === "สูงกว่าปกติ" ? t("budgetHighBadge") : t("budgetLowBadge")}
                 </span>
               )}
@@ -130,22 +130,22 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-bold leading-snug tracking-tight text-zinc-950 sm:text-[28px]">
+                <h1 className="text-2xl font-bold leading-snug tracking-tight text-ink sm:text-3xl">
                   {tor.title}
                 </h1>
-                <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[15px] text-zinc-500">
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-base text-ink-muted">
                   <span className="flex items-center gap-1.5">
-                    <Building2 size={16} className="text-zinc-400" />
+                    <Building2 size={16} className="text-ink-subtle" />
                     {tor.agency}
                   </span>
                   {tor.projectNumber && (
                     <span className="flex items-center gap-1.5">
-                      <Hash size={15} className="text-zinc-400" />
+                      <Hash size={15} className="text-ink-subtle" />
                       {tor.projectNumber}
                     </span>
                   )}
                   <span className="flex items-center gap-1.5">
-                    <Calendar size={15} className="text-zinc-400" />
+                    <Calendar size={15} className="text-ink-subtle" />
                     {t("publishedInfo", { date: publishedAt })}
                   </span>
                 </div>
@@ -176,13 +176,13 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
             <div className="space-y-5">
               <section className={CARD}>
                 <h2 className={HEADING}>
-                  <FileText size={18} className="text-zinc-400" />
+                  <FileText size={18} className="text-ink-subtle" />
                   {t("announcementDetail")}
                 </h2>
-                <p className="text-[15px] leading-relaxed text-zinc-600">{tor.summary}</p>
+                <p className="text-base leading-relaxed text-ink-muted">{tor.summary}</p>
 
                 {!detail && sourceUrl && (
-                  <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-zinc-500">
+                  <p className="mt-4 border-t border-border pt-4 text-sm text-ink-muted">
                     {t("fullDocumentNote")}{" "}
                     <a
                       href={sourceUrl}
@@ -199,17 +199,17 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {procurementFacts.length > 0 && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <ClipboardList size={18} className="text-zinc-400" />
+                    <ClipboardList size={18} className="text-ink-subtle" />
                     {t("procurementDetailsHeading")}
                   </h2>
                   <dl className="grid gap-4 sm:grid-cols-2">
                     {procurementFacts.map((fact) => (
                       <div key={fact.label}>
-                        <dt className="flex items-center gap-1.5 text-xs text-zinc-500">
-                          <Package size={13} className="text-zinc-400" />
+                        <dt className="flex items-center gap-1.5 text-xs text-ink-muted">
+                          <Package size={13} className="text-ink-subtle" />
                           {fact.label}
                         </dt>
-                        <dd className="mt-0.5 text-sm font-medium text-zinc-900">{fact.value}</dd>
+                        <dd className="mt-0.5 text-sm font-medium text-ink">{fact.value}</dd>
                       </div>
                     ))}
                   </dl>
@@ -219,12 +219,12 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {budgetAssessment && budgetAssessment.status !== "ไม่ประเมิน" && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <Scale size={18} className="text-zinc-400" />
+                    <Scale size={18} className="text-ink-subtle" />
                     {t("budgetAssessmentHeading")}
                   </h2>
                   <div className="flex flex-wrap items-center gap-3">
                     <span
-                      className={`rounded-full px-3 py-1 text-[13px] font-semibold ${
+                      className={`rounded-full px-3 py-1 text-sm font-semibold ${
                         budgetAssessment.status === "ปกติ"
                           ? "bg-success-soft text-success"
                           : "bg-warn-soft text-warn"
@@ -233,7 +233,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                       {budgetAssessment.status}
                     </span>
                     {budgetAssessment.median !== null && (
-                      <span className="text-sm text-zinc-500">
+                      <span className="text-sm text-ink-muted">
                         {t("budgetMedianLabel", {
                           median: THB.format(budgetAssessment.median),
                           count: budgetAssessment.peerCount,
@@ -243,12 +243,12 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                   </div>
                   <ul className="mt-3 space-y-1.5">
                     {budgetAssessment.notes.map((note) => (
-                      <li key={note} className="text-sm leading-relaxed text-zinc-600">
+                      <li key={note} className="text-sm leading-relaxed text-ink-muted">
                         {note}
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-3 border-t border-zinc-100 pt-3 text-xs leading-relaxed text-zinc-400">
+                  <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-ink-subtle">
                     {t("budgetAssessmentNote")}
                   </p>
                 </section>
@@ -257,28 +257,28 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {extraction && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <Sparkles size={18} className="text-zinc-400" />
+                    <Sparkles size={18} className="text-ink-subtle" />
                     {t("extractionHeading")}
                   </h2>
-                  <p className="mb-4 rounded-lg bg-zinc-50 px-3 py-2 text-xs leading-relaxed text-zinc-500">
+                  <p className="mb-4 rounded-lg bg-surface-alt px-3 py-2 text-xs leading-relaxed text-ink-muted">
                     {t("extractionDisclaimer", { model: extraction.model })}
                   </p>
 
                   {extraction.scope && (
                     <div className="mb-4">
-                      <h3 className="mb-1 text-sm font-semibold text-zinc-900">{t("scopeOfWork")}</h3>
-                      <p className="text-[15px] leading-relaxed text-zinc-600">{extraction.scope}</p>
+                      <h3 className="mb-1 text-sm font-semibold text-ink">{t("scopeOfWork")}</h3>
+                      <p className="text-base leading-relaxed text-ink-muted">{extraction.scope}</p>
                     </div>
                   )}
 
                   {extraction.qualifications.length > 0 && (
                     <div className="mb-4">
-                      <h3 className="mb-1.5 text-sm font-semibold text-zinc-900">
+                      <h3 className="mb-1.5 text-sm font-semibold text-ink">
                         {t("qualifications")}
                       </h3>
                       <ul className="space-y-1.5">
                         {extraction.qualifications.map((q) => (
-                          <li key={q} className="flex items-start gap-2 text-sm text-zinc-600">
+                          <li key={q} className="flex items-start gap-2 text-sm text-ink-muted">
                             <Check size={15} className="mt-0.5 shrink-0 text-accent" />
                             {q}
                           </li>
@@ -289,13 +289,13 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
 
                   {extraction.deliverables.length > 0 && (
                     <div className="mb-4">
-                      <h3 className="mb-1.5 text-sm font-semibold text-zinc-900">
+                      <h3 className="mb-1.5 text-sm font-semibold text-ink">
                         {t("deliverables")}
                       </h3>
                       <ul className="space-y-1.5">
                         {extraction.deliverables.map((d) => (
-                          <li key={d} className="flex items-start gap-2 text-sm text-zinc-600">
-                            <ListChecks size={15} className="mt-0.5 shrink-0 text-zinc-400" />
+                          <li key={d} className="flex items-start gap-2 text-sm text-ink-muted">
+                            <ListChecks size={15} className="mt-0.5 shrink-0 text-ink-subtle" />
                             {d}
                           </li>
                         ))}
@@ -303,27 +303,27 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                     </div>
                   )}
 
-                  <dl className="grid gap-3 border-t border-zinc-100 pt-3 sm:grid-cols-3">
+                  <dl className="grid gap-3 border-t border-border pt-3 sm:grid-cols-3">
                     {extraction.budgetAmount !== null && (
                       <div>
-                        <dt className="text-xs text-zinc-500">{t("documentBudgetLabel")}</dt>
-                        <dd className="mt-0.5 text-sm font-medium text-zinc-900">
+                        <dt className="text-xs text-ink-muted">{t("documentBudgetLabel")}</dt>
+                        <dd className="mt-0.5 text-sm font-medium text-ink">
                           {THB.format(extraction.budgetAmount)}
                         </dd>
                       </div>
                     )}
                     {extraction.contractPeriod && (
                       <div>
-                        <dt className="text-xs text-zinc-500">{t("contractPeriodLabel")}</dt>
-                        <dd className="mt-0.5 text-sm font-medium text-zinc-900">
+                        <dt className="text-xs text-ink-muted">{t("contractPeriodLabel")}</dt>
+                        <dd className="mt-0.5 text-sm font-medium text-ink">
                           {extraction.contractPeriod}
                         </dd>
                       </div>
                     )}
                     {extraction.deadline && (
                       <div>
-                        <dt className="text-xs text-zinc-500">{t("deadlineLabel")}</dt>
-                        <dd className="mt-0.5 text-sm font-medium text-zinc-900">
+                        <dt className="text-xs text-ink-muted">{t("deadlineLabel")}</dt>
+                        <dd className="mt-0.5 text-sm font-medium text-ink">
                           {thaiDate(extraction.deadline)}
                         </dd>
                       </div>
@@ -336,22 +336,22 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                 <>
                   <section className={CARD}>
                     <h2 className={HEADING}>
-                      <FileText size={18} className="text-zinc-400" />
+                      <FileText size={18} className="text-ink-subtle" />
                       {t("scopeOfWork")}
                     </h2>
-                    <p className="text-[15px] leading-relaxed text-zinc-600">{detail.scope}</p>
+                    <p className="text-base leading-relaxed text-ink-muted">{detail.scope}</p>
                   </section>
 
                   <section className={CARD}>
                     <h2 className={HEADING}>
-                      <Shield size={18} className="text-zinc-400" />
+                      <Shield size={18} className="text-ink-subtle" />
                       {t("qualifications")}
                     </h2>
                     <ul className="space-y-3">
                       {detail.qualifications.map((q) => (
                         <li
                           key={q}
-                          className="flex items-start gap-2.5 text-[15px] leading-relaxed text-zinc-600"
+                          className="flex items-start gap-2.5 text-base leading-relaxed text-ink-muted"
                         >
                           <Check size={16} className="mt-0.5 shrink-0 text-accent" />
                           {q}
@@ -362,12 +362,12 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
 
                   <section className={CARD}>
                     <h2 className={HEADING}>
-                      <ListChecks size={18} className="text-zinc-400" />
+                      <ListChecks size={18} className="text-ink-subtle" />
                       {t("deliverables")}
                     </h2>
                     <ol className="space-y-2.5">
                       {detail.deliverables.map((d, i) => (
-                        <li key={d} className="flex items-center gap-3 text-[15px] text-zinc-600">
+                        <li key={d} className="flex items-center gap-3 text-base text-ink-muted">
                           <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-bold text-accent">
                             {i + 1}
                           </span>
@@ -379,13 +379,13 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
 
                   <section className={CARD}>
                     <h2 className={HEADING}>
-                      <Scale size={18} className="text-zinc-400" />
+                      <Scale size={18} className="text-ink-subtle" />
                       {t("priceBenchmarkTitle")}
                     </h2>
-                    <p className="text-[15px] leading-relaxed text-zinc-600">
+                    <p className="text-base leading-relaxed text-ink-muted">
                       {detail.priceBenchmark}
                     </p>
-                    <p className="mt-3 text-xs text-zinc-400">{t("aiAnalyzedBy")}</p>
+                    <p className="mt-3 text-xs text-ink-subtle">{t("aiAnalyzedBy")}</p>
                   </section>
                 </>
               )}
@@ -393,15 +393,15 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {detail?.awardedVendor && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <Trophy size={18} className="text-zinc-400" />
+                    <Trophy size={18} className="text-ink-subtle" />
                     {t("awardedVendorTitle")}
                   </h2>
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-[15px] font-semibold text-zinc-900">
+                    <p className="text-base font-semibold text-ink">
                       {detail.awardedVendor.name}
                     </p>
-                    <span className="flex items-center gap-1.5 text-sm text-zinc-500">
-                      <Gauge size={15} className="text-zinc-400" />
+                    <span className="flex items-center gap-1.5 text-sm text-ink-muted">
+                      <Gauge size={15} className="text-ink-subtle" />
                       {t("vendorMatchScore", { score: detail.awardedVendor.matchScore })}
                     </span>
                   </div>
@@ -414,7 +414,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                       </p>
                       <ul className="mt-2.5 space-y-1.5">
                         {detail.awardedVendor.mismatchReasons.map((reason) => (
-                          <li key={reason} className="text-sm leading-relaxed text-zinc-600">
+                          <li key={reason} className="text-sm leading-relaxed text-ink-muted">
                             • {reason}
                           </li>
                         ))}
@@ -427,18 +427,18 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {rankedCompanies.length > 0 && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <Users size={18} className="text-zinc-400" />
+                    <Users size={18} className="text-ink-subtle" />
                     {t("matchedCompaniesHeading")}
                   </h2>
-                  <ul className="divide-y divide-zinc-100">
+                  <ul className="divide-y divide-border">
                     {rankedCompanies.map((company) => (
                       <li key={company.companyName} className="py-3 first:pt-0 last:pb-0">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-zinc-900">
+                            <p className="text-sm font-semibold text-ink">
                               {company.companyName}
                             </p>
-                            <p className="mt-0.5 text-xs text-zinc-500">
+                            <p className="mt-0.5 text-xs text-ink-muted">
                               {company.specialty} · {t("companySizeLabel", { size: company.size })}
                             </p>
                           </div>
@@ -450,7 +450,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                         {[...company.reasons, ...company.gaps].length > 0 && (
                           <ul className="mt-1.5 space-y-0.5">
                             {company.reasons.map((reason) => (
-                              <li key={reason} className="text-xs text-zinc-500">
+                              <li key={reason} className="text-xs text-ink-muted">
                                 · {reason}
                               </li>
                             ))}
@@ -470,18 +470,18 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {matchedCompanies.length > 0 && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <Users size={18} className="text-zinc-400" />
+                    <Users size={18} className="text-ink-subtle" />
                     {t("matchedCompaniesHeading")}
                   </h2>
-                  <ul className="divide-y divide-zinc-100">
+                  <ul className="divide-y divide-border">
                     {matchedCompanies.map((company) => (
                       <li
                         key={company.name}
                         className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-zinc-900">{company.name}</p>
-                          <p className="mt-0.5 text-xs text-zinc-500">
+                          <p className="text-sm font-semibold text-ink">{company.name}</p>
+                          <p className="mt-0.5 text-xs text-ink-muted">
                             {company.specialty} · {t("companySizeLabel", { size: company.size })}
                           </p>
                         </div>
@@ -497,19 +497,19 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {publishedFeedback.length > 0 && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <MessageSquare size={18} className="text-zinc-400" />
+                    <MessageSquare size={18} className="text-ink-subtle" />
                     {t("feedbackListHeading")}
                   </h2>
                   <ul className="space-y-4">
                     {publishedFeedback.map((entry) => (
-                      <li key={entry.id} className="rounded-lg bg-zinc-50 p-4">
+                      <li key={entry.id} className="rounded-lg bg-surface-alt p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-zinc-900">{entry.author}</p>
-                          <span className="text-xs text-zinc-400">
+                          <p className="text-sm font-semibold text-ink">{entry.author}</p>
+                          <span className="text-xs text-ink-subtle">
                             {thaiDate(entry.createdAt) ?? ""}
                           </span>
                         </div>
-                        <p className="mt-1.5 text-sm leading-relaxed text-zinc-600">{entry.text}</p>
+                        <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{entry.text}</p>
                       </li>
                     ))}
                   </ul>
@@ -534,18 +534,18 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {feedback.length > 0 && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <MessageSquare size={18} className="text-zinc-400" />
+                    <MessageSquare size={18} className="text-ink-subtle" />
                     {t("feedbackListHeading")}
                   </h2>
                   <ul className="space-y-4">
                     {feedback.map((entry) => (
-                      <li key={entry.id} className="rounded-lg bg-zinc-50 p-4">
+                      <li key={entry.id} className="rounded-lg bg-surface-alt p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-zinc-900">{entry.author}</p>
-                          <span className="text-xs text-zinc-400">{entry.submittedAt}</span>
+                          <p className="text-sm font-semibold text-ink">{entry.author}</p>
+                          <span className="text-xs text-ink-subtle">{entry.submittedAt}</span>
                         </div>
-                        <p className="mt-1.5 text-sm leading-relaxed text-zinc-600">{entry.text}</p>
-                        <span className="mt-2 inline-block rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-zinc-500 ring-1 ring-zinc-200">
+                        <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{entry.text}</p>
+                        <span className="mt-2 inline-block rounded-full bg-surface px-2.5 py-0.5 text-2xs font-medium text-ink-muted ring-1 ring-border">
                           {entry.status}
                         </span>
                       </li>
@@ -557,18 +557,18 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               {documents.length > 0 && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <FileText size={18} className="text-zinc-400" />
+                    <FileText size={18} className="text-ink-subtle" />
                     {t("documentsHeading")}
                   </h2>
-                  <ul className="divide-y divide-zinc-100">
+                  <ul className="divide-y divide-border">
                     {documents.map((doc) => (
                       <li
                         key={doc.url + doc.label}
                         className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-zinc-900">{doc.label}</p>
-                          <p className="mt-0.5 text-xs text-zinc-500">
+                          <p className="text-sm font-medium text-ink">{doc.label}</p>
+                          <p className="mt-0.5 text-xs text-ink-muted">
                             {thaiDate(doc.publishedAt) ?? t("unknownValue")}
                           </p>
                         </div>
@@ -576,7 +576,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                           href={doc.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-accent transition-colors hover:bg-accent-soft"
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-accent transition-colors hover:bg-accent-soft"
                         >
                           <ExternalLink size={14} />
                           {t("viewDocumentPdf")}
@@ -589,12 +589,12 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
 
               {tor.tags.length > 0 && (
                 <section className={CARD}>
-                  <h2 className="mb-3 text-lg font-bold text-zinc-900">{t("relatedTechnologies")}</h2>
+                  <h2 className="mb-3 text-lg font-bold text-ink">{t("relatedTechnologies")}</h2>
                   <div className="flex flex-wrap gap-2">
                     {tor.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-md bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-500 ring-1 ring-zinc-200"
+                        className="rounded-md bg-surface-alt px-2.5 py-1 text-xs font-medium text-ink-muted ring-1 ring-border"
                       >
                         {tag}
                       </span>
@@ -605,7 +605,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
             </div>
 
             <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-              <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
                 <InfoRow
                   icon={Banknote}
                   label={amount.isAwarded ? t("awardedLabel") : t("budgetLabel")}
@@ -648,7 +648,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               </div>
 
               {sourceUrl && (
-                <p className="px-1 text-xs leading-relaxed text-zinc-400">
+                <p className="px-1 text-xs leading-relaxed text-ink-subtle">
                   {t("publishedInfo", { date: publishedAt })}
                 </p>
               )}
@@ -676,14 +676,14 @@ function InfoRow({
   muted?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-3 border-b border-zinc-100 py-3 first:pt-0 last:border-0 last:pb-0">
-      <Icon size={16} className="mt-0.5 shrink-0 text-zinc-400" />
+    <div className="flex items-start gap-3 border-b border-border py-3 first:pt-0 last:border-0 last:pb-0">
+      <Icon size={16} className="mt-0.5 shrink-0 text-ink-subtle" />
       <div className="min-w-0">
-        <p className="text-xs text-zinc-500">{label}</p>
-        <p className={`mt-0.5 text-sm font-semibold ${muted ? "text-zinc-400" : "text-zinc-900"}`}>
+        <p className="text-xs text-ink-muted">{label}</p>
+        <p className={`mt-0.5 text-sm font-semibold ${muted ? "text-ink-subtle" : "text-ink"}`}>
           {value}
         </p>
-        {hint && <p className="mt-0.5 text-xs text-zinc-400">{hint}</p>}
+        {hint && <p className="mt-0.5 text-xs text-ink-subtle">{hint}</p>}
       </div>
     </div>
   );

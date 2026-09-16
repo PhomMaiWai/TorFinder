@@ -21,7 +21,7 @@ function PendingCard() {
         <span className="text-xl font-bold tracking-tight text-ink">TorFinder</span>
       </Link>
 
-      <div className="rounded-2xl border border-border bg-white p-10">
+      <div className="rounded-2xl border border-border bg-surface p-10">
         <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-warn-soft">
           <Clock size={26} className="text-warn" />
         </span>

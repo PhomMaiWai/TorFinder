@@ -3,7 +3,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/skeleton";
 /** Mirrors the search page: heading, filter bar, then the result cards. */
 export default function PublicLoading() {
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50">
+    <div className="flex min-h-screen flex-col bg-surface-alt">
       <main className="flex-1 py-8 sm:py-12">
         <div className="mx-auto w-full max-w-[1400px] px-6 sm:px-8">
           <SkeletonScreen label="กำลังโหลดประกาศ">
@@ -16,7 +16,7 @@ export default function PublicLoading() {
 
             <div className="grid gap-4 lg:grid-cols-2">
               {Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className="space-y-3 rounded-xl border border-border bg-white p-5">
+                <div key={i} className="space-y-3 rounded-xl border border-border bg-surface p-5">
                   <Skeleton className="h-5 w-24 rounded-full" />
                   <Skeleton className="h-5 w-4/5" />
                   <Skeleton className="h-4 w-1/2" />

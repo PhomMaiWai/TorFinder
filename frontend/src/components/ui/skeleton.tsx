@@ -45,7 +45,7 @@ export function SkeletonRow() {
 /** A card of the kind the dashboards and listings are built from. */
 export function SkeletonCard() {
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-white p-5">
+    <div className="space-y-3 rounded-xl border border-border bg-surface p-5">
       <Skeleton className="size-9 rounded-lg" />
       <Skeleton className="h-3 w-24" />
       <Skeleton className="h-6 w-16" />

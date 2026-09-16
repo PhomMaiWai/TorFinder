@@ -13,7 +13,7 @@ export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarPro
   return (
     <aside className="space-y-4 lg:sticky lg:top-[calc(theme(spacing.14)+1px)]">
       {/* Upcoming deadlines */}
-      <div className="rounded-xl border border-border bg-white">
+      <div className="rounded-xl border border-border bg-surface">
         <div className="border-b border-border px-5 py-4">
           <p className="text-sm font-semibold text-ink">{t("upcomingDeadlinesTitle")}</p>
         </div>
@@ -47,7 +47,7 @@ export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarPro
       </div>
 
       {/* Company profile */}
-      <div className="rounded-xl border border-border bg-white p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm font-semibold text-ink">{t("companyProfileTitle")}</p>
           <span className="text-sm font-bold text-accent">80%</span>
@@ -66,10 +66,10 @@ export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarPro
           ].map(({ label, done }) => (
             <div key={label} className="flex items-center gap-2 text-sm">
               <span
-                className={`size-4 shrink-0 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${
+                className={`size-4 shrink-0 rounded-full border-2 flex items-center justify-center text-2xs font-bold ${
                   done
                     ? "border-accent bg-accent text-white"
-                    : "border-border bg-white text-transparent"
+                    : "border-border bg-surface text-transparent"
                 }`}
               >
                 ✓
@@ -87,7 +87,7 @@ export function DashboardSidebar({ savedCount, byDeadline }: DashboardSidebarPro
       </div>
 
       {/* Quick links */}
-      <div className="rounded-xl border border-border bg-white p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <p className="mb-3 text-sm font-semibold text-ink">{t("savedTitle")}</p>
         {savedCount === 0 ? (
           <p className="text-sm text-ink-muted">{t("noSavedItems")}</p>
