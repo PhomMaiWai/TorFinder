@@ -35,7 +35,7 @@ export default async function AdminAuditPage() {
                 </div>
 
                 <div className="shrink-0 text-right max-sm:text-left">
-                  <p className="text-xs font-medium text-ink">{log.actor}</p>
+                  <p className="text-xs font-medium break-words text-ink">{log.actor}</p>
                   <p className="text-xs text-ink-muted">{thaiDateTime(log.date)}</p>
                 </div>
               </div>

@@ -36,7 +36,7 @@ export default async function AdminEditTorPage({ params }: { params: Promise<{ i
           </select>
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="งบประมาณ">
             <input name="budget" required defaultValue={tor.budget} className={inputCls} />
           </Field>
@@ -45,7 +45,7 @@ export default async function AdminEditTorPage({ params }: { params: Promise<{ i
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="จำนวนวันที่เหลือ">
             <input
               name="daysLeft"

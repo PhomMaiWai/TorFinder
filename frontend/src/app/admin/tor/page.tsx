@@ -104,48 +104,50 @@ export default async function AdminTorListPage({
               {isTrash ? "ถังขยะว่าง" : "ยังไม่มีรายการ TOR"}
             </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-surface-alt text-left text-xs text-ink-muted">
-                  <th className="px-5 py-3 font-medium">ชื่อโครงการ</th>
-                  <th className="px-5 py-3 font-medium">หน่วยงาน</th>
-                  <th className="px-5 py-3 font-medium">สถานะ</th>
-                  <th className="px-5 py-3 font-medium">วันที่ปิดรับ</th>
-                  <th className="px-5 py-3 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {tors.map((tor) => (
-                  <tr key={tor.id} className="border-b border-border last:border-0">
-                    <td className="max-w-xs truncate px-5 py-3 font-medium text-ink">{tor.title}</td>
-                    <td className="px-5 py-3 text-ink-muted">{tor.agency}</td>
-                    <td className="px-5 py-3">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-2xs font-semibold ${stageBadgeCls(tor.stage)}`}
-                      >
-                        {tor.stage}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-ink-muted">{tor.deadline}</td>
-                    <td className="px-5 py-3 text-right">
-                      <span className="inline-flex items-center gap-4">
-                        <Link
-                          href={`/admin/tor/${tor.id}`}
-                          className="font-medium text-accent hover:text-accent-dark"
-                        >
-                          ดูรายละเอียด
-                        </Link>
-                        <DeleteTorButton
-                          torId={tor.id}
-                          deleted={isTrash}
-                          labels={DELETE_LABELS}
-                        />
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[40rem] text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-surface-alt text-left text-xs text-ink-muted">
+                      <th className="px-5 py-3 font-medium">ชื่อโครงการ</th>
+                      <th className="px-5 py-3 font-medium">หน่วยงาน</th>
+                      <th className="px-5 py-3 font-medium">สถานะ</th>
+                      <th className="px-5 py-3 font-medium">วันที่ปิดรับ</th>
+                      <th className="px-5 py-3 font-medium"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tors.map((tor) => (
+                      <tr key={tor.id} className="border-b border-border last:border-0">
+                        <td className="max-w-xs truncate px-5 py-3 font-medium text-ink">{tor.title}</td>
+                        <td className="px-5 py-3 text-ink-muted">{tor.agency}</td>
+                        <td className="px-5 py-3">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-2xs font-semibold ${stageBadgeCls(tor.stage)}`}
+                          >
+                            {tor.stage}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-ink-muted">{tor.deadline}</td>
+                        <td className="px-5 py-3 text-right">
+                          <span className="inline-flex items-center gap-4">
+                            <Link
+                              href={`/admin/tor/${tor.id}`}
+                              className="font-medium text-accent hover:text-accent-dark"
+                            >
+                              ดูรายละเอียด
+                            </Link>
+                            <DeleteTorButton
+                              torId={tor.id}
+                              deleted={isTrash}
+                              labels={DELETE_LABELS}
+                            />
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
           )}
         </div>
 

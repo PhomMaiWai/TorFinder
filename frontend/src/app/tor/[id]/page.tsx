@@ -567,7 +567,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                         className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-ink">{doc.label}</p>
+                          <p className="text-sm font-medium break-words text-ink">{doc.label}</p>
                           <p className="mt-0.5 text-xs text-ink-muted">
                             {thaiDate(doc.publishedAt) ?? t("unknownValue")}
                           </p>

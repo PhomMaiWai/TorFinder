@@ -20,7 +20,7 @@ export function PageHeader({
   secondaryAction,
 }: PageHeaderProps) {
   return (
-    <div className="border-b border-border bg-surface px-8 pt-8 pb-6">
+    <div className="border-b border-border bg-surface px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
@@ -290,7 +290,7 @@ export function EmptyState({
 }
 
 export function PageBody({ children }: { children: React.ReactNode }) {
-  return <div className="flex-1 space-y-8 bg-surface-alt px-8 py-8 pb-12">{children}</div>;
+  return <div className="flex-1 space-y-8 bg-surface-alt px-5 py-6 pb-10 sm:px-8 sm:py-8 sm:pb-12">{children}</div>;
 }
 
 /* ── Status badge ────────────────────────────────── */
