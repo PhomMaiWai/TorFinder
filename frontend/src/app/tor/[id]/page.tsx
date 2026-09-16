@@ -31,7 +31,7 @@ import { FEEDBACK_ENTRIES, MATCHED_COMPANIES, TOR_DETAILS } from "@/data/tor-det
 import { FeedbackForm } from "@/components/public/feedback-form";
 import { fetchBudgetAssessment, fetchFeedback, fetchMatchedCompanies } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
-import { isKnown, stageBadgeCls } from "@/lib/tor-ui";
+import { isKnown, stageBadgeCls, torAmount } from "@/lib/tor-ui";
 
 const CARD = "rounded-xl border border-zinc-200 bg-white p-6 shadow-sm";
 
@@ -74,6 +74,8 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
 
   const sourceUrl = tor.sourceUrl ?? detail?.sourceUrl;
   const hasDeadline = isKnown(tor.deadline);
+  // An award notice publishes what the contract went for, never a budget.
+  const amount = torAmount(tor);
   const budgetStatus = detail?.budgetStatus ?? tor.budgetStatus;
 
   const procurementFacts = [
@@ -606,9 +608,9 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
               <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <InfoRow
                   icon={Banknote}
-                  label={t("budgetLabel")}
-                  value={tor.budget}
-                  muted={!isKnown(tor.budget)}
+                  label={amount.isAwarded ? t("awardedLabel") : t("budgetLabel")}
+                  value={amount.value}
+                  muted={!isKnown(amount.value)}
                 />
                 <InfoRow
                   icon={Clock}

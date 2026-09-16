@@ -1,6 +1,13 @@
 export type TorStage = "เปิดรับฟังความคิดเห็น" | "ประกาศ TOR" | "ประกาศผู้ชนะ";
 export type TorBudgetStatus = "สูงกว่าปกติ" | "ต่ำกว่าปกติ" | "ปกติ";
 
+/**
+ * Where a record came from: what an admin typed in, or the portal that
+ * published it. Mirrors the backend's TOR_SOURCES — the listing filters on it.
+ */
+export const TOR_SOURCES = ["manual", "egp", "mea", "datagov"] as const;
+export type TorSource = (typeof TOR_SOURCES)[number];
+
 export type TorRecord = {
   id: string;
   title: string;
@@ -23,6 +30,8 @@ export type TorRecord = {
   /** e-GP's project number, printed on every announcement of the project. */
   projectNumber?: string;
   budgetAmount?: number;
+  /** What the winning bid came to, on the announcements that publish it. */
+  awardedAmount?: number;
   /** Every announcement e-GP holds for the project, newest first. */
   documents?: { label: string; publishedAt: string | null; url: string }[];
   /** Set while the announcement is hidden from listings; absent when live. */

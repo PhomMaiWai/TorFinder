@@ -1,9 +1,30 @@
 /**
- * e-GP's text search matches loosely — "คอมพิวเตอร์" also hits CT scanners
- * ("เอกซเรย์คอมพิวเตอร์"), "ดิจิทัล" hits X-ray machines, "ระบบ" hits anything.
- * This is the second gate: only announcements that read as software / IT work
- * are imported, which is what this product is about.
+ * Every portal this app imports from searches text loosely — "คอมพิวเตอร์" also
+ * hits CT scanners ("เอกซเรย์คอมพิวเตอร์"), "ดิจิทัล" hits X-ray machines,
+ * "ระบบ" hits anything. This is the second gate, shared by every source: only
+ * announcements that read as software / IT work are imported, which is what
+ * this product is about.
+ *
+ * The keywords a portal is searched *with* live here too, because they only
+ * decide what gets considered — what is actually imported is decided below,
+ * and the two are useless apart.
  */
+
+/**
+ * One search runs per keyword. Deliberately broader than the terms below: a
+ * portal's index stems and truncates, so casting wide here and judging
+ * precisely there beats trying to write one query that does both.
+ */
+export const SOFTWARE_SEARCH_KEYWORDS = [
+  "ซอฟต์แวร์",
+  "ระบบสารสนเทศ",
+  "คอมพิวเตอร์",
+  "พัฒนาระบบ",
+  "เทคโนโลยีสารสนเทศ",
+  "ดิจิทัล",
+  "เว็บไซต์",
+  "ฐานข้อมูล",
+];
 
 /**
  * Software itself, not the infrastructure it runs on. Bare "คอมพิวเตอร์" is
@@ -151,17 +172,22 @@ const HARDWARE_TERMS = [
   "อุปกรณ์กระจายสัญญาณ",
 ];
 
-/** e-GP's own goods category, when enrichment has fetched one. */
+/** The portal's own category for the work, when it publishes one. */
 const NON_SOFTWARE_CATEGORIES = ["ก่อสร้าง", "ที่ดิน", "ยานพาหนะ", "การแพทย์"];
 
 const contains = (haystack: string, terms: string[]) => terms.some((term) => haystack.includes(term));
 
-export function isSoftwareProject(projectName: string, goodsCategory?: string | null): boolean {
+/**
+ * `category` is whatever the source calls its own classification — e-GP's goods
+ * category, กรมบัญชีกลาง's `typ_name`. Optional: the project name alone decides
+ * when a source publishes none.
+ */
+export function isSoftwareProject(projectName: string, category?: string | null): boolean {
   const name = projectName.toLowerCase();
-  const category = (goodsCategory ?? "").toLowerCase();
+  const ownCategory = (category ?? "").toLowerCase();
 
   if (contains(name, NON_SOFTWARE_TERMS)) return false;
-  if (category && contains(category, NON_SOFTWARE_CATEGORIES)) return false;
+  if (ownCategory && contains(ownCategory, NON_SOFTWARE_CATEGORIES)) return false;
 
   if (!contains(name, SOFTWARE_TERMS)) return false;
 

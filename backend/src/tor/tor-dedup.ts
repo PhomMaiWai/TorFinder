@@ -1,3 +1,5 @@
+import { foldThaiDigits } from "./tor-normalize";
+
 /**
  * Titles arrive from two unrelated sources — an admin's free-text form and
  * e-GP's own wording — so they're rarely byte-identical even for the same
@@ -7,13 +9,20 @@
  * titles that share most of their words in a different order.
  */
 
-/** Trims, collapses whitespace, and drops punctuation that carries no meaning for matching. */
+/**
+ * Trims, collapses whitespace, folds Thai numerals onto Arabic ones, and drops
+ * punctuation that carries no meaning for matching. The numerals matter: MEA
+ * files quantities as "๒๘,๐๐๐" for projects e-GP files as "28,000".
+ */
 export function normalizeForMatch(text: string): string {
-  return text
-    .trim()
+  return foldThaiDigits(text)
     .toLowerCase()
     .replace(/[.,()\-–—"'“”‘’]/g, " ")
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, " ")
+    // Trimmed last, not first: stripping a trailing "(e-bidding)" leaves a
+    // space behind, and a title that ends in one can never sit on a word
+    // boundary inside a longer title.
+    .trim();
 }
 
 const MIN_CONTAINMENT_LENGTH = 10;

@@ -9,7 +9,7 @@ import { PageBody, PageHeader } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
-import { isKnown } from "@/lib/tor-ui";
+import { isKnown, torAmount } from "@/lib/tor-ui";
 import { useSavedTors, type SavedTorsScope } from "@/lib/use-saved-tors";
 import type { TorRecord } from "@/types/tor";
 
@@ -73,7 +73,7 @@ function SavedList({
                     <Clock size={15} className="text-zinc-400" />
                     {isKnown(tor.deadline) ? t("daysLeft", { days: tor.daysLeft }) : t("deadlineUnknown")}
                   </span>
-                  <span className="font-semibold text-zinc-900">{tor.budget}</span>
+                  <span className="font-semibold text-zinc-900">{torAmount(tor).value}</span>
                 </div>
               </div>
 

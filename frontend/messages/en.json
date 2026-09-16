@@ -357,6 +357,7 @@
     "awardedVendorTitle": "Awarded bidder",
     "vendorRiskWarning": "Risk detected: expertise may not align with the scope of work",
     "budgetLabel": "Budget",
+    "awardedLabel": "Awarded price",
     "deadlineLabel": "Submission deadline",
     "daysLeftLabel": "{days} days left",
     "contractPeriodLabel": "Contract period",

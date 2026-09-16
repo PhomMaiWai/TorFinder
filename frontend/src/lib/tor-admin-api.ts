@@ -1,13 +1,5 @@
-import { cookies } from "next/headers";
-
-import { SESSION_COOKIE } from "@/lib/auth";
+import { authHeaders } from "@/lib/session-headers";
 import type { TorRecord } from "@/types/tor";
-
-/** The delete and restore routes are admin-guarded, so the session travels with them. */
-async function authHeaders(): Promise<HeadersInit> {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 /**
  * Announcements that have been hidden. Returns nothing for a caller who isn't
