@@ -39,6 +39,14 @@ export type UserDoc = {
   createdAt: Date;
   company?: CompanyProfile;
   reviewedAt?: Date;
+  /**
+   * Orthogonal to `status`: an admin can suspend an already-approved account
+   * to block it from signing in without reversing the approval decision
+   * itself. Absent (not false) means never suspended.
+   */
+  suspended?: boolean;
+  /** Stamped on every successful login/Google sign-in — see AuthService.issueSession. */
+  lastLoginAt?: Date;
 };
 
 export type TorDoc = {

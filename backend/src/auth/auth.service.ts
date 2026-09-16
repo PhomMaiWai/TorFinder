@@ -1,4 +1,10 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { OAuth2Client } from "google-auth-library";
 import { MongoServerError, WithId } from "mongodb";
 
@@ -19,6 +25,8 @@ const googleClient = new OAuth2Client(env.googleClientId);
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(private readonly db: DatabaseService) {}
 
   async signup({ email, password, ...company }: SignupDto) {
@@ -153,7 +161,7 @@ export class AuthService {
     return { ...existing, googleId };
   }
 
-  private issueSession(user: WithId<UserDoc>) {
+  private async issueSession(user: WithId<UserDoc>) {
     // Checked only after identity is established, so the response can't be
     // used to probe which emails are registered. googleAuth() already
     // special-cases "pending" before reaching here — this only fires for
@@ -163,6 +171,19 @@ export class AuthService {
     }
     if (user.status === "rejected") {
       throw new ForbiddenException("บัญชีของคุณไม่ผ่านการอนุมัติ กรุณาติดต่อผู้ดูแลระบบ");
+    }
+    // Orthogonal to status: an admin can block an already-approved account
+    // without reversing the approval itself (see AccountsService.setSuspended).
+    if (user.suspended) {
+      throw new ForbiddenException("บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ");
+    }
+
+    // Best-effort: a write hiccup here must never block a real sign-in, same
+    // posture as EgpService's sync-run recording and AuditService.record.
+    try {
+      await this.db.users.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
+    } catch (error) {
+      this.logger.warn(`Failed to stamp lastLoginAt for ${user.email}: ${String(error)}`);
     }
 
     const token = createSessionToken({

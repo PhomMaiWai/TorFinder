@@ -11,9 +11,12 @@ import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
 const PUBLIC_FIELDS = {
   email: 1,
   name: 1,
+  role: 1,
   status: 1,
+  suspended: 1,
   createdAt: 1,
   reviewedAt: 1,
+  lastLoginAt: 1,
   company: 1,
 } as const;
 
@@ -35,6 +38,48 @@ export class AccountsService {
       .toArray();
 
     return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+  }
+
+  /**
+   * Every account — admin and org alike — for the admin dashboard's user
+   * directory. Unlike findAll(), never filtered to organizations: that's
+   * what the signup-approval queue needs, this is "who exists at all".
+   */
+  async findAllUsers() {
+    const docs = await this.db.users.find({}, { projection: PUBLIC_FIELDS }).sort({ createdAt: -1 }).toArray();
+    return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+  }
+
+  /**
+   * Orthogonal to review(): blocks (or unblocks) sign-in on an account
+   * without touching its approval status — see AuthService.issueSession,
+   * which is what actually enforces this.
+   */
+  async setSuspended(id: string, suspended: boolean, actor: string) {
+    if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
+
+    const result = await this.db.users.findOneAndUpdate(
+      { _id: new ObjectId(id), role: "org" },
+      { $set: { suspended } },
+      { returnDocument: "after", projection: PUBLIC_FIELDS },
+    );
+    if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
+
+    const companyName = result.company?.companyName ?? result.name;
+    await Promise.all([
+      this.notifications.create(
+        result._id,
+        "system",
+        suspended ? "บัญชีของคุณถูกระงับการใช้งาน" : "บัญชีของคุณกลับมาใช้งานได้แล้ว",
+        suspended
+          ? "ผู้ดูแลระบบระงับการใช้งานบัญชีนี้ชั่วคราว กรุณาติดต่อผู้ดูแลระบบหากมีข้อสงสัย"
+          : "ผู้ดูแลระบบเปิดใช้งานบัญชีนี้อีกครั้ง เข้าใช้งานได้ทันที",
+      ),
+      this.audit.record(actor, suspended ? "ระงับบัญชีบริษัท" : "เปิดใช้งานบัญชีบริษัทอีกครั้ง", companyName),
+    ]);
+
+    const { _id, ...rest } = result;
+    return { id: _id.toString(), ...rest };
   }
 
   async review(id: string, { status }: ReviewAccountDto, actor: string) {
