@@ -32,7 +32,7 @@ export class AccountsController {
 
   @Patch(":id")
   @UseGuards(AdminGuard)
-  review(@Param("id") id: string, @Body() dto: ReviewAccountDto) {
-    return this.accountsService.review(id, dto);
+  review(@Param("id") id: string, @Body() dto: ReviewAccountDto, @Req() request: AuthenticatedRequest) {
+    return this.accountsService.review(id, dto, request.session.email);
   }
 }

@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 
 import { AdminGuard } from "../common/admin.guard";
+import { AuthenticatedRequest } from "../common/session.guard";
 import { env } from "../config/env";
 import { CreateFeedbackDto } from "./dto/create-feedback.dto";
 import { FeedbackQueryDto } from "./dto/feedback-query.dto";
@@ -43,7 +44,7 @@ export class FeedbackController {
 
   @Patch("feedback/:id")
   @UseGuards(AdminGuard)
-  review(@Param("id") id: string, @Body() dto: ReviewFeedbackDto) {
-    return this.feedback.review(id, dto.status);
+  review(@Param("id") id: string, @Body() dto: ReviewFeedbackDto, @Req() request: AuthenticatedRequest) {
+    return this.feedback.review(id, dto.status, request.session.email);
   }
 }

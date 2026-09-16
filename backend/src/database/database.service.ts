@@ -153,6 +153,20 @@ export type SyncRunDoc = {
   error?: string;
 };
 
+/**
+ * One attributable admin action (approving an account, moderating a comment,
+ * hiding/restoring a TOR). Automatic pipeline events — e-GP syncs — are never
+ * duplicated in here; the audit feed reads those straight from `syncRuns` and
+ * merges them in at query time (see AuditService.findAll).
+ */
+export type AuditLogEntryDoc = {
+  /** The admin's email, from their session — never a display name someone can spoof. */
+  actor: string;
+  action: string;
+  detail: string;
+  createdAt: Date;
+};
+
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
@@ -164,6 +178,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   savedTors!: Collection<SavedTorDoc>;
   notifications!: Collection<NotificationDoc>;
   syncRuns!: Collection<SyncRunDoc>;
+  auditLogEntries!: Collection<AuditLogEntryDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -173,6 +188,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
     this.notifications = this.client.db().collection<NotificationDoc>("notifications");
     this.syncRuns = this.client.db().collection<SyncRunDoc>("syncRuns");
+    this.auditLogEntries = this.client.db().collection<AuditLogEntryDoc>("auditLogEntries");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -188,6 +204,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.notifications.createIndex({ userId: 1, createdAt: -1 });
     // The only query pattern the admin dashboard needs: newest runs first.
     await this.syncRuns.createIndex({ startedAt: -1 });
+    await this.auditLogEntries.createIndex({ createdAt: -1 });
     await this.backfillAccountStatus();
     await this.seed();
   }
