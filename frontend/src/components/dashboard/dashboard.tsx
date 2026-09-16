@@ -412,10 +412,20 @@ export function Dashboard({ opportunities }: DashboardProps) {
               {/* Cards Container */}
               <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 {filtered.length === 0 ? (
+                  // Two different nothings: filters that matched none of the
+                  // ranked announcements, and an account with no ranking yet —
+                  // telling the second reader to loosen their filters would
+                  // send them looking for a control that isn't the problem.
                   <div className="px-5 py-20 text-center">
                     <Search size={28} className="mx-auto mb-3 text-zinc-300" />
-                    <p className="text-base font-medium text-zinc-700">{t("emptyStateTitle")}</p>
-                    <p className="mt-1 text-[13px] text-zinc-500">{t("emptyStateDescription")}</p>
+                    <p className="text-base font-medium text-zinc-700">
+                      {opportunities.length === 0 ? t("noMatchesYetTitle") : t("emptyStateTitle")}
+                    </p>
+                    <p className="mt-1 text-[13px] text-zinc-500">
+                      {opportunities.length === 0
+                        ? t("noMatchesYetDescription")
+                        : t("emptyStateDescription")}
+                    </p>
                   </div>
                 ) : (
                   <div className="divide-y divide-zinc-100">

@@ -1,3 +1,4 @@
+import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { cookies } from "next/headers";
 
 import { SESSION_COOKIE } from "@/lib/auth";
@@ -14,12 +15,10 @@ export async function fetchFeedbackQueue(
   status?: TorFeedback["status"],
 ): Promise<TorFeedback[]> {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
-  const res = await fetch(`${process.env.BACKEND_URL}/api/feedback${query}`, {
-    headers: await authHeaders(),
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  return res.json();
+  return orEmptyWhenAnswered(
+    fetchJson<TorFeedback[]>(`/api/feedback${query}`, { headers: await authHeaders() }),
+    [],
+  );
 }
 
 export async function reviewFeedback(

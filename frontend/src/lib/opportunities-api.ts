@@ -1,3 +1,4 @@
+import { fetchJson } from "@/lib/fetch-json";
 import { cookies } from "next/headers";
 
 import { SESSION_COOKIE } from "@/lib/auth";
@@ -13,10 +14,7 @@ export async function fetchRankedOpportunities(): Promise<ScoredTor[]> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return [];
 
-  const res = await fetch(`${process.env.BACKEND_URL}/api/matching/opportunities`, {
+  return fetchJson<ScoredTor[]>("/api/matching/opportunities", {
     headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
   });
-  if (!res.ok) return [];
-  return res.json();
 }
