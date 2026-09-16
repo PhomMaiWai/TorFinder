@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
+import { ActivityService } from "../activity/activity.service";
 import { mapWithLimit } from "../common/concurrency";
 import { USER_AGENT } from "../common/http-client";
 import { env } from "../config/env";
@@ -45,6 +46,7 @@ export class ExtractionService {
   constructor(
     private readonly db: DatabaseService,
     private readonly vertex: VertexClient,
+    private readonly activity: ActivityService,
   ) {}
 
   /**
@@ -137,6 +139,15 @@ export class ExtractionService {
       `Extraction run: ${result.extracted} extracted, ${result.skipped} unreadable, ` +
         `${result.failed} failed of ${result.attempted}`,
     );
+    await this.activity.record({
+      action: "อ่านเอกสาร TOR ด้วย AI",
+      detail:
+        `อ่านสำเร็จ ${result.extracted} ฉบับ` +
+        (result.skipped ? ` · อ่านไม่ได้ ${result.skipped}` : "") +
+        (result.failed ? ` · ล้มเหลว ${result.failed}` : ""),
+      actor: env.ai.model,
+      kind: "auto",
+    });
     return result;
   }
 

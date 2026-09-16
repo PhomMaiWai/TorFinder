@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
+import { ActivityService } from "../activity/activity.service";
 import { AccountStatus, DatabaseService, UserDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { ReviewAccountDto } from "./dto/review-account.dto";
@@ -21,6 +22,7 @@ export class AccountsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly notifications: NotificationsService,
+    private readonly activity: ActivityService,
   ) {}
 
   async findAll(status?: AccountStatus) {
@@ -35,7 +37,7 @@ export class AccountsService {
     return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
   }
 
-  async review(id: string, { status }: ReviewAccountDto) {
+  async review(id: string, { status }: ReviewAccountDto, reviewer: string) {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
 
     const result = await this.db.users.findOneAndUpdate(
@@ -45,7 +47,14 @@ export class AccountsService {
     );
     if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
 
-    await this.notifyReviewDecision(result._id, status, result.company?.companyName ?? result.name);
+    const company = result.company?.companyName ?? result.name;
+    await this.notifyReviewDecision(result._id, status, company);
+    await this.activity.record({
+      action: status === "approved" ? "อนุมัติบัญชีบริษัท" : "ปฏิเสธบัญชีบริษัท",
+      detail: `${company} (${result.email})`,
+      actor: reviewer,
+      kind: "manual",
+    });
 
     const { _id, ...rest } = result;
     return { id: _id.toString(), ...rest };

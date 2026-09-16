@@ -2,6 +2,7 @@ import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 
 import { mapWithLimit } from "../common/concurrency";
 import { SOFTWARE_SEARCH_KEYWORDS, isSoftwareProject } from "../common/software-filter";
+import { ActivityService } from "../activity/activity.service";
 import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
 import { isPointInBangkok, namesBangkok } from "../tor/thai-locality";
 import {
@@ -36,12 +37,13 @@ export class DataGovService {
   private inFlight: Promise<SyncResult> | null = null;
 
   constructor(
+    private readonly activity: ActivityService,
     private readonly client: DataGovClient,
     private readonly importer: TorImportService,
   ) {}
 
   sync(): Promise<SyncResult> {
-    this.inFlight ??= this.runSync().finally(() => {
+    this.inFlight ??= this.activity.trackSync("data.go.th", () => this.runSync()).finally(() => {
       this.inFlight = null;
     });
     return this.inFlight;

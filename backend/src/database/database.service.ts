@@ -103,6 +103,32 @@ export type TorDoc = {
   enrichVersion?: number;
 };
 
+export const ACTIVITY_KINDS = ["auto", "manual"] as const;
+export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
+
+/**
+ * One line of the audit log: what happened, who did it, and when. Written for
+ * the things a person would ask about later — an account approved, an
+ * announcement hidden, an import that failed overnight — and never for reads.
+ *
+ * Background runs are the same record with `run` filled in, so the dashboard
+ * charts them without a second collection to keep in step.
+ */
+export type ActivityDoc = {
+  action: string;
+  detail: string;
+  /** An admin's email, or the system that acted on its own ("e-GP", "Vertex AI"). */
+  actor: string;
+  kind: ActivityKind;
+  createdAt: Date;
+  run?: {
+    source: string;
+    ok: boolean;
+    imported: number;
+    updated: number;
+  };
+};
+
 /** A public comment on one announcement, shown only once it is approved. */
 export type FeedbackDoc = {
   torId: ObjectId;
@@ -150,6 +176,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   feedback!: Collection<FeedbackDoc>;
   savedTors!: Collection<SavedTorDoc>;
   notifications!: Collection<NotificationDoc>;
+  activity!: Collection<ActivityDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -158,6 +185,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
     this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
     this.notifications = this.client.db().collection<NotificationDoc>("notifications");
+    this.activity = this.client.db().collection<ActivityDoc>("activity");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -171,6 +199,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // Doubles as the natural key: a save is idempotent, never duplicated.
     await this.savedTors.createIndex({ userId: 1, torId: 1 }, { unique: true });
     await this.notifications.createIndex({ userId: 1, createdAt: -1 });
+    // The audit log is only ever read newest-first, whole or by kind.
+    await this.activity.createIndex({ createdAt: -1 });
     await this.backfillAccountStatus();
     await this.seed();
   }

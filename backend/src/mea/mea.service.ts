@@ -3,6 +3,7 @@ import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 import { mapWithLimit } from "../common/concurrency";
 import { isSoftwareProject } from "../common/software-filter";
 import { TorDoc } from "../database/database.service";
+import { ActivityService } from "../activity/activity.service";
 import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
 import { namesSomewhereElse } from "../tor/thai-locality";
 import {
@@ -38,6 +39,7 @@ export class MeaService {
   private inFlight: Promise<SyncResult> | null = null;
 
   constructor(
+    private readonly activity: ActivityService,
     private readonly client: MeaClient,
     private readonly importer: TorImportService,
   ) {}
@@ -48,7 +50,7 @@ export class MeaService {
    * results.
    */
   sync(): Promise<SyncResult> {
-    this.inFlight ??= this.runSync().finally(() => {
+    this.inFlight ??= this.activity.trackSync("MEA", () => this.runSync()).finally(() => {
       this.inFlight = null;
     });
     return this.inFlight;

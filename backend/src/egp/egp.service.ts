@@ -3,6 +3,7 @@ import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 import { mapWithLimit } from "../common/concurrency";
 import { SOFTWARE_SEARCH_KEYWORDS, isSoftwareProject } from "../common/software-filter";
 import { env } from "../config/env";
+import { ActivityService } from "../activity/activity.service";
 import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
 import { UNKNOWN, formatBaht } from "../tor/tor-normalize";
 import { EgpClient } from "./egp.client";
@@ -34,6 +35,7 @@ export class EgpService {
   private inFlight: Promise<SyncResult> | null = null;
 
   constructor(
+    private readonly activity: ActivityService,
     private readonly client: EgpClient,
     private readonly importer: TorImportService,
   ) {}
@@ -44,7 +46,7 @@ export class EgpService {
    * identical results.
    */
   sync(): Promise<SyncResult> {
-    this.inFlight ??= this.runSync().finally(() => {
+    this.inFlight ??= this.activity.trackSync("e-GP", () => this.runSync()).finally(() => {
       this.inFlight = null;
     });
     return this.inFlight;

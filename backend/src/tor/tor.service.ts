@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
+import { ActivityService } from "../activity/activity.service";
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
@@ -33,7 +34,10 @@ const STAGE_RANK = {
 
 @Injectable()
 export class TorService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly activity: ActivityService,
+  ) {}
 
   async create(dto: CreateTorDto) {
     const duplicate = await this.findLikelyDuplicate(dto.title, dto.agency);
@@ -120,12 +124,26 @@ export class TorService {
    * procurement notice should be unrecoverable by a single click, so the record
    * keeps its data and only gains a timestamp.
    */
-  async softDelete(id: string) {
-    return this.setDeletedAt(id, new Date());
+  async softDelete(id: string, actor: string) {
+    const tor = await this.setDeletedAt(id, new Date());
+    await this.activity.record({
+      action: "ซ่อนประกาศ",
+      detail: tor.title,
+      actor,
+      kind: "manual",
+    });
+    return tor;
   }
 
-  async restore(id: string) {
-    return this.setDeletedAt(id, null);
+  async restore(id: string, actor: string) {
+    const tor = await this.setDeletedAt(id, null);
+    await this.activity.record({
+      action: "กู้คืนประกาศ",
+      detail: tor.title,
+      actor,
+      kind: "manual",
+    });
+    return tor;
   }
 
   private async setDeletedAt(id: string, deletedAt: Date | null) {

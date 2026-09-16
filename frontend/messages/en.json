@@ -433,7 +433,24 @@
     "noNewItems": "No new items",
     "classificationHeading": "Classification Results (Vertex AI)",
     "torListCta": "TOR list",
-    "createTorCta": "Add TOR"
+    "createTorCta": "Add TOR",
+    "pipelineStatusLabel": "Pipeline status",
+    "pipelineOk": "Healthy",
+    "pipelineFailing": "Failing",
+    "lastRunAt": "Last import {when}",
+    "neverRun": "No import yet",
+    "newTodayLabel": "New TORs today",
+    "agencyCount": "across {count} agencies",
+    "extractedLabel": "Documents read",
+    "extractionPending": "{count} waiting",
+    "notificationsLabel": "Notifications sent",
+    "notificationsSub": "to company accounts",
+    "noRunsYet": "No imports recorded yet",
+    "runOk": "Succeeded",
+    "runFailed": "Failed",
+    "extractionDone": "Read",
+    "extractionFailed": "Unreadable",
+    "extractionWaiting": "Waiting"
   },
   "AdminAccountsPage": {
     "title": "Pending Accounts",
@@ -461,7 +478,8 @@
   "AdminAuditPage": {
     "description": "Complete activity history for the system and administrators",
     "typeAuto": "Automatic",
-    "typeManual": "Admin"
+    "typeManual": "Admin",
+    "emptyState": "Nothing has happened yet"
   },
   "AdminCompaniesPage": {
     "title": "Manage Companies",
@@ -487,7 +505,13 @@
     "emptyState": "No matching users found",
     "lastActiveInfo": "Last active {date}",
     "suspendAction": "Suspend Account",
-    "reactivateAction": "Reactivate"
+    "reactivateAction": "Reactivate",
+    "joinedInfo": "Joined {date}",
+    "roleOwner": "Account owner",
+    "roleAdmin": "Administrator",
+    "statusActive": "Active",
+    "statusSuspended": "Suspended",
+    "statusPending": "Pending"
   },
   "OpportunityCard": {
     "newBadge": "New",
