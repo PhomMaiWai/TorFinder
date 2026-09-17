@@ -95,7 +95,7 @@ export function UserList({ users, onSuspend, onReactivate }: Props) {
                     </span>
                   </div>
                   <h3 className="text-sm font-semibold text-ink">{user.name}</h3>
-                  <p className="mt-1 text-xs text-ink-muted">
+                  <p className="mt-1 break-words text-xs text-ink-muted">
                     {[
                       user.email,
                       user.company?.companyName,

@@ -14,7 +14,7 @@ export function AdminPageShell({
   return (
     <AppShell>
       <main className="flex min-h-screen flex-col bg-surface-alt/50">
-        <header className="shrink-0 border-b border-border bg-surface px-8 py-7">
+        <header className="shrink-0 border-b border-border bg-surface px-5 py-6 sm:px-8 sm:py-7">
           <div className="mx-auto w-full max-w-[1400px]">
             <div className="mb-1 flex items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-ink">{title}</h1>
@@ -27,7 +27,7 @@ export function AdminPageShell({
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-[1400px] flex-1 px-8 py-6">{children}</div>
+        <div className="mx-auto w-full max-w-[1400px] flex-1 px-5 py-5 sm:px-8 sm:py-6">{children}</div>
       </main>
     </AppShell>
   );
