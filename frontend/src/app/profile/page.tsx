@@ -163,7 +163,7 @@ export default function ProfilePage() {
         <form onSubmit={handleSave} className="grid gap-8 lg:grid-cols-[1fr_300px]">
         <div className="space-y-8">
           <Section title={t("accountInfoSectionTitle")}>
-            <div className="grid gap-4 rounded-xl border border-border bg-white p-5 sm:grid-cols-2">
+            <div className="grid gap-4 rounded-xl border border-border bg-surface p-5 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
                   {t("companyEmailLabel")}
@@ -184,7 +184,7 @@ export default function ProfilePage() {
           </Section>
 
           <Section title={t("companyInfoSectionTitle")}>
-            <div className="grid gap-4 rounded-xl border border-border bg-white p-5 sm:grid-cols-2">
+            <div className="grid gap-4 rounded-xl border border-border bg-surface p-5 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
                   {t("companyNameLabel")}
@@ -270,7 +270,7 @@ export default function ProfilePage() {
                 <select
                   value={size}
                   onChange={(e) => setSize(e.target.value as CompanySize)}
-                  className={`${inputCls} bg-white`}
+                  className={`${inputCls} bg-surface`}
                 >
                   {COMPANY_SIZE_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
@@ -294,7 +294,7 @@ export default function ProfilePage() {
           </Section>
 
           <Section title="Tech Stack">
-            <div className="rounded-xl border border-border bg-white p-5">
+            <div className="rounded-xl border border-border bg-surface p-5">
               <p className="mb-3 text-sm text-ink-muted">
                 {t("techStackDescription")}
               </p>
@@ -322,7 +322,7 @@ export default function ProfilePage() {
           </Section>
 
           <Section title={t("pastExperienceSectionTitle")}>
-            <div className="rounded-xl border border-border bg-white p-5">
+            <div className="rounded-xl border border-border bg-surface p-5">
               <p className="mb-3 text-sm text-ink-muted">{t("pastExperienceDescription")}</p>
               <textarea
                 value={pastExperience}
@@ -336,7 +336,7 @@ export default function ProfilePage() {
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-xl border border-border bg-white p-5 text-center">
+          <div className="rounded-xl border border-border bg-surface p-5 text-center">
             <span className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-accent-soft text-lg font-bold text-accent-text">
               {companyName.trim().charAt(0) || "A"}
             </span>

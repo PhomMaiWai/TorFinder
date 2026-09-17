@@ -40,10 +40,10 @@ export function SiteNavbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-white">
+    <header className="sticky top-0 z-50 border-b border-border bg-surface">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2" aria-label="TorFinder">
-          <span className="flex size-7 items-center justify-center rounded-md bg-accent text-[11px] font-bold text-white">
+          <span className="flex size-7 items-center justify-center rounded-md bg-accent text-2xs font-bold text-white">
             T
           </span>
           <span className="text-sm font-bold tracking-tight text-ink">TorFinder</span>
@@ -72,7 +72,7 @@ export function SiteNavbar() {
           >
             <Bookmark size={17} />
             {savedIds.length > 0 && (
-              <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-white">
+              <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-accent text-2xs font-bold text-white">
                 {savedIds.length}
               </span>
             )}
@@ -89,7 +89,7 @@ export function SiteNavbar() {
             </button>
 
             {noticesOpen && (
-              <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-border bg-white p-2 shadow-lg">
+              <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-border bg-surface p-2 shadow-lg">
                 <p className="px-2.5 py-1.5 text-xs font-semibold tracking-wide text-ink-subtle uppercase">
                   {t("recentNotices")}
                 </p>
@@ -142,7 +142,7 @@ export function SiteNavbar() {
       </div>
 
       {mobileOpen && (
-        <nav className="border-t border-border bg-white px-6 py-2 md:hidden">
+        <nav className="border-t border-border bg-surface px-6 py-2 md:hidden">
           {navLinks.map(({ label, href }) => (
             <Link
               key={label}

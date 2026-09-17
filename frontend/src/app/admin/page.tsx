@@ -77,7 +77,7 @@ export default async function AdminOverviewPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {metricCards.map(({ label, value, sub, icon: Icon, tone }) => (
-            <div key={label} className="rounded-xl border border-border bg-white p-5">
+            <div key={label} className="rounded-xl border border-border bg-surface p-5">
               <div className={`mb-3 grid size-9 place-items-center rounded-lg ${toneClasses[tone].chip}`}>
                 <Icon size={18} className={toneClasses[tone].icon} />
               </div>
@@ -89,7 +89,7 @@ export default async function AdminOverviewPage() {
         </div>
 
         {/* Sync history */}
-        <div className="rounded-xl border border-border bg-white p-6">
+        <div className="rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-4 text-base font-bold text-ink">{t("scrapeHistoryHeading")}</h2>
           {metrics.history.length === 0 ? (
             <p className="text-sm text-ink-muted">{t("noRunsYet")}</p>

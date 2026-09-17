@@ -133,7 +133,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-white p-6">
+    <div className="rounded-xl border border-border bg-surface p-6">
       <div className="mb-5 flex items-center gap-2">
         <span className="grid size-8 place-items-center rounded-lg bg-accent-soft text-accent">
           <Icon size={16} />

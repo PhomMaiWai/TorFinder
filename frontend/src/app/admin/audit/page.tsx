@@ -9,7 +9,7 @@ export default async function AdminAuditPage() {
 
   return (
     <AdminPageShell title="Audit Log" description={t("description")}>
-      <div className="rounded-xl border border-border bg-white overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface overflow-hidden">
         {entries.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-ink-muted">{t("emptyState")}</p>
         ) : (

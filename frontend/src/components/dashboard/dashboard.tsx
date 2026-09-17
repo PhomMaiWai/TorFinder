@@ -46,17 +46,17 @@ function OpportunityCard({
   const isHighMatch = opportunity.match >= HIGH_MATCH;
 
   return (
-    <article className="group relative rounded-xl border border-zinc-200 bg-white p-5 transition-all duration-200 hover:border-zinc-300 hover:shadow-[0_8px_30px_rgb(24,24,27/6%)]">
+    <article className="group relative rounded-xl border border-border bg-surface p-5 transition-all duration-200 hover:border-border hover:shadow-[0_8px_30px_rgb(24,24,27/6%)]">
       <div className="flex gap-4 sm:gap-5">
         {/* Match Circle */}
         <div className="hidden shrink-0 flex-col items-center sm:flex">
           <div
-            className={`relative flex size-14 items-center justify-center rounded-full border-[3px] bg-white ${
-              isHighMatch ? "border-accent text-accent" : "border-zinc-200 text-zinc-700"
+            className={`relative flex size-14 items-center justify-center rounded-full border-[3px] bg-surface ${
+              isHighMatch ? "border-accent text-accent" : "border-border text-ink"
             }`}
           >
-            <span className="text-[17px] font-bold tracking-tight">{opportunity.match}</span>
-            <span className="absolute -bottom-2 bg-white px-1 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+            <span className="text-lg font-bold tracking-tight">{opportunity.match}</span>
+            <span className="absolute -bottom-2 bg-surface px-1 text-2xs font-medium uppercase tracking-wider text-ink-subtle">
               Match
             </span>
           </div>
@@ -67,7 +67,7 @@ function OpportunityCard({
           <div className="mb-2.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span
-                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
+                className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${
                   opportunity.stage === "เปิดรับฟังความคิดเห็น"
                     ? "bg-amber-50 text-amber-700"
                     : "bg-accent-soft text-accent"
@@ -76,12 +76,12 @@ function OpportunityCard({
                 {opportunity.stage}
               </span>
               {opportunity.isNew && (
-                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
+                <span className="rounded-full bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted">
                   {t("newBadge")}
                 </span>
               )}
               {isUrgent && (
-                <span className="flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+                <span className="flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-2xs font-semibold text-red-600">
                   <div className="size-1.5 animate-pulse rounded-full bg-red-500" />
                   {t("urgentBadge")}
                 </span>
@@ -91,7 +91,7 @@ function OpportunityCard({
             {/* Mobile Match */}
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold sm:hidden ${
-                isHighMatch ? "bg-accent-soft text-accent" : "bg-zinc-100 text-zinc-700"
+                isHighMatch ? "bg-accent-soft text-accent" : "bg-surface-alt text-ink"
               }`}
             >
               {opportunity.match}% Match
@@ -99,33 +99,33 @@ function OpportunityCard({
           </div>
 
           <Link href={`/tor/${opportunity.id}`}>
-            <h3 className="text-base font-semibold leading-tight text-zinc-900 transition-colors group-hover:text-accent sm:text-[17px]">
+            <h3 className="text-base font-semibold leading-tight text-ink transition-colors group-hover:text-accent sm:text-lg">
               {opportunity.title}
             </h3>
           </Link>
 
-          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-zinc-500">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-muted">
             <span className="flex items-center gap-1.5">
-              <Building2 size={15} className="text-zinc-400" />
+              <Building2 size={15} className="text-ink-subtle" />
               {opportunity.agency}
             </span>
-            <span className="font-medium text-zinc-700">{opportunity.budget}</span>
+            <span className="font-medium text-ink">{opportunity.budget}</span>
             <span
               className={`flex items-center gap-1.5 ${
                 isUrgent ? "font-medium text-red-600" : ""
               }`}
             >
-              <Clock size={15} className={isUrgent ? "text-red-500" : "text-zinc-400"} />
+              <Clock size={15} className={isUrgent ? "text-red-500" : "text-ink-subtle"} />
               {t("daysLeftLabel", { days: opportunity.daysLeft })}
             </span>
           </div>
 
-          <p className="mt-3.5 line-clamp-2 text-sm leading-relaxed text-zinc-500">
+          <p className="mt-3.5 line-clamp-2 text-sm leading-relaxed text-ink-muted">
             {opportunity.summary}
           </p>
 
           {/* Divider */}
-          <div className="my-4 h-px w-full bg-zinc-100" />
+          <div className="my-4 h-px w-full bg-surface-alt" />
           
           <div className="flex flex-wrap items-center justify-between gap-4">
             {/* Tags */}
@@ -133,7 +133,7 @@ function OpportunityCard({
               {opportunity.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-md bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-500 ring-1 ring-zinc-200"
+                  className="rounded-md bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted ring-1 ring-border"
                 >
                   {tag}
                 </span>
@@ -144,10 +144,10 @@ function OpportunityCard({
             <div className="flex items-center gap-2">
               <button
                 aria-label={isSaved ? t("unsaveAriaLabel") : t("saveAriaLabel")}
-                className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors ${
+                className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors ${
                   isSaved
                     ? "bg-accent-soft text-accent"
-                    : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                    : "text-ink-muted hover:bg-surface-alt hover:text-ink"
                 }`}
                 onClick={(event) => onSaveToggle(opportunity.id, event)}
               >
@@ -156,7 +156,7 @@ function OpportunityCard({
               </button>
               <Link
                 href={`/tor/${opportunity.id}`}
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-900 px-3 text-[13px] font-medium text-white transition-colors hover:bg-zinc-800"
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-ink px-3 text-sm font-medium text-white transition-colors hover:bg-ink"
               >
                 {t("viewDetails")}
               </Link>
@@ -177,7 +177,7 @@ function DeadlinePanel({ opportunities }: { opportunities: ScoredTor[] }) {
     .slice(0, 5);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-white">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="border-b border-border px-4 py-3">
         <p className="text-sm font-semibold text-ink">{t("deadlinePanelTitle")}</p>
       </div>
@@ -223,7 +223,7 @@ function ProfilePanel() {
   );
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-white">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <p className="text-sm font-semibold text-ink">{t("companyProfileTitle")}</p>
         <Link href="/profile" className="text-xs font-medium text-accent hover:text-accent-dark">
@@ -308,42 +308,42 @@ export function Dashboard({ opportunities }: DashboardProps) {
 
   return (
     <AppShell>
-      <main className="flex min-h-screen flex-col bg-zinc-50/50">
+      <main className="flex min-h-screen flex-col bg-surface-alt/50">
         {/* Header - Fixed top, white, minimal like /public */}
-        <header className="shrink-0 border-b border-zinc-200 bg-white px-8 py-7">
+        <header className="shrink-0 border-b border-border bg-surface px-8 py-7">
           <div className="mx-auto w-full max-w-[1400px]">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="mb-1 text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                <p className="mb-1 text-xs font-medium tracking-wide text-ink-muted uppercase">
                   Arun Digital Co., Ltd
                 </p>
-                <h1 className="text-2xl font-bold tracking-tight text-zinc-950">
+                <h1 className="text-2xl font-bold tracking-tight text-ink">
                   {t("overviewTitle")}
                 </h1>
-                <p className="mt-1.5 max-w-xl text-sm text-zinc-500">
+                <p className="mt-1.5 max-w-xl text-sm text-ink-muted">
                   {t("overviewDescription")}
                 </p>
               </div>
 
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex flex-col items-end">
-                  <span className="text-lg font-bold text-zinc-900 leading-none">{opportunities.length}</span>
-                  <span className="mt-1 text-[11px] font-medium text-zinc-500">{t("statTotal")}</span>
+                  <span className="text-lg font-bold text-ink leading-none">{opportunities.length}</span>
+                  <span className="mt-1 text-2xs font-medium text-ink-muted">{t("statTotal")}</span>
                 </div>
-                <div className="h-8 w-px bg-zinc-200" />
+                <div className="h-8 w-px bg-border" />
                 <div className="flex flex-col items-end">
                   <span className="text-lg font-bold text-accent leading-none">{highMatchCount}</span>
-                  <span className="mt-1 text-[11px] font-medium text-zinc-500">{t("statHighMatch")}</span>
+                  <span className="mt-1 text-2xs font-medium text-ink-muted">{t("statHighMatch")}</span>
                 </div>
-                <div className="h-8 w-px bg-zinc-200" />
+                <div className="h-8 w-px bg-border" />
                 <div className="flex flex-col items-end">
                   <span className="text-lg font-bold text-red-500 leading-none">{urgentCount}</span>
-                  <span className="mt-1 text-[11px] font-medium text-zinc-500">{t("statUrgent")}</span>
+                  <span className="mt-1 text-2xs font-medium text-ink-muted">{t("statUrgent")}</span>
                 </div>
-                <div className="h-8 w-px bg-zinc-200" />
+                <div className="h-8 w-px bg-border" />
                 <div className="flex flex-col items-end">
-                  <span className="text-lg font-bold text-zinc-900 leading-none">{savedIds.length}</span>
-                  <span className="mt-1 text-[11px] font-medium text-zinc-500">{t("statSaved")}</span>
+                  <span className="text-lg font-bold text-ink leading-none">{savedIds.length}</span>
+                  <span className="mt-1 text-2xs font-medium text-ink-muted">{t("statSaved")}</span>
                 </div>
               </div>
             </div>
@@ -352,18 +352,18 @@ export function Dashboard({ opportunities }: DashboardProps) {
 
         <div className="mx-auto w-full max-w-[1400px] flex-1 px-8 py-6">
           {/* Toolbar: Search + Filters (Full Width matching /public) */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white p-2 pl-4 shadow-sm">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-2 pl-4 shadow-sm">
             <div className="flex min-w-[280px] flex-1 items-center gap-3">
-              <Search size={18} className="shrink-0 text-zinc-400" />
+              <Search size={18} className="shrink-0 text-ink-subtle" />
               <input
-                className="min-w-0 flex-1 bg-transparent text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400"
+                className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-subtle"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder={t("searchPlaceholder")}
               />
             </div>
             
-            <div className="hidden h-6 w-px bg-zinc-200 md:block" />
+            <div className="hidden h-6 w-px bg-border md:block" />
             
             <div className="flex w-full items-center justify-between gap-4 md:w-auto">
               <div className="flex gap-1.5 pr-2">
@@ -373,8 +373,8 @@ export function Dashboard({ opportunities }: DashboardProps) {
                     onClick={() => setActiveFilter(filter)}
                     className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all ${
                       activeFilter === filter
-                        ? "bg-zinc-900 text-white"
-                        : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                        ? "bg-ink text-white"
+                        : "text-ink-muted hover:bg-surface-alt hover:text-ink"
                     }`}
                   >
                     {filter}
@@ -389,20 +389,20 @@ export function Dashboard({ opportunities }: DashboardProps) {
             <section>
               {/* List Header */}
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-zinc-800">{t("recommendedTitle")}</h2>
+                <h2 className="text-sm font-semibold text-ink">{t("recommendedTitle")}</h2>
                 <div className="flex items-center gap-3">
-                  <p className="text-[13px] text-zinc-500">
+                  <p className="text-sm text-ink-muted">
                     {t.rich("resultsCount", {
                       count: filtered.length,
                       strong: (chunks) => (
-                        <span className="font-semibold text-zinc-900">{chunks}</span>
+                        <span className="font-semibold text-ink">{chunks}</span>
                       ),
                     })}
                   </p>
-                  <div className="h-4 w-px bg-zinc-200" />
+                  <div className="h-4 w-px bg-border" />
                   <Link
                     href="/public"
-                    className="flex items-center gap-1 text-[13px] font-medium text-accent hover:text-accent-dark"
+                    className="flex items-center gap-1 text-sm font-medium text-accent hover:text-accent-dark"
                   >
                     {t("viewNewOpportunities")} <ExternalLink size={13} />
                   </Link>
@@ -410,25 +410,25 @@ export function Dashboard({ opportunities }: DashboardProps) {
               </div>
 
               {/* Cards Container */}
-              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+              <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
                 {filtered.length === 0 ? (
                   // Two different nothings: filters that matched none of the
                   // ranked announcements, and an account with no ranking yet —
                   // telling the second reader to loosen their filters would
                   // send them looking for a control that isn't the problem.
                   <div className="px-5 py-20 text-center">
-                    <Search size={28} className="mx-auto mb-3 text-zinc-300" />
-                    <p className="text-base font-medium text-zinc-700">
+                    <Search size={28} className="mx-auto mb-3 text-ink-subtle" />
+                    <p className="text-base font-medium text-ink">
                       {opportunities.length === 0 ? t("noMatchesYetTitle") : t("emptyStateTitle")}
                     </p>
-                    <p className="mt-1 text-[13px] text-zinc-500">
+                    <p className="mt-1 text-sm text-ink-muted">
                       {opportunities.length === 0
                         ? t("noMatchesYetDescription")
                         : t("emptyStateDescription")}
                     </p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-zinc-100">
+                  <div className="divide-y divide-border">
                     {filtered.map((opportunity) => (
                       <OpportunityCard
                         key={opportunity.id}
@@ -453,10 +453,10 @@ export function Dashboard({ opportunities }: DashboardProps) {
 
       {toastMessage && (
         <div
-          className="animate-toast fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white shadow-[0_18px_45px_rgb(24,24,27/20%)]"
+          className="animate-toast fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-ink px-4 py-3 text-sm font-medium text-white shadow-[0_18px_45px_rgb(24,24,27/20%)]"
           role="status"
         >
-          <span className="grid size-6 place-items-center rounded-full bg-white/10 text-white">
+          <span className="grid size-6 place-items-center rounded-full bg-surface/10 text-white">
             <Check size={13} />
           </span>
           {toastMessage}

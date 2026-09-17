@@ -31,7 +31,7 @@ export function OpportunityList({
   return (
     <section>
       {/* Search */}
-      <label className="flex items-center gap-2.5 rounded-xl border border-border bg-white px-4 py-3 transition-colors focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
+      <label className="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-4 py-3 transition-colors focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
         <Search size={16} className="shrink-0 text-ink-subtle" />
         <input
           className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle"
@@ -82,7 +82,7 @@ export function OpportunityList({
         ))}
 
         {opportunities.length === 0 && (
-          <div className="rounded-xl border border-dashed border-border bg-white py-16 text-center">
+          <div className="rounded-xl border border-dashed border-border bg-surface py-16 text-center">
             <Search size={28} className="mx-auto mb-3 text-ink-subtle opacity-40" />
             <p className="text-sm font-semibold text-ink">{t("emptyTitle")}</p>
             <p className="mt-1 text-sm text-ink-muted">

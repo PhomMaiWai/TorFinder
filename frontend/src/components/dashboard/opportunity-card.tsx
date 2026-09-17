@@ -41,7 +41,7 @@ export function OpportunityCard({
   const isFeedbackOpen = stage === "เปิดรับฟังความคิดเห็น";
 
   return (
-    <article className="group relative overflow-hidden rounded-xl border border-border bg-white transition-all hover:border-accent/30 hover:shadow-sm">
+    <article className="group relative overflow-hidden rounded-xl border border-border bg-surface transition-all hover:border-accent/30 hover:shadow-sm">
       {/* Left urgency / status bar */}
       <div
         className={`absolute inset-y-0 left-0 w-[3px] ${

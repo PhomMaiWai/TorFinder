@@ -116,7 +116,7 @@ function NavLinks({
       {nav.map(({ section, links }, i) => (
         <div key={i} className={i > 0 ? "mt-5" : ""}>
           {section && (
-            <p className="mb-1 px-2.5 text-[11px] font-medium text-ink-subtle">{section}</p>
+            <p className="mb-1 px-2.5 text-2xs font-medium text-ink-subtle">{section}</p>
           )}
           <ul className="space-y-0.5">
             {links.map(({ label, href, icon: Icon, badge: staticBadge }) => {
@@ -133,15 +133,15 @@ function NavLinks({
                     onClick={onNavigate}
                     className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors ${
                       active
-                        ? "bg-zinc-200/70 font-semibold text-ink"
-                        : "font-medium text-ink-muted hover:bg-zinc-100 hover:text-ink"
+                        ? "bg-border/70 font-semibold text-ink"
+                        : "font-medium text-ink-muted hover:bg-surface-alt hover:text-ink"
                     }`}
                   >
                     <Icon size={16} className="shrink-0 opacity-70" />
                     <span className="flex-1">{label}</span>
                     {badge !== undefined && (
                       <span
-                        className={`flex size-4.5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                        className={`flex size-4.5 shrink-0 items-center justify-center rounded-full text-2xs font-bold text-white ${
                           href.startsWith("/saved") ? "bg-accent" : "bg-danger"
                         }`}
                       >
@@ -196,12 +196,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-[#f5f5f4]">
+    <div className="flex h-full flex-col bg-surface-alt">
       {/* Workspace */}
       <div className="px-3 pt-4 pb-2">
-        <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-zinc-200/50">
+        <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-border/50">
           <span
-            className={`flex size-7 items-center justify-center rounded-md text-[11px] font-bold text-white ${
+            className={`flex size-7 items-center justify-center rounded-md text-2xs font-bold text-white ${
               isAdmin ? "bg-danger" : "bg-accent"
             }`}
           >
@@ -216,10 +216,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Search */}
       <div className="px-3 pb-3">
-        <div className="flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-white px-3 py-2 text-sm text-ink-subtle shadow-sm">
+        <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-surface px-3 py-2 text-sm text-ink-subtle shadow-sm">
           <Search size={14} />
           <span className="flex-1">{t("searchPlaceholder")}</span>
-          <kbd className="rounded border border-border bg-surface-alt px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+          <kbd className="rounded border border-border bg-surface-alt px-1.5 py-0.5 text-2xs font-medium text-ink-muted">
             ⌘K
           </kbd>
         </div>
@@ -232,7 +232,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <Link
           href="/"
           onClick={onNavigate}
-          className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-zinc-100 hover:text-ink"
+          className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
         >
           <ArrowLeft size={15} className="opacity-60" />
           {t("backToHome")}
@@ -240,9 +240,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* User */}
-      <div className="shrink-0 border-t border-zinc-200/80 p-3">
+      <div className="shrink-0 border-t border-border/80 p-3">
         <div className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-zinc-600 ring-1 ring-zinc-200">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink-muted ring-1 ring-border">
             {(user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : "..."))[0]}
           </span>
           <div className="min-w-0 flex-1 text-left">
@@ -272,24 +272,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 border-r border-zinc-200/80 md:block">
+    <div className="flex min-h-screen bg-surface">
+      <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 border-r border-border/80 md:block">
         <SidebarContent />
       </aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-[260px] border-r border-zinc-200/80 shadow-xl">
+          <aside className="absolute left-0 top-0 h-full w-[260px] border-r border-border/80 shadow-xl">
             <SidebarContent onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col bg-white">
+      <div className="flex min-w-0 flex-1 flex-col bg-surface">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 md:hidden">
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md bg-accent text-[11px] font-bold text-white">
+            <span className="flex size-7 items-center justify-center rounded-md bg-accent text-2xs font-bold text-white">
               T
             </span>
             <span className="text-sm font-bold text-ink">TorFinder</span>

@@ -121,7 +121,7 @@ export default function OrganizationSignupPage() {
           <span className="text-xl font-bold tracking-tight text-ink">TorFinder</span>
         </Link>
 
-        <div className="rounded-2xl border border-border bg-white p-10">
+        <div className="rounded-2xl border border-border bg-surface p-10">
           <span className="mb-4 inline-flex items-center gap-1.5 rounded-md bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent-text">
             <Building2 size={15} />
             {t("badge")}
@@ -138,7 +138,7 @@ export default function OrganizationSignupPage() {
               </span>
               {isComplete && <Check size={16} className="shrink-0 text-success" />}
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
               <div
                 className={`h-full rounded-full transition-all ${isComplete ? "bg-success" : "bg-accent"}`}
                 style={{ width: `${(filledCount / REQUIRED_FIELDS.length) * 100}%` }}
@@ -263,7 +263,7 @@ export default function OrganizationSignupPage() {
                 <select
                   name="size"
                   defaultValue={COMPANY_SIZE_OPTIONS[0]}
-                  className={`${inputCls} border-border bg-white focus:border-accent/40`}
+                  className={`${inputCls} border-border bg-surface focus:border-accent/40`}
                 >
                   {COMPANY_SIZE_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>

@@ -71,7 +71,7 @@ function buildGroups(agencies: string[]): AgencyGroup[] {
 }
 
 const rowCls =
-  "flex w-full items-center gap-2.5 rounded-lg py-1.5 text-left text-[13px] leading-snug transition-colors";
+  "flex w-full items-center gap-2.5 rounded-lg py-1.5 text-left text-sm leading-snug transition-colors";
 
 export function AgencyFilter({
   title,
@@ -118,7 +118,7 @@ export function AgencyFilter({
 
   return (
     <div className="mb-7">
-      <h3 className="mb-2 text-sm font-bold text-zinc-900">{title}</h3>
+      <h3 className="mb-2 text-sm font-bold text-ink">{title}</h3>
       <div className="-mx-1.5 max-h-80 space-y-0.5 overflow-y-auto px-1.5">
         {groups.map((group) => {
           const selectedCount = group.values.reduce(
@@ -142,21 +142,21 @@ export function AgencyFilter({
                     type="button"
                     onClick={() => toggleExpanded(group.name)}
                     aria-expanded={isOpen}
-                    className="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-700 hover:text-zinc-950"
+                    className="flex min-w-0 flex-1 items-center gap-1.5 text-ink hover:text-ink"
                   >
                     <ChevronRight
                       size={14}
-                      className={`shrink-0 text-zinc-400 transition-transform ${isOpen ? "rotate-90" : ""}`}
+                      className={`shrink-0 text-ink-subtle transition-transform ${isOpen ? "rotate-90" : ""}`}
                     />
                     <span className="min-w-0 flex-1 font-medium">{group.name}</span>
-                    <span className="shrink-0 text-[11px] tabular-nums text-zinc-400">
+                    <span className="shrink-0 text-2xs tabular-nums text-ink-subtle">
                       {group.count}
                     </span>
                   </button>
                 ) : (
-                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-600">
+                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-ink-muted">
                     <span className="min-w-0 flex-1">{group.name}</span>
-                    <span className="shrink-0 text-[11px] tabular-nums text-zinc-400">
+                    <span className="shrink-0 text-2xs tabular-nums text-ink-subtle">
                       {group.count}
                     </span>
                   </span>
@@ -173,8 +173,8 @@ export function AgencyFilter({
                       onChange={(checked) => toggleValue(child.value, checked)}
                       ariaLabel={child.label}
                     />
-                    <span className="min-w-0 flex-1 text-zinc-600">{child.label}</span>
-                    <span className="shrink-0 text-[11px] tabular-nums text-zinc-400">
+                    <span className="min-w-0 flex-1 text-ink-muted">{child.label}</span>
+                    <span className="shrink-0 text-2xs tabular-nums text-ink-subtle">
                       {child.count}
                     </span>
                   </div>

@@ -61,7 +61,7 @@ export default async function AdminTorListPage({
     <AdminPageShell title="รายการ TOR" description="รายการ TOR ทั้งหมดในระบบ">
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-1 rounded-lg border border-border bg-white p-1">
+          <div className="flex gap-1 rounded-lg border border-border bg-surface p-1">
             {TABS.map((tab) => (
               <Link
                 key={tab.id}
@@ -98,7 +98,7 @@ export default async function AdminTorListPage({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-white">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {tors.length === 0 ? (
             <p className="p-6 text-sm text-ink-muted">
               {isTrash ? "ถังขยะว่าง" : "ยังไม่มีรายการ TOR"}
@@ -121,7 +121,7 @@ export default async function AdminTorListPage({
                     <td className="px-5 py-3 text-ink-muted">{tor.agency}</td>
                     <td className="px-5 py-3">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${stageBadgeCls(tor.stage)}`}
+                        className={`rounded-full px-2.5 py-1 text-2xs font-semibold ${stageBadgeCls(tor.stage)}`}
                       >
                         {tor.stage}
                       </span>

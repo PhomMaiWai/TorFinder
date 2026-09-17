@@ -58,7 +58,7 @@ function CheckboxFilter({
 
   return (
     <div className="mb-7">
-      <h3 className="mb-3 text-sm font-bold text-zinc-900">{title}</h3>
+      <h3 className="mb-3 text-sm font-bold text-ink">{title}</h3>
       <div className="space-y-2.5">
         {options.map((opt) => (
           <label key={opt} className="flex cursor-pointer items-start gap-3">
@@ -70,7 +70,7 @@ function CheckboxFilter({
                 }
               />
             </span>
-            <span className="text-[13px] leading-snug text-zinc-600">{opt}</span>
+            <span className="text-sm leading-snug text-ink-muted">{opt}</span>
           </label>
         ))}
       </div>
@@ -103,74 +103,74 @@ function PublicTorCard({
   const isUrgent = hasDeadline && tor.daysLeft <= 7;
 
   return (
-    <article className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all duration-200 hover:border-zinc-300 hover:shadow-[0_8px_30px_rgb(24,24,27/6%)]">
+    <article className="group overflow-hidden rounded-2xl border border-border bg-surface transition-all duration-200 hover:border-border hover:shadow-[0_8px_30px_rgb(24,24,27/6%)]">
       <div className="flex flex-col gap-6 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
+              className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
             >
               {tor.stage}
             </span>
             {tor.budgetStatus === "สูงกว่าปกติ" && (
-              <span className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700">
+              <span className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-1 text-2xs font-semibold text-red-700">
                 <TrendingUp size={12} />
                 {t("budgetHighBadge")}
               </span>
             )}
             {tor.budgetStatus === "ต่ำกว่าปกติ" && (
-              <span className="flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
+              <span className="flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-2xs font-semibold text-amber-700">
                 <TrendingDown size={12} />
                 {t("budgetLowBadge")}
               </span>
             )}
             {tor.budgetStatus === "ปกติ" && (
-              <span className="flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700">
+              <span className="flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-2 py-1 text-2xs font-semibold text-green-700">
                 <CheckCircle2 size={12} />
                 {t("budgetNormalBadge")}
               </span>
             )}
             {tor.hasVendorMismatch && (
-              <span className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700">
+              <span className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-1 text-2xs font-semibold text-red-700">
                 <AlertTriangle size={12} />
                 {t("vendorMismatchBadge")}
               </span>
             )}
             {tor.isNew && (
-              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
+              <span className="rounded-full bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted">
                 {t("newBadge")}
               </span>
             )}
             {isUrgent && (
-              <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+              <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-2xs font-semibold text-red-600">
                 <div className="size-1.5 animate-pulse rounded-full bg-red-500" />
                 {t("urgentBadge")}
               </span>
             )}
           </div>
 
-          <h3 className="text-[17px] font-bold text-zinc-900 sm:text-lg">{tor.title}</h3>
+          <h3 className="text-lg font-bold text-ink sm:text-lg">{tor.title}</h3>
 
-          <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px] text-zinc-500">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px] text-ink-muted">
             <span className="flex items-center gap-1.5">
-              <Building2 size={15} className="text-zinc-400" />
+              <Building2 size={15} className="text-ink-subtle" />
               {tor.agency}
             </span>
             <span
               className={`flex items-center gap-1.5 ${isUrgent ? "font-medium text-red-600" : ""}`}
             >
-              <Clock size={15} className={isUrgent ? "text-red-500" : "text-zinc-400"} />
+              <Clock size={15} className={isUrgent ? "text-red-500" : "text-ink-subtle"} />
               {hasDeadline ? t("daysLeftLabel", { days: tor.daysLeft }) : t("deadlineUnknown")}
             </span>
           </div>
 
-          <p className="mt-3.5 line-clamp-2 text-sm leading-relaxed text-zinc-600">{tor.summary}</p>
+          <p className="mt-3.5 line-clamp-2 text-sm leading-relaxed text-ink-muted">{tor.summary}</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {tor.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-500 ring-1 ring-zinc-200"
+                className="rounded-md bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted ring-1 ring-border"
               >
                 {tag}
               </span>
@@ -178,11 +178,11 @@ function PublicTorCard({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col items-start justify-between border-t border-zinc-100 pt-5 sm:w-[220px] sm:items-end sm:border-none sm:pl-6 sm:pt-0">
+        <div className="flex shrink-0 flex-col items-start justify-between border-t border-border pt-5 sm:w-[220px] sm:items-end sm:border-none sm:pl-6 sm:pt-0">
           <div className="mb-4 flex w-full items-start justify-between gap-3 sm:mb-0 sm:flex-col sm:items-end">
             <div className="sm:text-right">
-              <div className="mb-1 text-xs font-medium text-zinc-500">{t("budgetLabel")}</div>
-              <div className="text-[17px] font-bold text-zinc-900">{torAmount(tor).value}</div>
+              <div className="mb-1 text-xs font-medium text-ink-muted">{t("budgetLabel")}</div>
+              <div className="text-lg font-bold text-ink">{torAmount(tor).value}</div>
             </div>
             <button
               onClick={onToggleSave}
@@ -190,7 +190,7 @@ function PublicTorCard({
               className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors sm:mt-1 ${
                 isSaved
                   ? "bg-accent-soft text-accent"
-                  : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-600"
+                  : "bg-surface-alt text-ink-subtle hover:bg-border hover:text-ink-muted"
               }`}
             >
               <Bookmark size={15} fill={isSaved ? "currentColor" : "none"} />
@@ -201,7 +201,7 @@ function PublicTorCard({
             {isFeedbackStage && (
               <button
                 onClick={onToggleFeedback}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-100 py-2 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-200"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-surface-alt py-2 text-sm font-medium text-ink transition-colors hover:bg-border"
               >
                 <MessageSquare size={14} />
                 {isFeedbackOpen ? t("closeFeedbackButton") : t("openFeedbackButton")}
@@ -209,7 +209,7 @@ function PublicTorCard({
             )}
             <Link
               href={`/tor/${tor.id}`}
-              className="flex w-full items-center justify-center rounded-lg bg-zinc-900 py-2 text-[13px] font-medium text-white transition-colors hover:bg-zinc-800"
+              className="flex w-full items-center justify-center rounded-lg bg-ink py-2 text-sm font-medium text-white transition-colors hover:bg-ink"
             >
               {t("viewDetails")}
             </Link>
@@ -220,7 +220,7 @@ function PublicTorCard({
                 href={tor.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-200 py-2 text-[13px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt"
               >
                 <ExternalLink size={14} />
                 {t("announcementDocument")}
@@ -231,25 +231,25 @@ function PublicTorCard({
       </div>
 
       {isFeedbackOpen && (
-        <div className="border-t border-zinc-100 bg-zinc-50/50 p-5 sm:p-6">
-          <label className="mb-2 block text-sm font-semibold text-zinc-900">
+        <div className="border-t border-border bg-surface-alt/50 p-5 sm:p-6">
+          <label className="mb-2 block text-sm font-semibold text-ink">
             {t("feedbackFormLabel")}
           </label>
           <textarea
-            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 shadow-sm outline-none placeholder:text-zinc-400 focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-xl border border-border bg-surface p-3.5 text-sm text-ink shadow-sm outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
             rows={3}
             value={feedbackText}
             onChange={(e) => onFeedbackChange(e.target.value)}
             placeholder={t("feedbackPlaceholder")}
           />
           <div className="mt-3 flex items-center justify-between">
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-2xs text-ink-muted">
               {t("feedbackDisclaimer")}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={onToggleFeedback}
-                className="rounded-lg px-4 py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                className="rounded-lg px-4 py-2 text-xs font-medium text-ink-muted hover:bg-surface-alt hover:text-ink"
               >
                 {t("cancelButton")}
               </button>
@@ -349,12 +349,12 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   return (
     <div className="flex flex-col items-start gap-8 lg:flex-row">
       <div className="flex w-full items-center justify-between lg:hidden">
-        <span className="text-sm font-semibold text-zinc-800">
+        <span className="text-sm font-semibold text-ink">
           {t("resultsCountMobile", { count: filtered.length })}
         </span>
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
-          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm"
+          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-ink shadow-sm"
         >
           <SlidersHorizontal size={16} />
           {t("filtersButton")}
@@ -366,15 +366,15 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
           showMobileFilters ? "block" : "hidden"
         }`}
       >
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-base font-bold text-zinc-900">
+            <h2 className="flex items-center gap-2 text-base font-bold text-ink">
               <SlidersHorizontal size={18} /> {t("filtersButton")}
             </h2>
             {hasActiveFilters && (
               <button
                 onClick={clearAllFilters}
-                className="text-[13px] font-medium text-accent hover:text-accent-dark"
+                className="text-sm font-medium text-accent hover:text-accent-dark"
               >
                 {t("clearAllFilters")}
               </button>
@@ -382,10 +382,10 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
           </div>
 
           <div className="mb-7">
-            <label className="mb-3 block text-sm font-bold text-zinc-900">{t("searchLabel")}</label>
+            <label className="mb-3 block text-sm font-bold text-ink">{t("searchLabel")}</label>
             <div className="relative">
               <Search
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-subtle"
                 size={16}
               />
               <input
@@ -393,12 +393,12 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("searchInputPlaceholder")}
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2.5 pl-10 pr-4 text-[13px] text-zinc-900 outline-none transition-colors focus:border-accent/40 focus:bg-white focus:ring-2 focus:ring-accent/20"
+                className="w-full rounded-xl border border-border bg-surface-alt py-2.5 pl-10 pr-4 text-sm text-ink outline-none transition-colors focus:border-accent/40 focus:bg-surface focus:ring-2 focus:ring-accent/20"
               />
             </div>
           </div>
 
-          <div className="mb-7 h-px w-full bg-zinc-100" />
+          <div className="mb-7 h-px w-full bg-surface-alt" />
 
           <CheckboxFilter
             title={t("filterStageTitle")}
@@ -407,7 +407,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
             onChange={setSelectedStages}
           />
 
-          <div className="mb-7 h-px w-full bg-zinc-100" />
+          <div className="mb-7 h-px w-full bg-surface-alt" />
 
           <CheckboxFilter
             title={t("filterBudgetTitle")}
@@ -420,7 +420,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
             }
           />
 
-          <div className="mb-7 h-px w-full bg-zinc-100" />
+          <div className="mb-7 h-px w-full bg-surface-alt" />
 
           <AgencyFilter
             title={t("filterAgencyTitle")}
@@ -429,7 +429,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
             onChange={setSelectedAgencies}
           />
 
-          <div className="mb-7 h-px w-full bg-zinc-100" />
+          <div className="mb-7 h-px w-full bg-surface-alt" />
 
           <CheckboxFilter
             title={t("filterMethodTitle")}
@@ -442,31 +442,31 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
 
       <div className="min-w-0 flex-1">
         <div className="mb-5 hidden items-center justify-between lg:flex">
-          <h2 className="text-[15px] font-semibold text-zinc-800">
+          <h2 className="text-base font-semibold text-ink">
             {t.rich("resultsCount", {
               count: filtered.length,
-              strong: (chunks) => <span className="text-zinc-950">{chunks}</span>,
+              strong: (chunks) => <span className="text-ink">{chunks}</span>,
             })}
           </h2>
         </div>
 
         {tors.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-zinc-300 py-24 text-center">
-            <AlertTriangle size={32} className="mx-auto mb-4 text-zinc-300" />
-            <h3 className="text-base font-semibold text-zinc-900">{t("noRecordsTitle")}</h3>
-            <p className="mt-1 text-[15px] text-zinc-500">
+          <div className="rounded-2xl border border-dashed border-border py-24 text-center">
+            <AlertTriangle size={32} className="mx-auto mb-4 text-ink-subtle" />
+            <h3 className="text-base font-semibold text-ink">{t("noRecordsTitle")}</h3>
+            <p className="mt-1 text-base text-ink-muted">
               {t("noRecordsDescription")}
             </p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-zinc-300 py-24 text-center">
-            <Search size={32} className="mx-auto mb-4 text-zinc-300" />
-            <h3 className="text-base font-semibold text-zinc-900">{t("emptyStateTitle")}</h3>
-            <p className="mt-1 text-[15px] text-zinc-500">{t("emptyStateDescription")}</p>
+          <div className="rounded-2xl border border-dashed border-border py-24 text-center">
+            <Search size={32} className="mx-auto mb-4 text-ink-subtle" />
+            <h3 className="text-base font-semibold text-ink">{t("emptyStateTitle")}</h3>
+            <p className="mt-1 text-base text-ink-muted">{t("emptyStateDescription")}</p>
             {hasActiveFilters && (
               <button
                 onClick={clearAllFilters}
-                className="mt-4 rounded-lg bg-zinc-100 px-5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200"
+                className="mt-4 rounded-lg bg-surface-alt px-5 py-2 text-sm font-medium text-ink hover:bg-border"
               >
                 {t("clearAllFiltersButton")}
               </button>
@@ -500,18 +500,18 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
                 <button
                   onClick={() => setPage((p) => p - 1)}
                   disabled={page === 1}
-                  className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex items-center gap-1 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <ChevronLeft size={16} />
                   {t("prevPage")}
                 </button>
-                <span className="text-sm text-zinc-500">
+                <span className="text-sm text-ink-muted">
                   {t("pageIndicator", { page, total: pageCount })}
                 </span>
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page === pageCount}
-                  className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex items-center gap-1 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {t("nextPage")}
                   <ChevronRight size={16} />

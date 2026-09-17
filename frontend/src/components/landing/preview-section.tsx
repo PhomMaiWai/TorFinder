@@ -37,7 +37,7 @@ export function PreviewSection() {
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             {t("heading")}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-[15px] text-ink-muted">
+          <p className="mx-auto mt-4 max-w-2xl text-base text-ink-muted">
             {t("description")}
           </p>
         </div>
@@ -78,7 +78,7 @@ export function PreviewSection() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
+                      className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${
                         isFeedbackStage
                           ? "bg-amber-50 text-amber-700"
                           : "bg-accent-soft text-accent"
@@ -87,7 +87,7 @@ export function PreviewSection() {
                       {tor.stage}
                     </span>
                     {isUrgent && (
-                      <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+                      <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-2xs font-semibold text-red-600">
                         <div className="size-1.5 animate-pulse rounded-full bg-red-500" />
                         {t("closingSoon")}
                       </span>
@@ -95,11 +95,11 @@ export function PreviewSection() {
                   </div>
 
                   <Link href={`/tor/${tor.id}`} className="mt-3 block group-hover:cursor-pointer">
-                    <h3 className="text-[17px] font-semibold leading-tight text-ink transition-colors group-hover:text-accent">
+                    <h3 className="text-lg font-semibold leading-tight text-ink transition-colors group-hover:text-accent">
                       {tor.title}
                     </h3>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-ink-muted">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-muted">
                       <span className="flex items-center gap-1.5">
                         <Building2 size={15} className="text-ink-subtle" />
                         {tor.agency}
@@ -188,14 +188,14 @@ export function PreviewSection() {
 
         {items.length === 0 && (
           <div className="mt-6 rounded-2xl border border-dashed border-border bg-surface py-16 text-center">
-            <p className="text-[15px] font-medium text-ink-muted">{t("noResults")}</p>
+            <p className="text-base font-medium text-ink-muted">{t("noResults")}</p>
           </div>
         )}
 
         <div className="mt-10 text-center">
           <Link
             href="/public"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-6 text-[15px] font-medium text-ink-muted shadow-sm transition-all hover:bg-surface-alt hover:text-ink"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-6 text-base font-medium text-ink-muted shadow-sm transition-all hover:bg-surface-alt hover:text-ink"
           >
             {t("viewPublicPortal")}
             <ArrowRight size={16} />

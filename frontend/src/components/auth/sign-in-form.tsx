@@ -121,7 +121,7 @@ export function SignInForm({
           <span className="text-xl font-bold tracking-tight text-ink">TorFinder</span>
         </Link>
 
-        <div className="rounded-2xl border border-border bg-white p-10">
+        <div className="rounded-2xl border border-border bg-surface p-10">
           {googleSignup ? (
             <GoogleCompleteSignupForm
               credential={googleSignup.credential}

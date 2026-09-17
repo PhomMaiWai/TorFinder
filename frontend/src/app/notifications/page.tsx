@@ -49,7 +49,7 @@ export default function NotificationsPage() {
           unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="inline-flex h-9 items-center rounded-lg border border-border bg-white px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-alt"
+              className="inline-flex h-9 items-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-alt"
             >
               {t("markAllReadButton")}
             </button>
@@ -65,15 +65,15 @@ export default function NotificationsPage() {
               onClick={() => setFilter(id)}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 filter === id
-                  ? "bg-zinc-900 text-white"
-                  : "bg-white text-zinc-500 ring-1 ring-zinc-200 hover:text-zinc-800"
+                  ? "bg-ink text-white"
+                  : "bg-surface text-ink-muted ring-1 ring-border hover:text-ink"
               }`}
             >
               {label}
               {id === "unread" && unreadCount > 0 && (
                 <span
-                  className={`flex size-4.5 items-center justify-center rounded-full text-[10px] font-bold ${
-                    filter === id ? "bg-white/20 text-white" : "bg-danger text-white"
+                  className={`flex size-4.5 items-center justify-center rounded-full text-2xs font-bold ${
+                    filter === id ? "bg-surface/20 text-white" : "bg-danger text-white"
                   }`}
                 >
                   {unreadCount}
@@ -89,7 +89,7 @@ export default function NotificationsPage() {
             <p className="text-sm font-medium text-ink">{t("emptyFilterState")}</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-white divide-y divide-border">
+          <div className="overflow-hidden rounded-xl border border-border bg-surface divide-y divide-border">
             {filtered.map((n) => {
               const Icon = NOTIFICATION_ICONS[n.type];
               return (

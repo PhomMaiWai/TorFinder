@@ -34,7 +34,7 @@ export function FilterCheckbox({
         aria-label={ariaLabel}
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="peer size-4 cursor-pointer appearance-none rounded border border-zinc-300 bg-white transition-all checked:border-accent checked:bg-accent indeterminate:border-accent indeterminate:bg-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+        className="peer size-4 cursor-pointer appearance-none rounded border border-border bg-surface transition-all checked:border-accent checked:bg-accent indeterminate:border-accent indeterminate:bg-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
       />
       <Check
         size={12}

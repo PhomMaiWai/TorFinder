@@ -5,8 +5,8 @@ import { Skeleton, SkeletonCard, SkeletonScreen } from "@/components/ui/skeleton
 export default function DashboardLoading() {
   return (
     <AppShell>
-      <main className="flex min-h-screen flex-col bg-zinc-50/50">
-        <header className="shrink-0 border-b border-border bg-white px-8 py-7">
+      <main className="flex min-h-screen flex-col bg-surface-alt/50">
+        <header className="shrink-0 border-b border-border bg-surface px-8 py-7">
           <div className="mx-auto w-full max-w-[1400px] space-y-2">
             <Skeleton className="h-7 w-52" />
             <Skeleton className="h-4 w-80 max-w-full" />
@@ -23,7 +23,7 @@ export default function DashboardLoading() {
 
             <div className="space-y-4">
               {Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="flex gap-5 rounded-xl border border-border bg-white p-5">
+                <div key={i} className="flex gap-5 rounded-xl border border-border bg-surface p-5">
                   <Skeleton className="hidden size-14 shrink-0 rounded-full sm:block" />
                   <div className="flex-1 space-y-2.5">
                     <Skeleton className="h-5 w-3/4" />

@@ -13,8 +13,8 @@ export function AdminPageShell({
 }) {
   return (
     <AppShell>
-      <main className="flex min-h-screen flex-col bg-zinc-50/50">
-        <header className="shrink-0 border-b border-zinc-200 bg-white px-8 py-7">
+      <main className="flex min-h-screen flex-col bg-surface-alt/50">
+        <header className="shrink-0 border-b border-border bg-surface px-8 py-7">
           <div className="mx-auto w-full max-w-[1400px]">
             <div className="mb-1 flex items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-ink">{title}</h1>

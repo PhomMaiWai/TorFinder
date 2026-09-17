@@ -44,7 +44,7 @@ export function FeaturesSection() {
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             {t("heading")}
           </h2>
-          <p className="mt-4 mx-auto max-w-2xl text-[15px] text-ink-muted leading-relaxed">
+          <p className="mt-4 mx-auto max-w-2xl text-base text-ink-muted leading-relaxed">
             {t("subheading")}
           </p>
         </div>
@@ -58,8 +58,8 @@ export function FeaturesSection() {
               <div className="mb-5 flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent">
                 <feature.icon size={24} />
               </div>
-              <h3 className="text-[17px] font-bold text-ink">{feature.title}</h3>
-              <p className="mt-2.5 text-[14px] leading-relaxed text-ink-muted">
+              <h3 className="text-lg font-bold text-ink">{feature.title}</h3>
+              <p className="mt-2.5 text-sm leading-relaxed text-ink-muted">
                 {feature.description}
               </p>
             </div>

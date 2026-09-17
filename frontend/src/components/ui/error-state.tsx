@@ -48,7 +48,7 @@ export function ErrorState({ error, reset }: Props) {
       </button>
 
       {error.digest && (
-        <p className="font-mono text-[11px] text-ink-subtle">
+        <p className="font-mono text-2xs text-ink-subtle">
           {t("reference")}: {error.digest}
         </p>
       )}
