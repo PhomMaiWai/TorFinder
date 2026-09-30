@@ -28,6 +28,21 @@ export function torAmount(tor: Pick<TorRecord, "budget" | "awardedAmount">): {
   return { value: UNKNOWN_VALUE, isAwarded: false };
 }
 
+/** Archives and web pages a reader can't open as a document in the browser. */
+const NOT_A_DOCUMENT = /\.(zip|rar|html?)$/i;
+
+/**
+ * The file to open for "เอกสารประกาศ". An MEA announcement's link is its web
+ * page, not a document, so an attached file wins — the TOR itself first, since
+ * that is what a bidder came to read. Falls back to the announcement's link
+ * when nothing attached opens in a browser.
+ */
+export function torDocumentUrl(tor: Pick<TorRecord, "documents" | "sourceUrl">): string | undefined {
+  const readable = (tor.documents ?? []).filter((doc) => !NOT_A_DOCUMENT.test(doc.url));
+  const torFile = readable.find((doc) => /TOR|ขอบเขต/i.test(doc.label));
+  return (torFile ?? readable[0])?.url ?? tor.sourceUrl ?? undefined;
+}
+
 export function stageBadgeCls(stage: TorStage): string {
   if (stage === "ประกาศผู้ชนะ") return "bg-purple-50 text-purple-700";
   if (stage === "เปิดรับฟังความคิดเห็น") return "bg-amber-50 text-amber-700";
