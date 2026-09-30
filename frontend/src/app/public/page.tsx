@@ -4,9 +4,29 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { TorSearch } from "@/components/public/tor-search";
 import { getAllTors } from "@/lib/tor-source";
+import type { TorRecord } from "@/types/tor";
+
+/**
+ * Comma-separated ids that lead the list, in that order — the announcements a
+ * walkthrough opens first. Unset, the list keeps the order the backend returns.
+ */
+const FEATURED_IDS = (process.env.FEATURED_TOR_IDS ?? "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
+
+function featuredFirst(tors: TorRecord[]): TorRecord[] {
+  if (FEATURED_IDS.length === 0) return tors;
+  const rank = (tor: TorRecord) => {
+    const at = FEATURED_IDS.indexOf(tor.id);
+    return at === -1 ? FEATURED_IDS.length : at;
+  };
+  return [...tors].sort((a, b) => rank(a) - rank(b));
+}
 
 export default async function PublicPage() {
-  const [tors, t] = await Promise.all([getAllTors(), getTranslations("PublicPage")]);
+  const [allTors, t] = await Promise.all([getAllTors(), getTranslations("PublicPage")]);
+  const tors = featuredFirst(allTors);
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-alt">

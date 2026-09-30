@@ -19,7 +19,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
-import { isKnown, stageBadgeCls, torAmount } from "@/lib/tor-ui";
+import { isKnown, stageBadgeCls, torAmount, torDocumentUrl } from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
 import type { TorRecord } from "@/types/tor";
 
@@ -101,6 +101,7 @@ function PublicTorCard({
   const isFeedbackStage = tor.stage === "เปิดรับฟังความคิดเห็น";
   const hasDeadline = isKnown(tor.deadline);
   const isUrgent = hasDeadline && tor.daysLeft <= 7;
+  const documentUrl = torDocumentUrl(tor);
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-border bg-surface transition-all duration-200 hover:border-border hover:shadow-[0_8px_30px_rgb(24,24,27/6%)]">
@@ -215,9 +216,9 @@ function PublicTorCard({
             </Link>
             {/* e-GP occasionally publishes an announcement with an empty link, so
                 only offer the document when there really is one to open. */}
-            {tor.sourceUrl && (
+            {documentUrl && (
               <a
-                href={tor.sourceUrl}
+                href={documentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt"
