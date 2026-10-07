@@ -31,6 +31,35 @@ const notoSansThai = Noto_Sans_Thai({
   weight: ["400", "500", "600", "700"],
 });
 
+/**
+ * Namespaces read by client components. Server components translate on the
+ * server, so shipping their strings too would put every page's copy — the
+ * landing page's and the TOR detail's included — into every page's HTML.
+ * A new `useTranslations("X")` in a client component needs X added here.
+ */
+const CLIENT_NAMESPACES = [
+  "AdminAccountsPage",
+  "AdminCompaniesPage",
+  "AdminUsersPage",
+  "AppShell",
+  "Bidding",
+  "Common",
+  "CompanyProfileOptions",
+  "Dashboard",
+  "ErrorState",
+  "GoogleCompleteSignupForm",
+  "LandingPreview",
+  "Navbar",
+  "NotificationsPage",
+  "OwnerPage",
+  "ProfilePage",
+  "PublicPage",
+  "SavedPage",
+  "SignInForm",
+  "SignupOrganizationPage",
+  "SignupPendingPage",
+];
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
   return {
@@ -45,7 +74,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
-  const messages = await getMessages();
+  const allMessages = await getMessages();
+  const messages = Object.fromEntries(
+    CLIENT_NAMESPACES.filter((ns) => ns in allMessages).map((ns) => [ns, allMessages[ns]]),
+  );
 
   return (
     <html

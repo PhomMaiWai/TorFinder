@@ -49,10 +49,11 @@ function getOrgNav(t: (key: string) => string): { section: string | null; links:
     {
       section: null,
       links: [
-        { label: t("navOverview"), href: "/dashboard", icon: LayoutDashboard },
+        // The profile first: every match below is computed from it.
+        { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
+        { label: t("navMatches"), href: "/dashboard", icon: LayoutDashboard },
         { label: t("navSearchTor"), href: "/public", icon: Search },
         { label: t("navSavedList"), href: "/saved?scope=org", icon: Bookmark },
-        { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
         {
           label: t("navNotifications"),
           href: "/notifications",

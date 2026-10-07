@@ -73,6 +73,7 @@ export function OwnerContent({
   feedbackCounts: Record<string, number>;
 }) {
   const t = useTranslations("OwnerPage");
+  const tOptions = useTranslations("CompanyProfileOptions");
   const STAGE_PILLS = getStagePills(t);
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState("ทั้งหมด");
@@ -260,7 +261,9 @@ export function OwnerContent({
                                               {company.companyName}
                                             </p>
                                             <p className="text-xs text-ink-subtle">
-                                              {company.specialty} · {company.size}
+                                              {company.workTypes
+                                                .map((type) => tOptions(`workType_${type}`))
+                                                .join(" · ")}
                                             </p>
                                           </div>
                                         </div>

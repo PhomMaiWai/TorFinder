@@ -6,7 +6,8 @@ import { type SubmitEvent, useEffect, useState } from "react";
 
 import { PageBody, PageHeader, Section } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
-import { COMPANY_SIZE_OPTIONS, TECH_STACK_OPTIONS, type CompanySize } from "@/data/company-profile";
+import { COMPANY_SIZE_OPTIONS, type CompanySize } from "@/data/company-profile";
+import { CERTIFICATIONS, WORK_TYPE_GROUPS, type Certification, type WorkType } from "@/types/tor";
 import { formatTaxId, hasValidTaxIdChecksum, isValidTaxId } from "@/lib/thai-validation";
 
 const readOnlyInputCls =
@@ -22,20 +23,63 @@ type Account = {
     contactName?: string;
     phone?: string;
     address?: string;
-    specialty?: string;
     size?: string;
-    techStack?: string[];
     pastExperience?: string;
+    workTypes?: WorkType[];
+    largestPastContract?: number;
+    registeredCapital?: number;
+    certifications?: Certification[];
+    preferredBudgetMin?: number;
+    preferredBudgetMax?: number;
   };
 };
+
+/** Digits only, shown with thousands separators; "" for nothing. */
+function bahtInput(value: number | undefined): string {
+  return value ? value.toLocaleString("en-US") : "";
+}
+
+function parseBaht(text: string): number | undefined {
+  const digits = text.replace(/[^\d]/g, "");
+  return digits ? Number(digits) : undefined;
+}
+
+function toggle<T>(list: T[], item: T): T[] {
+  return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
+}
 
 async function fetchAccountProfile(): Promise<Account | null> {
   const res = await fetch("/api/accounts/me", { cache: "no-store" });
   return res.ok ? res.json() : null;
 }
 
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+        active ? "bg-accent-soft text-accent-text" : "border border-border text-ink-muted hover:text-ink"
+      }`}
+    >
+      {active && <Check size={13} />}
+      {children}
+    </button>
+  );
+}
+
 export default function ProfilePage() {
   const t = useTranslations("ProfilePage");
+  const tOptions = useTranslations("CompanyProfileOptions");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,10 +92,15 @@ export default function ProfilePage() {
   const [contactName, setContactName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [specialty, setSpecialty] = useState("");
   const [size, setSize] = useState<CompanySize>(COMPANY_SIZE_OPTIONS[0]);
-  const [techStack, setTechStack] = useState<string[]>([]);
   const [pastExperience, setPastExperience] = useState("");
+  const [workTypes, setWorkTypes] = useState<WorkType[]>([]);
+  const [largestPastContract, setLargestPastContract] = useState("");
+  const [registeredCapital, setRegisteredCapital] = useState("");
+  // Undefined until answered: "none of these" is an answer, a blank isn't.
+  const [certifications, setCertifications] = useState<Certification[] | undefined>(undefined);
+  const [budgetMin, setBudgetMin] = useState("");
+  const [budgetMax, setBudgetMax] = useState("");
   const [touchedTaxId, setTouchedTaxId] = useState(false);
 
   // A Google sign-in never collects these, so they start blank on those
@@ -68,10 +117,14 @@ export default function ProfilePage() {
     setContactName(account.company?.contactName ?? "");
     setPhone(account.company?.phone ?? "");
     setAddress(account.company?.address ?? "");
-    setSpecialty(account.company?.specialty ?? "");
     setSize((account.company?.size as CompanySize) ?? COMPANY_SIZE_OPTIONS[0]);
-    setTechStack(account.company?.techStack ?? []);
     setPastExperience(account.company?.pastExperience ?? "");
+    setWorkTypes(account.company?.workTypes ?? []);
+    setLargestPastContract(bahtInput(account.company?.largestPastContract));
+    setRegisteredCapital(bahtInput(account.company?.registeredCapital));
+    setCertifications(account.company?.certifications);
+    setBudgetMin(bahtInput(account.company?.preferredBudgetMin));
+    setBudgetMax(bahtInput(account.company?.preferredBudgetMax));
     setCompanyNameLocked(!!account.company?.companyName);
     setTaxIdLocked(!!account.company?.taxId);
   }
@@ -85,26 +138,22 @@ export default function ProfilePage() {
     load();
   }, []);
 
-  const percent = Math.round(
-    (
-      [
-        contactName.trim(),
-        phone.trim(),
-        address.trim(),
-        specialty.trim(),
-        size,
-        techStack.length > 0 ? "x" : "",
-        pastExperience.trim(),
-      ].filter(Boolean).length /
-        7
-    ) * 100,
-  );
+  // Weighted toward what matching reads: without these the dashboard can't
+  // say whether the company qualifies.
+  const completeness = [
+    contactName.trim(),
+    phone.trim(),
+    address.trim(),
+    workTypes.length > 0,
+    largestPastContract,
+    registeredCapital,
+    certifications !== undefined,
+    budgetMin || budgetMax,
+  ];
+  const percent = Math.round((completeness.filter(Boolean).length / completeness.length) * 100);
 
   const hasInvalidTaxId = !taxIdLocked && taxId.trim() !== "" && !isValidTaxId(taxId);
 
-  function toggleTech(tag: string) {
-    setTechStack((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
-  }
 
   async function handleSave(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -120,10 +169,14 @@ export default function ProfilePage() {
         contactName,
         phone,
         address,
-        specialty,
         size,
-        techStack,
         pastExperience,
+        workTypes,
+        largestPastContract: parseBaht(largestPastContract),
+        registeredCapital: parseBaht(registeredCapital),
+        certifications,
+        preferredBudgetMin: parseBaht(budgetMin),
+        preferredBudgetMax: parseBaht(budgetMax),
       }),
     });
 
@@ -255,16 +308,6 @@ export default function ProfilePage() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  {t("specialtyLabel")}
-                </span>
-                <input
-                  value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
-                  className={inputCls}
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-ink">
                   {t("sizeLabel")}
                 </span>
                 <select
@@ -293,30 +336,111 @@ export default function ProfilePage() {
             </div>
           </Section>
 
-          <Section title="Tech Stack">
+          <Section title={t("workTypesSectionTitle")}>
             <div className="rounded-xl border border-border bg-surface p-5">
-              <p className="mb-3 text-sm text-ink-muted">
-                {t("techStackDescription")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {TECH_STACK_OPTIONS.map((tag) => {
-                  const active = techStack.includes(tag);
-                  return (
-                    <button
-                      type="button"
-                      key={tag}
-                      onClick={() => toggleTech(tag)}
-                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                        active
-                          ? "bg-accent-soft text-accent-text"
-                          : "border border-border text-ink-muted hover:text-ink"
-                      }`}
+              <p className="mb-4 text-sm text-ink-muted">{t("workTypesDescription")}</p>
+              <div className="space-y-4">
+                {Object.entries(WORK_TYPE_GROUPS).map(([group, types]) => (
+                  <div key={group}>
+                    <p className="mb-2 text-xs font-semibold text-ink-subtle">
+                      {tOptions(`workTypeGroup_${group}`)}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {types.map((type) => (
+                        <Chip
+                          key={type}
+                          active={workTypes.includes(type)}
+                          onClick={() => setWorkTypes((prev) => toggle<WorkType>(prev, type))}
+                        >
+                          {tOptions(`workType_${type}`)}
+                        </Chip>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Section>
+
+          <Section title={t("qualificationsSectionTitle")}>
+            <div className="space-y-4 rounded-xl border border-border bg-surface p-5">
+              <p className="text-sm text-ink-muted">{t("qualificationsDescription")}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">
+                    {t("largestPastContractLabel")}
+                  </span>
+                  <input
+                    value={largestPastContract}
+                    onChange={(e) => setLargestPastContract(bahtInput(parseBaht(e.target.value)))}
+                    inputMode="numeric"
+                    placeholder="3,500,000"
+                    className={inputCls}
+                  />
+                  <span className="mt-1.5 block text-xs text-ink-subtle">
+                    {t("largestPastContractHint")}
+                  </span>
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">
+                    {t("registeredCapitalLabel")}
+                  </span>
+                  <input
+                    value={registeredCapital}
+                    onChange={(e) => setRegisteredCapital(bahtInput(parseBaht(e.target.value)))}
+                    inputMode="numeric"
+                    placeholder="2,000,000"
+                    className={inputCls}
+                  />
+                </label>
+              </div>
+              <div>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("certificationsLabel")}</span>
+                <div className="flex flex-wrap gap-2">
+                  {CERTIFICATIONS.map((cert) => (
+                    <Chip
+                      key={cert}
+                      active={certifications?.includes(cert) ?? false}
+                      onClick={() => setCertifications((prev) => toggle(prev ?? [], cert))}
                     >
-                      {active && <Check size={13} />}
-                      {tag}
-                    </button>
-                  );
-                })}
+                      {tOptions(`cert_${cert}`)}
+                    </Chip>
+                  ))}
+                  <Chip
+                    active={certifications !== undefined && certifications.length === 0}
+                    onClick={() => setCertifications([])}
+                  >
+                    {t("noCertificationsLabel")}
+                  </Chip>
+                </div>
+              </div>
+            </div>
+          </Section>
+
+          <Section title={t("budgetRangeSectionTitle")}>
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <p className="mb-3 text-sm text-ink-muted">{t("budgetRangeDescription")}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">{t("budgetMinLabel")}</span>
+                  <input
+                    value={budgetMin}
+                    onChange={(e) => setBudgetMin(bahtInput(parseBaht(e.target.value)))}
+                    inputMode="numeric"
+                    placeholder="1,000,000"
+                    className={inputCls}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">{t("budgetMaxLabel")}</span>
+                  <input
+                    value={budgetMax}
+                    onChange={(e) => setBudgetMax(bahtInput(parseBaht(e.target.value)))}
+                    inputMode="numeric"
+                    placeholder="10,000,000"
+                    className={inputCls}
+                  />
+                </label>
               </div>
             </div>
           </Section>
@@ -344,7 +468,9 @@ export default function ProfilePage() {
               {companyName.trim() || t("companyNameFallback")}
             </p>
             <p className="mt-0.5 truncate text-xs text-ink-muted">
-              {specialty.trim() || t("specialtyFallback")}
+              {workTypes.length
+                ? workTypes.map((type) => tOptions(`workType_${type}`)).join(" · ")
+                : t("workTypesFallback")}
             </p>
 
             <div className="mt-4 text-left">

@@ -5,7 +5,7 @@ export default function TorDetailLoading() {
   return (
     <div className="flex min-h-screen flex-col bg-surface-alt">
       <main className="flex-1 py-8">
-        <div className="mx-auto w-full max-w-[1400px] px-6 sm:px-8">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
           <SkeletonScreen label="กำลังโหลดรายละเอียดประกาศ">
             <div className="mb-6 space-y-3">
               <Skeleton className="h-6 w-28 rounded-full" />
@@ -13,7 +13,7 @@ export default function TorDetailLoading() {
               <Skeleton className="h-4 w-1/3" />
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
               <div className="space-y-4">
                 {Array.from({ length: 3 }, (_, i) => (
                   <div key={i} className="space-y-3 rounded-xl border border-border bg-surface p-6">

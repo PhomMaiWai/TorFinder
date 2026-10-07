@@ -2,10 +2,12 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/commo
 import { Collection, MongoClient, ObjectId } from "mongodb";
 
 import { StoredExtraction } from "../ai/ai.types";
+import { Certification } from "../matching/requirements";
+import { WorkType } from "../matching/work-types";
 import { FeedbackStatus } from "../feedback/feedback.constants";
 import { hashPassword } from "../common/password";
 import { env } from "../config/env";
-import { TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor/tor.constants";
+import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor/tor.constants";
 import { SEED_USERS } from "./seed-data";
 
 export const ACCOUNT_STATUSES = ["pending", "approved", "rejected"] as const;
@@ -19,10 +21,24 @@ export type CompanyProfile = {
   address: string;
   specialty: string;
   size: string;
-  /** Skills/services the company can offer, shown on its profile. */
+  /** Superseded by workTypes; kept so older profiles still read. */
   techStack?: string[];
   /** Free-text summary of past projects — absent until the company fills it in. */
   pastExperience?: string;
+  /** The kinds of public-sector IT contract the company takes on. */
+  workTypes?: WorkType[];
+  /**
+   * The largest single contract completed for a public agency, in baht — what
+   * a TOR's "ผลงาน ไม่น้อยกว่า …" is checked against.
+   */
+  largestPastContract?: number;
+  /** Paid-up registered capital, in baht. */
+  registeredCapital?: number;
+  /** Undefined until answered; an empty list means the company holds none. */
+  certifications?: Certification[];
+  /** The project size the company wants to bid on, in baht. */
+  preferredBudgetMin?: number;
+  preferredBudgetMax?: number;
 };
 
 export type UserDoc = {
@@ -49,6 +65,17 @@ export type UserDoc = {
   lastLoginAt?: Date;
 };
 
+export type TorContract = {
+  vendor: string;
+  /** The contract number e-GP itself assigns. */
+  number: string | null;
+  signedAt: Date | null;
+  amount: number | null;
+  startsAt: Date | null;
+  endsAt: Date | null;
+  durationDays: number | null;
+};
+
 export type TorDoc = {
   title: string;
   agency: string;
@@ -69,7 +96,10 @@ export type TorDoc = {
   deletedAt?: Date;
   /** Set only on records imported from e-GP; absent on admin-entered ones. */
   sourceRef?: string;
-  /** The record's own document when e-GP has one; otherwise the project's listing page. */
+  /**
+   * The announcement's page on the portal that published it — always a web page
+   * a reader can open, never a file. The files themselves are in `documents`.
+   */
   sourceUrl?: string;
   /**
    * What a model read out of the announcement document. Kept in its own field,
@@ -87,6 +117,11 @@ export type TorDoc = {
   /** Raw budget in baht, next to the formatted `budget` string. */
   budgetAmount?: number;
   /**
+   * ราคากลาง — the agency's own price estimate, published with the invitation.
+   * Not the budget: the national e-GP prints this one and never the other.
+   */
+  referencePrice?: number;
+  /**
    * What the winning bid came to, on the announcements that publish it. Never
    * merged into `budget`: one is what an agency set aside beforehand, the other
    * what the work was awarded for, and a reader comparing announcements has to
@@ -100,6 +135,18 @@ export type TorDoc = {
   procurementType?: string;
   goodsCategory?: string;
   contractStatus?: string;
+  /**
+   * The contracts e-GP has on file for the project, once one is signed — who
+   * won, for how much, and over which dates. Real, published figures.
+   */
+  contracts?: TorContract[];
+  /** When this record first entered the database. */
+  importedAt?: Date;
+  /**
+   * The project's current step on the national e-GP, as its own flow names it
+   * ("หนังสือเชิญชวน/ประกาศเชิญชวน"). The authority on whether bidding is over.
+   */
+  procurementStep?: { name: string | null; stage: ProcurementStage | null; checkedAt: Date };
   /**
    * Set once the e-GP document link and procurement facts have actually been
    * fetched (even if the portal had none to give). Absent means enrichment was
@@ -169,6 +216,11 @@ export type SyncRunDoc = {
   failedFeeds: string[];
   /** Set only when the run threw outright, i.e. status is "failed". */
   error?: string;
+  /**
+   * Titles the software filter turned down that still read like IT work — the
+   * place a wrongly rejected tender shows up. Capped; see EgpService.
+   */
+  nearMisses?: { projectNumber: string; title: string }[];
 };
 
 /**
@@ -213,6 +265,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.tors.createIndex({ createdAt: -1 });
     // Makes the e-GP import idempotent: re-running it updates instead of duplicating.
     await this.tors.createIndex({ sourceRef: 1 }, { unique: true, sparse: true });
+    // Serves the "which projects already have a winner" lookup every listing makes.
+    await this.tors.createIndex({ stage: 1, projectNumber: 1 });
     // The two ways comments are read: under one announcement, and in the
     // moderation queue.
     await this.feedback.createIndex({ torId: 1, createdAt: -1 });

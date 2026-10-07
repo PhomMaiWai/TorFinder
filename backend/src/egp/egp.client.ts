@@ -5,6 +5,7 @@ import { EGP_ENDPOINTS, EGP_REQUEST } from "./egp.constants";
 import {
   EgpAnnouncement,
   EgpAnnouncementResponse,
+  EgpContract,
   EgpProjectDetail,
   EgpSearchResponse,
 } from "./egp.types";
@@ -42,6 +43,16 @@ export class EgpClient {
       { timeoutMs: EGP_REQUEST.enrichTimeoutMs, maxRetries: 1 },
     );
     return body.data ?? [];
+  }
+
+  /** Signed contracts — empty until the project has a winner under contract. */
+  async contracts(projectId: string): Promise<EgpContract[]> {
+    const body = await this.http.get<EgpContract[] | { data: EgpContract[] | null }>(
+      "/ProjectContracts/GetProjectContractInProject",
+      { pageNo: "1", pageSize: "20", projectId },
+      { timeoutMs: EGP_REQUEST.enrichTimeoutMs, maxRetries: 1 },
+    );
+    return (Array.isArray(body) ? body : body.data) ?? [];
   }
 
   /** Procurement method/type/category — structured facts the portal has on file. */

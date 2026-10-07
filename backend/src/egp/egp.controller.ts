@@ -18,6 +18,16 @@ export class EgpController {
     return this.egpService.sync();
   }
 
+  /**
+   * Titles the software filter turned down that still read like IT work, from
+   * the latest sync — where a wrongly rejected tender would be.
+   */
+  @Get("near-misses")
+  @UseGuards(AdminGuard)
+  nearMisses() {
+    return this.egpService.nearMisses();
+  }
+
   /** Sync counts and success/fail history for the admin dashboard's pipeline card. */
   @Get("metrics")
   @UseGuards(AdminGuard)

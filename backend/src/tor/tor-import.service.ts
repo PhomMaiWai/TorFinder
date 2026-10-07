@@ -298,6 +298,12 @@ function upsertFor({ doc, provisional }: ImportRecord) {
     filter: { sourceRef },
     // Mongo rejects an empty operator, and a record whose every field was a
     // guess leaves nothing to $set.
-    update: Object.keys(set).length ? { $set: set, $setOnInsert: setOnInsert } : { $setOnInsert: setOnInsert },
+    // `$min` rather than `$setOnInsert` so records imported before the field
+    // existed gain it once, at the first sync that sees them.
+    update: {
+      ...(Object.keys(set).length ? { $set: set } : {}),
+      $setOnInsert: setOnInsert,
+      $min: { importedAt: new Date() },
+    },
   };
 }

@@ -41,11 +41,13 @@ export class VertexClient {
   async extractJson<T>(
     instruction: string,
     prompt: string,
-    document: { data: Buffer; mimeType: string },
+    /** Read together in one call, in the order the prompt names them. */
+    documents: { data: Buffer; mimeType: string }[],
     schema: Schema,
   ): Promise<T> {
-    if (document.data.byteLength > AI_REQUEST.maxDocumentBytes) {
-      throw new Error(`document is ${document.data.byteLength} bytes, over the inline limit`);
+    const bytes = documents.reduce((sum, doc) => sum + doc.data.byteLength, 0);
+    if (bytes > AI_REQUEST.maxDocumentBytes) {
+      throw new Error(`documents are ${bytes} bytes, over the inline limit`);
     }
 
     const generate = this.transport();
@@ -54,7 +56,9 @@ export class VertexClient {
       contents: {
         role: "user",
         parts: [
-          { inlineData: { mimeType: document.mimeType, data: document.data.toString("base64") } },
+          ...documents.map((doc) => ({
+            inlineData: { mimeType: doc.mimeType, data: doc.data.toString("base64") },
+          })),
           { text: prompt },
         ],
       },

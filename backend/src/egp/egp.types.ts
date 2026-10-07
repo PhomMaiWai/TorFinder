@@ -26,6 +26,18 @@ export type EgpAnnouncementResponse = {
   data: EgpAnnouncement[] | null;
 };
 
+/** GetProjectContractInProject — one signed contract of the project. */
+export type EgpContract = {
+  projectContractBidderName: string | null;
+  projectContractContractNumberEgp: string | null;
+  projectContractContractDate: string | null;
+  projectContractContractBudget: number | string | null;
+  projectContractContractStartDate: string | null;
+  projectContractContractEndDate: string | null;
+  /** Days; the portal sends it as a string. */
+  projectContractContractDeadline: number | string | null;
+};
+
 /** GetProjectDetail — the procurement facts the portal has on file for a project. */
 export type EgpProjectDetail = {
   masterMethodIdName: string | null;

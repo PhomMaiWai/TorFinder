@@ -11,6 +11,7 @@ import { AiModule } from "./ai/ai.module";
 import { DataGovModule } from "./datagov/datagov.module";
 import { EgpModule } from "./egp/egp.module";
 import { FeedbackModule } from "./feedback/feedback.module";
+import { GprocModule } from "./gproc/gproc.module";
 import { MeaModule } from "./mea/mea.module";
 import { MatchingModule } from "./matching/matching.module";
 import { HealthController } from "./health.controller";
@@ -32,6 +33,7 @@ import { TorModule } from "./tor/tor.module";
     EgpModule,
     DataGovModule,
     MeaModule,
+    GprocModule,
     FeedbackModule,
     MatchingModule,
     SavedTorsModule,
