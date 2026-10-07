@@ -1,9 +1,25 @@
 /**
- * Where a procurement announcement is for. This product covers Bangkok, and the
- * three sources say so in three different ways: the e-GP feed is the city's own
- * portal, MEA serves the metropolitan area and names the odd site outside it,
- * and the open-data dumps are national. So "is this ours?" is decided here,
- * once, from whatever the record happens to carry.
+ * Where a procurement announcement is for. This product covers Bangkok — not
+ * only the municipal agencies the BMA itself runs, but the state enterprises
+ * (MEA) that serve the same city, since those are the opportunities a company
+ * reading this site actually bids on. "Is this ours?" is decided here, once,
+ * from whatever the record happens to carry, and every source's import keeps
+ * only what it answers yes to — never written, not held back for review.
+ *
+ * One rule per source, because each proves it differently or not at all:
+ *  - e-GP (backend/src/egp): no check. egp2.bangkok.go.th is the city's own
+ *    procurement portal; everything on it is in scope by construction.
+ *  - gproc (backend/src/gproc): no check. It only re-reads the procurement
+ *    step of project numbers already stored — numbers that reached the
+ *    database through one of the other three, scope already settled.
+ *  - MEA (backend/src/mea): namesSomewhereElse, inverted. The utility serves
+ *    two neighbouring provinces besides the city and says so when it does, so
+ *    everything is kept except what names one of them.
+ *  - data.go.th (backend/src/datagov): namesBangkok, falling back to
+ *    isPointInBangkok. The source is national and mostly upcountry, so
+ *    Bangkok has to be proven rather than assumed — by the agency/project
+ *    name first, and only when that is silent, by the coordinates the
+ *    source's own map table gives for the contract.
  */
 
 /**

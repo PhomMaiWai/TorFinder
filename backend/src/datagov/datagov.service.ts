@@ -58,12 +58,10 @@ export class DataGovService {
     }
 
     const result = await this.importer.import("datagov", records);
-    // Records imported before this source was limited to Bangkok are dropped
-    // here: the agency name is all a stored record keeps of where the work was.
-    await this.importer.purge(
-      "datagov",
-      (doc) => isSoftwareProject(doc.title, doc.goodsCategory) && namesBangkok(doc.agency, doc.title),
-    );
+    // The same decision isWanted made at import, re-run on what the record
+    // still holds: the agency name, or — for the ones only the map table
+    // proved — the coordinates kept in `location` for exactly this.
+    await this.importer.purge("datagov", (doc) => this.isWanted(doc));
 
     return { ...result, failed };
   }
@@ -85,7 +83,10 @@ export class DataGovService {
     }
 
     // Keyed by contract, so a project matching several keywords is carried once.
-    const rows = new Map<string, { row: CgdContractRow; pkg: CkanPackage }>();
+    const rows = new Map<
+      string,
+      { row: CgdContractRow; pkg: CkanPackage; location?: { lat: number; long: number } }
+    >();
 
     const searches = packages.flatMap((pkg) => {
       const resource = this.client.contractResource(pkg);
@@ -105,8 +106,14 @@ export class DataGovService {
           for (const row of page) {
             if (!row.proj_no || !row.proj_name) continue;
             if (!isSoftwareProject(row.proj_name, row.typ_name)) continue;
-            if (!(await this.isInBangkok(row, locations.get(pkg.id) ?? null))) continue;
-            rows.set(sourceRefFor(row), { row, pkg });
+
+            const named = namesBangkok(row.subdep_name, row.proj_name);
+            const location = named
+              ? undefined
+              : await this.locationOf(row, locations.get(pkg.id) ?? null);
+            if (!named && !(location && isPointInBangkok(location.lat, location.long))) continue;
+
+            rows.set(sourceRefFor(row), { row, pkg, location });
           }
         }
       } catch {
@@ -118,26 +125,50 @@ export class DataGovService {
       `data.go.th: ${rows.size} Bangkok contracts from ${packages.length} monthly datasets`,
     );
     return {
-      records: [...rows.values()].map(({ row, pkg }) => this.toRecord(row, pkg)),
+      records: [...rows.values()].map(({ row, pkg, location }) => this.toRecord(row, pkg, location)),
       failed,
     };
   }
 
   /**
-   * Whether a contract is this product's business. The source is national and
-   * publishes no province, so Bangkok has to be proven: the agency or the
-   * project says so outright, or the month's map table places the work inside
-   * the city. Anything unproven is left alone — an upcountry hospital's order
-   * is noise in a listing for Bangkok, and most of this source is upcountry.
+   * The coordinates the month's map table has for one contract, when it has
+   * any. A separate request per row, so it's only spent on the rows the
+   * agency name alone didn't already settle.
    */
-  private async isInBangkok(row: CgdContractRow, location: CkanResource | null): Promise<boolean> {
-    if (namesBangkok(row.subdep_name, row.proj_name)) return true;
-    if (!location) return false;
-
+  private async locationOf(
+    row: CgdContractRow,
+    location: CkanResource | null,
+  ): Promise<{ lat: number; long: number } | undefined> {
+    if (!location) return undefined;
     const point = await this.client
       .projectLocation(location.id, String(row.proj_no))
       .catch(() => null);
-    return point?.lat != null && point.long != null && isPointInBangkok(point.lat, point.long);
+    return point?.lat != null && point.long != null ? { lat: point.lat, long: point.long } : undefined;
+  }
+
+  /**
+   * This product's full scope decision for a datagov record: software work,
+   * and Bangkok proven either by the agency/project name or by coordinates.
+   * The source is national and publishes no province, so an unproven record
+   * is left alone — an upcountry hospital's order is noise in a listing for
+   * Bangkok, and most of this source is upcountry.
+   *
+   * collect() calls this once a candidate has whatever location it could get,
+   * and purge() calls it again on the stored record — same rule either way,
+   * which is why `location` is persisted rather than re-fetched: without it,
+   * a contract only the map table placed in Bangkok would import correctly
+   * and then be purged on the very next sync, the agency name alone no longer
+   * being enough to keep it.
+   */
+  private isWanted(doc: {
+    title: string;
+    agency: string;
+    goodsCategory?: string;
+    location?: { lat: number; long: number };
+  }): boolean {
+    if (!isSoftwareProject(doc.title, doc.goodsCategory)) return false;
+    if (namesBangkok(doc.agency, doc.title)) return true;
+    return doc.location != null && isPointInBangkok(doc.location.lat, doc.location.long);
   }
 
   /**
@@ -146,7 +177,11 @@ export class DataGovService {
    * what an awarded contract tells a company — who buys this kind of work, and
    * at what price — which is also why the winner is named in the summary.
    */
-  private toRecord(row: CgdContractRow, pkg: CkanPackage): ImportRecord {
+  private toRecord(
+    row: CgdContractRow,
+    pkg: CkanPackage,
+    location?: { lat: number; long: number },
+  ): ImportRecord {
     const title = cleanText(row.proj_name ?? "");
     const agency = cleanText(row.subdep_name ?? "") || UNKNOWN;
     const announcedAt = parseDate(row.contrct_date ?? row.annce_date);
@@ -173,6 +208,7 @@ export class DataGovService {
         // every source uses for it — so a later purge re-runs the filter on
         // exactly what the import decided with, not on the title alone.
         goodsCategory: row.typ_name ? cleanText(row.typ_name) : undefined,
+        location,
       },
     };
   }

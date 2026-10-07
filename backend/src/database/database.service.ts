@@ -136,6 +136,12 @@ export type TorDoc = {
   goodsCategory?: string;
   contractStatus?: string;
   /**
+   * Set only on a datagov record the agency name alone didn't prove Bangkok —
+   * the coordinates that did, kept so a later purge can re-run that same
+   * decision instead of re-deriving it without the evidence it was made on.
+   */
+  location?: { lat: number; long: number };
+  /**
    * The contracts e-GP has on file for the project, once one is signed — who
    * won, for how much, and over which dates. Real, published figures.
    */

@@ -147,7 +147,7 @@ export class TorImportService {
     const imported = await this.db.tors
       .find(
         { sourceRef: { $regex: `^${source}:` } },
-        { projection: { title: 1, agency: 1, goodsCategory: 1 } },
+        { projection: { title: 1, agency: 1, goodsCategory: 1, location: 1 } },
       )
       .toArray();
 
