@@ -31,6 +31,10 @@ export const GPROC_REQUEST = {
    * capture is a batch nobody is waiting on, so it is read slowly.
    */
   delayMs: 500,
+  /** Pause between step reads — two requests each; a faster pace draws 429s within ~40 projects. */
+  stepDelayMs: 2_000,
+  /** Older projects whose step was never read, asked per run on top of the recent ones. */
+  stepBacklogPerRun: 40,
   /** Consecutive failures that end a run: the portal is down, not one project broken. */
   breaker: 3,
   /** Projects one capture accepts — the extension sends at most this many. */

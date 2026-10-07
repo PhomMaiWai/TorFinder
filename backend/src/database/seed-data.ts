@@ -118,6 +118,32 @@ export const SEED_USERS: SeedUser[] = [
         "ให้บริการ IT Helpdesk และดูแลผู้ใช้งานระบบให้รัฐวิสาหกิจ รวมถึงบำรุงรักษาระบบบริการประชาชนขนาดเล็ก",
     },
   },
+  // Left pending so /admin/accounts has something to review on a fresh install,
+  // and so the auth and accounts e2e suites can check that approval gates login.
+  {
+    email: "contact@techworks.co.th",
+    name: "บริษัท เทค เวิร์คส์ จำกัด",
+    role: "org",
+    status: "pending",
+    password: "Tech12345!",
+    company: {
+      companyName: "บริษัท เทค เวิร์คส์ จำกัด",
+      taxId: "0105563001244",
+      contactName: "ณัฐพล เทควิศิษฏ์",
+      phone: "089-123-4567",
+      address: "88 ถนนรัชดาภิเษก แขวงดินแดง เขตดินแดง กรุงเทพมหานคร 10400",
+      specialty: "",
+      size: "11-50 คน",
+      workTypes: ["datacenter", "network", "security"],
+      largestPastContract: 12_000_000,
+      registeredCapital: 10_000_000,
+      certifications: ["iso9001", "iso27001", "iso20000"],
+      preferredBudgetMin: 3_000_000,
+      preferredBudgetMax: 30_000_000,
+      pastExperience:
+        "ย้ายระบบงานสารบรรณและระบบบริหารงบประมาณของหน่วยงานภาครัฐขึ้นคลาวด์ และดูแลงานด้านความมั่นคงปลอดภัยไซเบอร์",
+    },
+  },
 ];
 
 type SeedTor = Omit<TorDoc, "createdAt" | "match"> & { daysAgo: number };

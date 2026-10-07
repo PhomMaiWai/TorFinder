@@ -28,6 +28,12 @@ export const WEIGHTS = {
   budget: 0.15,
 } as const;
 
+/**
+ * Eligibility when the document states no checkable requirement: no barrier is
+ * a good sign, not proof — the same neutral value as an unknown budget.
+ */
+export const NO_STATED_REQUIREMENTS = 0.6;
+
 /** A company that fails a stated requirement cannot win, whatever else fits. */
 export const INELIGIBLE_CEILING = 40;
 /** Nor is a contract of a kind the company doesn't do much of an opportunity. */

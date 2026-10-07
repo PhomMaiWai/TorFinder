@@ -7,9 +7,11 @@
 // scoreMatch() is deterministic by design — every point traces to a rule — so
 // these tests pin exact scores. Each case builds its own announcement through
 // POST /api/tor and passes an explicit company profile to
-// POST /api/matching/tor/:id/score, so the numbers don't depend on seed data
-// or on other test files. The weights under test (skills .65, size .25,
-// wording .10; useful-score cutoff 40) live in src/matching/matching.constants.ts.
+// POST /api/matching/tor/:id/score, so the numbers don't depend on other test
+// files. The weights under test (work type .50, eligibility .35, budget .15;
+// off-type cap 35, useful-score cutoff 40) live in
+// src/matching/matching.constants.ts. A manual record carries no extracted
+// qualifications, so eligibility sits at its "nothing stated" value of 0.6.
 
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
@@ -42,6 +44,10 @@ const GHOST_TOKEN = makeToken("org", "matching-ghost@ci.test");
 // TOR de-dup check (they share only this token).
 const RUN = String(Date.now());
 const AGENCY = `สำนักทดสอบการจับคู่ ${RUN}`;
+
+// Seeded Arun (development + maintenance, ฿1M–10M) against a ฿1M title naming
+// development, web and maintenance: .50*(.7 + .3*2/3) + .35*.6 + .15*1.
+const ARUN_PORTAL_SCORE = 81;
 
 // A well-formed ObjectId no record will have.
 const MISSING_ID = "0123456789abcdef01234567";
@@ -93,118 +99,79 @@ function scoreFor(torId, company) {
   return api(`/matching/tor/${torId}/score`, { method: "POST", body: company });
 }
 
-describe("POST /api/matching/tor/:id/score — skill fit (weight .65)", () => {
+describe("POST /api/matching/tor/:id/score — work type (.50) and budget (.15)", () => {
   let webTor;
 
   before(async () => {
+    // development + web + eservice, ฿1,000,000
     webTor = await createTor({ title: `จ้างพัฒนาเว็บไซต์บริการประชาชน ${RUN}` });
   });
 
-  it("scores a company that covers every implied skill at a credible size", async () => {
+  it("scores a company that does every kind of work the title names, in its budget range", async () => {
     const res = await scoreFor(webTor.id, {
       companyName: "เว็บสตูดิโอ",
-      specialty: "Web Application",
-      size: "11-50 คน",
+      workTypes: ["development", "web", "eservice"],
+      preferredBudgetMin: 500_000,
+      preferredBudgetMax: 5_000_000,
     });
 
     assert.equal(res.status, 201);
-    assert.equal(res.body.score, 90); // .65*1 + .25*1 + .10*0
+    assert.equal(res.body.score, 86); // .50*1 + .35*.6 + .15*1
     assert.deepEqual(res.body.gaps, []);
-    assert.equal(res.body.reasons.length, 2);
-    assert.ok(res.body.reasons.some((r) => r.includes("เว็บแอปพลิเคชัน")), "names the matched skill");
-    assert.ok(res.body.reasons.some((r) => r.includes("วงเงิน")), "credits the size/budget fit");
+    assert.equal(res.body.eligible, null, "nothing stated is not proof of eligibility");
+    assert.ok(res.body.reasons.some((r) => r.includes("วงเงิน")), "credits the budget fit");
   });
 
-  it("drops the skill component to zero when nothing overlaps, and lists the gap", async () => {
+  it("discounts a budget outside the company's range and says so", async () => {
     const res = await scoreFor(webTor.id, {
-      companyName: "ผู้รับเหมาก่อสร้าง",
-      specialty: "งานก่อสร้างและตกแต่งภายใน",
-      size: "11-50 คน",
+      companyName: "เว็บสตูดิโอใหญ่",
+      workTypes: ["development", "web", "eservice"],
+      preferredBudgetMin: 5_000_000,
+      preferredBudgetMax: 20_000_000,
     });
 
     assert.equal(res.status, 201);
-    assert.equal(res.body.score, 25); // .65*0 + .25*1 + .10*0
-    assert.equal(res.body.gaps.length, 1);
-    assert.ok(res.body.gaps[0].includes("เว็บแอปพลิเคชัน"), "the missing skill is spelled out");
+    assert.equal(res.body.score, 74); // .50*1 + .35*.6 + .15*.2
+    assert.ok(res.body.gaps.some((g) => g.includes("อยู่นอกช่วง")));
   });
 
-  it("scores an announcement that implies no skill as neutral, not as a failure", async () => {
-    const plainTor = await createTor({ title: `จัดซื้อวัสดุสำนักงานทั่วไป ${RUN}`, budget: "ไม่ระบุ" });
-
-    const res = await scoreFor(plainTor.id, {
-      companyName: "ห้างหุ้นส่วนบริการทั่วไป",
-      specialty: "บริการทั่วไป",
-      size: "11-50 คน",
+  it("credits partial overlap above nothing but below full coverage", async () => {
+    const res = await scoreFor(webTor.id, {
+      companyName: "ทีมเว็บ",
+      workTypes: ["web"],
+      preferredBudgetMin: 500_000,
+      preferredBudgetMax: 5_000_000,
     });
 
     assert.equal(res.status, 201);
-    assert.equal(res.body.score, 45); // .65*0.5 + .25*0.5 (no budget) + .10*0
+    assert.equal(res.body.score, 76); // .50*(.7 + .3/3) + .35*.6 + .15*1
+  });
+
+  it("caps a company that does none of the work named", async () => {
+    const res = await scoreFor(webTor.id, {
+      companyName: "ผู้ขายฮาร์ดแวร์",
+      workTypes: ["hardware"],
+      preferredBudgetMin: 500_000,
+      preferredBudgetMax: 5_000_000,
+    });
+
+    assert.equal(res.status, 201);
+    assert.equal(res.body.score, 35); // 36 before the off-type cap
+    assert.ok(res.body.gaps.some((g) => g.includes("ไม่อยู่ในงานที่บริษัทระบุ")));
+  });
+
+  it("scores a profile that names no work type as neutral, not as a failure", async () => {
+    const res = await scoreFor(webTor.id, { companyName: "บริษัทยังไม่กรอกข้อมูล" });
+
+    assert.equal(res.status, 201);
+    assert.equal(res.body.score, 55); // .50*.5 + .35*.6 + .15*.6
     assert.deepEqual(res.body.reasons, []);
-    assert.deepEqual(res.body.gaps, []);
-  });
-});
-
-describe("POST /api/matching/tor/:id/score — company size vs budget (weight .25)", () => {
-  it("discounts, rather than zeroes, a budget above the company's size ceiling", async () => {
-    const bigTor = await createTor({ title: `จ้างทำเว็บไซต์หน่วยงาน ${RUN}`, budget: "฿100,000,000" });
-
-    const res = await scoreFor(bigTor.id, {
-      companyName: "ทีมเล็ก",
-      specialty: "Web Application",
-      size: "1-10 คน", // ceiling ฿5M, so sizeFit = 5M / 100M = 0.05
-    });
-
-    assert.equal(res.status, 201);
-    assert.equal(res.body.score, 66); // round(.65*1 + .25*0.05 + .10*0)
-    assert.equal(res.body.reasons.length, 1, "the size/budget line is withheld when over ceiling");
-    assert.ok(res.body.gaps.some((g) => g.includes("สูงกว่าขนาดงาน")));
   });
 
-  it("maps an unrecognised company size onto the mid-size ceiling", async () => {
-    const tor = await createTor({ title: `ปรับปรุงระบบงานเว็บภายใน ${RUN}`, budget: "฿30,000,000" });
+  it("rejects an unknown work type (400)", async () => {
+    const res = await scoreFor(webTor.id, { companyName: "X", workTypes: ["construction"] });
 
-    const res = await scoreFor(tor.id, {
-      companyName: "องค์กรไม่ระบุขนาด",
-      specialty: "Web Application",
-      size: "ไม่ได้ระบุขนาด", // unknown -> falls back to ฿20M, so 30M is over -> sizeFit = 20/30
-    });
-
-    assert.equal(res.status, 201);
-    // 82, not 90: the fallback ceiling still discounts. An unknown size treated
-    // as "no ceiling" would leave sizeFit at 1.
-    assert.equal(res.body.score, 82);
-  });
-});
-
-describe("POST /api/matching/tor/:id/score — wording tie-breaker (weight .10)", () => {
-  let tor;
-
-  before(async () => {
-    // English title so the specialty's words can appear in it verbatim; no
-    // skill keyword, so skillFit stays neutral and only wording moves.
-    tor = await createTor({ title: `Traffic Analytics Platform ${RUN}`, budget: "฿10,000,000" });
-  });
-
-  it("adds points when the specialty's words show up in the title", async () => {
-    const res = await scoreFor(tor.id, {
-      companyName: "Overlap Co",
-      specialty: "Traffic Analytics", // both words are in the title
-      size: "1-10 คน", // ceiling ฿5M -> sizeFit = 5M / 10M = 0.5
-    });
-
-    assert.equal(res.status, 201);
-    assert.equal(res.body.score, 55); // .65*0.5 + .25*0.5 + .10*1
-  });
-
-  it("gives nothing for a specialty whose words are absent from the title", async () => {
-    const res = await scoreFor(tor.id, {
-      companyName: "No Overlap Co",
-      specialty: "งานออกแบบกราฟิก",
-      size: "1-10 คน",
-    });
-
-    assert.equal(res.status, 201);
-    assert.equal(res.body.score, 45); // same as above minus the .10 wording term
+    assert.equal(res.status, 400);
   });
 });
 
@@ -218,8 +185,8 @@ describe("POST /api/matching/tor/:id/score — invariants & errors", () => {
   it("always returns an integer score between 0 and 100", async () => {
     const res = await scoreFor(tor.id, {
       companyName: "Any Co",
-      specialty: "Web Application",
-      size: "11-50 คน",
+      workTypes: ["web"],
+      largestPastContract: 1_000_000,
     });
 
     assert.equal(res.status, 201);
@@ -228,13 +195,13 @@ describe("POST /api/matching/tor/:id/score — invariants & errors", () => {
   });
 
   it("scores the same pair identically every time", async () => {
-    const company = { companyName: "Repeat Co", specialty: "Web Application", size: "11-50 คน" };
+    const company = { companyName: "Repeat Co", workTypes: ["development", "web"] };
     const [a, b] = await Promise.all([scoreFor(tor.id, company), scoreFor(tor.id, company)]);
 
     assert.deepEqual(a.body, b.body);
   });
 
-  it("accepts a profile with no specialty or size", async () => {
+  it("accepts a profile with nothing but a name", async () => {
     const res = await scoreFor(tor.id, { companyName: "Bare Co" });
 
     assert.equal(res.status, 201);
@@ -242,7 +209,7 @@ describe("POST /api/matching/tor/:id/score — invariants & errors", () => {
   });
 
   it("rejects a profile with no company name (400)", async () => {
-    const res = await scoreFor(tor.id, { specialty: "Web Application", size: "11-50 คน" });
+    const res = await scoreFor(tor.id, { workTypes: ["web"] });
 
     assert.equal(res.status, 400);
   });
@@ -262,17 +229,17 @@ describe("POST /api/matching/tor/:id/score — invariants & errors", () => {
 
 describe("GET /api/matching/tor/:id/companies — ranked candidates", () => {
   it("ranks a fitting approved company, sorted and above the useful-score cutoff", async () => {
-    const webTor = await createTor({ title: `จ้างพัฒนาเว็บพอร์ทัลประชาชน ${RUN}` });
+    const webTor = await createTor({ title: `จ้างพัฒนาและบำรุงรักษาเว็บพอร์ทัลประชาชน ${RUN}` });
 
     const res = await api(`/matching/tor/${webTor.id}/companies`);
 
     assert.equal(res.status, 200);
     assert.ok(Array.isArray(res.body));
-    // Seeded by backend/src/database/seed-data.ts: an approved org whose
-    // specialty is "Web Application".
+    // Seeded by backend/src/database/seed-data.ts: an approved org doing
+    // development + maintenance, budget range ฿1M–10M.
     const arun = res.body.find((c) => c.companyName.includes("อรุณ"));
-    assert.ok(arun, "the seeded web-dev company should be a candidate");
-    assert.equal(arun.score, 90);
+    assert.ok(arun, "the seeded development company should be a candidate");
+    assert.equal(arun.score, ARUN_PORTAL_SCORE);
     assert.ok(Array.isArray(arun.reasons) && Array.isArray(arun.gaps));
 
     assert.ok(
@@ -286,14 +253,14 @@ describe("GET /api/matching/tor/:id/companies — ranked candidates", () => {
 
   it("omits a company whose score falls below the cutoff", async () => {
     const healthTor = await createTor({
-      title: `จ้างพัฒนาระบบเวชระเบียนโรงพยาบาล ${RUN}`,
+      title: `จัดหาระบบเวชระเบียนโรงพยาบาล ${RUN}`,
       budget: "฿2,000,000",
     });
 
     const res = await api(`/matching/tor/${healthTor.id}/companies`);
 
     assert.equal(res.status, 200);
-    // The seeded web-dev company scores 25 here (no skill overlap) -> filtered.
+    // The seeded development company does no health work -> capped at 35, filtered.
     assert.ok(!res.body.some((c) => c.companyName.includes("อรุณ")));
   });
 

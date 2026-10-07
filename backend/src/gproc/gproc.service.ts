@@ -163,13 +163,29 @@ export class GprocService {
    * is over. A project already decided is not asked again.
    */
   async refreshSteps(): Promise<string> {
-    const numbers = (await this.db.tors.distinct("projectNumber", {
+    const undecided = {
       deletedAt: { $exists: false },
       stage: { $ne: AWARD_STAGE },
       projectNumber: { $regex: PROJECT_NUMBER.source },
-      createdAt: { $gte: new Date(Date.now() - ACTIONABLE_WINDOW_MS) },
       "procurementStep.stage": { $nin: [...DECIDED_STAGES] },
-    })) as string[];
+    };
+    const since = new Date(Date.now() - ACTIONABLE_WINDOW_MS);
+    // Recent projects are followed every run, and first: they are the ones a
+    // vendor can still act on, and process5 rate-limits a long batch. An older
+    // one is asked once, a few per run — that settles the years-old invitations
+    // no portal ever closed on its own (most turn out cancelled or contracted).
+    const [recent, backlog] = await Promise.all([
+      this.db.tors.distinct("projectNumber", { ...undecided, createdAt: { $gte: since } }),
+      this.db.tors.distinct("projectNumber", {
+        ...undecided,
+        createdAt: { $lt: since },
+        procurementStep: { $exists: false },
+      }),
+    ]);
+    const numbers = [
+      ...(recent as string[]),
+      ...(backlog as string[]).filter((number) => !recent.includes(number)).slice(0, GPROC_REQUEST.stepBacklogPerRun),
+    ];
 
     let updated = 0;
     let consecutiveFailures = 0;
@@ -178,18 +194,18 @@ export class GprocService {
       try {
         const step = await this.client.procurementStep(projectNumber);
         consecutiveFailures = 0;
-        if (step) {
-          await this.db.tors.updateMany(
-            { projectNumber },
-            { $set: { procurementStep: { ...step, checkedAt: new Date() } } },
-          );
-          updated++;
-        }
+        // Recorded even when process5 has nothing, so an old project it
+        // doesn't know is not asked again every run.
+        await this.db.tors.updateMany(
+          { projectNumber },
+          { $set: { procurementStep: { ...(step ?? { name: null, stage: null }), checkedAt: new Date() } } },
+        );
+        if (step) updated++;
       } catch (error) {
         consecutiveFailures++;
         this.logger.warn(`process5 step ${projectNumber}: ${String(error)}`);
       }
-      await sleep(GPROC_REQUEST.delayMs);
+      await sleep(GPROC_REQUEST.stepDelayMs);
     }
     return `${updated}/${numbers.length} procurement steps read`;
   }
