@@ -21,7 +21,14 @@ import { TorRecordFacts } from "@/components/public/tor-record-facts";
 import { TOR_DETAILS } from "@/data/tor-details";
 import { fetchBudgetAssessment, fetchFeedback, fetchMatchedCompanies } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
-import { biddingOf, daysUntilClose, isClosingSoon, stageBadgeCls, torAmount } from "@/lib/tor-ui";
+import {
+  biddingOf,
+  daysUntilClose,
+  isClosingSoon,
+  sourcePageUrl,
+  stageBadgeCls,
+  torAmount,
+} from "@/lib/tor-ui";
 
 const CARD = "rounded-xl border border-border bg-surface p-6 shadow-sm";
 const HEADING = "mb-4 flex items-center gap-2 text-lg font-bold text-ink";
@@ -72,7 +79,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
   const daysLeft = daysUntilClose(tor);
   const urgent = isClosingSoon(tor);
   const amount = torAmount(tor);
-  const sourceUrl = tor.sourceUrl ?? written?.sourceUrl;
+  const sourceUrl = sourcePageUrl(tor) ?? written?.sourceUrl;
   const budgetStatus = written?.budgetStatus ?? tor.budgetStatus;
   const hasDocumentDetails = !!tor.extraction || !!written;
   const documents = tor.documents ?? [];

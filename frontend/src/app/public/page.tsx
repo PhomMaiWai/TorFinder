@@ -61,6 +61,7 @@ function toCard(tor: TorRecord): TorRecord {
     isNew: tor.isNew,
     hasVendorMismatch: tor.hasVendorMismatch,
     sourceUrl: tor.sourceUrl,
+    projectNumber: tor.projectNumber,
     awardedAmount: tor.awardedAmount,
     referencePrice: tor.referencePrice,
     // The card links to the announcement's page; the file list is only its

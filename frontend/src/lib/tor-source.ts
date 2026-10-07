@@ -40,15 +40,42 @@ export function mockNumericId(id: string): number | null {
  * search page filters and counts client-side, so it needs the whole set, not
  * just the first page the endpoint will hand out.
  */
-export async function getAllTors(): Promise<TorRecord[]> {
-  const all: TorRecord[] = [];
-
-  for (let page = 1; page <= MAX_PAGES; page++) {
-    const batch = await fetchTorList(page, PAGE_SIZE);
-    all.push(...batch);
-    if (batch.length < PAGE_SIZE) break;
+export function getAllTors(): Promise<TorRecord[]> {
+  // Every visit to the search page reads the whole set; one read serves them
+  // all for a short while. A failed read is dropped at once, not cached.
+  if (!listing || Date.now() - listing.at > LISTING_TTL_MS) {
+    const read = readAllTors();
+    listing = { at: Date.now(), read };
+    read.catch(() => {
+      if (listing?.read === read) listing = null;
+    });
   }
+  return listing.read;
+}
 
+/** Long enough to absorb a burst of visits, short enough that an import or an admin edit shows up soon. */
+const LISTING_TTL_MS = 30_000;
+
+/** Pages requested at once after the first; the backend answers each in ~0.1–0.2s. */
+const PAGE_CONCURRENCY = 4;
+
+let listing: { at: number; read: Promise<TorRecord[]> } | null = null;
+
+async function readAllTors(): Promise<TorRecord[]> {
+  const all = await fetchTorList(1, PAGE_SIZE);
+  if (all.length < PAGE_SIZE) return all;
+
+  // The total isn't known up front, so pages go out a few at a time until one
+  // comes back short — three round trips for ~700 records instead of seven.
+  for (let first = 2; first <= MAX_PAGES; first += PAGE_CONCURRENCY) {
+    const pages = Array.from(
+      { length: Math.min(PAGE_CONCURRENCY, MAX_PAGES - first + 1) },
+      (_, i) => first + i,
+    );
+    const batches = await Promise.all(pages.map((page) => fetchTorList(page, PAGE_SIZE)));
+    for (const batch of batches) all.push(...batch);
+    if (batches.some((batch) => batch.length < PAGE_SIZE)) break;
+  }
   return all;
 }
 
