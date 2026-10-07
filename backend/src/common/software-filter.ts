@@ -24,6 +24,16 @@ export const SOFTWARE_SEARCH_KEYWORDS = [
   "ดิจิทัล",
   "เว็บไซต์",
   "ฐานข้อมูล",
+  // Names that carry none of the words above — "จ้างเหมาบริการดูแลรักษาโปรแกรม
+  // ระบบ …" — are otherwise never seen, however clearly the filter accepts them.
+  "โปรแกรม",
+  "แอปพลิเคชัน",
+  "แพลตฟอร์ม",
+  "ระบบบริหารจัดการ",
+  "ปรับปรุงระบบ",
+  "จัดทำระบบ",
+  "ปัญญาประดิษฐ์",
+  "คลาวด์",
 ];
 
 /**
@@ -41,6 +51,7 @@ const SOFTWARE_TERMS = [
   "เว็บไซต์",
   "เว็บแอป",
   "ระบบสารสนเทศ",
+  "เทคโนโลยีสารสนเทศ",
   "ฐานข้อมูล",
   "พัฒนาระบบ",
   "ปรับปรุงระบบ",
@@ -57,6 +68,13 @@ const SOFTWARE_TERMS = [
   "website",
   "cloud",
   "dashboard",
+  "helpdesk",
+  "help desk",
+  "service desk",
+  "ห้องสมุดออนไลน์",
+  "e-library",
+  "e-learning",
+  "e-service",
 ];
 
 /**
@@ -79,6 +97,10 @@ const NON_SOFTWARE_TERMS = [
   "เช่าที่ดิน",
   // Facility systems inside a data centre are still building work.
   "ปรับอากาศ",
+  "ดับเพลิง",
+  "จ่ายไฟฟ้า",
+  "สายดิน",
+  "ตู้น้ำดื่ม",
   "ระบบไฟฟ้า",
   "ลิฟต์",
   "ทำความสะอาด",
@@ -122,17 +144,36 @@ const NON_SOFTWARE_TERMS = [
   "เดินเรือ",
   "ไฟฟ้าส่องสว่าง",
   "หนังสือพิมพ์",
-  // IT operations rather than software: networks, links, machines to keep alive.
+  // Spare parts for physical equipment
+  "อะไหล่",
+  "จ้างเหมาบริการบุคคล",
+];
+
+/**
+ * IT operations rather than software: networks, links, machines to keep alive.
+ * Out of scope on their own, but Bangkok tenders its application support as
+ * "บำรุงรักษาระบบเครือข่ายและโปรแกรมประยุกต์" — one contract for both — and a
+ * name that says application software outright is software work.
+ */
+const IT_OPERATIONS_TERMS = [
+  // Repairs — of buildings and machines, unless the name says it's software.
+  "ซ่อมแซม",
   "เครือข่าย",
   "อินเทอร์เน็ต",
   "แม่ข่าย",
   "อุปกรณ์คอมพิวเตอร์",
   "บำรุงรักษาอุปกรณ์",
   "วงจรสื่อสาร",
-  // Repairs of physical equipment
-  "ซ่อมแซม",
-  "อะไหล่",
-  "จ้างเหมาบริการบุคคล",
+];
+const APPLICATION_TERMS = [
+  "โปรแกรมประยุกต์",
+  "ชุดโปรแกรม",
+  "ซอฟต์แวร์",
+  "ซอฟท์แวร์",
+  "แอปพลิเคชัน",
+  "แอพพลิเคชัน",
+  "software",
+  "application",
 ];
 
 /**
@@ -152,6 +193,9 @@ const PURCHASABLE_SOFTWARE = [
   "แอพพลิเคชัน",
   "software",
   "license",
+  "helpdesk",
+  "help desk",
+  "service desk",
 ];
 
 /**
@@ -172,6 +216,33 @@ const HARDWARE_TERMS = [
   "อุปกรณ์กระจายสัญญาณ",
 ];
 
+/**
+ * Computers and the networks between them — machines, servers, notebooks,
+ * peripherals, their maintenance. An IT vendor bids on these as readily as on
+ * software, so they count, unless the name says the computer is part of
+ * something else (a CT scanner, a medical device) or is only its consumables.
+ */
+const COMPUTER_TERMS = ["คอมพิวเตอร์", "เครื่องแม่ข่าย", "server"];
+const NOT_IT_HARDWARE = [
+  "วัสดุ",
+  "หมึก",
+  "ดรัม",
+  "เอกซเรย์",
+  "เอ็กซเรย์",
+  "การแพทย์",
+  "เครื่องตรวจ",
+  "กระจกตา",
+  "ทันตกรรม",
+  "สติกเกอร์",
+  "สติ๊กเกอร์",
+];
+
+/**
+ * The agency picks the vendor itself (วิธีเฉพาะเจาะจง): the announcement is a
+ * record of a purchase already arranged, not something anyone else can bid on.
+ */
+const DIRECT_PURCHASE = "เฉพาะเจาะจง";
+
 /** The portal's own category for the work, when it publishes one. */
 const NON_SOFTWARE_CATEGORIES = ["ก่อสร้าง", "ที่ดิน", "ยานพาหนะ", "การแพทย์"];
 
@@ -186,7 +257,11 @@ export function isSoftwareProject(projectName: string, category?: string | null)
   const name = projectName.toLowerCase();
   const ownCategory = (category ?? "").toLowerCase();
 
+  if (name.includes(DIRECT_PURCHASE)) return false;
+  if (contains(name, COMPUTER_TERMS) && !contains(name, NOT_IT_HARDWARE)) return true;
+
   if (contains(name, NON_SOFTWARE_TERMS)) return false;
+  if (contains(name, IT_OPERATIONS_TERMS) && !contains(name, APPLICATION_TERMS)) return false;
   if (ownCategory && contains(ownCategory, NON_SOFTWARE_CATEGORIES)) return false;
 
   if (!contains(name, SOFTWARE_TERMS)) return false;

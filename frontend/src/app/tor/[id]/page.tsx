@@ -1,23 +1,10 @@
 import {
-  AlertTriangle,
   ArrowLeft,
-  Banknote,
   Building2,
-  Calendar,
-  Check,
-  ClipboardList,
-  Clock,
   ExternalLink,
   FileText,
-  Gauge,
-  Hash,
-  ListChecks,
   MessageSquare,
-  Package,
   Scale,
-  Shield,
-  Sparkles,
-  Trophy,
   Users,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -26,36 +13,49 @@ import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
-import { SaveTorButton } from "@/components/public/save-tor-button";
-import { FEEDBACK_ENTRIES, MATCHED_COMPANIES, TOR_DETAILS } from "@/data/tor-details";
+import { BiddingBadge } from "@/components/public/bidding-badge";
 import { FeedbackForm } from "@/components/public/feedback-form";
+import { SaveTorButton } from "@/components/public/save-tor-button";
+import { TorDocumentDetails } from "@/components/public/tor-document-details";
+import { TorRecordFacts } from "@/components/public/tor-record-facts";
+import { TOR_DETAILS } from "@/data/tor-details";
 import { fetchBudgetAssessment, fetchFeedback, fetchMatchedCompanies } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
-import { isKnown, stageBadgeCls, torAmount } from "@/lib/tor-ui";
+import { biddingOf, daysUntilClose, isClosingSoon, stageBadgeCls, torAmount } from "@/lib/tor-ui";
 
 const CARD = "rounded-xl border border-border bg-surface p-6 shadow-sm";
-
-const THB = new Intl.NumberFormat("th-TH", {
-  style: "currency",
-  currency: "THB",
-  maximumFractionDigits: 0,
-});
 const HEADING = "mb-4 flex items-center gap-2 text-lg font-bold text-ink";
+
+const DATE = new Intl.DateTimeFormat("th-TH", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "Asia/Bangkok",
+});
 
 function thaiDate(value: string | null | undefined): string | null {
   if (!value) return null;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" });
+  return Number.isNaN(date.getTime()) ? null : DATE.format(date);
 }
+
+const AMOUNT_LABEL = {
+  budget: "budgetLabel",
+  awarded: "awardedLabel",
+  reference: "referencePriceLabel",
+} as const;
 
 export default async function TorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [tor, t] = await Promise.all([getTorById(id), getTranslations("TorDetailPage")]);
+  const [tor, t, tOptions] = await Promise.all([
+    getTorById(id),
+    getTranslations("TorDetailPage"),
+    getTranslations("CompanyProfileOptions"),
+  ]);
   if (!tor) notFound();
 
-  // Only real records carry a budget verdict; the showcase ones aren't in the
-  // corpus it compares against.
+  // Supplementary panels exist only for real records; the showcase ones aren't
+  // in the corpus they are computed against.
   const [budgetAssessment, rankedCompanies, publishedFeedback] = tor.sourceRef
     ? await Promise.all([
         fetchBudgetAssessment(tor.id),
@@ -63,39 +63,27 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
         fetchFeedback(tor.id),
       ])
     : [null, [], []];
-  const extraction = tor.extraction;
 
-  // Showcase records carry hand-written scope/qualification detail; imported
-  // announcements don't, so those sections fall back to what e-GP returned.
+  // Showcase records carry hand-written scope instead of an extraction.
   const numericId = mockNumericId(id);
-  const detail = numericId === null ? null : TOR_DETAILS.find((d) => d.id === numericId);
-  const feedback = numericId === null ? [] : FEEDBACK_ENTRIES.filter((f) => f.torId === numericId);
-  const matchedCompanies = numericId === null ? [] : (MATCHED_COMPANIES[numericId] ?? []);
+  const written = numericId === null ? null : TOR_DETAILS.find((d) => d.id === numericId);
 
-  const sourceUrl = tor.sourceUrl ?? detail?.sourceUrl;
-  const hasDeadline = isKnown(tor.deadline);
-  // An award notice publishes what the contract went for, never a budget.
+  const bidding = biddingOf(tor);
+  const daysLeft = daysUntilClose(tor);
+  const urgent = isClosingSoon(tor);
   const amount = torAmount(tor);
-  const budgetStatus = detail?.budgetStatus ?? tor.budgetStatus;
-
-  const procurementFacts = [
-    { label: t("projectNumberLabel"), value: tor.projectNumber },
-    { label: t("procurementMethodLabel"), value: tor.procurementMethod },
-    { label: t("procurementTypeLabel"), value: tor.procurementType },
-    { label: t("goodsCategoryLabel"), value: tor.goodsCategory },
-    { label: t("contractStatusLabel"), value: tor.contractStatus },
-    { label: t("contractPeriodLabel"), value: detail?.contractPeriod },
-  ].filter((fact): fact is { label: string; value: string } => isKnown(fact.value));
-
-  const publishedAt = detail?.publishedAt ?? thaiDate(tor.createdAt) ?? t("unknownValue");
+  const sourceUrl = tor.sourceUrl ?? written?.sourceUrl;
+  const budgetStatus = written?.budgetStatus ?? tor.budgetStatus;
+  const hasDocumentDetails = !!tor.extraction || !!written;
   const documents = tor.documents ?? [];
+  const publishedAt = thaiDate(tor.createdAt);
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-alt">
       <SiteNavbar />
 
       <main className="flex-1 py-8 sm:py-10">
-        <div className="mx-auto w-full max-w-6xl px-6 sm:px-8">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
           <Link
             href="/public"
             className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
@@ -104,323 +92,135 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
             {t("backToSearch")}
           </Link>
 
-          <div className="mb-8">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span
-                className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
-              >
-                {tor.stage}
-              </span>
-              {tor.sourceRef && (
-                <span className="rounded-full bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted">
-                  {t("importedFromEgp")}
-                </span>
-              )}
-              {tor.isNew && (
-                <span className="rounded-full bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted">
-                  {t("newBadge")}
-                </span>
-              )}
-              {budgetStatus && budgetStatus !== "ปกติ" && (
-                <span className="rounded-full bg-warn-soft px-2.5 py-1 text-2xs font-semibold text-warn">
-                  {budgetStatus === "สูงกว่าปกติ" ? t("budgetHighBadge") : t("budgetLowBadge")}
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <header className={`${CARD} mb-6`}>
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-bold leading-snug tracking-tight text-ink sm:text-3xl">
-                  {tor.title}
-                </h1>
-                <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-base text-ink-muted">
-                  <span className="flex items-center gap-1.5">
-                    <Building2 size={16} className="text-ink-subtle" />
-                    {tor.agency}
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
+                  >
+                    {tor.stage}
                   </span>
-                  {tor.projectNumber && (
-                    <span className="flex items-center gap-1.5">
-                      <Hash size={15} className="text-ink-subtle" />
-                      {tor.projectNumber}
+                  <BiddingBadge bidding={bidding} />
+                  {budgetStatus && budgetStatus !== "ปกติ" && (
+                    <span className="rounded-full bg-warn-soft px-2.5 py-1 text-2xs font-semibold text-warn">
+                      {budgetStatus === "สูงกว่าปกติ" ? t("budgetHighBadge") : t("budgetLowBadge")}
                     </span>
                   )}
-                  <span className="flex items-center gap-1.5">
-                    <Calendar size={15} className="text-ink-subtle" />
-                    {t("publishedInfo", { date: publishedAt })}
-                  </span>
                 </div>
+                <h1 className="text-xl font-bold leading-snug tracking-tight text-ink sm:text-2xl">
+                  {tor.title}
+                </h1>
+                <p className="mt-2 flex items-start gap-1.5 text-sm text-ink-muted">
+                  <Building2 size={15} className="mt-0.5 shrink-0 text-ink-subtle" />
+                  {tor.agency}
+                </p>
               </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                <SaveTorButton
-                  torId={tor.id}
-                  saveLabel={t("saveButton")}
-                  savedLabel={t("savedButton")}
-                />
+              <div className="flex shrink-0 gap-2 lg:flex-col">
                 {sourceUrl && (
                   <a
                     href={sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark"
+                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark lg:flex-none"
                   >
                     <ExternalLink size={15} />
                     {t("viewOriginalEgp")}
                   </a>
                 )}
+                <SaveTorButton torId={tor.id} saveLabel={t("saveButton")} savedLabel={t("savedButton")} />
               </div>
             </div>
-          </div>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="space-y-5">
-              <section className={CARD}>
-                <h2 className={HEADING}>
-                  <FileText size={18} className="text-ink-subtle" />
-                  {t("announcementDetail")}
-                </h2>
-                <p className="text-base leading-relaxed text-ink-muted">{tor.summary}</p>
-
-                {!detail && sourceUrl && (
-                  <p className="mt-4 border-t border-border pt-4 text-sm text-ink-muted">
-                    {t("fullDocumentNote")}{" "}
-                    <a
-                      href={sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-accent hover:text-accent-dark"
-                    >
-                      {t("openDocument")}
-                    </a>
-                  </p>
+            {/* The four facts a bidder decides on, before any detail. */}
+            <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border lg:grid-cols-4">
+              <div className="bg-surface p-4">
+                <dt className="text-xs text-ink-muted">{t(AMOUNT_LABEL[amount.kind])}</dt>
+                <dd className="mt-1 text-lg font-bold text-ink">{amount.value}</dd>
+              </div>
+              <div className="bg-surface p-4">
+                <dt className="text-xs text-ink-muted">{t("closesAtLabel")}</dt>
+                <dd className="mt-1 text-lg font-bold text-ink">
+                  {thaiDate(bidding.closesAt) ?? t("unknownValue")}
+                </dd>
+                {bidding.status === "open" && daysLeft !== null && (
+                  <dd className={`mt-0.5 text-sm font-semibold ${urgent ? "text-danger" : "text-success"}`}>
+                    {t("daysLeftLabel", { days: daysLeft })}
+                  </dd>
                 )}
-              </section>
+              </div>
+              <div className="bg-surface p-4">
+                <dt className="text-xs text-ink-muted">{t("opensAtLabel")}</dt>
+                <dd className="mt-1 text-lg font-bold text-ink">
+                  {thaiDate(bidding.opensAt) ?? publishedAt ?? t("unknownValue")}
+                </dd>
+              </div>
+              <div className="bg-surface p-4">
+                <dt className="text-xs text-ink-muted">{t("procurementMethodLabel")}</dt>
+                <dd className="mt-1 text-sm font-semibold leading-snug text-ink">
+                  {tor.procurementMethod ?? t("unknownValue")}
+                </dd>
+              </div>
+            </dl>
+          </header>
 
-              {procurementFacts.length > 0 && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="min-w-0 space-y-6">
+              {hasDocumentDetails ? (
+                <TorDocumentDetails extraction={tor.extraction} written={written} />
+              ) : (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <ClipboardList size={18} className="text-ink-subtle" />
-                    {t("procurementDetailsHeading")}
+                    <FileText size={18} className="text-ink-subtle" />
+                    {t("announcementDetail")}
                   </h2>
-                  <dl className="grid gap-4 sm:grid-cols-2">
-                    {procurementFacts.map((fact) => (
-                      <div key={fact.label}>
-                        <dt className="flex items-center gap-1.5 text-xs text-ink-muted">
-                          <Package size={13} className="text-ink-subtle" />
-                          {fact.label}
-                        </dt>
-                        <dd className="mt-0.5 text-sm font-medium text-ink">{fact.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
+                  <p className="text-base leading-relaxed text-ink-muted">{tor.summary}</p>
+                  {sourceUrl && (
+                    <p className="mt-4 border-t border-border pt-4 text-sm text-ink-muted">
+                      {t("fullDocumentNote")}{" "}
+                      <a
+                        href={sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-accent hover:text-accent-dark"
+                      >
+                        {t("openDocument")}
+                      </a>
+                    </p>
+                  )}
                 </section>
               )}
 
-              {budgetAssessment && budgetAssessment.status !== "ไม่ประเมิน" && (
+              {documents.length > 0 && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
-                    <Scale size={18} className="text-ink-subtle" />
-                    {t("budgetAssessmentHeading")}
+                    <FileText size={18} className="text-ink-subtle" />
+                    {t("documentsHeading")}
                   </h2>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span
-                      className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                        budgetAssessment.status === "ปกติ"
-                          ? "bg-success-soft text-success"
-                          : "bg-warn-soft text-warn"
-                      }`}
-                    >
-                      {budgetAssessment.status}
-                    </span>
-                    {budgetAssessment.median !== null && (
-                      <span className="text-sm text-ink-muted">
-                        {t("budgetMedianLabel", {
-                          median: THB.format(budgetAssessment.median),
-                          count: budgetAssessment.peerCount,
-                        })}
-                      </span>
-                    )}
-                  </div>
-                  <ul className="mt-3 space-y-1.5">
-                    {budgetAssessment.notes.map((note) => (
-                      <li key={note} className="text-sm leading-relaxed text-ink-muted">
-                        {note}
+                  <ul className="divide-y divide-border">
+                    {documents.map((doc) => (
+                      <li
+                        key={doc.url + doc.label + doc.publishedAt}
+                        className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
+                      >
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-medium text-ink">{doc.label}</p>
+                          <p className="mt-0.5 text-xs text-ink-muted">
+                            {thaiDate(doc.publishedAt) ?? t("unknownValue")}
+                          </p>
+                        </div>
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-accent transition-colors hover:bg-accent-soft"
+                        >
+                          <ExternalLink size={14} />
+                          {t("openDocument")}
+                        </a>
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-ink-subtle">
-                    {t("budgetAssessmentNote")}
-                  </p>
-                </section>
-              )}
-
-              {extraction && (
-                <section className={CARD}>
-                  <h2 className={HEADING}>
-                    <Sparkles size={18} className="text-ink-subtle" />
-                    {t("extractionHeading")}
-                  </h2>
-                  <p className="mb-4 rounded-lg bg-surface-alt px-3 py-2 text-xs leading-relaxed text-ink-muted">
-                    {t("extractionDisclaimer", { model: extraction.model })}
-                  </p>
-
-                  {extraction.scope && (
-                    <div className="mb-4">
-                      <h3 className="mb-1 text-sm font-semibold text-ink">{t("scopeOfWork")}</h3>
-                      <p className="text-base leading-relaxed text-ink-muted">{extraction.scope}</p>
-                    </div>
-                  )}
-
-                  {extraction.qualifications.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="mb-1.5 text-sm font-semibold text-ink">
-                        {t("qualifications")}
-                      </h3>
-                      <ul className="space-y-1.5">
-                        {extraction.qualifications.map((q) => (
-                          <li key={q} className="flex items-start gap-2 text-sm text-ink-muted">
-                            <Check size={15} className="mt-0.5 shrink-0 text-accent" />
-                            {q}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {extraction.deliverables.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="mb-1.5 text-sm font-semibold text-ink">
-                        {t("deliverables")}
-                      </h3>
-                      <ul className="space-y-1.5">
-                        {extraction.deliverables.map((d) => (
-                          <li key={d} className="flex items-start gap-2 text-sm text-ink-muted">
-                            <ListChecks size={15} className="mt-0.5 shrink-0 text-ink-subtle" />
-                            {d}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <dl className="grid gap-3 border-t border-border pt-3 sm:grid-cols-3">
-                    {extraction.budgetAmount !== null && (
-                      <div>
-                        <dt className="text-xs text-ink-muted">{t("documentBudgetLabel")}</dt>
-                        <dd className="mt-0.5 text-sm font-medium text-ink">
-                          {THB.format(extraction.budgetAmount)}
-                        </dd>
-                      </div>
-                    )}
-                    {extraction.contractPeriod && (
-                      <div>
-                        <dt className="text-xs text-ink-muted">{t("contractPeriodLabel")}</dt>
-                        <dd className="mt-0.5 text-sm font-medium text-ink">
-                          {extraction.contractPeriod}
-                        </dd>
-                      </div>
-                    )}
-                    {extraction.deadline && (
-                      <div>
-                        <dt className="text-xs text-ink-muted">{t("deadlineLabel")}</dt>
-                        <dd className="mt-0.5 text-sm font-medium text-ink">
-                          {thaiDate(extraction.deadline)}
-                        </dd>
-                      </div>
-                    )}
-                  </dl>
-                </section>
-              )}
-
-              {detail && (
-                <>
-                  <section className={CARD}>
-                    <h2 className={HEADING}>
-                      <FileText size={18} className="text-ink-subtle" />
-                      {t("scopeOfWork")}
-                    </h2>
-                    <p className="text-base leading-relaxed text-ink-muted">{detail.scope}</p>
-                  </section>
-
-                  <section className={CARD}>
-                    <h2 className={HEADING}>
-                      <Shield size={18} className="text-ink-subtle" />
-                      {t("qualifications")}
-                    </h2>
-                    <ul className="space-y-3">
-                      {detail.qualifications.map((q) => (
-                        <li
-                          key={q}
-                          className="flex items-start gap-2.5 text-base leading-relaxed text-ink-muted"
-                        >
-                          <Check size={16} className="mt-0.5 shrink-0 text-accent" />
-                          {q}
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-
-                  <section className={CARD}>
-                    <h2 className={HEADING}>
-                      <ListChecks size={18} className="text-ink-subtle" />
-                      {t("deliverables")}
-                    </h2>
-                    <ol className="space-y-2.5">
-                      {detail.deliverables.map((d, i) => (
-                        <li key={d} className="flex items-center gap-3 text-base text-ink-muted">
-                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-bold text-accent">
-                            {i + 1}
-                          </span>
-                          {d}
-                        </li>
-                      ))}
-                    </ol>
-                  </section>
-
-                  <section className={CARD}>
-                    <h2 className={HEADING}>
-                      <Scale size={18} className="text-ink-subtle" />
-                      {t("priceBenchmarkTitle")}
-                    </h2>
-                    <p className="text-base leading-relaxed text-ink-muted">
-                      {detail.priceBenchmark}
-                    </p>
-                    <p className="mt-3 text-xs text-ink-subtle">{t("aiAnalyzedBy")}</p>
-                  </section>
-                </>
-              )}
-
-              {detail?.awardedVendor && (
-                <section className={CARD}>
-                  <h2 className={HEADING}>
-                    <Trophy size={18} className="text-ink-subtle" />
-                    {t("awardedVendorTitle")}
-                  </h2>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-base font-semibold text-ink">
-                      {detail.awardedVendor.name}
-                    </p>
-                    <span className="flex items-center gap-1.5 text-sm text-ink-muted">
-                      <Gauge size={15} className="text-ink-subtle" />
-                      {t("vendorMatchScore", { score: detail.awardedVendor.matchScore })}
-                    </span>
-                  </div>
-
-                  {detail.awardedVendor.status === "warning" && (
-                    <div className="mt-4 rounded-lg bg-danger-soft p-4">
-                      <p className="flex items-center gap-2 text-sm font-semibold text-danger">
-                        <AlertTriangle size={15} />
-                        {t("vendorRiskWarning")}
-                      </p>
-                      <ul className="mt-2.5 space-y-1.5">
-                        {detail.awardedVendor.mismatchReasons.map((reason) => (
-                          <li key={reason} className="text-sm leading-relaxed text-ink-muted">
-                            • {reason}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </section>
               )}
 
@@ -435,11 +235,9 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                       <li key={company.companyName} className="py-3 first:pt-0 last:pb-0">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-ink">
-                              {company.companyName}
-                            </p>
+                            <p className="text-sm font-semibold text-ink">{company.companyName}</p>
                             <p className="mt-0.5 text-xs text-ink-muted">
-                              {company.specialty} · {t("companySizeLabel", { size: company.size })}
+                              {company.workTypes.map((type) => tOptions(`workType_${type}`)).join(" · ")}
                             </p>
                           </div>
                           <span className="rounded-md bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent">
@@ -447,7 +245,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                           </span>
                         </div>
                         {/* Why it ranked here — a score with no reason is just a number. */}
-                        {[...company.reasons, ...company.gaps].length > 0 && (
+                        {company.reasons.length + company.gaps.length > 0 && (
                           <ul className="mt-1.5 space-y-0.5">
                             {company.reasons.map((reason) => (
                               <li key={reason} className="text-xs text-ink-muted">
@@ -467,33 +265,6 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                 </section>
               )}
 
-              {matchedCompanies.length > 0 && (
-                <section className={CARD}>
-                  <h2 className={HEADING}>
-                    <Users size={18} className="text-ink-subtle" />
-                    {t("matchedCompaniesHeading")}
-                  </h2>
-                  <ul className="divide-y divide-border">
-                    {matchedCompanies.map((company) => (
-                      <li
-                        key={company.name}
-                        className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-ink">{company.name}</p>
-                          <p className="mt-0.5 text-xs text-ink-muted">
-                            {company.specialty} · {t("companySizeLabel", { size: company.size })}
-                          </p>
-                        </div>
-                        <span className="rounded-md bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent">
-                          {t("matchScoreValue", { score: company.score })}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
               {publishedFeedback.length > 0 && (
                 <section className={CARD}>
                   <h2 className={HEADING}>
@@ -505,9 +276,7 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                       <li key={entry.id} className="rounded-lg bg-surface-alt p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-sm font-semibold text-ink">{entry.author}</p>
-                          <span className="text-xs text-ink-subtle">
-                            {thaiDate(entry.createdAt) ?? ""}
-                          </span>
+                          <span className="text-xs text-ink-subtle">{thaiDate(entry.createdAt) ?? ""}</span>
                         </div>
                         <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{entry.text}</p>
                       </li>
@@ -516,8 +285,8 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                 </section>
               )}
 
-              {/* Comments are only useful while the terms can still change. */}
-              {tor.sourceRef && tor.stage === "เปิดรับฟังความคิดเห็น" && (
+              {/* Comments are only useful while the draft can still change. */}
+              {tor.sourceRef && tor.stage === "เปิดรับฟังความคิดเห็น" && bidding.status !== "closed" && (
                 <FeedbackForm
                   torId={tor.id}
                   labels={{
@@ -530,161 +299,46 @@ export default async function TorDetailPage({ params }: { params: Promise<{ id: 
                   }}
                 />
               )}
-
-              {feedback.length > 0 && (
-                <section className={CARD}>
-                  <h2 className={HEADING}>
-                    <MessageSquare size={18} className="text-ink-subtle" />
-                    {t("feedbackListHeading")}
-                  </h2>
-                  <ul className="space-y-4">
-                    {feedback.map((entry) => (
-                      <li key={entry.id} className="rounded-lg bg-surface-alt p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-ink">{entry.author}</p>
-                          <span className="text-xs text-ink-subtle">{entry.submittedAt}</span>
-                        </div>
-                        <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{entry.text}</p>
-                        <span className="mt-2 inline-block rounded-full bg-surface px-2.5 py-0.5 text-2xs font-medium text-ink-muted ring-1 ring-border">
-                          {entry.status}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {documents.length > 0 && (
-                <section className={CARD}>
-                  <h2 className={HEADING}>
-                    <FileText size={18} className="text-ink-subtle" />
-                    {t("documentsHeading")}
-                  </h2>
-                  <ul className="divide-y divide-border">
-                    {documents.map((doc) => (
-                      <li
-                        key={doc.url + doc.label}
-                        className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium break-words text-ink">{doc.label}</p>
-                          <p className="mt-0.5 text-xs text-ink-muted">
-                            {thaiDate(doc.publishedAt) ?? t("unknownValue")}
-                          </p>
-                        </div>
-                        <a
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-accent transition-colors hover:bg-accent-soft"
-                        >
-                          <ExternalLink size={14} />
-                          {t("viewDocumentPdf")}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {tor.tags.length > 0 && (
-                <section className={CARD}>
-                  <h2 className="mb-3 text-lg font-bold text-ink">{t("relatedTechnologies")}</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {tor.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-md bg-surface-alt px-2.5 py-1 text-xs font-medium text-ink-muted ring-1 ring-border"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-              )}
             </div>
 
-            <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-              <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-                <InfoRow
-                  icon={Banknote}
-                  label={amount.isAwarded ? t("awardedLabel") : t("budgetLabel")}
-                  value={amount.value}
-                  muted={!isKnown(amount.value)}
-                />
-                <InfoRow
-                  icon={Clock}
-                  label={t("deadlineLabel")}
-                  value={hasDeadline ? tor.deadline : t("unknownValue")}
-                  hint={hasDeadline && tor.daysLeft > 0 ? t("daysLeftLabel", { days: tor.daysLeft }) : undefined}
-                  muted={!hasDeadline}
-                />
-                <InfoRow icon={Calendar} label={t("publishedAtLabel")} value={publishedAt} />
-                {detail && (
-                  <>
-                    <InfoRow
-                      icon={ClipboardList}
-                      label={t("contractPeriodLabel")}
-                      value={detail.contractPeriod}
-                    />
-                    <InfoRow
-                      icon={Users}
-                      label={t("matchedCompaniesLabel")}
-                      value={t("companiesCount", { count: detail.matchedCompaniesCount })}
-                    />
-                    {detail.feedbackDeadline && (
-                      <InfoRow
-                        icon={MessageSquare}
-                        label={t("shareFeedback")}
-                        value={t("feedbackOpenUntil", { date: detail.feedbackDeadline })}
-                        hint={t("feedbackWindowInfo", {
-                          date: detail.feedbackDeadline,
-                          count: detail.feedbackCount,
-                        })}
-                      />
-                    )}
-                  </>
+            <aside className="min-w-0 space-y-6 lg:sticky lg:top-20 lg:h-fit">
+              <TorRecordFacts tor={tor} />
+                {budgetAssessment && budgetAssessment.status !== "ไม่ประเมิน" && (
+                  <section className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+                    <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-ink">
+                      <Scale size={18} className="text-ink-subtle" />
+                      {t("budgetAssessmentHeading")}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span
+                        className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                          budgetAssessment.status === "ปกติ"
+                            ? "bg-success-soft text-success"
+                            : "bg-warn-soft text-warn"
+                        }`}
+                      >
+                        {budgetAssessment.status}
+                      </span>
+                    </div>
+                    <ul className="mt-3 space-y-1.5">
+                      {budgetAssessment.notes.map((note) => (
+                        <li key={note} className="text-sm leading-relaxed text-ink-muted">
+                          {note}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-ink-subtle">
+                      {t("budgetAssessmentNote")}
+                    </p>
+                  </section>
                 )}
-              </div>
 
-              {sourceUrl && (
-                <p className="px-1 text-xs leading-relaxed text-ink-subtle">
-                  {t("publishedInfo", { date: publishedAt })}
-                </p>
-              )}
             </aside>
           </div>
         </div>
       </main>
 
       <SiteFooter />
-    </div>
-  );
-}
-
-function InfoRow({
-  icon: Icon,
-  label,
-  value,
-  hint,
-  muted = false,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  hint?: string;
-  muted?: boolean;
-}) {
-  return (
-    <div className="flex items-start gap-3 border-b border-border py-3 first:pt-0 last:border-0 last:pb-0">
-      <Icon size={16} className="mt-0.5 shrink-0 text-ink-subtle" />
-      <div className="min-w-0">
-        <p className="text-xs text-ink-muted">{label}</p>
-        <p className={`mt-0.5 text-sm font-semibold ${muted ? "text-ink-subtle" : "text-ink"}`}>
-          {value}
-        </p>
-        {hint && <p className="mt-0.5 text-xs text-ink-subtle">{hint}</p>}
-      </div>
     </div>
   );
 }

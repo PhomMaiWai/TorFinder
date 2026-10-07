@@ -54,6 +54,46 @@ export function daysUntil(date: Date | null): number {
   return Math.max(days, 0);
 }
 
+const THAI_MONTHS = [
+  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
+];
+
+/**
+ * The closing date a stored deadline names — the reverse of formatThaiDate —
+ * taken as the end of that day in Bangkok, since bids are accepted all day.
+ */
+export function parseThaiDate(text: string): Date | null {
+  const match = /^(\d{1,2}) (\S+) (\d{4})$/.exec(text.trim());
+  if (!match) return null;
+  const month = THAI_MONTHS.indexOf(match[2]);
+  if (month === -1) return null;
+  // พ.ศ. to ค.ศ., and 23:59:59 ICT is 16:59:59 UTC.
+  return new Date(Date.UTC(Number(match[3]) - 543, month, Number(match[1]), 16, 59, 59));
+}
+
+/**
+ * Days left as of now. `daysLeft` is written at import and never moves again,
+ * so a listing read a week later would still say "7 days"; the deadline itself
+ * is what stays true. Records without a readable deadline keep what they have.
+ */
+export function currentDaysLeft(tor: { deadline: string; daysLeft: number }): number {
+  const closesAt = parseThaiDate(tor.deadline);
+  return closesAt ? daysUntil(closesAt) : tor.daysLeft;
+}
+
+/**
+ * The month an e-GP project was created in, read off its number: "69 09 …" is
+ * September 2569 (2026). Null for anything that isn't an 11-digit number.
+ */
+export function projectMonth(projectNumber: string): Date | null {
+  const match = /^(\d{2})(\d{2})\d{7}$/.exec(projectNumber);
+  if (!match) return null;
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return null;
+  return new Date(Date.UTC(2500 + Number(match[1]) - 543, month - 1, 1));
+}
+
 /** The deadline as a reader sees it, e.g. "24 ก.ย. 2569". */
 export function formatThaiDate(date: Date | null): string {
   if (!date) return UNKNOWN;

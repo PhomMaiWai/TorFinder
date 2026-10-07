@@ -5,8 +5,10 @@ import { mapWithLimit } from "../common/concurrency";
 import { USER_AGENT } from "../common/http-client";
 import { env } from "../config/env";
 import { DatabaseService, TorDoc } from "../database/database.service";
+import { GprocClient } from "../gproc/gproc.client";
+import { PROJECT_NUMBER, gprocProjectUrl } from "../gproc/gproc.constants";
 import { READABLE_DOCUMENT_PATTERN, isReadableDocument } from "../tor/tor-documents";
-import { TOR_STAGES } from "../tor/tor.constants";
+import { ACTIONABLE_WINDOW_MS, TOR_STAGES } from "../tor/tor.constants";
 import { AI_REQUEST, EXTRACTION_INSTRUCTION, EXTRACTION_SCHEMA, EXTRACTION_VERSION } from "./ai.constants";
 import { ExtractionRunResult, StoredExtraction } from "./ai.types";
 import { isUseful, parseExtraction } from "./tor-extraction";
@@ -14,28 +16,53 @@ import { VertexClient } from "./vertex.client";
 
 const PDF_MIME = "application/pdf";
 
-/** The stage whose document is worth the least: the bidding is already over. */
-const AWARD_STAGE = TOR_STAGES[2];
+const [DRAFT_STAGE, INVITATION_STAGE, AWARD_STAGE] = TOR_STAGES;
+
+/** e-GP names each announcement; MEA labels each attachment by its file name. */
+const isDraftDocument = (label: string) => /ร่าง|ขอบเขตของงาน|tor/i.test(label);
+const isInvitationDocument = (label: string) =>
+  /เชิญชวน|สำเนาประกาศ|เอกสารดาวน์โหลด/.test(label) ||
+  (/ประกวดราคา/.test(label) && !/ร่าง/.test(label));
 
 /**
- * Which of a project's documents is worth reading, best first. They are not
- * equally useful: the draft bidding document carries the scope of work and the
- * bidder qualifications, the invitation carries a summary, and an award notice
- * or a price form is barely more than a number — picking the newest file would
- * land on one of those almost every time.
- *
- * Matched against each portal's own wording: e-GP names its announcements, MEA
- * labels each attachment with the row it sits in (see MeaClient.parseDocuments).
+ * Which of a project's documents is worth reading for a record at this stage,
+ * best first. An invitation is read from the invitation itself — it is the one
+ * that names the bid submission day, and a draft read in its place would date
+ * the record by a comment window that closed weeks earlier. Every other stage
+ * prefers the draft TOR, which carries the full scope and qualifications; an
+ * award notice or a price form is barely more than a number.
  */
-const DOCUMENT_PRIORITY = [
-  ["ร่างเอกสารประกวดราคา", "ร่างขอบเขตของงาน", "ร่างประกาศ", "ขอบเขตของงาน", "tor"],
-  ["ประกาศเชิญชวน", "ประกวดราคา", "เอกสารดาวน์โหลด", "สำเนาประกาศ"],
-] as const;
+function documentRanking(stage: TorDoc["stage"]): ((label: string) => boolean)[] {
+  return stage === INVITATION_STAGE
+    ? [isInvitationDocument, isDraftDocument]
+    : [isDraftDocument, isInvitationDocument];
+}
 
-function documentRank(label: string): number {
-  const name = label.toLowerCase();
-  const rank = DOCUMENT_PRIORITY.findIndex((terms) => terms.some((term) => name.includes(term)));
-  return rank === -1 ? DOCUMENT_PRIORITY.length : rank;
+/** For the scope and qualifications: the TOR or bidding document, whatever the stage. */
+const DETAIL_RANKING = [isDraftDocument, isInvitationDocument];
+
+type LoadedDocument = { pdf: Buffer; label: string; url: string };
+
+/** A contract status that settles the project: signed, delivering, done, or called off. */
+const DECIDED_CONTRACT = /สัญญา|PO|ส่งงาน|ยกเลิก/;
+
+function documentRank(label: string, ranking: ((label: string) => boolean)[]): number {
+  const rank = ranking.findIndex((matches) => matches(label));
+  return rank === -1 ? ranking.length : rank;
+}
+
+/**
+ * Whether the deadline read from this document is this record's deadline. A
+ * draft's date ends public comment; an invitation's ends bidding. Attached to a
+ * record at the other stage it would flag the record open or closed on the
+ * wrong date, so it is dropped instead — "unknown" is honest, a wrong date isn't.
+ */
+function deadlineApplies(stage: TorDoc["stage"], label: string): boolean {
+  if (stage === DRAFT_STAGE) return !isInvitationDocument(label);
+  // Only a document named as a draft is ruled out: MEA names attachments by
+  // file ("Attach_TOR_1.pdf"), and those belong to the announcement itself.
+  if (stage === INVITATION_STAGE) return !/ร่าง/.test(label);
+  return true;
 }
 
 @Injectable()
@@ -45,6 +72,7 @@ export class ExtractionService {
   constructor(
     private readonly db: DatabaseService,
     private readonly vertex: VertexClient,
+    private readonly gproc: GprocClient,
   ) {}
 
   /**
@@ -58,18 +86,20 @@ export class ExtractionService {
     const tor = await this.db.tors.findOne({ _id: new ObjectId(torId) });
     if (!tor) throw new NotFoundException("ไม่พบรายการ TOR");
 
-    const documentUrl = this.documentUrlFor(tor);
-    if (!documentUrl) throw new NotFoundException("ประกาศนี้ไม่มีเอกสารให้อ่าน");
+    const documents = await this.loadDocuments(tor);
+    if (documents.length === 0) throw new NotFoundException("ประกาศนี้ไม่มีเอกสารให้อ่าน");
 
-    const pdf = await this.fetchPdf(documentUrl);
     const answer = await this.vertex.extractJson<unknown>(
       EXTRACTION_INSTRUCTION,
-      this.buildPrompt(tor),
-      { data: pdf, mimeType: PDF_MIME },
+      this.buildPrompt(tor, documents.map((doc) => doc.label)),
+      documents.map((doc) => ({ data: doc.pdf, mimeType: PDF_MIME })),
       EXTRACTION_SCHEMA,
     );
 
-    const extraction = parseExtraction(answer);
+    const parsed = parseExtraction(answer);
+    const extraction = documents.some((doc) => deadlineApplies(tor.stage, doc.label))
+      ? parsed
+      : { ...parsed, deadline: null };
     if (!isUseful(extraction)) {
       throw new NotFoundException("อ่านเอกสารแล้วไม่พบรายละเอียดที่ใช้ได้");
     }
@@ -77,7 +107,8 @@ export class ExtractionService {
     const stored: StoredExtraction = {
       ...extraction,
       model: env.ai.model,
-      documentUrl,
+      // The document a reader should open: the detailed one when there are two.
+      documentUrl: documents[documents.length - 1].url,
       extractedAt: new Date(),
       version: EXTRACTION_VERSION,
     };
@@ -141,21 +172,21 @@ export class ExtractionService {
   }
 
   /**
-   * The records this run will read. Announcements a company can still act on
-   * come first — their document is the scope of work and the qualifications,
-   * the whole reason to read one — and an award notice, which is little more
-   * than a winner's name, is only read once nothing open is waiting. Both
-   * newest first, so a backlog never starves the fresh arrivals.
+   * The records this run will read: only announcements a company can still act
+   * on — a draft open for comment or an invitation open for bids, recent, with
+   * no contract signed and not cancelled. Their documents are the reason the
+   * product exists; an award or a closed bid is left with what it has. Newest
+   * first, so a backlog never starves the fresh arrivals.
    */
-  private async pickPending(limit: number): Promise<{ _id: ObjectId }[]> {
-    const open = await this.pick(limit, { $ne: AWARD_STAGE });
-    return open.length >= limit ? open : [...open, ...(await this.pick(limit - open.length, AWARD_STAGE))];
-  }
-
-  private pick(limit: number, stage: Filter<TorDoc>["stage"]): Promise<{ _id: ObjectId }[]> {
+  private pickPending(limit: number): Promise<{ _id: ObjectId }[]> {
     return this.db.tors
       .find(
-        { ...this.pendingFilter(), stage },
+        {
+          ...this.pendingFilter(),
+          stage: { $ne: AWARD_STAGE },
+          createdAt: { $gte: new Date(Date.now() - ACTIONABLE_WINDOW_MS) },
+          contractStatus: { $not: DECIDED_CONTRACT },
+        },
         { projection: { _id: 1 }, sort: { createdAt: -1 }, limit },
       )
       .toArray();
@@ -175,10 +206,16 @@ export class ExtractionService {
     const retryBefore = new Date(Date.now() - AI_REQUEST.retryAfterMs);
 
     return {
-      "documents.url": { $regex: READABLE_DOCUMENT_PATTERN, $options: "i" },
       // No point spending a model call on an announcement nobody can see.
       deletedAt: { $exists: false },
       $and: [
+        {
+          $or: [
+            { "documents.url": { $regex: READABLE_DOCUMENT_PATTERN, $options: "i" } },
+            // process5 has no file URL; its invitation is fetched by project number.
+            { sourceRef: { $regex: "^gproc:" }, stage: INVITATION_STAGE },
+          ],
+        },
         {
           $or: [
             { extraction: { $exists: false } },
@@ -219,33 +256,91 @@ export class ExtractionService {
   }
 
   /**
+   * What the model reads, in the order the prompt names it. An invitation's bid
+   * date comes from the national e-GP's signed copy — rendered from what the
+   * agency published, where a city portal's attachment can be the unfilled
+   * template. That notice is one page, though: who may bid and what the work
+   * is are in the TOR, so the TOR is read alongside it in the same call.
+   */
+  private async loadDocuments(tor: TorDoc): Promise<LoadedDocument[]> {
+    const loaded: LoadedDocument[] = [];
+    let room = AI_REQUEST.maxDocumentBytes;
+
+    if (tor.stage === INVITATION_STAGE && tor.projectNumber && PROJECT_NUMBER.test(tor.projectNumber)) {
+      const signed = await this.gproc.invitationPdf(tor.projectNumber).catch(() => null);
+      if (signed && signed.byteLength <= room) {
+        loaded.push({ pdf: signed, label: "ประกาศเชิญชวน (e-GP กรมบัญชีกลาง)", url: gprocProjectUrl(tor.projectNumber) });
+        room -= signed.byteLength;
+      }
+    }
+
+    // Who may bid and what the work is: the bidding document and TOR the
+    // national e-GP bundles for every e-bidding. Only for an announcement that
+    // can still be bid on or commented on — an award's bundle is a large
+    // download for detail nobody acts on any more.
+    if (tor.stage !== AWARD_STAGE && tor.projectNumber && PROJECT_NUMBER.test(tor.projectNumber)) {
+      const tender = await this.gproc.tenderDocuments(tor.projectNumber, room).catch(() => []);
+      for (const doc of tender) {
+        loaded.push({ ...doc, url: gprocProjectUrl(tor.projectNumber) });
+        room -= doc.pdf.byteLength;
+      }
+      if (tender.length) return loaded;
+    }
+
+    // With the invitation in hand, the detail is what is still missing.
+    const ranking = loaded.length ? DETAIL_RANKING : documentRanking(tor.stage);
+    const file = this.documentFor(tor, ranking);
+    // A second copy of the same notice adds cost and nothing else.
+    if (!file || (loaded.length && !isDraftDocument(file.label))) return loaded;
+
+    try {
+      const pdf = await this.fetchPdf(file.url);
+      if (pdf.byteLength <= room) loaded.push({ pdf, ...file });
+    } catch (error) {
+      // The invitation alone still yields the date; with nothing read, fail.
+      if (loaded.length === 0) throw error;
+    }
+    return loaded;
+  }
+
+  /**
    * The document to read. A project publishes several and only some of them are
    * files at all — the rest point at a listing page, which has nothing to
-   * extract. The most useful file wins, and among equals the newest, since
-   * `documents` is stored newest-first and the sort is stable. `sourceUrl` is
-   * the fallback for records imported before the document list existed.
+   * extract. The most useful file for this record's stage wins, and among
+   * equals the newest, since `documents` is stored newest-first and the sort is
+   * stable. `sourceUrl` is the fallback for records imported before the
+   * document list existed.
    */
-  private documentUrlFor(tor: TorDoc): string | null {
-    const files = (tor.documents ?? []).filter((doc) => isReadableDocument(doc.url));
-    const best = files.sort((a, b) => documentRank(a.label) - documentRank(b.label))[0];
-    if (best) return best.url;
+  private documentFor(
+    tor: TorDoc,
+    ranking: ((label: string) => boolean)[],
+  ): { url: string; label: string } | null {
+    const best = (tor.documents ?? [])
+      .filter((doc) => isReadableDocument(doc.url))
+      .sort((a, b) => documentRank(a.label, ranking) - documentRank(b.label, ranking))[0];
+    if (best) return { url: best.url, label: best.label };
 
-    return tor.sourceUrl && isReadableDocument(tor.sourceUrl) ? tor.sourceUrl : null;
+    return tor.sourceUrl && isReadableDocument(tor.sourceUrl)
+      ? { url: tor.sourceUrl, label: tor.stage }
+      : null;
   }
 
   /**
    * What the portal already knows, given to the model as context — never as
-   * something to copy: the point is what the document itself says.
+   * something to copy: the point is what the document itself says. The
+   * document's own name tells the model which deadline it is looking for.
    */
-  private buildPrompt(tor: TorDoc): string {
+  private buildPrompt(tor: TorDoc, documentLabels: string[]): string {
     return [
       `Known title: ${tor.title}`,
       `Known agency: ${tor.agency}`,
       `Known budget: ${tor.budget}`,
       `Known stage: ${tor.stage}`,
+      "Attached documents, in order:",
+      ...documentLabels.map((label, i) => `${i + 1}. ${label}`),
       "",
-      "The attached PDF is the announcement document — it may be a scan.",
-      "<tor_document>(see attached PDF)</tor_document>",
+      "The attached PDFs are the announcement documents — any of them may be a scan.",
+      "<tor_document>(see attached PDFs)</tor_document>",
     ].join("\n");
   }
 

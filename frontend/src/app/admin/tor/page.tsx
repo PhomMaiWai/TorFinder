@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Plus, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 import { DeleteTorButton } from "@/components/admin/delete-tor-button";
+import { GprocCapture } from "@/components/admin/gproc-capture";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { fetchDeletedTors } from "@/lib/tor-admin-api";
 import { fetchTorList } from "@/lib/tor-api";
@@ -14,6 +15,7 @@ const PAGE_SIZE = 20;
 const TABS = [
   { id: "manual", label: "สร้างเอง" },
   { id: "egp", label: "จาก e-GP" },
+  { id: "gproc", label: "จาก e-GP กรมบัญชีกลาง" },
   { id: "mea", label: "จาก กฟน." },
   { id: "datagov", label: "จาก data.go.th" },
   { id: "all", label: "ทั้งหมด" },
@@ -97,6 +99,8 @@ export default async function AdminTorListPage({
           </Link>
           </div>
         </div>
+
+        {source === "gproc" && <GprocCapture />}
 
         <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {tors.length === 0 ? (

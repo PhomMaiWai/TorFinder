@@ -1,13 +1,14 @@
 import { Module } from "@nestjs/common";
 
 import { DatabaseModule } from "../database/database.module";
+import { GprocModule } from "../gproc/gproc.module";
 import { AiController } from "./ai.controller";
 import { ExtractionScheduler } from "./extraction.scheduler";
 import { ExtractionService } from "./extraction.service";
 import { VertexClient } from "./vertex.client";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, GprocModule],
   controllers: [AiController],
   providers: [VertexClient, ExtractionService, ExtractionScheduler],
   exports: [VertexClient, ExtractionService],

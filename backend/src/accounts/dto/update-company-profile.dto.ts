@@ -1,4 +1,8 @@
-import { IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { Type } from "class-transformer";
+import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
+
+import { CERTIFICATION_KEYS, Certification } from "../../matching/requirements";
+import { WORK_TYPE_KEYS, WorkType } from "../../matching/work-types";
 
 import { IsThaiTaxId } from "../../common/thai-id";
 
@@ -47,4 +51,40 @@ export class UpdateCompanyProfileDto {
   @IsOptional()
   @IsString()
   pastExperience?: string;
+
+  @IsOptional()
+  @IsIn(WORK_TYPE_KEYS, { each: true })
+  workTypes?: WorkType[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100_000_000_000)
+  largestPastContract?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100_000_000_000)
+  registeredCapital?: number;
+
+  @IsOptional()
+  @IsIn(CERTIFICATION_KEYS, { each: true })
+  certifications?: Certification[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100_000_000_000)
+  preferredBudgetMin?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100_000_000_000)
+  preferredBudgetMax?: number;
 }

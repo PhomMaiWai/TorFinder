@@ -66,6 +66,35 @@ export class HttpClient {
     ).then((res) => res.json() as Promise<T>);
   }
 
+  /**
+   * A POST whose parameters travel in the query string, body empty — how
+   * process5 serves a rendered document. Read-only despite the verb.
+   */
+  post<T>(path: string, query: Record<string, string> = {}, options: RequestOptions = {}): Promise<T> {
+    const url = new URL(`${this.baseUrl}${path}`);
+    for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
+    return this.request(url, { accept: "application/json", method: "POST" }, options).then(
+      (res) => res.json() as Promise<T>,
+    );
+  }
+
+  /**
+   * A file, refused past `maxBytes` — checked at the header and again on the
+   * body, since a portal may not declare the length.
+   */
+  async getBytes(path: string, query: Record<string, string>, maxBytes: number, options: RequestOptions = {}): Promise<Buffer> {
+    const url = new URL(`${this.baseUrl}${path}`);
+    for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
+    const res = await this.request(url, { accept: "*/*" }, options);
+    if (Number(res.headers.get("content-length") ?? 0) > maxBytes) {
+      await res.body?.cancel();
+      throw new Error(`${path}: larger than ${maxBytes} bytes`);
+    }
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (bytes.byteLength > maxBytes) throw new Error(`${path}: larger than ${maxBytes} bytes`);
+    return bytes;
+  }
+
   /** For the pages that publish facts as HTML only — see each client's parser. */
   getText(path: string, options: RequestOptions = {}): Promise<string> {
     return this.request(new URL(`${this.baseUrl}${path}`), { accept: "text/html" }, options).then(

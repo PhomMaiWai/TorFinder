@@ -3,11 +3,14 @@ import { Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
 import { DatabaseService, TorDoc } from "../database/database.service";
+import { env } from "../config/env";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
 import { TOR_STAGES } from "./tor.constants";
+import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
+import { currentDaysLeft } from "./tor-normalize";
 
 /**
  * Where an announcement sits in its own lifecycle, as a number to sort on.
@@ -73,41 +76,66 @@ export class TorService {
   async findAll(page = 1, pageSize = 20, source?: TorSource) {
     // Deleted records stay in the collection but out of every listing except
     // the one that exists to restore them.
-    const filter: Filter<TorDoc> = { deletedAt: { $exists: false } };
+    const filter: Filter<TorDoc> = {
+      deletedAt: { $exists: false },
+      createdAt: { $gte: env.torListedSince },
+    };
     // Imported records carry their portal as the prefix of `sourceRef`, so the
     // source is filtered on the same anchored prefix an index can serve.
     if (source === "manual") filter.sourceRef = { $exists: false };
     else if (source) filter.sourceRef = { $regex: `^${source}:` };
 
-    const docs = await this.db.tors
-      .aggregate<TorDoc & { _id: ObjectId }>([
-        { $match: filter },
-        // Each stage numbered separately, newest first...
-        {
-          $setWindowFields: {
-            partitionBy: "$stage",
-            sortBy: { createdAt: -1 },
-            output: { stageSeq: { $documentNumber: {} } },
+    const [docs, awarded] = await Promise.all([
+      this.db.tors
+        .aggregate<TorDoc & { _id: ObjectId; documentDeadline?: string | null }>([
+          { $match: filter },
+          // No listing shows what the model read out of a document, and it is
+          // the bulk of every record — only the closing date it found is kept,
+          // for the open/closed flag, before the sort has to carry the rest.
+          { $set: { documentDeadline: "$extraction.deadline" } },
+          { $unset: ["extraction", "extractionFailure"] },
+          // Each stage numbered separately, newest first...
+          {
+            $setWindowFields: {
+              partitionBy: "$stage",
+              sortBy: { createdAt: -1 },
+              output: { stageSeq: { $documentNumber: {} } },
+            },
           },
-        },
-        { $addFields: { stageRank: STAGE_RANK } },
-        // ...then read across the stages rather than down one: the newest of
-        // each, then the second newest of each. Every page carries all three,
-        // and within a round the ones still open come first.
-        { $sort: { stageSeq: 1, stageRank: 1 } },
-        { $skip: (page - 1) * pageSize },
-        { $limit: pageSize },
-        { $project: { stageSeq: 0, stageRank: 0 } },
-      ])
-      .toArray();
-    return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+          { $addFields: { stageRank: STAGE_RANK } },
+          // ...then read across the stages rather than down one: the newest of
+          // each, then the second newest of each. Every page carries all three,
+          // and within a round the ones still open come first.
+          { $sort: { stageSeq: 1, stageRank: 1 } },
+          { $skip: (page - 1) * pageSize },
+          { $limit: pageSize },
+          { $project: { stageSeq: 0, stageRank: 0 } },
+        ])
+        .toArray(),
+      awardedProjectNumbers(this.db.tors),
+    ]);
+    return docs.map(({ _id, documentDeadline, ...rest }) => ({
+      id: _id.toString(),
+      ...rest,
+      daysLeft: currentDaysLeft(rest),
+      bidding: biddingOf({ ...rest, documentDeadline }, awarded),
+    }));
   }
 
   async findOne(id: string) {
-    const doc = ObjectId.isValid(id) ? await this.db.tors.findOne({ _id: new ObjectId(id) }) : null;
+    if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบรายการ TOR");
+    const [doc, awarded] = await Promise.all([
+      this.db.tors.findOne({ _id: new ObjectId(id) }, { projection: { extractionFailure: 0 } }),
+      awardedProjectNumbers(this.db.tors),
+    ]);
     if (!doc) throw new NotFoundException("ไม่พบรายการ TOR");
     const { _id, ...rest } = doc;
-    return { id: _id.toString(), ...rest };
+    return {
+      id: _id.toString(),
+      ...rest,
+      daysLeft: currentDaysLeft(rest),
+      bidding: biddingOf({ ...rest, documentDeadline: rest.extraction?.deadline }, awarded),
+    };
   }
 
   /** Hidden announcements, newest first — the restore view. */

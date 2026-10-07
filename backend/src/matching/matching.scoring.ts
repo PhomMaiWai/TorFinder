@@ -1,49 +1,26 @@
-import { MIN_USEFUL_SCORE, SIZE_CEILING, SKILL_KEYWORDS, WEIGHTS } from "./matching.constants";
-import { MatchCandidate, MatchResult } from "./matching.types";
+import { formatBaht } from "../tor/tor-normalize";
+import {
+  INELIGIBLE_CEILING,
+  MIN_USEFUL_SCORE,
+  OFF_TYPE_CEILING,
+  SKILL_KEYWORDS,
+  WEIGHTS,
+} from "./matching.constants";
+import { EligibilityCheck, MatchCandidate, MatchResult } from "./matching.types";
+import { CERTIFICATIONS, requirementsOf } from "./requirements";
+import { workTypeLabel, workTypesOf } from "./work-types";
 
-/** What scoring reads from an announcement; kept structural so it takes a TorDoc as-is. */
-type ScorableTor = {
+/** What scoring reads from an announcement; structural, so it takes a TorDoc as-is. */
+export type ScorableTor = {
   title: string;
-  summary: string;
-  tags: string[];
-  budget: string;
-  /**
-   * What a model read out of the announcement document. A title says "จ้างพัฒนา
-   * ระบบ"; the document says which technologies and qualifications it actually
-   * calls for, which is what decides whether a company fits.
-   */
+  budgetAmount?: number;
+  referencePrice?: number;
+  /** What a model read out of the bidding document — the qualifications above all. */
   extraction?: {
-    scope?: string | null;
     qualifications?: string[];
-    deliverables?: string[];
+    referencePrice?: number | null;
+    budgetAmount?: number | null;
   } | null;
-};
-
-/** Everything about the work the wording can be read from. */
-function torText(tor: ScorableTor): string {
-  const extracted = tor.extraction;
-  return [
-    tor.title,
-    tor.summary,
-    tor.tags.join(" "),
-    extracted?.scope ?? "",
-    extracted?.qualifications?.join(" ") ?? "",
-    extracted?.deliverables?.join(" ") ?? "",
-  ].join(" ");
-}
-
-const SKILL_LABELS: Record<string, string> = {
-  web: "เว็บแอปพลิเคชัน",
-  mobile: "แอปพลิเคชันมือถือ",
-  cloud: "คลาวด์ / โครงสร้างพื้นฐาน",
-  data: "ข้อมูลและแดชบอร์ด",
-  ai: "ปัญญาประดิษฐ์",
-  security: "ความปลอดภัยสารสนเทศ",
-  gis: "ภูมิสารสนเทศ",
-  iot: "IoT / เซ็นเซอร์",
-  erp: "ระบบบริหารจัดการองค์กร",
-  healthcare: "ระบบสารสนเทศสุขภาพ",
-  integration: "การเชื่อมโยงระบบ",
 };
 
 /** Every canonical skill the text implies. */
@@ -57,61 +34,119 @@ export function skillsOf(text: string): Set<string> {
   return skills;
 }
 
-/** Budget in baht, or null when the announcement doesn't state one. */
-export function budgetOf(budget: string): number | null {
-  const digits = budget.replace(/[^0-9]/g, "");
-  return digits ? Number(digits) : null;
+/** The money the project is worth, from the most authoritative figure on record. */
+function projectValue(tor: ScorableTor): number | null {
+  return (
+    tor.budgetAmount ||
+    tor.referencePrice ||
+    tor.extraction?.referencePrice ||
+    tor.extraction?.budgetAmount ||
+    null
+  );
 }
 
+function threshold(
+  requirement: string,
+  needed: number | null,
+  has: number | null | undefined,
+): EligibilityCheck | null {
+  if (!needed) return null;
+  const status = has === null || has === undefined ? "unknown" : has >= needed ? "pass" : "fail";
+  return { requirement, status };
+}
+
+/** What the bidding document demands, each checked against the company's own answer. */
+function eligibilityOf(tor: ScorableTor, company: MatchCandidate): EligibilityCheck[] {
+  const required = requirementsOf(tor.extraction?.qualifications ?? []);
+  const checks = [
+    threshold(
+      `ผลงานไม่น้อยกว่า ${formatBaht(required.minPastContract)}`,
+      required.minPastContract,
+      company.largestPastContract,
+    ),
+    threshold(
+      `ทุนจดทะเบียนไม่ต่ำกว่า ${formatBaht(required.minRegisteredCapital)}`,
+      required.minRegisteredCapital,
+      company.registeredCapital,
+    ),
+    ...required.certifications.map((group): EligibilityCheck => ({
+      requirement: group.map((cert) => CERTIFICATIONS[cert].label).join(" หรือ "),
+      status: company.certifications === undefined
+        ? "unknown"
+        : group.some((cert) => company.certifications!.includes(cert))
+          ? "pass"
+          : "fail",
+    })),
+  ];
+  return checks.filter((check): check is EligibilityCheck => check !== null);
+}
+
+const CHECK_WEIGHT = { pass: 1, unknown: 0.5, fail: 0 } as const;
+
 /**
- * How well one company fits one announcement, as a percentage with the reasons
- * that produced it. Deterministic on purpose: the same pair always scores the
- * same, and every point is traceable to a rule a person can argue with.
+ * How well one company fits one announcement, with the reasons. Three
+ * questions, in the order a bidder asks them: is this the kind of contract we
+ * do, do we meet what the document demands, and is it the size we want.
+ * Deterministic: the same pair always scores the same, and every point traces
+ * to a line the reader can see.
  */
 export function scoreMatch(tor: ScorableTor, company: MatchCandidate): MatchResult {
-  const needed = skillsOf(torText(tor));
-  const offered = skillsOf(company.specialty);
+  const torTypes = workTypesOf(tor.title);
+  const shared = torTypes.filter((type) => company.workTypes.includes(type));
+  // Any shared kind of work makes it the company's kind of contract; covering
+  // more of what the title names — the maintenance AND the citizen service —
+  // makes it a closer one.
+  const workFit =
+    torTypes.length === 0 || company.workTypes.length === 0
+      ? 0.5
+      : shared.length
+        ? 0.7 + (0.3 * shared.length) / torTypes.length
+        : 0;
 
-  const matched = [...needed].filter((skill) => offered.has(skill));
-  const missing = [...needed].filter((skill) => !offered.has(skill));
+  const eligibility = eligibilityOf(tor, company);
+  const eligibilityFit = eligibility.length
+    ? eligibility.reduce((sum, check) => sum + CHECK_WEIGHT[check.status], 0) / eligibility.length
+    : 0.7; // no stated barrier is good, not proof
+  const failed = eligibility.filter((check) => check.status === "fail");
+  const eligible = failed.length
+    ? false
+    : eligibility.length && eligibility.every((check) => check.status === "pass")
+      ? true
+      : null;
 
-  // An announcement whose wording implies no particular skill can't discriminate
-  // between companies, so it scores neutral instead of punishing everyone.
-  const skillFit = needed.size === 0 ? 0.5 : matched.length / needed.size;
+  const value = projectValue(tor);
+  const hasRange = Boolean(company.preferredBudgetMin || company.preferredBudgetMax);
+  const inRange =
+    value !== null &&
+    value >= (company.preferredBudgetMin ?? 0) &&
+    value <= (company.preferredBudgetMax || Number.POSITIVE_INFINITY);
+  const budgetFit = !hasRange || value === null ? 0.6 : inRange ? 1 : 0.2;
 
-  const budget = budgetOf(tor.budget);
-  const ceiling = SIZE_CEILING[company.size] ?? SIZE_CEILING["กลาง"];
-  const sizeFit = budget === null ? 0.5 : budget <= ceiling ? 1 : ceiling / budget;
-
-  // Direct word overlap between the specialty and the title — catches domain
-  // wording the skill vocabulary doesn't cover yet.
-  const wordingFit = wordOverlap(company.specialty, tor.title);
-  const readFromDocument = Boolean(tor.extraction?.scope || tor.extraction?.qualifications?.length);
-
-  const score = Math.round(
-    100 * (WEIGHTS.skills * skillFit + WEIGHTS.size * sizeFit + WEIGHTS.wording * wordingFit),
+  let score = Math.round(
+    100 * (WEIGHTS.work * workFit + WEIGHTS.eligibility * eligibilityFit + WEIGHTS.budget * budgetFit),
   );
+  if (failed.length) score = Math.min(score, INELIGIBLE_CEILING);
+  if (workFit === 0) score = Math.min(score, OFF_TYPE_CEILING);
 
   const reasons: string[] = [];
   const gaps: string[] = [];
 
-  if (matched.length) {
-    reasons.push(`ตรงกับความเชี่ยวชาญ: ${matched.map(labelFor).join(", ")}`);
-  }
-  if (budget !== null && budget <= ceiling) {
-    reasons.push(`ขนาดบริษัท (${company.size}) สอดคล้องกับวงเงินโครงการ`);
-  }
-  if (readFromDocument) {
-    reasons.push("ประเมินจากขอบเขตงานที่อ่านได้จากเอกสารประกาศ");
-  }
-  if (missing.length) {
-    gaps.push(`ยังไม่พบประสบการณ์ด้าน: ${missing.map(labelFor).join(", ")}`);
-  }
-  if (budget !== null && budget > ceiling) {
-    gaps.push(`วงเงินโครงการสูงกว่าขนาดงานที่บริษัทขนาด${company.size}มักรับ`);
+  if (shared.length) reasons.push(`ตรงกับงานที่บริษัททำ: ${shared.map(workTypeLabel).join(", ")}`);
+  else if (workFit === 0) gaps.push(`เป็นงานประเภท ${torTypes.map(workTypeLabel).join(", ")} ซึ่งไม่อยู่ในงานที่บริษัทระบุ`);
+
+  const passed = eligibility.filter((check) => check.status === "pass");
+  if (passed.length) reasons.push(`ผ่านเกณฑ์: ${passed.map((check) => check.requirement).join(", ")}`);
+  if (failed.length) gaps.push(`ไม่ผ่านเกณฑ์: ${failed.map((check) => check.requirement).join(", ")}`);
+  if (eligibility.some((check) => check.status === "unknown")) {
+    gaps.push("กรอกผลงาน ทุนจดทะเบียน และใบรับรองในโปรไฟล์ เพื่อเช็คคุณสมบัติให้ครบ");
   }
 
-  return { score, reasons, gaps };
+  if (hasRange && value !== null) {
+    if (inRange) reasons.push(`วงเงิน ${formatBaht(value)} อยู่ในช่วงที่บริษัทสนใจ`);
+    else gaps.push(`วงเงิน ${formatBaht(value)} อยู่นอกช่วงที่บริษัทสนใจ`);
+  }
+
+  return { score, reasons, gaps, eligibility, eligible };
 }
 
 /** Ranked best-first, with the matches too weak to suggest dropped. */
@@ -123,20 +158,4 @@ export function rankCompanies<T extends MatchCandidate>(
     .map((company) => ({ ...company, ...scoreMatch(tor, company) }))
     .filter((candidate) => candidate.score >= MIN_USEFUL_SCORE)
     .sort((a, b) => b.score - a.score);
-}
-
-function labelFor(skill: string): string {
-  return SKILL_LABELS[skill] ?? skill;
-}
-
-/** Share of the specialty's words that also appear in the title, 0-1. */
-function wordOverlap(specialty: string, title: string): number {
-  const words = specialty
-    .toLowerCase()
-    .split(/[\s/,·]+/)
-    .filter((word) => word.length > 2);
-  if (words.length === 0) return 0;
-
-  const haystack = title.toLowerCase();
-  return words.filter((word) => haystack.includes(word)).length / words.length;
 }

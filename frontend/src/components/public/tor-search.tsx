@@ -17,16 +17,33 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 
-import { isKnown, stageBadgeCls, torAmount, torDocumentUrl } from "@/lib/tor-ui";
+import {
+  type AmountKind,
+  biddingOf,
+  daysUntilClose,
+  isClosingSoon,
+  isKnown,
+  stageBadgeCls,
+  torAmount,
+  torDocumentUrl,
+} from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
-import type { TorRecord } from "@/types/tor";
+import type { BiddingStatus, TorRecord } from "@/types/tor";
+
+import { BiddingBadge } from "./bidding-badge";
 
 import { AgencyFilter } from "./agency-filter";
 import { FilterCheckbox } from "./filter-checkbox";
 
 const STAGES = ["เปิดรับฟังความคิดเห็น", "ประกาศ TOR", "ประกาศผู้ชนะ"];
+const BIDDING_STATUSES: readonly BiddingStatus[] = ["open", "closed", "unknown"];
+const AMOUNT_LABEL = {
+  budget: "budgetLabel",
+  awarded: "awardedLabel",
+  reference: "referencePriceLabel",
+} as const satisfies Record<AmountKind, string>;
 const PER_PAGE = 10;
 
 const BUDGET_RANGES = [
@@ -35,6 +52,20 @@ const BUDGET_RANGES = [
   { id: "10m-20m", labelKey: "budgetRange10to20m", min: 10_000_000, max: 20_000_000 },
   { id: "over-20m", labelKey: "budgetRangeOver20m", min: 20_000_000, max: Infinity },
 ] as const;
+
+/** Bangkok time: an announcement made on 1 Jan local time is stored as 31 Dec UTC. */
+const YEAR = new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Bangkok" });
+
+/** The year an announcement was published, or null when the record carries no date. */
+function announcedYear(createdAt: string): number | null {
+  const date = new Date(createdAt);
+  return Number.isNaN(date.getTime()) ? null : Number(YEAR.format(date));
+}
+
+/** Thai readers count in พ.ศ.; the ค.ศ. year is kept alongside for everyone else. */
+function yearLabel(year: number): string {
+  return `${year + 543} (${year})`;
+}
 
 /** null when the announcement doesn't state a budget, so it can't match a range. */
 function parseBudget(budget: string): number | null {
@@ -98,10 +129,13 @@ function PublicTorCard({
   onToggleSave: () => void;
 }) {
   const t = useTranslations("PublicPage");
-  const isFeedbackStage = tor.stage === "เปิดรับฟังความคิดเห็น";
-  const hasDeadline = isKnown(tor.deadline);
-  const isUrgent = hasDeadline && tor.daysLeft <= 7;
-  const documentUrl = torDocumentUrl(tor);
+  const bidding = biddingOf(tor);
+  const amount = torAmount(tor);
+  const isFeedbackStage = tor.stage === "เปิดรับฟังความคิดเห็น" && bidding.status !== "closed";
+  const daysLeft = daysUntilClose(tor);
+  const isUrgent = isClosingSoon(tor);
+  // The announcement's own page on the portal; a file only when there is no page.
+  const originalUrl = tor.sourceUrl ?? torDocumentUrl(tor);
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-border bg-surface transition-all duration-200 hover:border-border hover:shadow-[0_8px_30px_rgb(24,24,27/6%)]">
@@ -113,6 +147,7 @@ function PublicTorCard({
             >
               {tor.stage}
             </span>
+            <BiddingBadge bidding={bidding} />
             {tor.budgetStatus === "สูงกว่าปกติ" && (
               <span className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-1 text-2xs font-semibold text-red-700">
                 <TrendingUp size={12} />
@@ -157,12 +192,16 @@ function PublicTorCard({
               <Building2 size={15} className="text-ink-subtle" />
               {tor.agency}
             </span>
-            <span
-              className={`flex items-center gap-1.5 ${isUrgent ? "font-medium text-red-600" : ""}`}
-            >
-              <Clock size={15} className={isUrgent ? "text-red-500" : "text-ink-subtle"} />
-              {hasDeadline ? t("daysLeftLabel", { days: tor.daysLeft }) : t("deadlineUnknown")}
-            </span>
+            {daysLeft !== null && (
+              <span
+                className={`flex items-center gap-1.5 ${isUrgent ? "font-medium text-red-600" : ""}`}
+              >
+                <Clock size={15} className={isUrgent ? "text-red-500" : "text-ink-subtle"} />
+                {bidding.status === "closed"
+                  ? t("deadlineClosed")
+                  : t("daysLeftLabel", { days: daysLeft })}
+              </span>
+            )}
           </div>
 
           <p className="mt-3.5 line-clamp-2 text-sm leading-relaxed text-ink-muted">{tor.summary}</p>
@@ -182,8 +221,10 @@ function PublicTorCard({
         <div className="flex shrink-0 flex-col items-start justify-between border-t border-border pt-5 sm:w-[220px] sm:items-end sm:border-none sm:pl-6 sm:pt-0">
           <div className="mb-4 flex w-full items-start justify-between gap-3 sm:mb-0 sm:flex-col sm:items-end">
             <div className="sm:text-right">
-              <div className="mb-1 text-xs font-medium text-ink-muted">{t("budgetLabel")}</div>
-              <div className="text-lg font-bold text-ink">{torAmount(tor).value}</div>
+              <div className="mb-1 text-xs font-medium text-ink-muted">
+                {t(AMOUNT_LABEL[amount.kind])}
+              </div>
+              <div className="text-lg font-bold text-ink">{amount.value}</div>
             </div>
             <button
               onClick={onToggleSave}
@@ -214,17 +255,16 @@ function PublicTorCard({
             >
               {t("viewDetails")}
             </Link>
-            {/* e-GP occasionally publishes an announcement with an empty link, so
-                only offer the document when there really is one to open. */}
-            {documentUrl && (
+            {/* A few records carry no link at all, so only offer one that opens. */}
+            {originalUrl && (
               <a
-                href={documentUrl}
+                href={originalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt"
               >
                 <ExternalLink size={14} />
-                {t("announcementDocument")}
+                {t("viewOriginal")}
               </a>
             )}
           </div>
@@ -270,7 +310,9 @@ function PublicTorCard({
 
 export function TorSearch({ tors }: { tors: TorRecord[] }) {
   const [search, setSearch] = useState("");
+  const [selectedBidding, setSelectedBidding] = useState<BiddingStatus[]>([]);
   const [selectedStages, setSelectedStages] = useState<string[]>([]);
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedBudgets, setSelectedBudgets] = useState<string[]>([]);
@@ -281,20 +323,36 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const { savedIds, toggleSaved } = useSavedTors();
   const t = useTranslations("PublicPage");
+  const tBidding = useTranslations("Bidding");
 
   // Filter options come from what was actually announced, not a fixed list.
   const agencies = useMemo(() => tors.map((t) => t.agency), [tors]);
   const tags = useMemo(() => [...new Set(tors.flatMap((t) => t.tags))].sort(), [tors]);
+  // Newest first: the current year is the one a reader almost always wants.
+  const years = useMemo(
+    () =>
+      [...new Set(tors.map((t) => announcedYear(t.createdAt)))]
+        .filter((year): year is number => year !== null)
+        .sort((a, b) => b - a),
+    [tors],
+  );
 
+  // Typing stays responsive; the list catches up once React has a spare frame.
+  const deferredSearch = useDeferredValue(search);
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = deferredSearch.trim().toLowerCase();
     return tors.filter((tor) => {
       const matchSearch =
         !q ||
         `${tor.title} ${tor.agency} ${tor.summary} ${tor.tags.join(" ")}`
           .toLowerCase()
           .includes(q);
+      const matchBidding =
+        selectedBidding.length === 0 || selectedBidding.includes(biddingOf(tor).status);
       const matchStage = selectedStages.length === 0 || selectedStages.includes(tor.stage);
+      const year = announcedYear(tor.createdAt);
+      const matchYear =
+        selectedYears.length === 0 || (year !== null && selectedYears.includes(year));
       const matchAgency = selectedAgencies.length === 0 || selectedAgencies.includes(tor.agency);
       const matchTags = selectedTags.length === 0 || tor.tags.some((t) => selectedTags.includes(t));
 
@@ -307,14 +365,24 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
             return !!range && budgetValue >= range.min && budgetValue <= range.max;
           }));
 
-      return matchSearch && matchStage && matchAgency && matchTags && matchBudget;
+      return (
+        matchSearch &&
+        matchBidding &&
+        matchStage &&
+        matchYear &&
+        matchAgency &&
+        matchTags &&
+        matchBudget
+      );
     });
-  }, [tors, search, selectedStages, selectedAgencies, selectedTags, selectedBudgets]);
+  }, [tors, deferredSearch, selectedBidding, selectedStages, selectedYears, selectedAgencies, selectedTags, selectedBudgets]);
 
   // Any change to the query lands the reader back on the first page of results.
   const queryKey = JSON.stringify([
     search,
+    selectedBidding,
     selectedStages,
+    selectedYears,
     selectedAgencies,
     selectedTags,
     selectedBudgets,
@@ -334,7 +402,9 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   }
 
   function clearAllFilters() {
+    setSelectedBidding([]);
     setSelectedStages([]);
+    setSelectedYears([]);
     setSelectedAgencies([]);
     setSelectedTags([]);
     setSelectedBudgets([]);
@@ -342,7 +412,9 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   }
 
   const hasActiveFilters =
+    selectedBidding.length > 0 ||
     selectedStages.length > 0 ||
+    selectedYears.length > 0 ||
     selectedAgencies.length > 0 ||
     selectedTags.length > 0 ||
     selectedBudgets.length > 0;
@@ -362,8 +434,10 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
         </button>
       </div>
 
+      {/* On desktop the filters stay in view and scroll on their own, below the
+          sticky navbar (h-14), so a long filter list never drags the results. */}
       <aside
-        className={`w-full shrink-0 lg:block lg:w-[280px] xl:w-[320px] ${
+        className={`w-full shrink-0 lg:sticky lg:top-20 lg:block lg:max-h-[calc(100vh-6rem)] lg:w-[280px] lg:overflow-y-auto lg:overscroll-contain xl:w-[320px] ${
           showMobileFilters ? "block" : "hidden"
         }`}
       >
@@ -402,10 +476,30 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
           <div className="mb-7 h-px w-full bg-surface-alt" />
 
           <CheckboxFilter
+            title={tBidding("filterTitle")}
+            options={BIDDING_STATUSES.map((status) => tBidding(status))}
+            selected={selectedBidding.map((status) => tBidding(status))}
+            onChange={(labels) =>
+              setSelectedBidding(BIDDING_STATUSES.filter((status) => labels.includes(tBidding(status))))
+            }
+          />
+
+          <div className="mb-7 h-px w-full bg-surface-alt" />
+
+          <CheckboxFilter
             title={t("filterStageTitle")}
             options={STAGES}
             selected={selectedStages}
             onChange={setSelectedStages}
+          />
+
+          <div className="mb-7 h-px w-full bg-surface-alt" />
+
+          <CheckboxFilter
+            title={t("filterYearTitle")}
+            options={years.map(yearLabel)}
+            selected={selectedYears.map(yearLabel)}
+            onChange={(labels) => setSelectedYears(years.filter((y) => labels.includes(yearLabel(y))))}
           />
 
           <div className="mb-7 h-px w-full bg-surface-alt" />

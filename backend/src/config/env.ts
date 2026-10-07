@@ -32,6 +32,9 @@ function optionalNumber(name: string, fallback: number): number {
 export const env = {
   isProduction,
   port: optionalNumber("PORT", 4000),
+  // Announcements published before this are kept but not listed: they are
+  // too old to be anyone's opportunity or a useful price reference.
+  torListedSince: new Date(process.env.TOR_LISTED_SINCE ?? "2022-01-01"),
   mongodbUri: required("MONGODB_URI", "mongodb://localhost:27017/torfinder"),
   sessionSecret: required("SESSION_SECRET", "dev-only-insecure-secret-change-me"),
   // Google Identity Services ID tokens are verified against this audience.
@@ -70,9 +73,12 @@ export const env = {
    * timeouts — is code, and lives in egp/egp.constants.ts.
    */
   egp: {
-    // Import depth per announcement type. e-GP holds thousands of projects, so a
-    // sync takes the newest pages rather than the whole archive.
-    maxPages: optionalNumber("EGP_MAX_PAGES", 2),
+    // How far back each sync reads, newest first. Open tenders are weeks old;
+    // a few months also keeps the awards a bidder looks back on.
+    lookbackDays: optionalNumber("EGP_LOOKBACK_DAYS", 120),
+    // A safety stop per announcement type whatever the dates say — the window
+    // normally ends the scan long before this.
+    maxPages: optionalNumber("EGP_MAX_PAGES", 40),
     // Requests in flight against the portal — lower it if it starts rate-limiting.
     concurrency: optionalNumber("EGP_CONCURRENCY", 5),
     // Background refresh. 0 turns polling off and leaves the admin button as the
@@ -101,5 +107,15 @@ export const env = {
   datagov: {
     pollMinutes: optionalNumber("DATAGOV_POLL_MINUTES", 1_440),
     pollOnStartup: (process.env.DATAGOV_POLL_ON_STARTUP ?? "true") === "true",
+  },
+  /**
+   * The national e-GP is read for the procurement step of the announcements
+   * still open, and to follow captured projects to their next announcement —
+   * a few dozen projects, one at a time. Every three hours keeps "still open"
+   * true to within a morning without leaning on a shared national service.
+   */
+  gproc: {
+    pollMinutes: optionalNumber("GPROC_POLL_MINUTES", 180),
+    pollOnStartup: (process.env.GPROC_POLL_ON_STARTUP ?? "true") === "true",
   },
 };
