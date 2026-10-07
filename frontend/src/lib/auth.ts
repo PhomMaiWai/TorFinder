@@ -1,8 +1,11 @@
+/** Mirrors the backend's ROLES (backend/src/common/roles.ts). */
+export type Role = "admin" | "org" | "owner" | "auditor";
+
 export type SessionPayload = {
   sub: string;
   email: string;
   name: string;
-  role: "admin" | "org";
+  role: Role;
   exp: number;
 };
 

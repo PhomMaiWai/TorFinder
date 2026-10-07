@@ -1,12 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { env } from "../config/env";
+import { Role } from "./roles";
 
 export type SessionPayload = {
   sub: string;
   email: string;
   name: string;
-  role: "admin" | "org";
+  role: Role;
   exp: number;
 };
 
