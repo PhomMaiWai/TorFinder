@@ -25,6 +25,7 @@ import {
   daysUntilClose,
   isClosingSoon,
   isKnown,
+  sourcePageUrl,
   stageBadgeCls,
   torAmount,
   torDocumentUrl,
@@ -143,7 +144,7 @@ function PublicTorCard({
   const daysLeft = daysUntilClose(tor);
   const isUrgent = isClosingSoon(tor);
   // The announcement's own page on the portal; a file only when there is no page.
-  const originalUrl = tor.sourceUrl ?? torDocumentUrl(tor);
+  const originalUrl = sourcePageUrl(tor) ?? torDocumentUrl(tor);
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-border bg-surface transition-all duration-200 hover:border-border hover:shadow-[0_8px_30px_rgb(24,24,27/6%)]">

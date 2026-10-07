@@ -80,6 +80,23 @@ export function isClosingSoon(tor: DeadlineFields): boolean {
 /** Archives and web pages a reader can't open as a document in the browser. */
 const NOT_A_DOCUMENT = /\.(zip|rar|html?)$/i;
 
+/** The national e-GP's page for one project, by its 11-digit number. */
+const EGP_PROJECT_PAGE = "https://process5.gprocurement.go.th/egp-agpc01-web/announcement?keywordSearch=";
+const MEA_PORTAL = /procurement\.mea\.or\.th/;
+
+/**
+ * Where "view original" should go. MEA's portal shows only its own copy of an
+ * announcement, so an MEA record that carries its e-GP project number opens
+ * the national e-GP instead — the official record, with the whole paper trail.
+ * Everything else keeps the page it was imported from.
+ */
+export function sourcePageUrl(tor: Pick<TorRecord, "sourceUrl" | "projectNumber">): string | undefined {
+  if (tor.sourceUrl && MEA_PORTAL.test(tor.sourceUrl) && tor.projectNumber && /^\d{11}$/.test(tor.projectNumber)) {
+    return EGP_PROJECT_PAGE + tor.projectNumber;
+  }
+  return tor.sourceUrl;
+}
+
 /**
  * The file to open for "เอกสารประกาศ". An MEA announcement's link is its web
  * page, not a document, so an attached file wins — the TOR itself first, since
