@@ -1,4 +1,31 @@
-export const TOR_STAGES = ["เปิดรับฟังความคิดเห็น", "ประกาศ TOR", "ประกาศผู้ชนะ"] as const;
+/**
+ * Every stage by name. Code that means "the award stage" says STAGE.award, never
+ * TOR_STAGES[2] or a destructured position: the list below is ordered and will
+ * grow, and a position silently changes meaning when it does.
+ *
+ * `invitation` is spelled "ประกาศ TOR" for historical reasons — it is the
+ * invitation to bid (ประกาศเชิญชวน) — and the stored value stays that way so no
+ * existing record has to change.
+ */
+export const STAGE = {
+  draft: "เปิดรับฟังความคิดเห็น",
+  invitation: "ประกาศ TOR",
+  award: "ประกาศผู้ชนะ",
+} as const;
+
+export const TOR_STAGES = [STAGE.draft, STAGE.invitation, STAGE.award] as const;
+
+/**
+ * Where a stage sorts in a listing: what a company can still act on first, the
+ * closed-and-decided last. Kept apart from TOR_STAGES because that is the order
+ * a project moves in, and the two are not the same thing.
+ *
+ * It matters more than it sounds: the portals publish award notices daily and
+ * drafts rarely, so ordering by date alone buries everything a company could
+ * actually bid on under announcements it has already lost.
+ */
+export const STAGE_LISTING_ORDER = [STAGE.draft, STAGE.invitation, STAGE.award] as const;
+
 export const TOR_BUDGET_STATUSES = ["สูงกว่าปกติ", "ต่ำกว่าปกติ", "ปกติ"] as const;
 
 /**

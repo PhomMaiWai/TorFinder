@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 
 import { HttpClient } from "../common/http-client";
 import { readZip } from "../common/zip";
-import { ProcurementStage, TOR_STAGES } from "../tor/tor.constants";
+import { ProcurementStage, STAGE } from "../tor/tor.constants";
 import {
   GPROC_ANNOUNCE_TYPES,
   GPROC_CANCELLED,
@@ -21,7 +21,7 @@ import {
 } from "./gproc.types";
 
 const PDF_MAGIC = "%PDF-";
-const [DRAFT_STAGE, INVITATION_STAGE] = TOR_STAGES;
+const { draft: DRAFT_STAGE, invitation: INVITATION_STAGE } = STAGE;
 
 /** The bidding document e-GP generates: conditions, qualifications, payment, penalties. */
 const BIDDING_DOCUMENT = /^doc_.*\.pdf$/i;

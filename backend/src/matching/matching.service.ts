@@ -3,13 +3,13 @@ import { AnyBulkWriteOperation, ObjectId } from "mongodb";
 
 import { CompanyProfile, DatabaseService, TorDoc } from "../database/database.service";
 import { awardedProjectNumbers, biddingOf } from "../tor/tor-bidding";
-import { ACTIONABLE_WINDOW_MS, TOR_STAGES } from "../tor/tor.constants";
+import { ACTIONABLE_WINDOW_MS, STAGE } from "../tor/tor.constants";
 import { currentDaysLeft } from "../tor/tor-normalize";
 import { assessBudget, BudgetAssessment } from "./budget-analysis";
 import { rankCompanies, scoreMatch } from "./matching.scoring";
 import { MatchCandidate, MatchResult, RankedCompany } from "./matching.types";
 
-const AWARD_STAGE = TOR_STAGES[2];
+const AWARD_STAGE = STAGE.award;
 
 /** The stored profile as matching reads it. */
 function candidateOf(company: CompanyProfile): MatchCandidate {

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { isSoftwareProject } from "../common/software-filter";
 import { DatabaseService } from "../database/database.service";
 import { ImportRecord, TorImportService, summarizeSync } from "../tor/tor-import.service";
-import { ACTIONABLE_WINDOW_MS, DECIDED_STAGES, TOR_STAGES } from "../tor/tor.constants";
+import { ACTIONABLE_WINDOW_MS, DECIDED_STAGES, STAGE } from "../tor/tor.constants";
 import { UNKNOWN, formatBaht, parseDate } from "../tor/tor-normalize";
 import { GprocClient } from "./gproc.client";
 import {
@@ -16,7 +16,7 @@ import {
 } from "./gproc.constants";
 import { GprocAnnouncement, GprocOutcome, GprocProjectDetail, GprocRun } from "./gproc.types";
 
-const AWARD_STAGE = TOR_STAGES[2];
+const AWARD_STAGE = STAGE.award;
 const CANCELLED_STATUS = "ยกเลิกโครงการ";
 /** How far back the scheduled refresh looks: older projects have long been decided. */
 const REFRESH_WINDOW_MS = 180 * 86_400_000;

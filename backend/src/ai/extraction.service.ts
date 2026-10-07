@@ -8,7 +8,7 @@ import { DatabaseService, TorDoc } from "../database/database.service";
 import { GprocClient } from "../gproc/gproc.client";
 import { PROJECT_NUMBER, gprocProjectUrl } from "../gproc/gproc.constants";
 import { READABLE_DOCUMENT_PATTERN, isReadableDocument } from "../tor/tor-documents";
-import { ACTIONABLE_WINDOW_MS, TOR_STAGES } from "../tor/tor.constants";
+import { ACTIONABLE_WINDOW_MS, STAGE } from "../tor/tor.constants";
 import { AI_REQUEST, EXTRACTION_INSTRUCTION, EXTRACTION_SCHEMA, EXTRACTION_VERSION } from "./ai.constants";
 import { ExtractionRunResult, StoredExtraction } from "./ai.types";
 import { isUseful, parseExtraction } from "./tor-extraction";
@@ -16,7 +16,7 @@ import { VertexClient } from "./vertex.client";
 
 const PDF_MIME = "application/pdf";
 
-const [DRAFT_STAGE, INVITATION_STAGE, AWARD_STAGE] = TOR_STAGES;
+const { draft: DRAFT_STAGE, invitation: INVITATION_STAGE, award: AWARD_STAGE } = STAGE;
 
 /** e-GP names each announcement; MEA labels each attachment by its file name. */
 const isDraftDocument = (label: string) => /ร่าง|ขอบเขตของงาน|tor/i.test(label);
