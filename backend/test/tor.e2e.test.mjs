@@ -132,6 +132,23 @@ describe("POST /api/tor — create", () => {
     }
   });
 
+  it("reads back a five-entry timeline with the record's stage current", async () => {
+    const created = await createTor({ stage: "\u0e1b\u0e23\u0e30\u0e01\u0e32\u0e28 TOR" });
+    const read = await api(`/tor/${created.id}`);
+
+    assert.equal(read.body.currentStage, read.body.stage);
+    assert.equal(read.body.timeline.length, 5);
+    assert.deepEqual(read.body.timeline.filter((entry) => entry.current).map((entry) => entry.stage), [read.body.stage]);
+    assert.ok(read.body.timeline.every((entry) => typeof entry.reached === "boolean"));
+  });
+
+  it("carries the timeline on the list too", async () => {
+    await createTor();
+    const list = await api("/tor");
+    assert.ok(list.body.length > 0);
+    assert.ok(list.body.every((tor) => tor.timeline?.length === 5 && tor.currentStage === tor.stage));
+  });
+
   it("rejects a stage outside the allowed set (400)", async () => {
     const res = await api("/tor", { method: "POST", body: newTor({ stage: "draft" }), token: ADMIN_TOKEN });
 

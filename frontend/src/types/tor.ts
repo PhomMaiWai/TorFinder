@@ -43,6 +43,17 @@ export type Bidding = {
   submissionTime?: string | null;
 };
 
+/** One step of the project's journey; the API sends all five, in lifecycle order. */
+export type TimelineEntry = {
+  stage: TorStage;
+  /** The portal's paper trail, or the record itself, shows the project got here. */
+  reached: boolean;
+  /** The stage this record is; exactly one entry. */
+  current: boolean;
+  /** ISO timestamp of the earliest announcement for the stage, when it has a date. */
+  publishedAt: string | null;
+};
+
 export type TorContract = {
   vendor: string;
   number: string | null;
@@ -88,6 +99,9 @@ export type TorRecord = {
   extraction?: TorExtraction;
   /** Sent by the backend; absent on the showcase records. */
   bidding?: Bidding;
+  /** Sent by the backend; absent on the showcase records. */
+  timeline?: TimelineEntry[];
+  currentStage?: TorStage;
   /** Signed contracts e-GP has on file, once the project has a winner. */
   contracts?: TorContract[];
   /** When the record first entered the database. */

@@ -9,6 +9,7 @@ import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
 import { STAGE_LISTING_ORDER } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
+import { buildTimeline } from "./tor-stage";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
 import { currentDaysLeft } from "./tor-normalize";
 
@@ -126,6 +127,8 @@ export class TorService {
       ...rest,
       daysLeft: currentDaysLeft(rest),
       bidding: biddingOf({ ...rest, documentDeadline, documentDeadlineTime }, awarded),
+      currentStage: rest.stage,
+      timeline: buildTimeline(rest),
     }));
   }
 
@@ -149,6 +152,8 @@ export class TorService {
         },
         awarded,
       ),
+      currentStage: rest.stage,
+      timeline: buildTimeline(rest),
     };
   }
 
