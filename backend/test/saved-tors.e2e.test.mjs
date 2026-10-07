@@ -52,6 +52,9 @@ function randomUserId() {
 // A well-formed ObjectId that no TOR record will ever have.
 const MISSING_TOR_ID = "0123456789abcdef01234567";
 
+// Creating a TOR takes an admin; the saved list itself is every account's own.
+const ADMIN_TOKEN = makeToken("admin", randomUserId(), "saved-tors-admin@ci.test");
+
 async function api(path, { method = "GET", body, token } = {}) {
   const headers = {};
   if (body !== undefined) headers["content-type"] = "application/json";
@@ -90,7 +93,7 @@ function newTor(overrides = {}) {
 }
 
 async function createTor(overrides = {}) {
-  const res = await api("/tor", { method: "POST", body: newTor(overrides) });
+  const res = await api("/tor", { method: "POST", body: newTor(overrides), token: ADMIN_TOKEN });
   assert.equal(res.status, 201, `create failed: ${JSON.stringify(res.body)}`);
   return res.body;
 }

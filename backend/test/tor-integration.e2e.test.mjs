@@ -89,7 +89,7 @@ function torBody(overrides = {}) {
 }
 
 function postTor(overrides = {}) {
-  return api("/tor", { method: "POST", body: torBody(overrides) });
+  return api("/tor", { method: "POST", body: torBody(overrides), token: ADMIN_TOKEN });
 }
 
 async function createTor(overrides = {}) {

@@ -1,4 +1,5 @@
 import { fetchJson, orEmptyWhenAnswered, orFallback } from "@/lib/fetch-json";
+import { authHeaders } from "@/lib/session-headers";
 import type {
   BudgetAssessment,
   MatchedCompany,
@@ -46,10 +47,16 @@ export function fetchBudgetAssessment(id: string): Promise<BudgetAssessment | nu
   );
 }
 
-/** Approved organizations ranked against this announcement — supplementary. */
-export function fetchMatchedCompanies(id: string): Promise<MatchedCompany[]> {
+/**
+ * Approved organizations ranked against this announcement — supplementary, and
+ * admin-only on the backend, so the caller's session travels with the request.
+ * Anyone else gets the fallback, and the page simply has no such section.
+ */
+export async function fetchMatchedCompanies(id: string): Promise<MatchedCompany[]> {
   return orFallback<MatchedCompany[]>(
-    fetchJson<MatchedCompany[]>(`/api/matching/tor/${id}/companies`),
+    fetchJson<MatchedCompany[]>(`/api/matching/tor/${id}/companies`, {
+      headers: await authHeaders(),
+    }),
     [],
   );
 }
