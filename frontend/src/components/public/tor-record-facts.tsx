@@ -79,7 +79,9 @@ export function TorRecordFacts({ tor }: { tor: TorRecord }) {
     bidding.closesAt
       ? {
           label: t("closesAtLabel"),
-          value: thaiDate(bidding.closesAt),
+          value: bidding.submissionTime
+            ? `${thaiDate(bidding.closesAt)} · ${t("submissionTime", { time: bidding.submissionTime })}`
+            : thaiDate(bidding.closesAt),
           hint: bidding.closesAtSource === "document" ? t("closesFromDocument") : undefined,
         }
       : null,

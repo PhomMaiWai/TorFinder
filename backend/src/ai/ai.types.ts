@@ -15,6 +15,11 @@ export type TorExtraction = {
    * submission for an invitation, the end of public comment for a draft.
    */
   deadline: string | null;
+  /**
+   * The hours on the deadline day, 24-hour "HH:MM–HH:MM" (or just "HH:MM" when
+   * only the end is printed) — bids are taken in a window, e.g. 09:00–12:00.
+   */
+  deadlineTime: string | null;
   /** เกณฑ์การพิจารณา — lowest price, or price-performance and its weights. */
   evaluationCriteria: string | null;
   /** งวดงานและการจ่ายเงิน, one instalment per item. */

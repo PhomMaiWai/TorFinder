@@ -99,7 +99,15 @@ export class MatchingService {
         id: _id.toString(),
         ...tor,
         daysLeft: currentDaysLeft(tor),
-        bidding: biddingOf({ ...tor, documents, documentDeadline: extraction?.deadline }, awarded),
+        bidding: biddingOf(
+          {
+            ...tor,
+            documents,
+            documentDeadline: extraction?.deadline,
+            documentDeadlineTime: extraction?.deadlineTime,
+          },
+          awarded,
+        ),
         ...scoreMatch({ ...tor, extraction }, company),
       }))
       .filter((tor) => tor.bidding.status !== "closed")

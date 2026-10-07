@@ -45,7 +45,7 @@ function SavedList({
             {t("emptyDescription")}
           </p>
           <Link
-            href="/public"
+            href={scope === "org" ? "/search" : "/public"}
             className="mt-4 inline-block rounded-lg bg-ink px-5 py-2 text-sm font-medium text-white hover:bg-ink"
           >
             {t("goToSearchCta")}
@@ -59,7 +59,7 @@ function SavedList({
               className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-surface p-5 sm:p-6"
             >
               <div className="min-w-0 flex-1">
-                <Link href={`/tor/${tor.id}`} className="block">
+                <Link href={`/tor/${tor.id}${scope === "org" ? "?in=app" : ""}`} className="block">
                   <h3 className="text-base font-bold text-ink hover:text-accent sm:text-lg">
                     {tor.title}
                   </h3>
@@ -81,7 +81,7 @@ function SavedList({
 
               <div className="flex shrink-0 items-center gap-2">
                 <Link
-                  href={`/tor/${tor.id}`}
+                  href={`/tor/${tor.id}${scope === "org" ? "?in=app" : ""}`}
                   className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink"
                 >
                   {t("viewDetailsCta")}

@@ -25,6 +25,8 @@ export type Bidding = {
   closesAt: string | null;
   /** The portal published the date, or a model read it from the document. */
   closesAtSource: "portal" | "document" | null;
+  /** The hours bids are taken on the closing day, "09:00–12:00", when the document says. */
+  submissionTime?: string | null;
 };
 
 export type TorContract = {
