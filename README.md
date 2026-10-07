@@ -84,11 +84,15 @@ Seeded automatically the first time the database starts empty.
 | Role                            | Email                       | Password     |
 | ------------------------------- | --------------------------- | ------------ |
 | Administrator                   | `admin@bma.go.th`           | `Admin1234!` |
+| Project owner                   | `owner@bma.go.th`           | `Owner1234!` |
+| Auditor                         | `auditor@bma.go.th`         | `Auditor1234!` |
 | Organization (approved)         | `contact@arundigital.co.th` | `Org12345!`  |
 | Organization (pending approval) | `contact@techworks.co.th`   | `Tech12345!` |
 | Organization (pending approval) | `hello@datacraft.co.th`     | `Data12345!` |
 
 Sign in at `/login/admin` or `/login/organization`.
+
+The project owner and auditor accounts exist so the screens for those roles can be built and tried; until those screens land they sign in through the same forms and have no area of their own.
 
 The two pending accounts exist so the approval queue at `/admin/accounts` isn't empty —
 try approving one, then sign in as it. A pending account **cannot** sign in until an
