@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { authHeaders } from "@/lib/session-headers";
 import { assertTorFormValid, parseTorFormData } from "@/lib/tor-form";
 
 export type CreateTorState = { error?: string };
@@ -21,7 +22,7 @@ export async function createTorEntry(
   try {
     res = await fetch(`${process.env.BACKEND_URL}/api/tor`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...(await authHeaders()), "Content-Type": "application/json" },
       body: JSON.stringify(values),
       cache: "no-store",
       signal: AbortSignal.timeout(8000),

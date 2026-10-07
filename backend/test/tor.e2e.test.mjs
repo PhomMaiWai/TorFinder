@@ -5,9 +5,8 @@
 // the running server over HTTP. TOR records are never seeded, so the database
 // starts empty and every record here is one these tests created.
 //
-// Observed behaviour, not aspiration: POST /api/tor and PATCH /api/tor/:id
-// currently take no session; only delete, restore and the deleted listing are
-// admin-guarded.
+// Creating, editing, hiding and restoring an announcement, and listing the
+// hidden ones, are admin-only; reading one is public.
 
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
@@ -79,7 +78,7 @@ function newTor(overrides = {}) {
 }
 
 async function createTor(overrides = {}) {
-  const res = await api("/tor", { method: "POST", body: newTor(overrides) });
+  const res = await api("/tor", { method: "POST", body: newTor(overrides), token: ADMIN_TOKEN });
   assert.equal(res.status, 201, `create failed: ${JSON.stringify(res.body)}`);
   return res.body;
 }
@@ -87,7 +86,7 @@ async function createTor(overrides = {}) {
 describe("POST /api/tor — create", () => {
   it("creates an announcement and returns its id", async () => {
     const payload = newTor();
-    const res = await api("/tor", { method: "POST", body: payload });
+    const res = await api("/tor", { method: "POST", body: payload, token: ADMIN_TOKEN });
 
     assert.equal(res.status, 201);
     assert.match(res.body.id, /^[a-f0-9]{24}$/);
@@ -98,7 +97,7 @@ describe("POST /api/tor — create", () => {
   });
 
   it("ignores a client-supplied match score", async () => {
-    const res = await api("/tor", { method: "POST", body: newTor({ match: 99 }) });
+    const res = await api("/tor", { method: "POST", body: newTor({ match: 99 }), token: ADMIN_TOKEN });
 
     assert.equal(res.status, 201);
     assert.equal(res.body.match, 0);
@@ -107,43 +106,43 @@ describe("POST /api/tor — create", () => {
   it("rejects a missing title (400)", async () => {
     const { title, ...rest } = newTor();
     void title;
-    const res = await api("/tor", { method: "POST", body: rest });
+    const res = await api("/tor", { method: "POST", body: rest, token: ADMIN_TOKEN });
 
     assert.equal(res.status, 400);
   });
 
   it("rejects an empty title (400)", async () => {
-    const res = await api("/tor", { method: "POST", body: newTor({ title: "" }) });
+    const res = await api("/tor", { method: "POST", body: newTor({ title: "" }), token: ADMIN_TOKEN });
 
     assert.equal(res.status, 400);
   });
 
   it("rejects a stage outside the allowed set (400)", async () => {
-    const res = await api("/tor", { method: "POST", body: newTor({ stage: "draft" }) });
+    const res = await api("/tor", { method: "POST", body: newTor({ stage: "draft" }), token: ADMIN_TOKEN });
 
     assert.equal(res.status, 400);
   });
 
   it("rejects a negative daysLeft (400)", async () => {
-    const res = await api("/tor", { method: "POST", body: newTor({ daysLeft: -1 }) });
+    const res = await api("/tor", { method: "POST", body: newTor({ daysLeft: -1 }), token: ADMIN_TOKEN });
 
     assert.equal(res.status, 400);
   });
 
   it("rejects a non-integer daysLeft (400)", async () => {
-    const res = await api("/tor", { method: "POST", body: newTor({ daysLeft: 3.5 }) });
+    const res = await api("/tor", { method: "POST", body: newTor({ daysLeft: 3.5 }), token: ADMIN_TOKEN });
 
     assert.equal(res.status, 400);
   });
 
   it("rejects tags that are not all strings (400)", async () => {
-    const res = await api("/tor", { method: "POST", body: newTor({ tags: [123] }) });
+    const res = await api("/tor", { method: "POST", body: newTor({ tags: [123] }), token: ADMIN_TOKEN });
 
     assert.equal(res.status, 400);
   });
 
   it("rejects an unknown budgetStatus (400)", async () => {
-    const res = await api("/tor", { method: "POST", body: newTor({ budgetStatus: "high" }) });
+    const res = await api("/tor", { method: "POST", body: newTor({ budgetStatus: "high" }), token: ADMIN_TOKEN });
 
     assert.equal(res.status, 400);
   });
@@ -248,6 +247,7 @@ describe("PATCH /api/tor/:id — update", () => {
   it("updates a field and returns the new value", async () => {
     const res = await api(`/tor/${created.id}`, {
       method: "PATCH",
+      token: ADMIN_TOKEN,
       body: { title: "ชื่อโครงการที่แก้ไขแล้ว" },
     });
 
@@ -258,7 +258,7 @@ describe("PATCH /api/tor/:id — update", () => {
   // Patched through `budget`, not `daysLeft`: days left is recomputed from the
   // deadline on every read, so a stored value never comes back as written.
   it("leaves untouched fields alone", async () => {
-    await api(`/tor/${created.id}`, { method: "PATCH", body: { budget: "฿2,000,000" } });
+    await api(`/tor/${created.id}`, { method: "PATCH", body: { budget: "฿2,000,000" }, token: ADMIN_TOKEN });
     const res = await api(`/tor/${created.id}`);
 
     assert.equal(res.body.budget, "฿2,000,000");
@@ -268,6 +268,7 @@ describe("PATCH /api/tor/:id — update", () => {
   it("strips unknown fields", async () => {
     const res = await api(`/tor/${created.id}`, {
       method: "PATCH",
+      token: ADMIN_TOKEN,
       body: { summary: "สรุปใหม่", nonsense: "ignored" },
     });
 
@@ -279,6 +280,7 @@ describe("PATCH /api/tor/:id — update", () => {
   it("rejects an invalid stage (400)", async () => {
     const res = await api(`/tor/${created.id}`, {
       method: "PATCH",
+      token: ADMIN_TOKEN,
       body: { stage: "draft" },
     });
 
@@ -288,10 +290,60 @@ describe("PATCH /api/tor/:id — update", () => {
   it("returns 404 for an unknown id", async () => {
     const res = await api(`/tor/${MISSING_ID}`, {
       method: "PATCH",
+      token: ADMIN_TOKEN,
       body: { title: "x" },
     });
 
     assert.equal(res.status, 404);
+  });
+});
+
+describe("POST /api/tor and PATCH /api/tor/:id — admin only", () => {
+  let target;
+
+  before(async () => {
+    target = await createTor();
+  });
+
+  it("forbids creating without a token (403)", async () => {
+    const res = await api("/tor", { method: "POST", body: newTor() });
+
+    assert.equal(res.status, 403);
+  });
+
+  it("forbids creating with an organization token (403)", async () => {
+    const res = await api("/tor", { method: "POST", body: newTor(), token: ORG_TOKEN });
+
+    assert.equal(res.status, 403);
+  });
+
+  it("checks the session before the body — an invalid payload without a token is 403, not 400", async () => {
+    const res = await api("/tor", { method: "POST", body: newTor({ title: "" }) });
+
+    assert.equal(res.status, 403);
+  });
+
+  it("forbids editing without a token (403)", async () => {
+    const res = await api(`/tor/${target.id}`, { method: "PATCH", body: { title: "แก้โดยไม่มีสิทธิ์" } });
+
+    assert.equal(res.status, 403);
+  });
+
+  it("forbids editing with an organization token (403)", async () => {
+    const res = await api(`/tor/${target.id}`, {
+      method: "PATCH",
+      body: { title: "แก้โดยบริษัท" },
+      token: ORG_TOKEN,
+    });
+
+    assert.equal(res.status, 403);
+  });
+
+  it("leaves the record untouched after a refused edit", async () => {
+    const res = await api(`/tor/${target.id}`);
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.title, target.title);
   });
 });
 

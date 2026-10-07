@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
 
+import { AdminGuard } from "../common/admin.guard";
 import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
 
 import { ScoreMatchDto } from "./dto/score-match.dto";
@@ -20,14 +21,20 @@ export class MatchingController {
     return this.matching.rankOpportunitiesFor(request.session.sub);
   }
 
-  /** Companies an agency could expect to bid, ranked. */
+  /**
+   * Companies an agency could expect to bid, ranked. Names, scores and gaps of
+   * every approved company, so it is not for anonymous visitors or for other
+   * companies — admin-only until an owner of the announcement can be told apart.
+   */
   @Get("tor/:id/companies")
+  @UseGuards(AdminGuard)
   companies(@Param("id") id: string) {
     return this.matching.rankForTor(id);
   }
 
   /** Recompute and store every record's budget verdict. */
   @Post("budget/refresh")
+  @UseGuards(AdminGuard)
   refreshBudgets() {
     return this.matching.refreshBudgetStatuses();
   }

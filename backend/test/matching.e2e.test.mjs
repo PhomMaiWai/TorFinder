@@ -20,8 +20,9 @@ import { before, describe, it } from "node:test";
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:4000";
 const API = `${BASE_URL}/api`;
 
-// Mirrors backend/src/common/token.ts — used only for the /opportunities guard
-// checks. Must match the SESSION_SECRET the server booted with.
+// Mirrors backend/src/common/token.ts — for the guarded routes: creating a TOR
+// and the ranked-companies list take an admin, /opportunities any session. Must
+// match the SESSION_SECRET the server booted with.
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-insecure-secret-change-me";
 
 function makeToken(role, email) {
@@ -38,6 +39,8 @@ function makeToken(role, email) {
 }
 
 const GHOST_TOKEN = makeToken("org", "matching-ghost@ci.test");
+const ADMIN_TOKEN = makeToken("admin", "matching-admin@ci.test");
+const ORG_TOKEN = makeToken("org", "matching-org@ci.test");
 
 // Digits only: it can't collide with a skill keyword, and every fixture title
 // is "<one Thai/English phrase> <RUN>" so no two of them fuzzy-match on the
@@ -90,7 +93,7 @@ function torBody(overrides = {}) {
 }
 
 async function createTor(overrides) {
-  const res = await api("/tor", { method: "POST", body: torBody(overrides) });
+  const res = await api("/tor", { method: "POST", body: torBody(overrides), token: ADMIN_TOKEN });
   assert.equal(res.status, 201, `create failed: ${JSON.stringify(res.body)}`);
   return res.body;
 }
@@ -231,7 +234,7 @@ describe("GET /api/matching/tor/:id/companies — ranked candidates", () => {
   it("ranks a fitting approved company, sorted and above the useful-score cutoff", async () => {
     const webTor = await createTor({ title: `จ้างพัฒนาและบำรุงรักษาเว็บพอร์ทัลประชาชน ${RUN}` });
 
-    const res = await api(`/matching/tor/${webTor.id}/companies`);
+    const res = await api(`/matching/tor/${webTor.id}/companies`, { token: ADMIN_TOKEN });
 
     assert.equal(res.status, 200);
     assert.ok(Array.isArray(res.body));
@@ -257,7 +260,7 @@ describe("GET /api/matching/tor/:id/companies — ranked candidates", () => {
       budget: "฿2,000,000",
     });
 
-    const res = await api(`/matching/tor/${healthTor.id}/companies`);
+    const res = await api(`/matching/tor/${healthTor.id}/companies`, { token: ADMIN_TOKEN });
 
     assert.equal(res.status, 200);
     // The seeded development company does no health work -> capped at 35, filtered.
@@ -265,9 +268,58 @@ describe("GET /api/matching/tor/:id/companies — ranked candidates", () => {
   });
 
   it("returns 404 for an unknown announcement id", async () => {
-    const res = await api(`/matching/tor/${MISSING_ID}/companies`);
+    const res = await api(`/matching/tor/${MISSING_ID}/companies`, { token: ADMIN_TOKEN });
 
     assert.equal(res.status, 404);
+  });
+});
+
+describe("GET /api/matching/tor/:id/companies — admin only", () => {
+  let tor;
+
+  before(async () => {
+    tor = await createTor({ title: `จ้างพัฒนาเว็บไซต์องค์กร ${RUN}` });
+  });
+
+  it("forbids a request with no token (403)", async () => {
+    const res = await api(`/matching/tor/${tor.id}/companies`);
+
+    assert.equal(res.status, 403);
+  });
+
+  it("forbids an organization token (403) — one company can't read the others' scores", async () => {
+    const res = await api(`/matching/tor/${tor.id}/companies`, { token: ORG_TOKEN });
+
+    assert.equal(res.status, 403);
+  });
+});
+
+describe("POST /api/matching/budget/refresh — admin only", () => {
+  it("forbids a request with no token (403)", async () => {
+    const res = await api("/matching/budget/refresh", { method: "POST" });
+
+    assert.equal(res.status, 403);
+  });
+
+  it("forbids an organization token (403)", async () => {
+    const res = await api("/matching/budget/refresh", { method: "POST", token: ORG_TOKEN });
+
+    assert.equal(res.status, 403);
+  });
+
+  it("lets an admin recompute the verdicts", async () => {
+    const res = await api("/matching/budget/refresh", { method: "POST", token: ADMIN_TOKEN });
+
+    assert.equal(res.status, 201);
+  });
+});
+
+describe("matching routes that stay public", () => {
+  it("serves a budget verdict without a session", async () => {
+    const tor = await createTor({ title: `จ้างพัฒนาระบบบริการ ${RUN}` });
+    const res = await api(`/matching/tor/${tor.id}/budget`);
+
+    assert.equal(res.status, 200);
   });
 });
 

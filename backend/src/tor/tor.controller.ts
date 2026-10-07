@@ -12,6 +12,7 @@ export class TorController {
   constructor(private readonly torService: TorService) {}
 
   @Post()
+  @UseGuards(AdminGuard)
   create(@Body() dto: CreateTorDto) {
     return this.torService.create(dto);
   }
@@ -37,6 +38,7 @@ export class TorController {
   }
 
   @Patch(":id")
+  @UseGuards(AdminGuard)
   update(@Param("id") id: string, @Body() dto: UpdateTorDto) {
     return this.torService.update(id, dto);
   }
