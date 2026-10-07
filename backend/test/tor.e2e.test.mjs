@@ -117,6 +117,21 @@ describe("POST /api/tor — create", () => {
     assert.equal(res.status, 400);
   });
 
+  it("accepts each of the five stages and stores it as given", async () => {
+    const stages = [
+      "\u0e41\u0e1c\u0e19\u0e01\u0e32\u0e23\u0e08\u0e31\u0e14\u0e0b\u0e37\u0e49\u0e2d\u0e08\u0e31\u0e14\u0e08\u0e49\u0e32\u0e07",
+      "\u0e40\u0e1b\u0e34\u0e14\u0e23\u0e31\u0e1a\u0e1f\u0e31\u0e07\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19",
+      "\u0e1b\u0e23\u0e30\u0e01\u0e32\u0e28\u0e23\u0e32\u0e04\u0e32\u0e01\u0e25\u0e32\u0e07",
+      "\u0e1b\u0e23\u0e30\u0e01\u0e32\u0e28 TOR",
+      "\u0e1b\u0e23\u0e30\u0e01\u0e32\u0e28\u0e1c\u0e39\u0e49\u0e0a\u0e19\u0e30",
+    ];
+    for (const stage of stages) {
+      const created = await createTor({ stage });
+      const read = await api(`/tor/${created.id}`);
+      assert.equal(read.body.stage, stage);
+    }
+  });
+
   it("rejects a stage outside the allowed set (400)", async () => {
     const res = await api("/tor", { method: "POST", body: newTor({ stage: "draft" }), token: ADMIN_TOKEN });
 

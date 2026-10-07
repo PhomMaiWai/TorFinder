@@ -127,5 +127,7 @@ export function torDocumentUrl(tor: Pick<TorRecord, "documents" | "sourceUrl">):
 export function stageBadgeCls(stage: TorStage): string {
   if (stage === "ประกาศผู้ชนะ") return "bg-purple-50 text-purple-700";
   if (stage === "เปิดรับฟังความคิดเห็น") return "bg-amber-50 text-amber-700";
+  if (stage === "แผนการจัดซื้อจัดจ้าง") return "bg-slate-100 text-slate-700";
+  if (stage === "ประกาศราคากลาง") return "bg-sky-50 text-sky-700";
   return "bg-accent-soft text-accent";
 }

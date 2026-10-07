@@ -1,4 +1,18 @@
-export type TorStage = "เปิดรับฟังความคิดเห็น" | "ประกาศ TOR" | "ประกาศผู้ชนะ";
+export type TorStage =
+  | "แผนการจัดซื้อจัดจ้าง"
+  | "เปิดรับฟังความคิดเห็น"
+  | "ประกาศราคากลาง"
+  | "ประกาศ TOR"
+  | "ประกาศผู้ชนะ";
+
+/** Lifecycle order, as the API stores it. */
+export const TOR_STAGES: readonly TorStage[] = [
+  "แผนการจัดซื้อจัดจ้าง",
+  "เปิดรับฟังความคิดเห็น",
+  "ประกาศราคากลาง",
+  "ประกาศ TOR",
+  "ประกาศผู้ชนะ",
+];
 export type TorBudgetStatus = "สูงกว่าปกติ" | "ต่ำกว่าปกติ" | "ปกติ";
 
 /**

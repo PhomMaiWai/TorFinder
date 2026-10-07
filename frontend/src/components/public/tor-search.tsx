@@ -63,7 +63,9 @@ function statusOf(tor: TorRecord): TorStatus {
   const { status, reason } = biddingOf(tor);
   // Bid now, or plan for what is coming — two different jobs, so two options;
   // the "all open" shortcut puts them back together.
-  if (status === "open") return tor.stage === "เปิดรับฟังความคิดเห็น" ? "comment" : "bidding";
+  // Only an invitation takes bids; a plan, a draft or a reference price is
+  // still ahead of that.
+  if (status === "open") return tor.stage === "ประกาศ TOR" ? "bidding" : "comment";
   if (status === "unknown") return "unknown";
   return reason === "awarded" || reason === "contracted" ? "awarded" : "closed";
 }

@@ -8,12 +8,15 @@
  * existing record has to change.
  */
 export const STAGE = {
+  plan: "แผนการจัดซื้อจัดจ้าง",
   draft: "เปิดรับฟังความคิดเห็น",
+  price: "ประกาศราคากลาง",
   invitation: "ประกาศ TOR",
   award: "ประกาศผู้ชนะ",
 } as const;
 
-export const TOR_STAGES = [STAGE.draft, STAGE.invitation, STAGE.award] as const;
+/** The order a project moves in: plan, draft, reference price, invitation, award. */
+export const TOR_STAGES = [STAGE.plan, STAGE.draft, STAGE.price, STAGE.invitation, STAGE.award] as const;
 
 /**
  * Where a stage sorts in a listing: what a company can still act on first, the
@@ -24,7 +27,13 @@ export const TOR_STAGES = [STAGE.draft, STAGE.invitation, STAGE.award] as const;
  * drafts rarely, so ordering by date alone buries everything a company could
  * actually bid on under announcements it has already lost.
  */
-export const STAGE_LISTING_ORDER = [STAGE.draft, STAGE.invitation, STAGE.award] as const;
+export const STAGE_LISTING_ORDER = [
+  STAGE.draft,
+  STAGE.invitation,
+  STAGE.price,
+  STAGE.plan,
+  STAGE.award,
+] as const;
 
 export const TOR_BUDGET_STATUSES = ["สูงกว่าปกติ", "ต่ำกว่าปกติ", "ปกติ"] as const;
 
