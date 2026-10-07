@@ -118,6 +118,33 @@ export const SEED_USERS: SeedUser[] = [
         "ให้บริการ IT Helpdesk และดูแลผู้ใช้งานระบบให้รัฐวิสาหกิจ รวมถึงบำรุงรักษาระบบบริการประชาชนขนาดเล็ก",
     },
   },
+  // Does exactly the work the open network-and-application maintenance tenders
+  // ask for, but its largest past contract is below what the bigger ones
+  // require — the case that shows a perfect fit capped by a failed requirement.
+  {
+    email: "contact@softstart.co.th",
+    name: "Soft Start",
+    role: "org",
+    status: "approved",
+    password: "Start12345!",
+    company: {
+      companyName: "บริษัท ซอฟต์สตาร์ท จำกัด",
+      taxId: "0105566004521",
+      contactName: "ปกรณ์ เริ่มดี",
+      phone: "02-555-0404",
+      address: "77 ถนนพหลโยธิน แขวงสามเสนใน เขตพญาไท กรุงเทพมหานคร 10400",
+      specialty: "",
+      size: "11-50 คน",
+      workTypes: ["development", "maintenance", "eservice", "network"],
+      largestPastContract: 1_500_000,
+      registeredCapital: 5_000_000,
+      certifications: ["iso9001"],
+      preferredBudgetMin: 1_000_000,
+      preferredBudgetMax: 10_000_000,
+      pastExperience:
+        "พัฒนาและดูแลระบบบริการประชาชนขนาดเล็กให้สำนักงานเขต ผลงานใหญ่ที่สุดมูลค่า 1.5 ล้านบาท",
+    },
+  },
   // Left pending so /admin/accounts has something to review on a fresh install,
   // and so the auth and accounts e2e suites can check that approval gates login.
   {
