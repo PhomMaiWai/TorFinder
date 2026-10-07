@@ -4,7 +4,7 @@ import { mapWithLimit } from "../common/concurrency";
 import { isSoftwareProject } from "../common/software-filter";
 import { TorDoc } from "../database/database.service";
 import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
-import { namesSomewhereElse } from "../tor/thai-locality";
+import { meaInScope } from "../tor/thai-locality";
 import {
   UNKNOWN,
   cleanText,
@@ -107,7 +107,20 @@ export class MeaService {
    * record can never sit in the database on terms the import would refuse.
    */
   private isWanted(subject: string | null | undefined): boolean {
-    return isSoftwareProject(subject ?? "") && !namesSomewhereElse(subject);
+    return isSoftwareProject(subject ?? "") && meaInScope(subject);
+  }
+
+  /**
+   * How many stored MEA records the current rules would no longer import —
+   * the count a one-time clean-up shows before anyone commits to it.
+   */
+  previewCleanup(): Promise<number> {
+    return this.importer.countOutOfScope("mea", (doc) => this.isWanted(doc.title));
+  }
+
+  /** Removes them. */
+  cleanup(): Promise<number> {
+    return this.importer.purge("mea", (doc) => this.isWanted(doc.title));
   }
 
   /**

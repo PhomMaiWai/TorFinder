@@ -244,15 +244,30 @@ export class EgpService {
     // Judged by both before the import, the same rule the purge applies after
     // it — otherwise a record the category rules out is inserted and deleted
     // again on every sync, re-enriched each time.
-    const keep = (doc: { title: string; goodsCategory?: string }) =>
-      isSoftwareProject(doc.title, doc.goodsCategory);
     const records = (await this.withEnrichment([...projects.values()])).filter(({ doc }) =>
-      keep(doc),
+      this.isWanted(doc),
     );
     const result = await this.importer.import("egp", records);
-    await this.importer.purge("egp", keep);
+    await this.importer.purge("egp", (doc) => this.isWanted(doc));
 
     return { result: { ...result, failed }, nearMisses };
+  }
+
+  private isWanted(doc: { title: string; goodsCategory?: string }): boolean {
+    return isSoftwareProject(doc.title, doc.goodsCategory);
+  }
+
+  /**
+   * How many stored e-GP records the current rules would no longer import —
+   * the count a one-time clean-up shows before anyone commits to it.
+   */
+  previewCleanup(): Promise<number> {
+    return this.importer.countOutOfScope("egp", (doc) => this.isWanted(doc));
+  }
+
+  /** Removes them. */
+  cleanup(): Promise<number> {
+    return this.importer.purge("egp", (doc) => this.isWanted(doc));
   }
 
   /**

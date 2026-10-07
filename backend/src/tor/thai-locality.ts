@@ -1,9 +1,25 @@
 /**
- * Where a procurement announcement is for. This product covers Bangkok, and the
- * three sources say so in three different ways: the e-GP feed is the city's own
- * portal, MEA serves the metropolitan area and names the odd site outside it,
- * and the open-data dumps are national. So "is this ours?" is decided here,
- * once, from whatever the record happens to carry.
+ * Where a procurement announcement is for. This product covers Bangkok — not
+ * only the municipal agencies the BMA itself runs, but the state enterprises
+ * (MEA) that serve the same city, since those are the opportunities a company
+ * reading this site actually bids on. "Is this ours?" is decided here, once,
+ * from whatever the record happens to carry, and every source's import keeps
+ * only what it answers yes to — never written, not held back for review.
+ *
+ * One rule per source, because each proves it differently or not at all:
+ *  - e-GP (backend/src/egp): no check. egp2.bangkok.go.th is the city's own
+ *    procurement portal; everything on it is in scope by construction.
+ *  - gproc (backend/src/gproc): no check. It only re-reads the procurement
+ *    step of project numbers already stored — numbers that reached the
+ *    database through one of the other three, scope already settled.
+ *  - MEA (backend/src/mea): namesSomewhereElse, inverted. The utility serves
+ *    two neighbouring provinces besides the city and says so when it does, so
+ *    everything is kept except what names one of them.
+ *  - data.go.th (backend/src/datagov): namesBangkok, falling back to
+ *    isPointInBangkok. The source is national and mostly upcountry, so
+ *    Bangkok has to be proven rather than assumed — by the agency/project
+ *    name first, and only when that is silent, by the coordinates the
+ *    source's own map table gives for the contract.
  */
 
 /**
@@ -82,4 +98,26 @@ export function namesSomewhereElse(...texts: (string | null | undefined)[]): boo
     containsAny(text, OUTSIDE_MARKERS) ||
     AMBIGUOUS_PROVINCES.some((province) => text.includes(`จังหวัด${province}`))
   );
+}
+
+/**
+ * MEA's scope rule (see the module comment above), as the one function its
+ * service and this file's tests both call — so a test proves what actually
+ * ships, not a re-description of it.
+ */
+export function meaInScope(subject: string | null | undefined): boolean {
+  return !namesSomewhereElse(subject);
+}
+
+/**
+ * datagov's scope rule (see the module comment above): the agency/project
+ * name first, the map table's coordinates only when that is silent.
+ */
+export function datagovInScope(
+  agency: string | null | undefined,
+  title: string | null | undefined,
+  location?: { lat: number; long: number } | null,
+): boolean {
+  if (namesBangkok(agency, title)) return true;
+  return location != null && isPointInBangkok(location.lat, location.long);
 }

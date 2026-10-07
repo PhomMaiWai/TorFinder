@@ -287,6 +287,24 @@ export class GprocService {
     return run;
   }
 
+  /**
+   * How many stored gproc records the current rules would no longer import —
+   * the count a one-time clean-up shows before anyone commits to it. No
+   * agency/locality rule of its own (see thai-locality.ts): a gproc record's
+   * project number only ever reached the database through a source that had
+   * already settled that.
+   */
+  previewCleanup(): Promise<number> {
+    return this.importer.countOutOfScope("gproc", (doc) =>
+      isSoftwareProject(doc.title, doc.goodsCategory),
+    );
+  }
+
+  /** Removes them. */
+  cleanup(): Promise<number> {
+    return this.importer.purge("gproc", (doc) => isSoftwareProject(doc.title, doc.goodsCategory));
+  }
+
   private async coveredElsewhere(codes: string[]): Promise<Set<string>> {
     const numbers = await this.db.tors.distinct("projectNumber", {
       projectNumber: { $in: codes },
