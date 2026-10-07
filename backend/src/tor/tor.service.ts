@@ -87,12 +87,19 @@ export class TorService {
 
     const [docs, awarded] = await Promise.all([
       this.db.tors
-        .aggregate<TorDoc & { _id: ObjectId; documentDeadline?: string | null }>([
+        .aggregate<
+          TorDoc & { _id: ObjectId; documentDeadline?: string | null; documentDeadlineTime?: string | null }
+        >([
           { $match: filter },
           // No listing shows what the model read out of a document, and it is
           // the bulk of every record — only the closing date it found is kept,
           // for the open/closed flag, before the sort has to carry the rest.
-          { $set: { documentDeadline: "$extraction.deadline" } },
+          {
+            $set: {
+              documentDeadline: "$extraction.deadline",
+              documentDeadlineTime: "$extraction.deadlineTime",
+            },
+          },
           { $unset: ["extraction", "extractionFailure"] },
           // Each stage numbered separately, newest first...
           {
@@ -114,11 +121,11 @@ export class TorService {
         .toArray(),
       awardedProjectNumbers(this.db.tors),
     ]);
-    return docs.map(({ _id, documentDeadline, ...rest }) => ({
+    return docs.map(({ _id, documentDeadline, documentDeadlineTime, ...rest }) => ({
       id: _id.toString(),
       ...rest,
       daysLeft: currentDaysLeft(rest),
-      bidding: biddingOf({ ...rest, documentDeadline }, awarded),
+      bidding: biddingOf({ ...rest, documentDeadline, documentDeadlineTime }, awarded),
     }));
   }
 
@@ -134,7 +141,14 @@ export class TorService {
       id: _id.toString(),
       ...rest,
       daysLeft: currentDaysLeft(rest),
-      bidding: biddingOf({ ...rest, documentDeadline: rest.extraction?.deadline }, awarded),
+      bidding: biddingOf(
+        {
+          ...rest,
+          documentDeadline: rest.extraction?.deadline,
+          documentDeadlineTime: rest.extraction?.deadlineTime,
+        },
+        awarded,
+      ),
     };
   }
 

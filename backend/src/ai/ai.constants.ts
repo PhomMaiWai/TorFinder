@@ -54,8 +54,9 @@ export const AI_REQUEST = {
  * v4: an invitation is read together with its TOR; qualifications are the
  * project's own requirements, verbatim, not the regulation boilerplate.
  * v5: concise items — one role per item, identical instalments merged.
+ * v6: the hours on the deadline day (bids close at noon, not midnight).
  */
-export const EXTRACTION_VERSION = 5;
+export const EXTRACTION_VERSION = 6;
 
 /**
  * The document is written by whoever published it, so it is untrusted input:
@@ -86,6 +87,7 @@ Fields:
 - "referencePrice": ราคากลาง in baht as a plain number. It is a different figure from the budget; null when the document does not print it.
 - "contractPeriod": ระยะเวลาดำเนินการ / ส่งมอบงาน, as printed, e.g. "240 วัน นับถัดจากวันลงนามในสัญญา".
 - "deadline": the last day this announcement can be acted on — for a ร่างขอบเขตของงาน / ร่างเอกสารประกวดราคา, the last day public comments are accepted; for a ประกาศเชิญชวน, the bid submission day (วันยื่นข้อเสนอ). If a range is given, the last day. It MUST be an ISO date (YYYY-MM-DD) in the Gregorian era: Thai documents print the Buddhist era, e.g. "25 เมษายน 2567" means 2024-04-25 — always subtract 543 from a printed พ.ศ. year. null when the document gives no such date.
+- "deadlineTime": the hours on that deadline day as printed, in 24-hour form with Arabic digits — "09:00–12:00" for "ระหว่างเวลา ๐๙.๐๐ น. ถึง ๑๒.๐๐ น.", or just the end time such as "16:30" when only that is given. null when the document gives no time.
 - "evaluationCriteria": หลักเกณฑ์การพิจารณาคัดเลือกข้อเสนอ — e.g. "เกณฑ์ราคา" or "เกณฑ์ราคาประกอบเกณฑ์อื่น" with each criterion and its weight.
 - "paymentTerms": งวดงานและการจ่ายเงิน — one item per instalment with its percentage or amount and what must be delivered for it. Merge consecutive instalments with identical terms into one item, e.g. "งวดที่ 1–11: งวดละ 8.33% เมื่อปฏิบัติงานประจำเดือนแล้วเสร็จ".
 - "bidSecurity": หลักประกันการเสนอราคา and หลักประกันสัญญา — the amount or percentage of each.
@@ -112,6 +114,7 @@ export const EXTRACTION_SCHEMA: Schema = {
     referencePrice: nullableNumber,
     contractPeriod: nullableString,
     deadline: nullableString,
+    deadlineTime: nullableString,
     evaluationCriteria: nullableString,
     paymentTerms: stringList,
     bidSecurity: nullableString,
@@ -131,6 +134,7 @@ export const EXTRACTION_SCHEMA: Schema = {
     "referencePrice",
     "contractPeriod",
     "deadline",
+    "deadlineTime",
     "evaluationCriteria",
     "paymentTerms",
     "bidSecurity",

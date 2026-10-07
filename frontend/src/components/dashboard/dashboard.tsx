@@ -98,7 +98,7 @@ function OpportunityCard({
             </span>
           </div>
 
-          <Link href={`/tor/${opportunity.id}`}>
+          <Link href={`/tor/${opportunity.id}?in=app`}>
             <h3 className="text-base font-semibold leading-snug text-ink transition-colors group-hover:text-accent">
               {opportunity.title}
             </h3>
@@ -140,7 +140,7 @@ function OpportunityCard({
               {isSaved ? t("savedButtonText") : t("saveButtonText")}
             </button>
             <Link
-              href={`/tor/${opportunity.id}`}
+              href={`/tor/${opportunity.id}?in=app`}
               className="flex h-8 items-center rounded-lg bg-ink px-3 text-sm font-medium text-white transition-colors hover:opacity-90"
             >
               {t("viewDetails")}
@@ -168,7 +168,7 @@ function DeadlinePanel({ opportunities }: { opportunities: ScoredTor[] }) {
         {closing.map(({ opp, days }) => (
           <Link
             key={opp.id}
-            href={`/tor/${opp.id}`}
+            href={`/tor/${opp.id}?in=app`}
             className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-alt"
           >
             <p className="min-w-0 flex-1 truncate text-sm text-ink">{opp.title}</p>
@@ -339,7 +339,7 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
                   <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-ink">{t("recommendedTitle")}</h2>
                     <Link
-                      href="/public"
+                      href="/search"
                       className="flex items-center gap-1 text-sm font-medium text-accent hover:text-accent-dark"
                     >
                       {t("viewNewOpportunities")} <ExternalLink size={13} />

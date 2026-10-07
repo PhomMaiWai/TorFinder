@@ -31,21 +31,42 @@ import {
   torDocumentUrl,
 } from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
-import type { BiddingStatus, TorRecord } from "@/types/tor";
+import type { TorRecord } from "@/types/tor";
 
 import { BiddingBadge } from "./bidding-badge";
 
 import { AgencyFilter } from "./agency-filter";
 import { FilterCheckbox } from "./filter-checkbox";
 
-const STAGES = ["เปิดรับฟังความคิดเห็น", "ประกาศ TOR", "ประกาศผู้ชนะ"];
-/** The stored stage names read as e-GP's own steps — a draft is what vendors look for. */
-const STAGE_LABEL_KEY: Record<string, string> = {
-  เปิดรับฟังความคิดเห็น: "stageDraft",
-  "ประกาศ TOR": "stageInvitation",
-  ประกาศผู้ชนะ: "stageAwarded",
+/**
+ * One status a reader filters by, in the order they care: what they can still
+ * act on first. It folds together three things that used to be separate
+ * filters — whether bidding is open, the announcement stage, and the
+ * announcement type — which said the same thing three ways.
+ */
+type TorStatus = "bidding" | "comment" | "awarded" | "closed" | "unknown";
+
+const STATUSES: readonly TorStatus[] = ["bidding", "comment", "awarded", "closed", "unknown"];
+
+/** Everything a reader can still act on: bid now, or comment on what is coming. */
+const OPEN_STATUSES: readonly TorStatus[] = ["bidding", "comment"];
+
+const STATUS_LABEL_KEY: Record<TorStatus, string> = {
+  bidding: "statusBidding",
+  comment: "statusComment",
+  awarded: "statusAwarded",
+  closed: "statusClosed",
+  unknown: "statusUnknown",
 };
-const BIDDING_STATUSES: readonly BiddingStatus[] = ["open", "closed", "unknown"];
+
+function statusOf(tor: TorRecord): TorStatus {
+  const { status, reason } = biddingOf(tor);
+  // Bid now, or plan for what is coming — two different jobs, so two options;
+  // the "all open" shortcut puts them back together.
+  if (status === "open") return tor.stage === "เปิดรับฟังความคิดเห็น" ? "comment" : "bidding";
+  if (status === "unknown") return "unknown";
+  return reason === "awarded" || reason === "contracted" ? "awarded" : "closed";
+}
 const AMOUNT_LABEL = {
   budget: "budgetLabel",
   awarded: "awardedLabel",
@@ -118,8 +139,70 @@ function CheckboxFilter({
   );
 }
 
+/**
+ * The status filter. The two open statuses sit under one parent box — "what can
+ * I still act on" is where most readers start — and either can still be picked
+ * on its own. The parent shows a dash when only one of them is.
+ */
+function StatusFilter({
+  title,
+  allOpenLabel,
+  statuses,
+  selected,
+  onChange,
+  labelOf,
+}: {
+  title: string;
+  allOpenLabel: string;
+  statuses: readonly TorStatus[];
+  selected: TorStatus[];
+  onChange: (statuses: TorStatus[]) => void;
+  labelOf: (status: TorStatus) => string;
+}) {
+  if (statuses.length === 0) return null;
+
+  // Rebuilt in the canonical order, so the selection reads the same however it was clicked.
+  const setMany = (targets: readonly TorStatus[], on: boolean) =>
+    onChange(STATUSES.filter((status) => (targets.includes(status) ? on : selected.includes(status))));
+
+  const openOptions = OPEN_STATUSES.filter((status) => statuses.includes(status));
+  const openPicked = openOptions.filter((status) => selected.includes(status));
+
+  const row = (status: TorStatus, nested: boolean) => (
+    <label key={status} className={`flex cursor-pointer items-start gap-3 ${nested ? "pl-7" : ""}`}>
+      <span className="mt-0.5">
+        <FilterCheckbox checked={selected.includes(status)} onChange={(on) => setMany([status], on)} />
+      </span>
+      <span className="text-sm leading-snug text-ink-muted">{labelOf(status)}</span>
+    </label>
+  );
+
+  return (
+    <div className="mb-7">
+      <h3 className="mb-3 text-sm font-bold text-ink">{title}</h3>
+      <div className="space-y-2.5">
+        {openOptions.length > 0 && (
+          <label className="flex cursor-pointer items-start gap-3">
+            <span className="mt-0.5">
+              <FilterCheckbox
+                checked={openPicked.length === openOptions.length}
+                indeterminate={openPicked.length > 0}
+                onChange={(on) => setMany(openOptions, on)}
+              />
+            </span>
+            <span className="text-sm font-medium leading-snug text-ink">{allOpenLabel}</span>
+          </label>
+        )}
+        {openOptions.map((status) => row(status, true))}
+        {statuses.filter((status) => !OPEN_STATUSES.includes(status)).map((status) => row(status, false))}
+      </div>
+    </div>
+  );
+}
+
 function PublicTorCard({
   tor,
+  detailHref,
   isFeedbackOpen,
   feedbackText,
   onFeedbackChange,
@@ -129,6 +212,7 @@ function PublicTorCard({
   onToggleSave,
 }: {
   tor: TorRecord;
+  detailHref: string;
   isFeedbackOpen: boolean;
   feedbackText: string;
   onFeedbackChange: (val: string) => void;
@@ -209,6 +293,9 @@ function PublicTorCard({
                 {bidding.status === "closed"
                   ? t("deadlineClosed")
                   : t("daysLeftLabel", { days: daysLeft })}
+                {bidding.status !== "closed" && bidding.submissionTime && (
+                  <> · {t("submissionTime", { time: bidding.submissionTime })}</>
+                )}
               </span>
             )}
           </div>
@@ -259,7 +346,7 @@ function PublicTorCard({
               </button>
             )}
             <Link
-              href={`/tor/${tor.id}`}
+              href={detailHref}
               className="flex w-full items-center justify-center rounded-lg bg-ink py-2 text-sm font-medium text-white transition-colors hover:bg-ink"
             >
               {t("viewDetails")}
@@ -317,13 +404,12 @@ function PublicTorCard({
   );
 }
 
-export function TorSearch({ tors }: { tors: TorRecord[] }) {
+/** `inApp`: rendered inside the signed-in shell, so a TOR opens there too. */
+export function TorSearch({ tors, inApp = false }: { tors: TorRecord[]; inApp?: boolean }) {
   const [search, setSearch] = useState("");
-  const [selectedBidding, setSelectedBidding] = useState<BiddingStatus[]>([]);
-  const [selectedStages, setSelectedStages] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<TorStatus[]>([]);
   const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedBudgets, setSelectedBudgets] = useState<string[]>([]);
   const [feedbackOpenId, setFeedbackOpenId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -332,11 +418,14 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const { savedIds, toggleSaved } = useSavedTors();
   const t = useTranslations("PublicPage");
-  const tBidding = useTranslations("Bidding");
 
   // Filter options come from what was actually announced, not a fixed list.
   const agencies = useMemo(() => tors.map((t) => t.agency), [tors]);
-  const tags = useMemo(() => [...new Set(tors.flatMap((t) => t.tags))].sort(), [tors]);
+  // Only the statuses something actually has — an empty option is a dead end.
+  const statuses = useMemo(() => {
+    const present = new Set(tors.map(statusOf));
+    return STATUSES.filter((status) => present.has(status));
+  }, [tors]);
   // Newest first: the current year is the one a reader almost always wants.
   const years = useMemo(
     () =>
@@ -356,14 +445,11 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
         `${tor.title} ${tor.agency} ${tor.summary} ${tor.tags.join(" ")}`
           .toLowerCase()
           .includes(q);
-      const matchBidding =
-        selectedBidding.length === 0 || selectedBidding.includes(biddingOf(tor).status);
-      const matchStage = selectedStages.length === 0 || selectedStages.includes(tor.stage);
+      const matchStatus = selectedStatuses.length === 0 || selectedStatuses.includes(statusOf(tor));
       const year = announcedYear(tor.createdAt);
       const matchYear =
         selectedYears.length === 0 || (year !== null && selectedYears.includes(year));
       const matchAgency = selectedAgencies.length === 0 || selectedAgencies.includes(tor.agency);
-      const matchTags = selectedTags.length === 0 || tor.tags.some((t) => selectedTags.includes(t));
 
       const budgetValue = parseBudget(tor.budget);
       const matchBudget =
@@ -376,24 +462,20 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
 
       return (
         matchSearch &&
-        matchBidding &&
-        matchStage &&
+        matchStatus &&
         matchYear &&
         matchAgency &&
-        matchTags &&
         matchBudget
       );
     });
-  }, [tors, deferredSearch, selectedBidding, selectedStages, selectedYears, selectedAgencies, selectedTags, selectedBudgets]);
+  }, [tors, deferredSearch, selectedStatuses, selectedYears, selectedAgencies, selectedBudgets]);
 
   // Any change to the query lands the reader back on the first page of results.
   const queryKey = JSON.stringify([
     search,
-    selectedBidding,
-    selectedStages,
+    selectedStatuses,
     selectedYears,
     selectedAgencies,
-    selectedTags,
     selectedBudgets,
   ]);
   if (queryKey !== lastQueryKey) {
@@ -411,21 +493,17 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
   }
 
   function clearAllFilters() {
-    setSelectedBidding([]);
-    setSelectedStages([]);
+    setSelectedStatuses([]);
     setSelectedYears([]);
     setSelectedAgencies([]);
-    setSelectedTags([]);
     setSelectedBudgets([]);
     setSearch("");
   }
 
   const hasActiveFilters =
-    selectedBidding.length > 0 ||
-    selectedStages.length > 0 ||
+    selectedStatuses.length > 0 ||
     selectedYears.length > 0 ||
     selectedAgencies.length > 0 ||
-    selectedTags.length > 0 ||
     selectedBudgets.length > 0;
 
   return (
@@ -484,23 +562,13 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
 
           <div className="mb-7 h-px w-full bg-surface-alt" />
 
-          <CheckboxFilter
-            title={tBidding("filterTitle")}
-            options={BIDDING_STATUSES.map((status) => tBidding(status))}
-            selected={selectedBidding.map((status) => tBidding(status))}
-            onChange={(labels) =>
-              setSelectedBidding(BIDDING_STATUSES.filter((status) => labels.includes(tBidding(status))))
-            }
-          />
-
-          <div className="mb-7 h-px w-full bg-surface-alt" />
-
-          <CheckboxFilter
-            title={t("filterStageTitle")}
-            options={STAGES}
-            selected={selectedStages}
-            onChange={setSelectedStages}
-            labelOf={(stage) => t(STAGE_LABEL_KEY[stage])}
+          <StatusFilter
+            title={t("filterStatusTitle")}
+            allOpenLabel={t("statusAllOpen")}
+            statuses={statuses}
+            selected={selectedStatuses}
+            onChange={setSelectedStatuses}
+            labelOf={(status) => t(STATUS_LABEL_KEY[status])}
           />
 
           <div className="mb-7 h-px w-full bg-surface-alt" />
@@ -534,14 +602,6 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
             onChange={setSelectedAgencies}
           />
 
-          <div className="mb-7 h-px w-full bg-surface-alt" />
-
-          <CheckboxFilter
-            title={t("filterMethodTitle")}
-            options={tags}
-            selected={selectedTags}
-            onChange={setSelectedTags}
-          />
         </div>
       </aside>
 
@@ -583,6 +643,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
               <PublicTorCard
                 key={tor.id}
                 tor={tor}
+                detailHref={`/tor/${tor.id}${inApp ? "?in=app" : ""}`}
                 isFeedbackOpen={feedbackOpenId === tor.id}
                 feedbackText={feedbackText}
                 onFeedbackChange={setFeedbackText}

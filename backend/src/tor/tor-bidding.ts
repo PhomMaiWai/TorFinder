@@ -34,6 +34,8 @@ export type Bidding = {
   closesAt: string | null;
   /** Where `closesAt` came from: the portal, or a model reading the document. */
   closesAtSource: "portal" | "document" | null;
+  /** The hours bids are taken on the closing day, "09:00–12:00", when the document says. */
+  submissionTime: string | null;
 };
 
 /** What the status is read from — kept structural so any projection of a TorDoc fits. */
@@ -44,6 +46,8 @@ export type BiddingFields = Pick<TorDoc, "stage" | "deadline" | "createdAt" | "p
   documents?: { label: string; publishedAt?: Date | null }[];
   /** `extraction.deadline`: an ISO date the model read from the document. */
   documentDeadline?: string | null;
+  /** `extraction.deadlineTime`: the hours on that day, "09:00–12:00" or "16:30". */
+  documentDeadlineTime?: string | null;
 };
 
 const [DRAFT_STAGE, INVITATION_STAGE, AWARD_STAGE] = TOR_STAGES;
@@ -73,14 +77,30 @@ function endOfDayBangkok(isoDate: string): Date | null {
   return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 16, 59, 59));
 }
 
-function closingDate(tor: BiddingFields): Pick<Bidding, "closesAt" | "closesAtSource"> {
+/** The given ISO day at a Bangkok clock time ("12:00"). 12:00 ICT is 05:00 UTC. */
+function atBangkokTime(isoDate: string, clock: string): Date | null {
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  const time = /^(\d{2}):(\d{2})$/.exec(clock);
+  if (!day || !time) return null;
+  return new Date(
+    Date.UTC(Number(day[1]), Number(day[2]) - 1, Number(day[3]), Number(time[1]) - 7, Number(time[2])),
+  );
+}
+
+function closingDate(tor: BiddingFields): Pick<Bidding, "closesAt" | "closesAtSource" | "submissionTime"> {
   const portal = parseThaiDate(tor.deadline);
-  if (portal) return { closesAt: portal.toISOString(), closesAtSource: "portal" };
+  if (portal) return { closesAt: portal.toISOString(), closesAtSource: "portal", submissionTime: null };
 
-  const document = tor.documentDeadline ? endOfDayBangkok(tor.documentDeadline) : null;
-  if (document) return { closesAt: document.toISOString(), closesAtSource: "document" };
+  if (tor.documentDeadline) {
+    // Bids close when the window does — at noon for a 09:00–12:00 window, not
+    // at midnight — so a TOR stops showing as open once its hours are over.
+    const time = tor.documentDeadlineTime ?? null;
+    const end = time?.split("–").pop();
+    const closes = (end && atBangkokTime(tor.documentDeadline, end)) || endOfDayBangkok(tor.documentDeadline);
+    if (closes) return { closesAt: closes.toISOString(), closesAtSource: "document", submissionTime: time };
+  }
 
-  return { closesAt: null, closesAtSource: null };
+  return { closesAt: null, closesAtSource: null, submissionTime: null };
 }
 
 const DRAFT_NOTICE = /ร่าง/;

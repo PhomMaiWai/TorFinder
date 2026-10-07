@@ -1,3 +1,4 @@
+import { foldThaiDigits } from "../tor/tor-normalize";
 import { TorExtraction } from "./ai.types";
 
 /** Longest field the UI will ever show; anything beyond is the model rambling. */
@@ -121,6 +122,7 @@ export function parseExtraction(raw: unknown): TorExtraction {
     // A year past 2100 is a Buddhist year that escaped conversion — dropping it
     // is better than showing a deadline 543 years out.
     deadline: dropImplausibleYear(isoDate(value.deadline)),
+    deadlineTime: timeWindow(value.deadlineTime),
     evaluationCriteria: text(value.evaluationCriteria),
     paymentTerms: mergeInstalments(list(value.paymentTerms)),
     bidSecurity: text(value.bidSecurity),
@@ -130,6 +132,22 @@ export function parseExtraction(raw: unknown): TorExtraction {
     // Models sometimes answer 90 for "90%"; clamped so it stays comparable.
     confidence: Math.min(1, Math.max(0, confidence > 1 ? confidence / 100 : confidence)),
   };
+}
+
+const CLOCK = /(\d{1,2})[:.](\d{2})/g;
+
+/**
+ * "09:00–12:00" or "16:30", whatever separators and digits the model used.
+ * Anything that isn't a real time of day is dropped rather than shown.
+ */
+export function timeWindow(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const times = [...foldThaiDigits(value).matchAll(CLOCK)]
+    .map(([, h, m]) => [Number(h), Number(m)] as const)
+    .filter(([h, m]) => h < 24 && m < 60)
+    .map(([h, m]) => `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  if (times.length === 0) return null;
+  return times.length === 1 ? times[0] : `${times[0]}–${times[times.length - 1]}`;
 }
 
 function dropImplausibleYear(date: string | null): string | null {

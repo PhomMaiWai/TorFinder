@@ -59,10 +59,25 @@ export function biddingOf(tor: DeadlineFields): Bidding {
   return { status: "unknown", reason: null, opensAt: null, closesAt: null, closesAtSource: null };
 }
 
-/** Whole days until it closes, or null when no closing date is known. */
+/** Bangkok is UTC+7 all year. */
+const BANGKOK_OFFSET_MS = 7 * 3_600_000;
+
+/** The calendar day in Bangkok, as a running count — so "today" ends at Bangkok midnight. */
+function bangkokDay(ms: number): number {
+  return Math.floor((ms + BANGKOK_OFFSET_MS) / DAY_MS);
+}
+
+/**
+ * Calendar days until it closes — 0 on the closing day itself, 1 the day
+ * before — or null when no closing date is known. Counting 24-hour spans
+ * instead would call a TOR closing at noon today "1 day left" this morning.
+ */
 export function daysUntilClose(tor: DeadlineFields): number | null {
   const { closesAt } = biddingOf(tor);
-  if (closesAt) return Math.max(0, Math.ceil((new Date(closesAt).getTime() - Date.now()) / DAY_MS));
+  if (closesAt) {
+    const now = Date.now();
+    return Math.max(0, bangkokDay(new Date(closesAt).getTime()) - bangkokDay(now));
+  }
   return isKnown(tor.deadline) ? tor.daysLeft : null;
 }
 
