@@ -3,7 +3,7 @@ import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 import { mapWithLimit } from "../common/concurrency";
 import { SOFTWARE_SEARCH_KEYWORDS, isSoftwareProject } from "../common/software-filter";
 import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
-import { isPointInBangkok, namesBangkok } from "../tor/thai-locality";
+import { datagovInScope, namesBangkok } from "../tor/thai-locality";
 import {
   UNKNOWN,
   cleanText,
@@ -111,7 +111,7 @@ export class DataGovService {
             const location = named
               ? undefined
               : await this.locationOf(row, locations.get(pkg.id) ?? null);
-            if (!named && !(location && isPointInBangkok(location.lat, location.long))) continue;
+            if (!datagovInScope(row.subdep_name, row.proj_name, location)) continue;
 
             rows.set(sourceRefFor(row), { row, pkg, location });
           }
@@ -166,9 +166,20 @@ export class DataGovService {
     goodsCategory?: string;
     location?: { lat: number; long: number };
   }): boolean {
-    if (!isSoftwareProject(doc.title, doc.goodsCategory)) return false;
-    if (namesBangkok(doc.agency, doc.title)) return true;
-    return doc.location != null && isPointInBangkok(doc.location.lat, doc.location.long);
+    return isSoftwareProject(doc.title, doc.goodsCategory) && datagovInScope(doc.agency, doc.title, doc.location);
+  }
+
+  /**
+   * How many stored datagov records the current rules would no longer import
+   * — the count a one-time clean-up shows before anyone commits to it.
+   */
+  previewCleanup(): Promise<number> {
+    return this.importer.countOutOfScope("datagov", (doc) => this.isWanted(doc));
+  }
+
+  /** Removes them. */
+  cleanup(): Promise<number> {
+    return this.importer.purge("datagov", (doc) => this.isWanted(doc));
   }
 
   /**

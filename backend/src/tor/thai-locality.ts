@@ -99,3 +99,25 @@ export function namesSomewhereElse(...texts: (string | null | undefined)[]): boo
     AMBIGUOUS_PROVINCES.some((province) => text.includes(`จังหวัด${province}`))
   );
 }
+
+/**
+ * MEA's scope rule (see the module comment above), as the one function its
+ * service and this file's tests both call — so a test proves what actually
+ * ships, not a re-description of it.
+ */
+export function meaInScope(subject: string | null | undefined): boolean {
+  return !namesSomewhereElse(subject);
+}
+
+/**
+ * datagov's scope rule (see the module comment above): the agency/project
+ * name first, the map table's coordinates only when that is silent.
+ */
+export function datagovInScope(
+  agency: string | null | undefined,
+  title: string | null | undefined,
+  location?: { lat: number; long: number } | null,
+): boolean {
+  if (namesBangkok(agency, title)) return true;
+  return location != null && isPointInBangkok(location.lat, location.long);
+}

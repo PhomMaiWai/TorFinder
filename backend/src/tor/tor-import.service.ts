@@ -136,22 +136,44 @@ export class TorImportService {
   }
 
   /**
-   * Drops the records this source would no longer import. Earlier runs — and
-   * looser rules — left announcements behind that don't belong here any more,
-   * and an imported record is disposable because the portal remains the source
-   * of truth. `keep` is the source's own rule, so what the import refuses and
+   * Every record this source imported that the current rules would no longer
+   * let in: either the shared listed-since cutoff `import()` also enforces, or
+   * `keep`, the source's own further rule — so what the import refuses and
    * what the database holds can never drift apart. Admin-entered records have
    * no `sourceRef` and are never touched.
    */
-  async purge(source: TorImportSource, keep: (doc: TorDoc) => boolean): Promise<number> {
+  private async outOfScope(
+    source: TorImportSource,
+    keep: (doc: TorDoc) => boolean,
+  ): Promise<ObjectId[]> {
     const imported = await this.db.tors
       .find(
         { sourceRef: { $regex: `^${source}:` } },
-        { projection: { title: 1, agency: 1, goodsCategory: 1, location: 1 } },
+        { projection: { title: 1, agency: 1, goodsCategory: 1, location: 1, createdAt: 1 } },
       )
       .toArray();
 
-    const stale = imported.filter((doc) => !keep(doc as TorDoc)).map((doc) => doc._id);
+    return imported
+      .filter((doc) => doc.createdAt < env.torListedSince || !keep(doc as TorDoc))
+      .map((doc) => doc._id);
+  }
+
+  /**
+   * How many stored records {@link purge} would remove, without removing
+   * them — the count a one-time clean-up shows before anyone commits to it.
+   */
+  async countOutOfScope(source: TorImportSource, keep: (doc: TorDoc) => boolean): Promise<number> {
+    return (await this.outOfScope(source, keep)).length;
+  }
+
+  /**
+   * Drops the records this source would no longer import. Earlier runs — and
+   * looser rules — left announcements behind that don't belong here any more,
+   * and an imported record is disposable because the portal remains the source
+   * of truth.
+   */
+  async purge(source: TorImportSource, keep: (doc: TorDoc) => boolean): Promise<number> {
+    const stale = await this.outOfScope(source, keep);
     if (!stale.length) return 0;
 
     const { deletedCount } = await this.db.tors.deleteMany({ _id: { $in: stale } });
