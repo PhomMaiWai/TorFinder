@@ -1,4 +1,18 @@
-export type TorStage = "เปิดรับฟังความคิดเห็น" | "ประกาศ TOR" | "ประกาศผู้ชนะ";
+export type TorStage =
+  | "แผนการจัดซื้อจัดจ้าง"
+  | "เปิดรับฟังความคิดเห็น"
+  | "ประกาศราคากลาง"
+  | "ประกาศ TOR"
+  | "ประกาศผู้ชนะ";
+
+/** Lifecycle order, as the API stores it. */
+export const TOR_STAGES: readonly TorStage[] = [
+  "แผนการจัดซื้อจัดจ้าง",
+  "เปิดรับฟังความคิดเห็น",
+  "ประกาศราคากลาง",
+  "ประกาศ TOR",
+  "ประกาศผู้ชนะ",
+];
 export type TorBudgetStatus = "สูงกว่าปกติ" | "ต่ำกว่าปกติ" | "ปกติ";
 
 /**
@@ -27,6 +41,17 @@ export type Bidding = {
   closesAtSource: "portal" | "document" | null;
   /** The hours bids are taken on the closing day, "09:00–12:00", when the document says. */
   submissionTime?: string | null;
+};
+
+/** One step of the project's journey; the API sends all five, in lifecycle order. */
+export type TimelineEntry = {
+  stage: TorStage;
+  /** The portal's paper trail, or the record itself, shows the project got here. */
+  reached: boolean;
+  /** The stage this record is; exactly one entry. */
+  current: boolean;
+  /** ISO timestamp of the earliest announcement for the stage, when it has a date. */
+  publishedAt: string | null;
 };
 
 export type TorContract = {
@@ -74,6 +99,9 @@ export type TorRecord = {
   extraction?: TorExtraction;
   /** Sent by the backend; absent on the showcase records. */
   bidding?: Bidding;
+  /** Sent by the backend; absent on the showcase records. */
+  timeline?: TimelineEntry[];
+  currentStage?: TorStage;
   /** Signed contracts e-GP has on file, once the project has a winner. */
   contracts?: TorContract[];
   /** When the record first entered the database. */

@@ -6,6 +6,7 @@ import { useFormStatus } from "react-dom";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
+import { TOR_STAGES } from "@/types/tor";
 
 import { createTorEntry, type CreateTorState } from "./actions";
 
@@ -52,9 +53,11 @@ export default function AdminCreateTorPage() {
             </Field>
             <Field label="สถานะ TOR">
               <select name="stage" defaultValue="เปิดรับฟังความคิดเห็น" className={inputCls}>
-                <option value="เปิดรับฟังความคิดเห็น">เปิดรับฟังความคิดเห็น</option>
-                <option value="ประกาศ TOR">ประกาศ TOR</option>
-                <option value="ประกาศผู้ชนะ">ประกาศผู้ชนะ</option>
+                {TOR_STAGES.map((stage) => (
+                  <option key={stage} value={stage}>
+                    {stage}
+                  </option>
+                ))}
               </select>
             </Field>
           </Section>

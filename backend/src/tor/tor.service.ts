@@ -7,14 +7,15 @@ import { env } from "../config/env";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
-import { TOR_STAGES } from "./tor.constants";
+import { STAGE_LISTING_ORDER } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
+import { buildTimeline } from "./tor-stage";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
 import { currentDaysLeft } from "./tor-normalize";
 
 /**
  * Where an announcement sits in its own lifecycle, as a number to sort on.
- * TOR_STAGES is already in that order — a draft open for comment, an invitation
+ * STAGE_LISTING_ORDER is that order — a draft open for comment, an invitation
  * still taking bids, an award that closed the whole thing — so the position in
  * it is the rank.
  *
@@ -29,9 +30,9 @@ import { currentDaysLeft } from "./tor-normalize";
  */
 const STAGE_RANK = {
   $let: {
-    vars: { rank: { $indexOfArray: [TOR_STAGES, "$stage"] } },
+    vars: { rank: { $indexOfArray: [STAGE_LISTING_ORDER, "$stage"] } },
     // A stage from outside the list sorts last rather than silently first.
-    in: { $cond: [{ $lt: ["$$rank", 0] }, TOR_STAGES.length, "$$rank"] },
+    in: { $cond: [{ $lt: ["$$rank", 0] }, STAGE_LISTING_ORDER.length, "$$rank"] },
   },
 };
 
@@ -126,6 +127,8 @@ export class TorService {
       ...rest,
       daysLeft: currentDaysLeft(rest),
       bidding: biddingOf({ ...rest, documentDeadline, documentDeadlineTime }, awarded),
+      currentStage: rest.stage,
+      timeline: buildTimeline(rest),
     }));
   }
 
@@ -149,6 +152,8 @@ export class TorService {
         },
         awarded,
       ),
+      currentStage: rest.stage,
+      timeline: buildTimeline(rest),
     };
   }
 

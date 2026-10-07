@@ -6,7 +6,7 @@ import { env } from "../config/env";
 import { DatabaseService, SyncRunDoc, SyncRunStatus } from "../database/database.service";
 import { EgpClient } from "./egp.client";
 import { EGP_ANNOUNCE_TYPES, EgpAnnounceType } from "./egp.constants";
-import { TOR_STAGES } from "../tor/tor.constants";
+import { STAGE } from "../tor/tor.constants";
 import { EgpAnnouncement, EgpContract, EgpProject, EgpProjectDetail } from "./egp.types";
 import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
 import { UNKNOWN, formatBaht, parseDate, projectMonth } from "../tor/tor-normalize";
@@ -86,7 +86,7 @@ const AWARD_KEYWORD_PAGES = 2;
  * they can wait their turn.
  */
 const AWARD_SEARCH_CONCURRENCY = 2;
-const AWARD_STAGE = TOR_STAGES[2];
+const AWARD_STAGE = STAGE.award;
 
 /** Near misses kept per run — the top of the list is what matters. */
 const NEAR_MISS_LIMIT = 50;

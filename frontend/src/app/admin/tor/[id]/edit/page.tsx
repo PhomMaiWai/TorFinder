@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
 import { fetchTor } from "@/lib/tor-api";
+import { TOR_STAGES } from "@/types/tor";
 
 import { updateTorEntry } from "./actions";
 
@@ -66,9 +67,11 @@ export default async function AdminEditTorPage({ params }: { params: Promise<{ i
 
         <Field label="สถานะ TOR">
           <select name="stage" defaultValue={tor.stage} className={inputCls}>
-            <option value="เปิดรับฟังความคิดเห็น">เปิดรับฟังความคิดเห็น</option>
-            <option value="ประกาศ TOR">ประกาศ TOR</option>
-            <option value="ประกาศผู้ชนะ">ประกาศผู้ชนะ</option>
+            {TOR_STAGES.map((stage) => (
+              <option key={stage} value={stage}>
+                {stage}
+              </option>
+            ))}
           </select>
         </Field>
 

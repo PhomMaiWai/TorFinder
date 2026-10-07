@@ -1,7 +1,7 @@
 import { Collection } from "mongodb";
 
 import { TorDoc } from "../database/database.service";
-import { TOR_STAGES } from "./tor.constants";
+import { STAGE } from "./tor.constants";
 import { parseThaiDate } from "./tor-normalize";
 
 /**
@@ -50,7 +50,7 @@ export type BiddingFields = Pick<TorDoc, "stage" | "deadline" | "createdAt" | "p
   documentDeadlineTime?: string | null;
 };
 
-const [DRAFT_STAGE, INVITATION_STAGE, AWARD_STAGE] = TOR_STAGES;
+const { draft: DRAFT_STAGE, invitation: INVITATION_STAGE, award: AWARD_STAGE } = STAGE;
 
 /** The portal's contract status for a project it has dropped — "ยกเลิกโครงการ". */
 const PROJECT_CANCELLED = /ยกเลิกโครงการ/;

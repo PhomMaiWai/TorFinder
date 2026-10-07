@@ -1,6 +1,6 @@
-import { ProcurementStage, TOR_STAGES } from "../tor/tor.constants";
+import { ProcurementStage, STAGE, TOR_STAGES } from "../tor/tor.constants";
 
-const [DRAFT_STAGE, INVITATION_STAGE, AWARD_STAGE] = TOR_STAGES;
+const { draft: DRAFT_STAGE, invitation: INVITATION_STAGE, award: AWARD_STAGE } = STAGE;
 
 /**
  * The national e-GP (กรมบัญชีกลาง, "process5"). Only its per-project endpoints
