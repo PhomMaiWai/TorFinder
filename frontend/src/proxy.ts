@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { type Role, SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 /** Pages only a signed-in account may see. */
 const PROTECTED_PREFIXES = ["/dashboard", "/admin", "/owner", "/profile", "/saved", "/notifications"];
@@ -27,7 +27,7 @@ const PUBLIC_API_ROUTES = [
 ];
 
 /** Where a signed-in visitor belongs when they land somewhere they shouldn't be. */
-function homeFor(role: string): string {
+function homeFor(role: Role): string {
   return role === "admin" ? "/admin" : "/dashboard";
 }
 

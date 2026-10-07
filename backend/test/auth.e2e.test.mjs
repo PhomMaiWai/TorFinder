@@ -19,6 +19,8 @@ const THROTTLE_LIMIT = Number(process.env.AUTH_THROTTLE_LIMIT ?? "30");
 /** Seeded by backend/src/database/seed-data.ts when SEED_DEMO_DATA=true. */
 const SEED = {
   admin: { email: "admin@bma.go.th", password: "Admin1234!" },
+  owner: { email: "owner@bma.go.th", password: "Owner1234!" },
+  auditor: { email: "auditor@bma.go.th", password: "Auditor1234!" },
   approvedOrg: { email: "contact@arundigital.co.th", password: "Org12345!" },
   pendingOrg: { email: "contact@techworks.co.th", password: "Tech12345!" },
 };
@@ -154,6 +156,18 @@ describe("POST /api/auth/login", () => {
     assert.equal(res.status, 200);
     assert.equal(res.body.user.role, "admin");
   });
+
+  for (const role of ["owner", "auditor"]) {
+    it(`signs in the seeded ${role}, and the session token carries that role`, async () => {
+      const res = await login(SEED[role]);
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.user.role, role);
+
+      const payload = JSON.parse(Buffer.from(res.body.token.split(".")[0], "base64url").toString());
+      assert.equal(payload.role, role);
+    });
+  }
 
   it("rejects a wrong password with 401", async () => {
     const res = await login({ email: SEED.approvedOrg.email, password: "wrong-password" });

@@ -23,9 +23,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-type SessionUser = { name: string; email: string; role: "admin" | "org" };
+type SessionUser = { name: string; email: string; role: Role };
 
 import { PENDING_ACCOUNTS } from "@/data/admin";
+import type { Role } from "@/lib/auth";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
 import { resetNotifications, useNotifications } from "@/lib/use-notifications";
 import { resetOrgSavedTors, useSavedTors } from "@/lib/use-saved-tors";

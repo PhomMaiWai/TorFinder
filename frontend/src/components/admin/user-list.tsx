@@ -5,7 +5,16 @@ import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import type { DirectoryUser } from "@/lib/admin-api";
+import type { Role } from "@/lib/auth";
 import { thaiDate, timeAgo } from "@/lib/datetime";
+
+/** Exhaustive on purpose: a new role that has no label here is a compile error. */
+const ROLE_LABEL = {
+  admin: "roleAdmin",
+  org: "roleOrg",
+  owner: "roleProjectOwner",
+  auditor: "roleAuditor",
+} as const satisfies Record<Role, string>;
 
 type Props = {
   users: DirectoryUser[];
@@ -54,7 +63,7 @@ export function UserList({ users, onSuspend, onReactivate }: Props) {
           <p className="px-5 py-10 text-center text-sm text-ink-muted">{t("emptyState")}</p>
         ) : (
           filtered.map((user) => {
-            const isAdmin = user.role === "admin";
+            const canSuspend = user.role === "org";
             const suspended = !!user.suspended;
             const statusLabel = suspended
               ? t("statusSuspended")
@@ -88,10 +97,12 @@ export function UserList({ users, onSuspend, onReactivate }: Props) {
                     </span>
                     <span
                       className={`rounded-md px-2.5 py-1 text-xs font-medium ${
-                        isAdmin ? "bg-danger-soft text-danger" : "bg-accent-soft text-accent-text"
+                        user.role === "admin"
+                          ? "bg-danger-soft text-danger"
+                          : "bg-accent-soft text-accent-text"
                       }`}
                     >
-                      {isAdmin ? t("roleAdmin") : t("roleOwner")}
+                      {t(ROLE_LABEL[user.role])}
                     </span>
                   </div>
                   <h3 className="text-sm font-semibold text-ink">{user.name}</h3>
@@ -108,9 +119,9 @@ export function UserList({ users, onSuspend, onReactivate }: Props) {
                   </p>
                 </div>
 
-                {/* An admin account has no sign-in to block — the route that
-                    does the blocking only accepts organizations. */}
-                {!isAdmin && (
+                {/* Only an organization has a sign-in this can block — the
+                    route that does the blocking accepts nothing else. */}
+                {canSuspend && (
                   <button
                     onClick={() => {
                       setBusyId(user.id);

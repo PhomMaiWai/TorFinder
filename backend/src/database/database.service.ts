@@ -6,6 +6,7 @@ import { Certification } from "../matching/requirements";
 import { WorkType } from "../matching/work-types";
 import { FeedbackStatus } from "../feedback/feedback.constants";
 import { hashPassword } from "../common/password";
+import { Role } from "../common/roles";
 import { env } from "../config/env";
 import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor/tor.constants";
 import { SEED_USERS } from "./seed-data";
@@ -44,7 +45,7 @@ export type CompanyProfile = {
 export type UserDoc = {
   email: string;
   name: string;
-  role: "admin" | "org";
+  role: Role;
   /** Organizations sign themselves up and stay pending until an admin approves. */
   status: AccountStatus;
   /** Absent for accounts created via Google sign-in that never set a password. */

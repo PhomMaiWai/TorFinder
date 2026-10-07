@@ -1,9 +1,10 @@
+import { Role } from "../common/roles";
 import { AccountStatus, CompanyProfile, TorDoc } from "./database.service";
 
 export type SeedUser = {
   email: string;
   name: string;
-  role: "admin" | "org";
+  role: Role;
   status: AccountStatus;
   password: string;
   company?: CompanyProfile;
@@ -17,6 +18,20 @@ export const SEED_USERS: SeedUser[] = [
     role: "admin",
     status: "approved",
     password: "Admin1234!",
+  },
+  {
+    email: "owner@bma.go.th",
+    name: "เจ้าของโครงการ",
+    role: "owner",
+    status: "approved",
+    password: "Owner1234!",
+  },
+  {
+    email: "auditor@bma.go.th",
+    name: "ผู้ตรวจสอบ",
+    role: "auditor",
+    status: "approved",
+    password: "Auditor1234!",
   },
   {
     email: "contact@arundigital.co.th",

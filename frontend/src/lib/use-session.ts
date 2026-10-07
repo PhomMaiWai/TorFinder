@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+import type { Role } from "@/lib/auth";
+
 export type SessionUser = {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "org";
+  role: Role;
 };
 
 /** Where a signed-in user's own area starts. */

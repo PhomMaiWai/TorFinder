@@ -1,3 +1,4 @@
+import type { Role } from "@/lib/auth";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { authHeaders } from "@/lib/session-headers";
 
@@ -36,7 +37,7 @@ export type DirectoryUser = {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "org";
+  role: Role;
   status: "pending" | "approved" | "rejected";
   /** Blocks sign-in without touching the approval decision. */
   suspended?: boolean;
