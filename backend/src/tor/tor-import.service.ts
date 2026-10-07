@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 
+import { env } from "../config/env";
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { MatchingService } from "../matching/matching.service";
 import { TorDedupIndex } from "./tor-dedup-index";
@@ -80,7 +81,16 @@ export class TorImportService {
   ) {}
 
   async import(source: TorImportSource, records: ImportRecord[]): Promise<ImportResult> {
-    const unique = collapseDuplicates(records);
+    const inScope = records.filter((record) => record.doc.createdAt >= env.torListedSince);
+    const tooOld = records.length - inScope.length;
+    if (tooOld) {
+      this.logger.log(
+        `${source}: rejected ${tooOld} record(s) published before ` +
+          env.torListedSince.toISOString().slice(0, 10),
+      );
+    }
+
+    const unique = collapseDuplicates(inScope);
     if (unique.length === 0) {
       return { fetched: 0, imported: 0, updated: 0, skipped: 0, superseded: 0 };
     }
