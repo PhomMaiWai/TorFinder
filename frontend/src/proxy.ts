@@ -3,7 +3,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 /** Pages only a signed-in account may see. */
-const PROTECTED_PREFIXES = ["/dashboard", "/admin", "/profile", "/saved", "/notifications"];
+const PROTECTED_PREFIXES = ["/dashboard", "/admin", "/owner", "/profile", "/saved", "/notifications"];
+/**
+ * Pages only an admin may see. /owner is here until there is an owner role to
+ * give it to — its hide/restore actions are admin-only already, and it embeds
+ * the ranked-companies panel, which is too.
+ */
+const ADMIN_ONLY_PREFIXES = ["/admin", "/owner"];
 /** Pages that make no sense once you are signed in. */
 const GUEST_ONLY_PREFIXES = ["/login", "/signup"];
 
@@ -64,7 +70,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname.startsWith("/admin") && session.role !== "admin") {
+  if (matches(pathname, ADMIN_ONLY_PREFIXES) && session.role !== "admin") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -76,6 +82,7 @@ export const config = {
     "/api/:path*",
     "/dashboard/:path*",
     "/admin/:path*",
+    "/owner/:path*",
     "/profile/:path*",
     "/saved/:path*",
     "/notifications/:path*",
