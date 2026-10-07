@@ -255,11 +255,13 @@ describe("PATCH /api/tor/:id — update", () => {
     assert.equal(res.body.title, "ชื่อโครงการที่แก้ไขแล้ว");
   });
 
+  // Patched through `budget`, not `daysLeft`: days left is recomputed from the
+  // deadline on every read, so a stored value never comes back as written.
   it("leaves untouched fields alone", async () => {
-    await api(`/tor/${created.id}`, { method: "PATCH", body: { daysLeft: 7 } });
+    await api(`/tor/${created.id}`, { method: "PATCH", body: { budget: "฿2,000,000" } });
     const res = await api(`/tor/${created.id}`);
 
-    assert.equal(res.body.daysLeft, 7);
+    assert.equal(res.body.budget, "฿2,000,000");
     assert.equal(res.body.agency, created.agency, "agency was not part of the patch");
   });
 

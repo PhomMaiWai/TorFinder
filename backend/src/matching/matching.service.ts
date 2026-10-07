@@ -189,6 +189,7 @@ export class MatchingService {
           {
             projection: {
               title: 1,
+              budget: 1,
               budgetAmount: 1,
               referencePrice: 1,
               "extraction.qualifications": 1,

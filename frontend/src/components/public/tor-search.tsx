@@ -38,6 +38,12 @@ import { AgencyFilter } from "./agency-filter";
 import { FilterCheckbox } from "./filter-checkbox";
 
 const STAGES = ["เปิดรับฟังความคิดเห็น", "ประกาศ TOR", "ประกาศผู้ชนะ"];
+/** The stored stage names read as e-GP's own steps — a draft is what vendors look for. */
+const STAGE_LABEL_KEY: Record<string, string> = {
+  เปิดรับฟังความคิดเห็น: "stageDraft",
+  "ประกาศ TOR": "stageInvitation",
+  ประกาศผู้ชนะ: "stageAwarded",
+};
 const BIDDING_STATUSES: readonly BiddingStatus[] = ["open", "closed", "unknown"];
 const AMOUNT_LABEL = {
   budget: "budgetLabel",
@@ -79,11 +85,13 @@ function CheckboxFilter({
   options,
   selected,
   onChange,
+  labelOf = (opt) => opt,
 }: {
   title: string;
   options: string[];
   selected: string[];
   onChange: (val: string[]) => void;
+  labelOf?: (opt: string) => string;
 }) {
   if (options.length === 0) return null;
 
@@ -101,7 +109,7 @@ function CheckboxFilter({
                 }
               />
             </span>
-            <span className="text-sm leading-snug text-ink-muted">{opt}</span>
+            <span className="text-sm leading-snug text-ink-muted">{labelOf(opt)}</span>
           </label>
         ))}
       </div>
@@ -491,6 +499,7 @@ export function TorSearch({ tors }: { tors: TorRecord[] }) {
             options={STAGES}
             selected={selectedStages}
             onChange={setSelectedStages}
+            labelOf={(stage) => t(STAGE_LABEL_KEY[stage])}
           />
 
           <div className="mb-7 h-px w-full bg-surface-alt" />

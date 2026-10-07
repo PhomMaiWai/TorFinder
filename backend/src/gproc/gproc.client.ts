@@ -2,8 +2,9 @@ import { Injectable, Logger } from "@nestjs/common";
 
 import { HttpClient } from "../common/http-client";
 import { readZip } from "../common/zip";
-import { ProcurementStage } from "../tor/tor.constants";
+import { ProcurementStage, TOR_STAGES } from "../tor/tor.constants";
 import {
+  GPROC_ANNOUNCE_TYPES,
   GPROC_CANCELLED,
   GPROC_ENDPOINTS,
   GPROC_IGNORED_TYPES,
@@ -20,6 +21,7 @@ import {
 } from "./gproc.types";
 
 const PDF_MAGIC = "%PDF-";
+const [DRAFT_STAGE, INVITATION_STAGE] = TOR_STAGES;
 
 /** The bidding document e-GP generates: conditions, qualifications, payment, penalties. */
 const BIDDING_DOCUMENT = /^doc_.*\.pdf$/i;
@@ -81,7 +83,20 @@ export class GprocClient {
     ]);
     if (!flow.data && !detail) return null;
     const name = flow.data?.flowName?.trim() || null;
-    return { name, stage: detail?.projectStatus === GPROC_CANCELLED ? "cancelled" : stageFromFlow(name) };
+    if (detail?.projectStatus === GPROC_CANCELLED) return { name, stage: "cancelled" };
+
+    // The step group "หนังสือเชิญชวน/ประกาศเชิญชวน" starts with the draft put out
+    // for comment, so on its own it doesn't mean the invitation is out. Read as
+    // "invitation", a draft still taking comments would be shown superseded.
+    // `announceType` is the project's first announcement, not its latest, so
+    // a project that opened with a draft is settled by its announcement list.
+    const stage = stageFromFlow(name);
+    if (stage === "invitation" && detail && GPROC_ANNOUNCE_TYPES[detail.announceType ?? ""]?.stage === DRAFT_STAGE) {
+      const announced = await this.announcements(detail);
+      const invited = announced.some((a) => GPROC_ANNOUNCE_TYPES[a.announceType]?.stage === INVITATION_STAGE);
+      if (!invited) return { name, stage: "tor" };
+    }
+    return { name, stage };
   }
 
   /** The project's paper trail, oldest first. Needs the detail's method and type. */

@@ -113,7 +113,9 @@ export function extractProjectNumber(...candidates: (string | number | null | un
 
     const text = foldThaiDigits(String(candidate));
     // e-GP project numbers are 11 digits; a shorter run is a quantity or a year.
-    const match = /\b(\d{11,})\b/.exec(text);
+    // Not \b: in a file name ("doc_S50510000036_69069367809.pdf") the number
+    // follows "_", a word character. A letter in front makes it some other code.
+    const match = /(?<![\dA-Za-z])(\d{11,})(?!\d)/.exec(text);
     if (match) return match[1];
   }
   return undefined;

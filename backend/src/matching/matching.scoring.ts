@@ -2,6 +2,7 @@ import { formatBaht } from "../tor/tor-normalize";
 import {
   INELIGIBLE_CEILING,
   MIN_USEFUL_SCORE,
+  NO_STATED_REQUIREMENTS,
   OFF_TYPE_CEILING,
   SKILL_KEYWORDS,
   WEIGHTS,
@@ -13,6 +14,8 @@ import { workTypeLabel, workTypesOf } from "./work-types";
 /** What scoring reads from an announcement; structural, so it takes a TorDoc as-is. */
 export type ScorableTor = {
   title: string;
+  /** The formatted figure an admin typed in ("฿1,000,000") — the only one a manual record has. */
+  budget?: string;
   budgetAmount?: number;
   referencePrice?: number;
   /** What a model read out of the bidding document — the qualifications above all. */
@@ -41,8 +44,14 @@ function projectValue(tor: ScorableTor): number | null {
     tor.referencePrice ||
     tor.extraction?.referencePrice ||
     tor.extraction?.budgetAmount ||
-    null
+    budgetOf(tor.budget)
   );
+}
+
+/** Baht from a formatted figure, or null for "ไม่ระบุ" and anything without digits. */
+function budgetOf(budget: string | undefined): number | null {
+  const digits = budget?.replace(/[^0-9]/g, "");
+  return digits ? Number(digits) : null;
 }
 
 function threshold(
@@ -106,7 +115,7 @@ export function scoreMatch(tor: ScorableTor, company: MatchCandidate): MatchResu
   const eligibility = eligibilityOf(tor, company);
   const eligibilityFit = eligibility.length
     ? eligibility.reduce((sum, check) => sum + CHECK_WEIGHT[check.status], 0) / eligibility.length
-    : 0.7; // no stated barrier is good, not proof
+    : NO_STATED_REQUIREMENTS; // no stated barrier is good, not proof
   const failed = eligibility.filter((check) => check.status === "fail");
   const eligible = failed.length
     ? false

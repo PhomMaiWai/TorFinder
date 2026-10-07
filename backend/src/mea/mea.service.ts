@@ -159,6 +159,7 @@ export class MeaService {
     const budgetAmount = row.BUDGET ?? detail?.budgetAmount;
     const publishedAt = parseDate(row.POST_DT ?? row.DETAIL_DT);
 
+    const listedNumber = extractProjectNumber(row.EGP_PROJ_NO, row.PUBLISH_NO);
     const doc = {
       title: cleanText(row.SUBJECT ?? ""),
       agency: [MEA_AGENCY, detail?.department].filter(Boolean).join(" · "),
@@ -175,7 +176,10 @@ export class MeaService {
       // MEA files the e-GP project number in a column of its own, or appends it
       // to the announcement number. Either way it is what ties this record to
       // the same project on the other portals.
-      projectNumber: extractProjectNumber(row.EGP_PROJ_NO, row.PUBLISH_NO),
+      // Failing both, e-GP's own file names carry it ("tor_69069367809_….pdf").
+      projectNumber:
+        listedNumber ??
+        extractProjectNumber(...(detail?.documents ?? []).map((document) => document.label)),
       budgetAmount,
       awardedAmount: detail?.awardedAmount,
       procurementMethod: row.METHOD_DESC ?? undefined,
@@ -203,6 +207,7 @@ export class MeaService {
     // summary sentence quoting it. Marked so the upsert never writes any of
     // them over what an enriched run already stored.
     const provisional: (keyof TorDoc)[] = ["agency", "awardedAmount"];
+    if (!listedNumber) provisional.push("projectNumber");
     if (row.BUDGET === null || row.BUDGET === undefined) {
       provisional.push("budget", "budgetAmount", "summary");
     }

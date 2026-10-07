@@ -74,5 +74,5 @@ export const MEA_ENRICHMENT = {
    */
   budgetMs: 45_000,
   /** Bump when detail parsing starts collecting something new; forces one refetch. */
-  version: 3,
+  version: 4,
 } as const;
