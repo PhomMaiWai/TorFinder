@@ -36,14 +36,31 @@ function labelCls(entry: TimelineEntry): string {
 const SEGMENT_LEFT = ["left-[10%]", "left-[30%]", "left-[50%]", "left-[70%]"];
 
 /**
+ * Whether the track between stage `i` and `i + 1` reads as "behind us" (green,
+ * the same color a reached circle gets) or "ahead" (the neutral gray an
+ * unreached one gets). Driven by position relative to the current stage, not
+ * by each stage's own `reached` — a circle can be gray for lack of evidence
+ * (an unpublished plan, say) while the project has clearly moved past it, and
+ * a track colored by that circle's own state would turn green on one side of
+ * it and gray on the other for no reason a reader could follow. The track
+ * answers "how far along is this", the circles answer "do we have paper for
+ * this particular stage" — two different questions, kept visually separate so
+ * neither muddies the other.
+ */
+function isBehindCurrent(segmentIndex: number, currentIndex: number): boolean {
+  return segmentIndex < currentIndex;
+}
+
+/**
  * The project's journey through the five stages — plan, draft, reference
- * price, invitation, award — in lifecycle order. A stage is only marked
- * reached on evidence from the backend (buildTimeline), never inferred here:
- * a project can be awarded with its plan never published, and the reader
- * should see that gap rather than a timeline that papers over it.
+ * price, invitation, award — in lifecycle order. A stage's circle is only
+ * marked reached on evidence from the backend (buildTimeline), never inferred
+ * here: a project can be awarded with its plan never published, and the
+ * reader should see that gap rather than a timeline that papers over it.
  */
 export function TorTimeline({ timeline }: { timeline: TimelineEntry[] }) {
   const t = useTranslations("TorDetailPage");
+  const currentIndex = timeline.findIndex((entry) => entry.current);
 
   return (
     <section className="rounded-xl border border-border bg-surface p-5 shadow-sm sm:p-6">
@@ -59,7 +76,7 @@ export function TorTimeline({ timeline }: { timeline: TimelineEntry[] }) {
                 {entry.reached && !entry.current ? <Check size={14} /> : i + 1}
               </div>
               {i < timeline.length - 1 && (
-                <div className={`my-1 w-0.5 flex-1 ${entry.reached ? "bg-success" : "bg-border"}`} />
+                <div className={`my-1 w-0.5 flex-1 ${isBehindCurrent(i, currentIndex) ? "bg-success" : "bg-border"}`} />
               )}
             </div>
             <div className="min-w-0 pb-6 last:pb-0">
@@ -80,12 +97,9 @@ export function TorTimeline({ timeline }: { timeline: TimelineEntry[] }) {
       <div className="hidden sm:block">
         <div className="relative h-7">
           <div className="absolute inset-x-[10%] top-1/2 h-0.5 -translate-y-1/2 bg-border" />
-          {timeline.slice(0, -1).map((entry, i) =>
-            entry.reached ? (
-              <div
-                key={entry.stage}
-                className={`absolute top-1/2 h-0.5 w-[20%] -translate-y-1/2 bg-success ${SEGMENT_LEFT[i]}`}
-              />
+          {SEGMENT_LEFT.map((left, i) =>
+            isBehindCurrent(i, currentIndex) ? (
+              <div key={left} className={`absolute top-1/2 h-0.5 w-[20%] -translate-y-1/2 bg-success ${left}`} />
             ) : null,
           )}
           <div className="relative grid h-7 grid-cols-5">
@@ -108,6 +122,21 @@ export function TorTimeline({ timeline }: { timeline: TimelineEntry[] }) {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-4 text-xs text-ink-subtle">
+        <div className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-full bg-success" />
+          {t("timelineLegendReached")}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-full bg-accent" />
+          {t("timelineLegendCurrent")}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-full bg-surface-alt ring-1 ring-border" />
+          {t("timelineLegendUnreached")}
         </div>
       </div>
     </section>
