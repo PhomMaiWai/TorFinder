@@ -18,6 +18,7 @@ import { FeedbackForm } from "@/components/public/feedback-form";
 import { SaveTorButton } from "@/components/public/save-tor-button";
 import { TorDocumentDetails } from "@/components/public/tor-document-details";
 import { TorRecordFacts } from "@/components/public/tor-record-facts";
+import { TorTimeline } from "@/components/public/tor-timeline";
 import { TOR_DETAILS } from "@/data/tor-details";
 import { fetchBudgetAssessment, fetchFeedback } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
@@ -170,6 +171,14 @@ export default async function TorDetailPage({
           </div>
         </dl>
       </header>
+
+      {/* Only real records carry a paper trail to build this from; the
+          showcase records have no timeline. */}
+      {tor.timeline && tor.timeline.length > 0 && (
+        <div className="mb-6">
+          <TorTimeline timeline={tor.timeline} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">
