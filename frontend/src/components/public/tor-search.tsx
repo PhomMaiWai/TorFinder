@@ -22,9 +22,11 @@ import { useDeferredValue, useMemo, useState } from "react";
 import {
   type AmountKind,
   biddingOf,
+  DEADLINE_RANGES,
   daysUntilClose,
   isClosingSoon,
   isKnown,
+  matchesDeadline,
   sourcePageUrl,
   stageBadgeCls,
   torAmount,
@@ -82,30 +84,6 @@ const BUDGET_RANGES = [
   { id: "10m-20m", labelKey: "budgetRange10to20m", min: 10_000_000, max: 20_000_000 },
   { id: "over-20m", labelKey: "budgetRangeOver20m", min: 20_000_000, max: Infinity },
 ] as const;
-
-/**
- * "Closing within" buckets, nested rather than exclusive — 30 days includes
- * everything 7 days does — so this is a single pick with an explicit "any"
- * reset, not a set of checkboxes like the budget ranges.
- */
-const DEADLINE_RANGES = [
-  { id: "7d", labelKey: "deadlineWithin7Days", days: 7 },
-  { id: "30d", labelKey: "deadlineWithin30Days", days: 30 },
-] as const;
-
-/**
- * Whether `tor` closes within `rangeId`'s window — null (any) always matches.
- * Only something still open has a deadline worth filtering on: a closed or
- * awarded record's old closing date isn't a reason to surface it among what a
- * reader could still act on soon.
- */
-function matchesDeadline(tor: TorRecord, rangeId: string | null): boolean {
-  if (rangeId === null) return true;
-  const range = DEADLINE_RANGES.find((r) => r.id === rangeId);
-  if (!range || biddingOf(tor).status !== "open") return false;
-  const days = daysUntilClose(tor);
-  return days !== null && days <= range.days;
-}
 
 /** Bangkok time: an announcement made on 1 Jan local time is stored as 31 Dec UTC. */
 const YEAR = new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Bangkok" });
