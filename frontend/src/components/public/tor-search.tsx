@@ -39,6 +39,7 @@ import { BiddingBadge } from "./bidding-badge";
 
 import { AgencyFilter } from "./agency-filter";
 import { FilterCheckbox } from "./filter-checkbox";
+import { FilterRadio } from "./filter-radio";
 
 /**
  * One status a reader filters by, in the order they care: what they can still
@@ -165,14 +166,10 @@ function RadioFilter({
   onChange: (id: string | null) => void;
 }) {
   const row = (id: string | null, label: string) => (
-    <label key={id ?? "any"} className="flex cursor-pointer items-center gap-3">
-      <input
-        type="radio"
-        name={name}
-        checked={selected === id}
-        onChange={() => onChange(id)}
-        className="size-4 cursor-pointer accent-accent"
-      />
+    <label key={id ?? "any"} className="flex cursor-pointer items-start gap-3">
+      <span className="mt-0.5">
+        <FilterRadio name={name} checked={selected === id} onChange={() => onChange(id)} />
+      </span>
       <span className="text-sm leading-snug text-ink-muted">{label}</span>
     </label>
   );
