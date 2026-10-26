@@ -52,6 +52,21 @@ export const env = {
     authLimit: optionalNumber("AUTH_THROTTLE_LIMIT", 5),
   },
   /**
+   * Where notifications go besides the in-app list. Each channel switches
+   * itself off while its credential is empty, so nothing here is required.
+   */
+  notify: {
+    // Email through Resend's HTTP API — no SMTP client to install.
+    resendApiKey: process.env.RESEND_API_KEY ?? "",
+    emailFrom: process.env.NOTIFY_EMAIL_FROM ?? "TOR Finder <noreply@torfinder.app>",
+    // LINE Messaging API: the official account's long-lived channel access token.
+    lineChannelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
+    // A new announcement scoring at least this for a company is worth telling it about.
+    matchThreshold: optionalNumber("NOTIFY_MATCH_THRESHOLD", 70),
+    // Per company per import, so a large first sync doesn't flood anyone.
+    maxMatchesPerRun: optionalNumber("NOTIFY_MAX_MATCHES_PER_RUN", 5),
+  },
+  /**
    * Vertex AI. Credentials are never configured here — the SDK reads
    * Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS, or the
    * host's service account). An empty project id leaves extraction switched
