@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { type Role, SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { homeFor } from "@/lib/roles";
 
 /** Pages only a signed-in account may see. */
 const PROTECTED_PREFIXES = ["/dashboard", "/admin", "/owner", "/profile", "/saved", "/notifications"];
@@ -10,6 +11,8 @@ const PROTECTED_PREFIXES = ["/dashboard", "/admin", "/owner", "/profile", "/save
  * the ranked-companies panel, which is too.
  */
 const ADMIN_ONLY_PREFIXES = ["/admin", "/owner"];
+/** The one protected page a public viewer has: their own saved list. */
+const VIEWER_PREFIXES = ["/saved"];
 /** Pages that make no sense once you are signed in. */
 const GUEST_ONLY_PREFIXES = ["/login", "/signup"];
 
@@ -26,10 +29,11 @@ const PUBLIC_API_ROUTES = [
   "/api/auth/google/complete",
 ];
 
-/** Where a signed-in visitor belongs when they land somewhere they shouldn't be. */
-function homeFor(role: Role): string {
-  return role === "admin" ? "/admin" : "/dashboard";
-}
+/** Announcement files are as public as the announcement pages that show them. */
+const PUBLIC_API_PATTERNS = [
+  /^\/api\/tor\/[^/]+\/documents\/\d+(?:\/entries(?:\/\d+)?)?$/,
+  /^\/api\/tor\/[^/]+\/egp-documents(?:\/[a-z-]+(?:\/entries(?:\/\d+)?)?)?$/,
+];
 
 function matches(pathname: string, prefixes: string[]): boolean {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -44,7 +48,9 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/api/")) {
-    if (PUBLIC_API_ROUTES.includes(pathname)) return NextResponse.next();
+    if (PUBLIC_API_ROUTES.includes(pathname) || PUBLIC_API_PATTERNS.some((pattern) => pattern.test(pathname))) {
+      return NextResponse.next();
+    }
 
     const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
     return session
@@ -68,6 +74,12 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Every other protected page is a company or staff workspace; a public viewer
+  // has nothing there, so send them back to search instead of a half-empty shell.
+  if (session.role === "viewer" && !matches(pathname, VIEWER_PREFIXES)) {
+    return NextResponse.redirect(new URL(homeFor(session.role), request.url));
   }
 
   if (matches(pathname, ADMIN_ONLY_PREFIXES) && session.role !== "admin") {

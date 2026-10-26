@@ -73,9 +73,15 @@ export class AuthService {
     return this.issueSession(user);
   }
 
-  async googleAuth({ credential }: GoogleAuthDto) {
+  async googleAuth({ credential, as }: GoogleAuthDto) {
     const { email, googleId, name } = await this.verifyGoogleCredential(credential);
     const user = await this.findOrLinkGoogleUser(googleId, email);
+
+    // An existing account always signs in as itself, whichever button was
+    // pressed — a company owner using the public button still lands as org.
+    if (!user && as === "viewer") {
+      return this.issueSession(await this.createViewer(googleId, email, name ?? email));
+    }
 
     if (!user) {
       // A Google identity we've never seen, with no existing account to link
@@ -142,11 +148,33 @@ export class AuthService {
       .then((ticket) => ticket.getPayload())
       .catch(() => null);
 
-    if (!payload?.email) {
+    // findOrLinkGoogleUser links by email, so an address Google hasn't proven
+    // the caller owns would let them take over the account registered to it.
+    if (!payload?.email || payload.email_verified !== true) {
       throw new UnauthorizedException("ยืนยันบัญชี Google ไม่สำเร็จ");
     }
 
     return { email: payload.email.trim().toLowerCase(), googleId: payload.sub, name: payload.name };
+  }
+
+  /**
+   * Viewers only read public data, so there is nothing for an admin to review:
+   * the account is approved the moment Google vouches for the identity.
+   */
+  private async createViewer(googleId: string, email: string, name: string) {
+    const doc: UserDoc = { email, name, role: "viewer", status: "approved", googleId, createdAt: new Date() };
+    try {
+      const { insertedId } = await this.db.users.insertOne(doc);
+      return { ...doc, _id: insertedId };
+    } catch (error) {
+      // Two tabs finishing sign-in at once: the unique index let one insert
+      // through, so sign in as the account the other one created.
+      if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) {
+        const existing = await this.db.users.findOne({ googleId });
+        if (existing) return existing;
+      }
+      throw error;
+    }
   }
 
   /** Finds the account for this Google identity, linking it to a matching email/password account if one exists. */

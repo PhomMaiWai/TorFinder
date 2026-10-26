@@ -2,7 +2,8 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UseGuard
 import { Throttle } from "@nestjs/throttler";
 
 import { AdminGuard } from "../common/admin.guard";
-import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
+import { OrgGuard } from "../common/org.guard";
+import { AuthenticatedRequest } from "../common/session.guard";
 import { env } from "../config/env";
 import { ProposalDraftDto } from "./dto/proposal-draft.dto";
 import { ExtractionService } from "./extraction.service";
@@ -52,7 +53,7 @@ export class AiController {
    * is a long model answer someone pays for.
    */
   @Post("proposal-draft/:torId")
-  @UseGuards(SessionGuard)
+  @UseGuards(OrgGuard)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   proposalDraft(
