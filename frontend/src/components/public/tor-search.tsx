@@ -24,12 +24,12 @@ import {
   biddingOf,
   daysUntilClose,
   isClosingSoon,
-  isKnown,
   sourcePageUrl,
   stageBadgeCls,
   torAmount,
   torDocumentUrl,
 } from "@/lib/tor-ui";
+import { DEFAULT_SORT, isSortKey, parseBudget, SORT_KEYS, type SortKey, sortTors } from "@/lib/tor-sort";
 import { useSavedTors } from "@/lib/use-saved-tors";
 import type { TorRecord } from "@/types/tor";
 
@@ -76,6 +76,46 @@ const AMOUNT_LABEL = {
 } as const satisfies Record<AmountKind, string>;
 const PER_PAGE = 10;
 
+/** A stable empty list, so the sorted results aren't recomputed on every render. */
+const NO_PINS: string[] = [];
+
+const SORT_LABEL_KEY: Record<SortKey, string> = {
+  prepare: "sortPrepare",
+  newest: "sortNewest",
+  closing: "sortClosing",
+  budget: "sortBudget",
+};
+
+/** Keeps the chosen order in the address, so a shared or reloaded link opens the same list. */
+function rememberSort(key: SortKey) {
+  const url = new URL(window.location.href);
+  if (key === DEFAULT_SORT) url.searchParams.delete("sort");
+  else url.searchParams.set("sort", key);
+  window.history.replaceState(null, "", url);
+}
+
+function SortSelect({ value, onChange }: { value: SortKey; onChange: (key: SortKey) => void }) {
+  const t = useTranslations("PublicPage");
+  return (
+    <label className="flex items-center gap-2 text-sm text-ink-muted">
+      <span className="shrink-0 font-medium">{t("sortLabel")}</span>
+      <select
+        value={value}
+        onChange={(e) => {
+          if (isSortKey(e.target.value)) onChange(e.target.value);
+        }}
+        className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-ink shadow-sm outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+      >
+        {SORT_KEYS.map((key) => (
+          <option key={key} value={key}>
+            {t(SORT_LABEL_KEY[key])}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 const BUDGET_RANGES = [
   { id: "under-5m", labelKey: "budgetRangeUnder5m", min: 0, max: 5_000_000 },
   { id: "5m-10m", labelKey: "budgetRange5to10m", min: 5_000_000, max: 10_000_000 },
@@ -95,13 +135,6 @@ function announcedYear(createdAt: string): number | null {
 /** Thai readers count in พ.ศ.; the ค.ศ. year is kept alongside for everyone else. */
 function yearLabel(year: number): string {
   return `${year + 543} (${year})`;
-}
-
-/** null when the announcement doesn't state a budget, so it can't match a range. */
-function parseBudget(budget: string): number | null {
-  if (!isKnown(budget)) return null;
-  const digits = budget.replace(/[^0-9]/g, "");
-  return digits ? Number(digits) : null;
 }
 
 function CheckboxFilter({
@@ -406,9 +439,23 @@ function PublicTorCard({
   );
 }
 
-/** `inApp`: rendered inside the signed-in shell, so a TOR opens there too. */
-export function TorSearch({ tors, inApp = false }: { tors: TorRecord[]; inApp?: boolean }) {
+/**
+ * `inApp`: rendered inside the signed-in shell, so a TOR opens there too.
+ * `initialSort` comes from the address (`?sort=`); `pinnedIds` lead whatever the sort.
+ */
+export function TorSearch({
+  tors,
+  inApp = false,
+  initialSort = DEFAULT_SORT,
+  pinnedIds = NO_PINS,
+}: {
+  tors: TorRecord[];
+  inApp?: boolean;
+  initialSort?: SortKey;
+  pinnedIds?: string[];
+}) {
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>(initialSort);
   const [selectedStatuses, setSelectedStatuses] = useState<TorStatus[]>([]);
   const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
@@ -472,6 +519,13 @@ export function TorSearch({ tors, inApp = false }: { tors: TorRecord[]; inApp?: 
     });
   }, [tors, deferredSearch, selectedStatuses, selectedYears, selectedAgencies, selectedBudgets]);
 
+  const sorted = useMemo(() => sortTors(filtered, sortKey, pinnedIds), [filtered, sortKey, pinnedIds]);
+
+  function changeSort(key: SortKey) {
+    setSortKey(key);
+    rememberSort(key);
+  }
+
   // Any change to the query lands the reader back on the first page of results.
   const queryKey = JSON.stringify([
     search,
@@ -479,6 +533,7 @@ export function TorSearch({ tors, inApp = false }: { tors: TorRecord[]; inApp?: 
     selectedYears,
     selectedAgencies,
     selectedBudgets,
+    sortKey,
   ]);
   if (queryKey !== lastQueryKey) {
     setLastQueryKey(queryKey);
@@ -486,7 +541,7 @@ export function TorSearch({ tors, inApp = false }: { tors: TorRecord[]; inApp?: 
   }
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   function handleSubmitFeedback() {
     if (!feedbackText.trim()) return;
@@ -608,13 +663,14 @@ export function TorSearch({ tors, inApp = false }: { tors: TorRecord[]; inApp?: 
       </aside>
 
       <div className="min-w-0 flex-1">
-        <div className="mb-5 hidden items-center justify-between lg:flex">
-          <h2 className="text-base font-semibold text-ink">
+        <div className="mb-5 flex items-center justify-end gap-4 lg:justify-between">
+          <h2 className="hidden text-base font-semibold text-ink lg:block">
             {t.rich("resultsCount", {
               count: filtered.length,
               strong: (chunks) => <span className="text-ink">{chunks}</span>,
             })}
           </h2>
+          {tors.length > 0 && <SortSelect value={sortKey} onChange={changeSort} />}
         </div>
 
         {tors.length === 0 ? (

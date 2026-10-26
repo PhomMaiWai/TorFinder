@@ -381,7 +381,12 @@
     "noRecordsDescription": "ผู้ดูแลระบบต้องเพิ่มรายการ TOR เข้ามาก่อน",
     "viewOriginal": "ดูต้นฉบับ",
     "referencePriceLabel": "ราคากลาง",
-    "awardedLabel": "ราคาที่ตกลง"
+    "awardedLabel": "ราคาที่ตกลง",
+    "sortLabel": "เรียงตาม",
+    "sortPrepare": "มีเวลาเตรียมตัว",
+    "sortNewest": "เปิดล่าสุด",
+    "sortClosing": "ใกล้ปิดรับ",
+    "sortBudget": "งบประมาณสูงสุด"
   },
   "TorDetailPage": {
     "backToSearch": "กลับไปค้นหา TOR",
