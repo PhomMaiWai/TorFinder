@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { PageBody, PageHeader } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
+import { ChannelSettings } from "@/components/notifications/channel-settings";
 import {
   NOTIFICATION_FILTERS,
   NOTIFICATION_ICONS,
@@ -58,6 +59,8 @@ export default function NotificationsPage() {
       />
 
       <PageBody>
+        <ChannelSettings />
+
         <div className="mb-5 flex flex-wrap gap-1.5">
           {NOTIFICATION_FILTERS.map(({ id, label }) => (
             <button

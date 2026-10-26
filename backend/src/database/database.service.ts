@@ -42,6 +42,15 @@ export type CompanyProfile = {
   preferredBudgetMax?: number;
 };
 
+export type NotificationChannels = {
+  /** To the account's own sign-in address. */
+  email: boolean;
+  /** A Slack incoming-webhook URL the company created for its own channel. */
+  slackWebhookUrl?: string;
+  /** The LINE user (or group) id our official account pushes to. */
+  lineUserId?: string;
+};
+
 export type UserDoc = {
   email: string;
   name: string;
@@ -55,6 +64,8 @@ export type UserDoc = {
   googleId?: string;
   createdAt: Date;
   company?: CompanyProfile;
+  /** Where notifications are sent besides the in-app list; absent means in-app only. */
+  notificationChannels?: NotificationChannels;
   reviewedAt?: Date;
   /**
    * Orthogonal to `status`: an admin can suspend an already-approved account
@@ -184,9 +195,10 @@ export type SavedTorDoc = {
 };
 
 /**
- * "match" and "feedback" don't have a producer yet — only account review
- * ("approval") creates one today — but the type stays ready for when they do,
- * the same way TorSource anticipates values before every source exists.
+ * "match" comes from each import (MatchingService.notifyNewMatches) and
+ * "approval" from account review. "feedback" has no producer yet, but the type
+ * stays ready for when it does, the same way TorSource anticipates values
+ * before every source exists.
  */
 export const NOTIFICATION_TYPES = ["match", "approval", "feedback", "system"] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

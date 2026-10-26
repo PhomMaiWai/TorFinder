@@ -154,6 +154,28 @@ export type BudgetAssessment = {
   notes: string[];
 };
 
+/** A suggested bid and how contested the work is — mirrors the backend's BidInsight. */
+export type BidInsight = {
+  status: "ok" | "insufficient";
+  base: number | null;
+  baseKind: "reference" | "budget" | null;
+  peerCount: number;
+  broad: boolean;
+  medianDiscount: number | null;
+  averageDiscount: number | null;
+  competition: "blue" | "moderate" | "red" | null;
+  distinctWinners: number;
+  topWinners: { vendor: string; wins: number }[];
+  pricePoints: {
+    label: "aggressive" | "recommended" | "conservative";
+    price: number;
+    ratio: number;
+    winChance: number;
+  }[];
+  recentAwards: { title: string; vendor: string | null; base: number; awarded: number; discount: number }[];
+  notes: string[];
+};
+
 /**
  * Mirrors the backend's WORK_TYPES: the kinds of IT contract a company takes
  * on, grouped the way the profile page lays them out.

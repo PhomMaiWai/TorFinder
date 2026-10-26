@@ -45,6 +45,12 @@ export class MatchingController {
     return this.matching.assessBudgetForTor(id);
   }
 
+  /** A suggested bid price and how contested this kind of work is, from past awards. */
+  @Get("tor/:id/bid-insight")
+  bidInsight(@Param("id") id: string) {
+    return this.matching.assessBidForTor(id);
+  }
+
   /** Score a profile the caller supplies, without it having to be an account yet. */
   @Post("tor/:id/score")
   score(@Param("id") id: string, @Body() dto: ScoreMatchDto) {

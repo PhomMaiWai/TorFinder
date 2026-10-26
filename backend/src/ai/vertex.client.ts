@@ -44,6 +44,8 @@ export class VertexClient {
     /** Read together in one call, in the order the prompt names them. */
     documents: { data: Buffer; mimeType: string }[],
     schema: Schema,
+    /** Writing, rather than extracting, wants a longer answer and some variety. */
+    overrides: { maxOutputTokens?: number; temperature?: number } = {},
   ): Promise<T> {
     const bytes = documents.reduce((sum, doc) => sum + doc.data.byteLength, 0);
     if (bytes > AI_REQUEST.maxDocumentBytes) {
@@ -66,8 +68,8 @@ export class VertexClient {
         systemInstruction: instruction,
         responseMimeType: "application/json",
         responseSchema: schema,
-        temperature: AI_REQUEST.temperature,
-        maxOutputTokens: AI_REQUEST.maxOutputTokens,
+        temperature: overrides.temperature ?? AI_REQUEST.temperature,
+        maxOutputTokens: overrides.maxOutputTokens ?? AI_REQUEST.maxOutputTokens,
         thinkingConfig: { thinkingBudget: AI_REQUEST.thinkingBudget },
         abortSignal: AbortSignal.timeout(AI_REQUEST.timeoutMs),
       },

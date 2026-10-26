@@ -1,10 +1,13 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { AnyBulkWriteOperation, ObjectId } from "mongodb";
 
+import { env } from "../config/env";
 import { CompanyProfile, DatabaseService, TorDoc } from "../database/database.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { awardedProjectNumbers, biddingOf } from "../tor/tor-bidding";
 import { ACTIONABLE_WINDOW_MS, STAGE } from "../tor/tor.constants";
 import { currentDaysLeft } from "../tor/tor-normalize";
+import { assessBid, BidInsight } from "./bid-insight";
 import { assessBudget, BudgetAssessment } from "./budget-analysis";
 import { rankCompanies, scoreMatch } from "./matching.scoring";
 import { MatchCandidate, MatchResult, RankedCompany } from "./matching.types";
@@ -28,7 +31,10 @@ function candidateOf(company: CompanyProfile): MatchCandidate {
 export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** Approved organizations ranked against one announcement, best first. */
   async rankForTor(torId: string): Promise<RankedCompany[]> {
@@ -119,6 +125,67 @@ export class MatchingService {
       .map(({ score, ...tor }) => ({ ...tor, match: score }));
   }
 
+  /**
+   * Tells each approved company about the newly imported announcements that
+   * suit it — the "match" notification, delivered in-app and to whatever
+   * outside channels the company turned on. Only new records, only ones still
+   * to be bid on, and only a handful per company per run, best first.
+   */
+  async notifyNewMatches(torIds: ObjectId[]): Promise<number> {
+    if (torIds.length === 0) return 0;
+
+    const [tors, accounts] = await Promise.all([
+      this.db.tors
+        .find(
+          { _id: { $in: torIds }, stage: { $ne: AWARD_STAGE }, deletedAt: { $exists: false } },
+          {
+            projection: {
+              title: 1,
+              agency: 1,
+              budget: 1,
+              budgetAmount: 1,
+              referencePrice: 1,
+              "extraction.qualifications": 1,
+              "extraction.referencePrice": 1,
+              "extraction.budgetAmount": 1,
+            },
+          },
+        )
+        .toArray(),
+      this.db.users
+        .find(
+          { role: "org", status: "approved", suspended: { $ne: true }, company: { $exists: true } },
+          { projection: { company: 1 } },
+        )
+        .toArray(),
+    ]);
+
+    let sent = 0;
+    for (const account of accounts) {
+      if (!account.company) continue;
+      const company = candidateOf(account.company);
+      const matches = tors
+        .map((tor) => ({ tor, result: scoreMatch(tor, company) }))
+        .filter(({ result }) => result.score >= env.notify.matchThreshold && result.eligible !== false)
+        .sort((a, b) => b.result.score - a.result.score)
+        .slice(0, env.notify.maxMatchesPerRun);
+
+      for (const { tor, result } of matches) {
+        await this.notifications.create(
+          account._id,
+          "match",
+          `TOR ใหม่ตรงกับบริษัทคุณ ${result.score}%`,
+          `${tor.title} — ${tor.agency} (${tor.budget})`,
+          tor._id,
+        );
+        sent++;
+      }
+    }
+
+    if (sent) this.logger.log(`Match notifications: ${sent} sent for ${tors.length} new announcement(s)`);
+    return sent;
+  }
+
   /** One company against one announcement — the org's own "do I fit this?" view. */
   async scoreForTor(torId: string, company: MatchCandidate): Promise<MatchResult> {
     return scoreMatch(await this.findTor(torId), company);
@@ -147,6 +214,45 @@ export class MatchingService {
     return assessBudget(
       { ...tor, documentBudget: tor.extraction?.budgetAmount ?? null },
       all.map((peer) => (peer._id.equals(tor._id) ? { ...peer, budgetAmount: undefined } : peer)),
+    );
+  }
+
+  /**
+   * What to bid on this announcement, from what comparable projects were won
+   * for. Like the budget check, the whole corpus of awarded records is the
+   * comparison set, read per request so it is never stale.
+   */
+  async assessBidForTor(torId: string): Promise<BidInsight> {
+    if (!ObjectId.isValid(torId)) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    const projection = {
+      title: 1,
+      summary: 1,
+      tags: 1,
+      budgetAmount: 1,
+      referencePrice: 1,
+      awardedAmount: 1,
+      "contracts.vendor": 1,
+      "contracts.amount": 1,
+      "extraction.referencePrice": 1,
+    };
+    const [tor, awarded] = await Promise.all([
+      this.db.tors.findOne({ _id: new ObjectId(torId) }, { projection }),
+      this.db.tors
+        .find(
+          {
+            deletedAt: { $exists: false },
+            $or: [{ awardedAmount: { $gt: 0 } }, { "contracts.amount": { $gt: 0 } }],
+          },
+          { projection },
+        )
+        .toArray(),
+    ]);
+    if (!tor) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    return assessBid(
+      tor,
+      awarded.filter((peer) => !peer._id.equals(tor._id)),
     );
   }
 

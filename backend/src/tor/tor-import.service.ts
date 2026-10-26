@@ -120,6 +120,10 @@ export class TorImportService {
     // The budget verdict is relative to every other announcement, so an import
     // that adds or removes records invalidates the stored ones.
     await this.matching.refreshBudgetStatuses();
+    // Telling companies is a side effect; a failed send must not fail the import.
+    await this.matching
+      .notifyNewMatches(Object.values(result.upsertedIds))
+      .catch((error: unknown) => this.logger.warn(`Match notifications failed: ${String(error)}`));
 
     this.logger.log(
       `${source}: ${result.upsertedCount} new, ${result.modifiedCount} updated, ` +

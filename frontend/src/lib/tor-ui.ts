@@ -92,6 +92,30 @@ export function isClosingSoon(tor: DeadlineFields): boolean {
   return days !== null && days <= 7;
 }
 
+/**
+ * "Closing within" buckets the search filter offers, nested rather than
+ * exclusive — 30 days includes everything 7 days does — so a reader picks
+ * one, with an explicit "any" (`null`) to reset, not a set of checkboxes.
+ */
+export const DEADLINE_RANGES = [
+  { id: "7d", labelKey: "deadlineWithin7Days", days: 7 },
+  { id: "30d", labelKey: "deadlineWithin30Days", days: 30 },
+] as const;
+
+/**
+ * Whether `tor` closes within `rangeId`'s window — `null` (any) always
+ * matches. Only something still open has a deadline worth filtering on: a
+ * closed or awarded record's old closing date isn't a reason to surface it
+ * among what a reader could still act on soon.
+ */
+export function matchesDeadline(tor: DeadlineFields, rangeId: string | null): boolean {
+  if (rangeId === null) return true;
+  const range = DEADLINE_RANGES.find((r) => r.id === rangeId);
+  if (!range || biddingOf(tor).status !== "open") return false;
+  const days = daysUntilClose(tor);
+  return days !== null && days <= range.days;
+}
+
 /** Archives and web pages a reader can't open as a document in the browser. */
 const NOT_A_DOCUMENT = /\.(zip|rar|html?)$/i;
 

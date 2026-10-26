@@ -22,8 +22,10 @@ import { useDeferredValue, useMemo, useState } from "react";
 import {
   type AmountKind,
   biddingOf,
+  DEADLINE_RANGES,
   daysUntilClose,
   isClosingSoon,
+  matchesDeadline,
   sourcePageUrl,
   stageBadgeCls,
   torAmount,
@@ -37,6 +39,7 @@ import { BiddingBadge } from "./bidding-badge";
 
 import { AgencyFilter } from "./agency-filter";
 import { FilterCheckbox } from "./filter-checkbox";
+import { FilterRadio } from "./filter-radio";
 
 /**
  * One status a reader filters by, in the order they care: what they can still
@@ -169,6 +172,47 @@ function CheckboxFilter({
             <span className="text-sm leading-snug text-ink-muted">{labelOf(opt)}</span>
           </label>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A single pick among a fixed set of options, plus an explicit "any" that
+ * resets to no filter — unlike CheckboxFilter's options, these are nested
+ * windows (30 days within is a superset of 7), so picking more than one at
+ * once wouldn't mean anything.
+ */
+function RadioFilter({
+  name,
+  title,
+  anyLabel,
+  options,
+  selected,
+  onChange,
+}: {
+  name: string;
+  title: string;
+  anyLabel: string;
+  options: { id: string; label: string }[];
+  selected: string | null;
+  onChange: (id: string | null) => void;
+}) {
+  const row = (id: string | null, label: string) => (
+    <label key={id ?? "any"} className="flex cursor-pointer items-start gap-3">
+      <span className="mt-0.5">
+        <FilterRadio name={name} checked={selected === id} onChange={() => onChange(id)} />
+      </span>
+      <span className="text-sm leading-snug text-ink-muted">{label}</span>
+    </label>
+  );
+
+  return (
+    <div className="mb-7">
+      <h3 className="mb-3 text-sm font-bold text-ink">{title}</h3>
+      <div className="space-y-2.5">
+        {row(null, anyLabel)}
+        {options.map((opt) => row(opt.id, opt.label))}
       </div>
     </div>
   );
@@ -457,6 +501,7 @@ export function TorSearch({
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>(initialSort);
   const [selectedStatuses, setSelectedStatuses] = useState<TorStatus[]>([]);
+  const [selectedDeadline, setSelectedDeadline] = useState<string | null>(null);
   const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
   const [selectedBudgets, setSelectedBudgets] = useState<string[]>([]);
@@ -495,6 +540,7 @@ export function TorSearch({
           .toLowerCase()
           .includes(q);
       const matchStatus = selectedStatuses.length === 0 || selectedStatuses.includes(statusOf(tor));
+      const matchDeadline = matchesDeadline(tor, selectedDeadline);
       const year = announcedYear(tor.createdAt);
       const matchYear =
         selectedYears.length === 0 || (year !== null && selectedYears.includes(year));
@@ -512,12 +558,13 @@ export function TorSearch({
       return (
         matchSearch &&
         matchStatus &&
+        matchDeadline &&
         matchYear &&
         matchAgency &&
         matchBudget
       );
     });
-  }, [tors, deferredSearch, selectedStatuses, selectedYears, selectedAgencies, selectedBudgets]);
+  }, [tors, deferredSearch, selectedStatuses, selectedDeadline, selectedYears, selectedAgencies, selectedBudgets]);
 
   const sorted = useMemo(() => sortTors(filtered, sortKey, pinnedIds), [filtered, sortKey, pinnedIds]);
 
@@ -530,6 +577,7 @@ export function TorSearch({
   const queryKey = JSON.stringify([
     search,
     selectedStatuses,
+    selectedDeadline,
     selectedYears,
     selectedAgencies,
     selectedBudgets,
@@ -551,6 +599,7 @@ export function TorSearch({
 
   function clearAllFilters() {
     setSelectedStatuses([]);
+    setSelectedDeadline(null);
     setSelectedYears([]);
     setSelectedAgencies([]);
     setSelectedBudgets([]);
@@ -559,6 +608,7 @@ export function TorSearch({
 
   const hasActiveFilters =
     selectedStatuses.length > 0 ||
+    selectedDeadline !== null ||
     selectedYears.length > 0 ||
     selectedAgencies.length > 0 ||
     selectedBudgets.length > 0;
@@ -626,6 +676,17 @@ export function TorSearch({
             selected={selectedStatuses}
             onChange={setSelectedStatuses}
             labelOf={(status) => t(STATUS_LABEL_KEY[status])}
+          />
+
+          <div className="mb-7 h-px w-full bg-surface-alt" />
+
+          <RadioFilter
+            name="deadline-filter"
+            title={t("filterDeadlineTitle")}
+            anyLabel={t("deadlineAny")}
+            options={DEADLINE_RANGES.map((r) => ({ id: r.id, label: t(r.labelKey) }))}
+            selected={selectedDeadline}
+            onChange={setSelectedDeadline}
           />
 
           <div className="mb-7 h-px w-full bg-surface-alt" />
