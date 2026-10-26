@@ -7,7 +7,8 @@ import { type SubmitEvent, useEffect, useState } from "react";
 import { PageBody, PageHeader, Section } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
 import { COMPANY_SIZE_OPTIONS, type CompanySize } from "@/data/company-profile";
-import { CERTIFICATIONS, WORK_TYPE_GROUPS, type Certification, type WorkType } from "@/types/tor";
+import { StandardsPicker } from "@/components/profile/standards-picker";
+import { WORK_TYPE_GROUPS, type Certification, type WorkType } from "@/types/tor";
 import { formatTaxId, hasValidTaxIdChecksum, isValidTaxId } from "@/lib/thai-validation";
 
 const readOnlyInputCls =
@@ -392,29 +393,27 @@ export default function ProfilePage() {
                     placeholder="2,000,000"
                     className={inputCls}
                   />
+                  <span className="mt-1.5 block text-xs text-ink-subtle">
+                    {t("registeredCapitalHint")}
+                  </span>
                 </label>
               </div>
               <div>
-                <span className="mb-2 block text-sm font-medium text-ink">{t("certificationsLabel")}</span>
+                <span className="mb-2 block text-sm font-medium text-ink">{t("dealerLabel")}</span>
                 <div className="flex flex-wrap gap-2">
-                  {CERTIFICATIONS.map((cert) => (
-                    <Chip
-                      key={cert}
-                      active={certifications?.includes(cert) ?? false}
-                      onClick={() => setCertifications((prev) => toggle(prev ?? [], cert))}
-                    >
-                      {tOptions(`cert_${cert}`)}
-                    </Chip>
-                  ))}
                   <Chip
-                    active={certifications !== undefined && certifications.length === 0}
-                    onClick={() => setCertifications([])}
+                    active={certifications?.includes("dealer") ?? false}
+                    onClick={() => setCertifications((prev) => toggle<Certification>(prev ?? [], "dealer"))}
                   >
-                    {t("noCertificationsLabel")}
+                    {tOptions("cert_dealer")}
                   </Chip>
                 </div>
               </div>
             </div>
+          </Section>
+
+          <Section title={t("standardsSectionTitle")}>
+            <StandardsPicker value={certifications} onChange={setCertifications} />
           </Section>
 
           <Section title={t("budgetRangeSectionTitle")}>
