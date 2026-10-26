@@ -118,8 +118,9 @@ export function BidInsightPanel({ insight }: { insight: BidInsight }) {
         <div className="mt-4">
           <h3 className="mb-1.5 text-xs font-semibold text-ink">{t("bidRecentAwards")}</h3>
           <ul className="space-y-2">
-            {insight.recentAwards.map((award) => (
-              <li key={`${award.title}-${award.awarded}`} className="text-sm">
+            {insight.recentAwards.map((award, index) => (
+              // Yearly contracts repeat the same title and price, so only the project number is unique.
+              <li key={award.projectNumber ?? `${award.title}-${index}`} className="text-sm">
                 <p className="line-clamp-1 text-ink">{award.vendor ?? t("bidUnknownVendor")}</p>
                 <p className="line-clamp-1 text-xs text-ink-subtle">{award.title}</p>
                 <p className="text-xs text-ink-muted">

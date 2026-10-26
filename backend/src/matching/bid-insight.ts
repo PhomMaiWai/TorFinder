@@ -5,6 +5,8 @@ import { skillsOf } from "./matching.scoring";
 /** What the insight reads from a record; structural so a TorDoc fits as-is. */
 export type BidPeer = {
   title: string;
+  /** e-GP's project number; one project is stored once per announcement stage. */
+  projectNumber?: string;
   summary: string;
   tags: string[];
   budgetAmount?: number;
@@ -31,6 +33,8 @@ export type PricePoint = {
 };
 
 export type PastAward = {
+  /** Identifies the award; absent on records imported without one. */
+  projectNumber: string | null;
   title: string;
   vendor: string | null;
   base: number;
@@ -137,8 +141,17 @@ export function assessBid(target: BidPeer, all: BidPeer[]): BidInsight {
   const wanted = skillsOf(textOf(target));
   const kind = workKindOf(target.title);
 
+  // A project appears once per announcement stage, each carrying the award, so
+  // without this one contract would count several times — and the target's
+  // own award notice would be compared against itself. Only the project number
+  // proves two records are one project: yearly contracts repeat title and price.
+  const seen = new Set<string>(target.projectNumber ? [target.projectNumber] : []);
   const scored = all.flatMap((peer) => {
     if (peer === target) return [];
+    if (peer.projectNumber) {
+      if (seen.has(peer.projectNumber)) return [];
+      seen.add(peer.projectNumber);
+    }
     const peerBase = baseOf(peer);
     const awarded = awardedOf(peer);
     if (!peerBase || !awarded) return [];
@@ -147,6 +160,7 @@ export function assessBid(target: BidPeer, all: BidPeer[]): BidInsight {
     return [
       {
         award: {
+          projectNumber: peer.projectNumber ?? null,
           title: peer.title,
           vendor: peer.contracts?.find((contract) => contract.vendor)?.vendor ?? null,
           base: peerBase.value,
