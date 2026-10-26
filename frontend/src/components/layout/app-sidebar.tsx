@@ -29,7 +29,7 @@ import { PENDING_ACCOUNTS } from "@/data/admin";
 import type { Role } from "@/lib/auth";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
 import { resetNotifications, useNotifications } from "@/lib/use-notifications";
-import { resetOrgSavedTors, useSavedTors } from "@/lib/use-saved-tors";
+import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
 
 type NavLink = {
   label: string;
@@ -101,7 +101,7 @@ function NavLinks({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const { savedIds } = useSavedTors("org");
+  const { savedIds } = useSavedTors();
   const { notifications } = useNotifications();
   const unreadNotifications = notifications.filter((n) => !n.read).length;
 
@@ -188,7 +188,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     setIsLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      resetOrgSavedTors();
+      resetSavedTors();
       resetNotifications();
       router.push("/login");
       router.refresh();

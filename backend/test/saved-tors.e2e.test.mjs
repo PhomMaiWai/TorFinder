@@ -304,3 +304,63 @@ describe("save/unsave round trip", () => {
     assert.ok(res.body.includes(tor.id));
   });
 });
+
+describe("POST /api/saved-tors/import — fold a browser's bookmarks into the account", () => {
+  async function importIds(token, torIds) {
+    return api("/saved-tors/import", { method: "POST", body: { torIds }, token });
+  }
+
+  it("rejects a request with no token (401)", async () => {
+    const res = await importIds(undefined, []);
+    assert.equal(res.status, 401);
+  });
+
+  it("merges with what the account already has and answers with the whole list (200)", async () => {
+    const { token } = newSession();
+    const already = await createTor();
+    const fromBrowser = await createTor();
+    await save(token, already.id);
+
+    const res = await importIds(token, [fromBrowser.id, already.id]);
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.length, 2);
+    assert.ok(res.body.includes(already.id) && res.body.includes(fromBrowser.id));
+  });
+
+  it("drops ids that aren't announcements instead of failing the whole merge", async () => {
+    const { token } = newSession();
+    const tor = await createTor();
+
+    const res = await importIds(token, [tor.id, MISSING_TOR_ID, "not-an-id", "7"]);
+
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body, [tor.id]);
+  });
+
+  it("is idempotent — importing the same ids twice keeps one entry each", async () => {
+    const { token } = newSession();
+    const tor = await createTor();
+
+    await importIds(token, [tor.id, tor.id]);
+    const res = await importIds(token, [tor.id]);
+
+    assert.deepEqual(res.body, [tor.id]);
+  });
+
+  it("rejects a body that isn't a list of ids (400)", async () => {
+    const { token } = newSession();
+    const res = await importIds(token, "abc");
+    assert.equal(res.status, 400);
+  });
+
+  it("never imports into another user's list", async () => {
+    const alice = newSession();
+    const bob = newSession();
+    const tor = await createTor();
+
+    await importIds(alice.token, [tor.id]);
+
+    assert.deepEqual((await list(bob.token)).body, []);
+  });
+});
