@@ -245,6 +245,6 @@ describe("admin dashboard — renders real data", () => {
     assert.ok(html.includes(approvedThenSuspended.companyName));
     assert.ok(html.includes(">Pending<"), "the untouched signup should still read pending");
     assert.ok(html.includes(">Suspended<"), "suspension should override the approved status in the badge");
-    assert.ok(html.includes(">Account owner<"), "an org account should never be badged as an administrator");
+    assert.ok(html.includes(">Company<"), "an org account should never be badged as an administrator");
   });
 });
