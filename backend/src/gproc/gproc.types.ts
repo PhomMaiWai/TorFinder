@@ -29,7 +29,7 @@ export type GprocAnnouncementList = {
 export type GprocDocumentInfo = { buildName2?: string | null; zipId?: string | null };
 
 /** A PDF taken out of a project's document bundle. */
-export type GprocDocument = { label: string; pdf: Buffer };
+export type GprocDocument = { kind: "bidding" | "tor"; label: string; pdf: Buffer };
 
 /** What one captured project came to. */
 export type GprocOutcome = "created" | "updated" | "known" | "skipped" | "failed";

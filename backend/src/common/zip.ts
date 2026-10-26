@@ -23,6 +23,23 @@ export type ZipEntry = {
   read(): Buffer;
 };
 
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
+const THAI_WINDOWS = new TextDecoder("windows-874");
+
+/**
+ * A name without the UTF-8 flag is in whatever the zipping tool used: often
+ * UTF-8 anyway, and on a Thai Windows machine, code page 874. Read as Latin-1,
+ * a Thai file name comes out as mojibake.
+ */
+function decodeName(raw: Buffer, flaggedUtf8: boolean): string {
+  if (flaggedUtf8) return raw.toString("utf8");
+  try {
+    return STRICT_UTF8.decode(raw);
+  } catch {
+    return THAI_WINDOWS.decode(raw);
+  }
+}
+
 export function readZip(zip: Buffer): ZipEntry[] {
   const tailStart = Math.max(0, zip.length - MAX_TAIL);
   let end = -1;
@@ -49,7 +66,7 @@ export function readZip(zip: Buffer): ZipEntry[] {
     const commentLength = zip.readUInt16LE(at + 32);
     const localOffset = zip.readUInt32LE(at + 42);
     const rawName = zip.subarray(at + 46, at + 46 + nameLength);
-    const name = rawName.toString(flags & UTF8_NAMES ? "utf8" : "latin1");
+    const name = decodeName(rawName, (flags & UTF8_NAMES) !== 0);
     at += 46 + nameLength + extraLength + commentLength;
 
     if (method !== STORED && method !== DEFLATED) continue;

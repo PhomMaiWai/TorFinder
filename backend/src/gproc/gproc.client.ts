@@ -126,6 +126,41 @@ export class GprocClient {
   }
 
   /**
+   * What the project has published, without downloading any of it: the
+   * template its signed invitation renders from, and the ids of its published
+   * bundle and of the draft bundle put out for comment before it.
+   */
+  async documentSources(
+    projectNumber: string,
+  ): Promise<{ invitationTemplate: string | null; bundle: string | null; draftBundle: string | null }> {
+    const [published, draft] = await Promise.all([
+      this.http.get<GprocEnvelope<GprocDocumentInfo>>(GPROC_ENDPOINTS.documentInfo, { projectId: projectNumber }),
+      this.http.get<GprocEnvelope<GprocDocumentInfo>>(GPROC_ENDPOINTS.draftDocumentInfo, { projectId: projectNumber }),
+    ]);
+    return {
+      invitationTemplate: published.data?.buildName2 ?? null,
+      bundle: published.data?.zipId ?? null,
+      draftBundle: draft.data?.zipId ?? null,
+    };
+  }
+
+  /** A bundle by id. Tens of MB, and process5 serves it slowly, so it gets its own long timeout. */
+  downloadBundle(zipId: string): Promise<Buffer> {
+    return this.http.getBytes(GPROC_ENDPOINTS.download, { fileId: zipId }, GPROC_REQUEST.maxBundleBytes, {
+      timeoutMs: GPROC_REQUEST.bundleTimeoutMs,
+      maxRetries: 1,
+    });
+  }
+
+  /** Renders a published template (a signed notice) to PDF; null when it doesn't render to one. */
+  async renderTemplate(templateId: string): Promise<Buffer | null> {
+    const rendered = await this.http.post<GprocEnvelope<string>>(GPROC_ENDPOINTS.renderPdf, { templateId });
+    if (!rendered.data) return null;
+    const pdf = Buffer.from(rendered.data, "base64");
+    return isPdf(pdf) ? pdf : null;
+  }
+
+  /**
    * The signed invitation as a PDF, or null before there is one. Unlike the
    * file a city portal attaches — sometimes the unfilled template — this is
    * rendered from what the agency actually published, bid date included.
@@ -164,14 +199,14 @@ export class GprocClient {
 
       const picked: GprocDocument[] = [];
       let room = maxBytes;
-      for (const [entry, label] of [
-        [bidding, "เอกสารประกวดราคา (e-GP กรมบัญชีกลาง)"],
-        [tor, "ขอบเขตของงาน TOR (e-GP กรมบัญชีกลาง)"],
+      for (const [entry, kind, label] of [
+        [bidding, "bidding", "เอกสารประกวดราคา (e-GP กรมบัญชีกลาง)"],
+        [tor, "tor", "ขอบเขตของงาน TOR (e-GP กรมบัญชีกลาง)"],
       ] as const) {
         if (!entry || entry.size > room) continue;
         const pdf = entry.read();
         if (!isPdf(pdf)) continue;
-        picked.push({ label, pdf });
+        picked.push({ kind, label, pdf });
         room -= pdf.byteLength;
       }
       if (picked.length) return picked;

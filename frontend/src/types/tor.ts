@@ -92,7 +92,15 @@ export type TorRecord = {
   /** What the winning bid came to, on the announcements that publish it. */
   awardedAmount?: number;
   /** Every announcement e-GP holds for the project, newest first. */
-  documents?: { label: string; publishedAt: string | null; url: string }[];
+  documents?: {
+    label: string;
+    publishedAt: string | null;
+    url: string;
+    /** A PDF the site can show in place; otherwise a page on the portal to link to. */
+    viewable?: boolean;
+    /** A zipped bundle whose PDFs and images can be listed and shown one by one. */
+    archive?: boolean;
+  }[];
   /** Set while the announcement is hidden from listings; absent when live. */
   deletedAt?: string;
   /** Present once a model has read the announcement document. */
@@ -172,7 +180,14 @@ export type BidInsight = {
     ratio: number;
     winChance: number;
   }[];
-  recentAwards: { title: string; vendor: string | null; base: number; awarded: number; discount: number }[];
+  recentAwards: {
+    projectNumber: string | null;
+    title: string;
+    vendor: string | null;
+    base: number;
+    awarded: number;
+    discount: number;
+  }[];
   notes: string[];
 };
 
@@ -189,9 +204,44 @@ export const WORK_TYPE_GROUPS = {
 export const WORK_TYPES = Object.values(WORK_TYPE_GROUPS).flat();
 export type WorkType = (typeof WORK_TYPES)[number];
 
-/** Mirrors the backend's CERTIFICATIONS. */
-export const CERTIFICATIONS = ["iso9001", "iso14001", "iso27001", "iso20000", "cmmi", "dealer"] as const;
-export type Certification = (typeof CERTIFICATIONS)[number];
+/**
+ * International standards, grouped the way a company thinks of them. Labels
+ * are the standards' own names, the same in every language. Together with
+ * "dealer" this mirrors the backend's CERTIFICATIONS.
+ */
+export const STANDARD_GROUPS = {
+  software: [
+    { id: "iso29110", label: "ISO/IEC 29110" },
+    { id: "cmmi3", label: "CMMI Level 3" },
+    { id: "cmmi5", label: "CMMI Level 5" },
+    { id: "iso12207", label: "ISO/IEC 12207" },
+    { id: "iso25010", label: "ISO/IEC 25010" },
+  ],
+  security: [
+    { id: "iso27001", label: "ISO/IEC 27001" },
+    { id: "iso27701", label: "ISO/IEC 27701" },
+    { id: "iso27017", label: "ISO/IEC 27017" },
+    { id: "iso27018", label: "ISO/IEC 27018" },
+    { id: "pcidss", label: "PCI DSS" },
+    { id: "csastar", label: "CSA STAR" },
+    { id: "iso15408", label: "ISO/IEC 15408" },
+  ],
+  service: [
+    { id: "iso20000", label: "ISO/IEC 20000-1" },
+    { id: "iso22301", label: "ISO 22301" },
+    { id: "tia942", label: "TIA-942" },
+  ],
+  quality: [
+    { id: "iso9001", label: "ISO 9001" },
+    { id: "iso14001", label: "ISO 14001" },
+    { id: "iso42001", label: "ISO/IEC 42001" },
+  ],
+} as const;
+
+export type StandardGroup = keyof typeof STANDARD_GROUPS;
+export type Standard = (typeof STANDARD_GROUPS)[StandardGroup][number]["id"];
+/** Not a standard: a manufacturer's letter appointing the company as its dealer. */
+export type Certification = Standard | "dealer";
 
 /** One requirement from the bidding document, checked against a company profile. */
 export type EligibilityCheck = { requirement: string; status: "pass" | "fail" | "unknown" };

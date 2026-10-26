@@ -26,6 +26,14 @@ export type EgpAnnouncementResponse = {
   data: EgpAnnouncement[] | null;
 };
 
+/** GetTorInProject — a draft TOR the agency put out for public comment. */
+export type EgpTor = {
+  id: string;
+  projectTorTitle: string | null;
+  projectTorHearingStartDate: string | null;
+  projectTorPath: string | null;
+};
+
 /** GetProjectContractInProject — one signed contract of the project. */
 export type EgpContract = {
   projectContractBidderName: string | null;
