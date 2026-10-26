@@ -1,11 +1,12 @@
 import { Module } from "@nestjs/common";
 
 import { DatabaseModule } from "../database/database.module";
+import { NotificationsModule } from "../notifications/notifications.module";
 import { MatchingController } from "./matching.controller";
 import { MatchingService } from "./matching.service";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, NotificationsModule],
   controllers: [MatchingController],
   providers: [MatchingService],
   exports: [MatchingService],

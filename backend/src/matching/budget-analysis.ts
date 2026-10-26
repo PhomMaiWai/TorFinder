@@ -26,7 +26,7 @@ export type BudgetAssessment = {
  * than about the price, so the announcement is left unjudged rather than
  * labelled on thin evidence.
  */
-const MIN_PEERS = 5;
+export const MIN_PEERS = 5;
 
 /**
  * Where a budget has to land to be worth a second look. Procurement budgets are
@@ -41,12 +41,12 @@ const LOW_PERCENTILE = 0.1;
 /** A budget in the document differing from the portal's by more than this is worth noting. */
 const RESTATEMENT_TOLERANCE = 0.05;
 
-function percentile(sorted: number[], fraction: number): number {
+export function percentile(sorted: number[], fraction: number): number {
   const index = Math.min(sorted.length - 1, Math.max(0, Math.round(fraction * (sorted.length - 1))));
   return sorted[index];
 }
 
-function median(sorted: number[]): number {
+export function median(sorted: number[]): number {
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
@@ -68,14 +68,14 @@ const BAHT = new Intl.NumberFormat("th-TH", {
  * least one skill with every other — so similarity is the share of skills the
  * two have in common out of all skills either mentions.
  */
-function similarity(a: Set<string>, b: Set<string>): number {
+export function similarity(a: Set<string>, b: Set<string>): number {
   if (a.size === 0 || b.size === 0) return 0;
   const shared = [...a].filter((skill) => b.has(skill)).length;
   return shared / new Set([...a, ...b]).size;
 }
 
 /** Announcements alike enough that comparing prices means something. */
-const CLOSE_ENOUGH = 0.5;
+export const CLOSE_ENOUGH = 0.5;
 
 /**
  * What is being bought, which sets the price class before any skill does:
@@ -90,7 +90,7 @@ const WORK_KINDS: Record<string, string[]> = {
   build: ["พัฒนา", "จัดทำ", "จ้างทำ", "ออกแบบ", "ติดตั้ง", "ปรับปรุงระบบ"],
 };
 
-function workKindOf(text: string): string {
+export function workKindOf(text: string): string {
   const haystack = text.toLowerCase();
   // Order matters: "ปรับปรุงระบบบำรุงรักษา" is maintenance, not a build.
   for (const [kind, terms] of Object.entries(WORK_KINDS)) {
