@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "node --test --test-concurrency=1 \"test/**/*.test.mjs\""
+    "test:e2e": "node --test --test-concurrency=1 \"test/**/*.test.{mjs,mts}\""
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
