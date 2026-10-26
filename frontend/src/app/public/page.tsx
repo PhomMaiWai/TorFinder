@@ -3,12 +3,20 @@ import { getTranslations } from "next-intl/server";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { TorSearch } from "@/components/public/tor-search";
-import { toSearchCards } from "@/lib/tor-cards";
+import { FEATURED_IDS, toSearchCards } from "@/lib/tor-cards";
+import { DEFAULT_SORT, isSortKey } from "@/lib/tor-sort";
 import { getAllTors } from "@/lib/tor-source";
 
-export default async function PublicPage() {
-  const [allTors, t] = await Promise.all([getAllTors(), getTranslations("PublicPage")]);
-  // Open announcements lead; a featured walkthrough order applies within the rest.
+export default async function PublicPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const [allTors, t, { sort }] = await Promise.all([
+    getAllTors(),
+    getTranslations("PublicPage"),
+    searchParams,
+  ]);
   const tors = toSearchCards(allTors);
 
   return (
@@ -23,7 +31,11 @@ export default async function PublicPage() {
             <p className="mt-2 text-base text-ink-muted">{t("pageDescription")}</p>
           </div>
 
-          <TorSearch tors={tors} />
+          <TorSearch
+            tors={tors}
+            initialSort={isSortKey(sort) ? sort : DEFAULT_SORT}
+            pinnedIds={FEATURED_IDS}
+          />
         </div>
       </main>
       <SiteFooter />

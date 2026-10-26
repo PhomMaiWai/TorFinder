@@ -397,7 +397,12 @@
     "noRecordsDescription": "An administrator needs to add TOR records first.",
     "viewOriginal": "View original",
     "referencePriceLabel": "Reference price",
-    "awardedLabel": "Awarded price"
+    "awardedLabel": "Awarded price",
+    "sortLabel": "Sort by",
+    "sortPrepare": "Best time to prepare",
+    "sortNewest": "Newly opened",
+    "sortClosing": "Closing soon",
+    "sortBudget": "Highest budget"
   },
   "TorDetailPage": {
     "backToSearch": "Back to TOR search",
