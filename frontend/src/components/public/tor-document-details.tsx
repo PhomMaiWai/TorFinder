@@ -1,6 +1,7 @@
-import { AlertTriangle, Banknote, Check, ListChecks, Sparkles, Target } from "lucide-react";
+import { AlertTriangle, Award, Banknote, Briefcase, Building2, Check, ListChecks, Sparkles, Target, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { evaluationMethodOf, groupQualifications, QUALIFICATION_GROUPS } from "@/lib/tor-qualifications";
 import type { TorExtraction } from "@/types/tor";
 
 const BAHT = new Intl.NumberFormat("th-TH", {
@@ -44,6 +45,63 @@ function List({
   );
 }
 
+const GROUP_ICON = {
+  company: Building2,
+  certification: Award,
+  experience: Briefcase,
+  personnel: Users,
+} as const;
+
+const GROUP_LABEL = {
+  company: "qualificationCompany",
+  certification: "qualificationCertification",
+  experience: "qualificationExperience",
+  personnel: "qualificationPersonnel",
+} as const;
+
+/**
+ * Who may bid, read apart by what each line asks of a company: the firm, the
+ * certifications it holds as an organisation, its track record, and the people
+ * it staffs the project with — usually the longest list, and the one a bidder
+ * has to assemble.
+ */
+function Qualifications({ items }: { items: string[] | undefined }) {
+  const t = useTranslations("TorDetailPage");
+  if (!items?.length) return null;
+  const groups = groupQualifications(items);
+
+  return (
+    <div>
+      <h3 className="mb-3 text-sm font-semibold text-ink">{t("qualifications")}</h3>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {QUALIFICATION_GROUPS.filter((group) => groups[group].length > 0).map((group) => {
+          const Icon = GROUP_ICON[group];
+          return (
+            <div key={group} className="rounded-lg border border-border bg-surface-alt p-4">
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-ink">
+                <Icon size={14} className="text-accent" />
+                {t(GROUP_LABEL[group])}
+                <span className="font-normal text-ink-subtle">({groups[group].length})</span>
+              </p>
+              <ul className="space-y-1.5">
+                {groups[group].map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-sm leading-relaxed text-ink-muted">
+                    <Check size={14} className="mt-0.5 shrink-0 text-accent" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+      {groups.certification.length > 0 && (
+        <p className="mt-2 text-xs leading-relaxed text-ink-subtle">{t("certificationIsCompanyNote")}</p>
+      )}
+    </div>
+  );
+}
+
 /**
  * What the announcement document says the work is, one block per question a
  * bidder asks: what, why, who may bid, what to hand over, how it is paid and
@@ -59,6 +117,7 @@ export function TorDocumentDetails({
 }) {
   const t = useTranslations("TorDetailPage");
   const scope = extraction?.scope ?? written?.scope;
+  const evaluationMethod = evaluationMethodOf(extraction?.evaluationCriteria);
 
   const terms = extraction
     ? [
@@ -98,11 +157,7 @@ export function TorDocumentDetails({
           </div>
         )}
         <List title={t("objectives")} items={extraction?.objectives} icon={Target} />
-        <List
-          title={t("qualifications")}
-          items={extraction?.qualifications ?? written?.qualifications}
-          icon={Check}
-        />
+        <Qualifications items={extraction?.qualifications ?? written?.qualifications} />
         <List
           title={t("deliverables")}
           items={extraction?.deliverables ?? written?.deliverables}
@@ -111,7 +166,18 @@ export function TorDocumentDetails({
         <List title={t("paymentTerms")} items={extraction?.paymentTerms} icon={Banknote} />
         {extraction?.evaluationCriteria && (
           <div>
-            <h3 className="mb-1.5 text-sm font-semibold text-ink">{t("evaluationCriteria")}</h3>
+            <h3 className="mb-1.5 flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
+              {t("evaluationCriteria")}
+              {evaluationMethod && (
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-2xs font-semibold ${
+                    evaluationMethod === "price" ? "bg-warn-soft text-warn" : "bg-accent-soft text-accent"
+                  }`}
+                >
+                  {t(evaluationMethod === "price" ? "evaluationPriceOnly" : "evaluationPricePerformance")}
+                </span>
+              )}
+            </h3>
             <p className="text-sm leading-relaxed text-ink-muted">{extraction.evaluationCriteria}</p>
           </div>
         )}

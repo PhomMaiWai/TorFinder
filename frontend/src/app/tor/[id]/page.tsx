@@ -13,14 +13,16 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-sidebar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
+import { BidInsightPanel } from "@/components/public/bid-insight-panel";
 import { BiddingBadge } from "@/components/public/bidding-badge";
 import { FeedbackForm } from "@/components/public/feedback-form";
+import { ProposalDraftForm } from "@/components/public/proposal-draft-form";
 import { SaveTorButton } from "@/components/public/save-tor-button";
 import { TorDocumentDetails } from "@/components/public/tor-document-details";
 import { TorRecordFacts } from "@/components/public/tor-record-facts";
 import { TorTimeline } from "@/components/public/tor-timeline";
 import { TOR_DETAILS } from "@/data/tor-details";
-import { fetchBudgetAssessment, fetchFeedback } from "@/lib/tor-api";
+import { fetchBidInsight, fetchBudgetAssessment, fetchFeedback } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
 import {
   biddingOf,
@@ -67,9 +69,9 @@ export default async function TorDetailPage({
 
   // Supplementary panels exist only for real records; the showcase ones aren't
   // in the corpus they are computed against.
-  const [budgetAssessment, publishedFeedback] = tor.sourceRef
-    ? await Promise.all([fetchBudgetAssessment(tor.id), fetchFeedback(tor.id)])
-    : [null, []];
+  const [budgetAssessment, publishedFeedback, bidInsight] = tor.sourceRef
+    ? await Promise.all([fetchBudgetAssessment(tor.id), fetchFeedback(tor.id), fetchBidInsight(tor.id)])
+    : [null, [], null];
 
   // Showcase records carry hand-written scope instead of an extraction.
   const numericId = mockNumericId(id);
@@ -240,6 +242,9 @@ export default async function TorDetailPage({
             </section>
           )}
 
+          {/* A signed-in company preparing a bid, or reworking one for the next similar job. */}
+          {inApp && tor.sourceRef && <ProposalDraftForm torId={tor.id} />}
+
           {publishedFeedback.length > 0 && (
             <section className={CARD}>
               <h2 className={HEADING}>
@@ -278,6 +283,11 @@ export default async function TorDetailPage({
 
         <aside className="min-w-0 space-y-6 lg:sticky lg:top-20 lg:h-fit">
           <TorRecordFacts tor={tor} />
+          {/* Before the award, past winning bids are the market for this one —
+              still worth reading once bidding closes, for the next similar job. */}
+          {bidInsight && tor.stage !== "ประกาศผู้ชนะ" && (
+            <BidInsightPanel insight={bidInsight} />
+          )}
             {budgetAssessment && budgetAssessment.status !== "ไม่ประเมิน" && (
               <section className="rounded-xl border border-border bg-surface p-5 shadow-sm">
                 <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-ink">

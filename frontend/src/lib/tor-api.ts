@@ -1,6 +1,7 @@
 import { fetchJson, orEmptyWhenAnswered, orFallback } from "@/lib/fetch-json";
 import { authHeaders } from "@/lib/session-headers";
 import type {
+  BidInsight,
   BudgetAssessment,
   MatchedCompany,
   TorFeedback,
@@ -45,6 +46,11 @@ export function fetchBudgetAssessment(id: string): Promise<BudgetAssessment | nu
     fetchJson<BudgetAssessment>(`/api/matching/tor/${id}/budget`),
     null,
   );
+}
+
+/** A suggested bid from past awards — supplementary, like the budget verdict. */
+export function fetchBidInsight(id: string): Promise<BidInsight | null> {
+  return orFallback<BidInsight | null>(fetchJson<BidInsight>(`/api/matching/tor/${id}/bid-insight`), null);
 }
 
 /**
