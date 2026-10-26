@@ -5,18 +5,24 @@ import { SOFTWARE_SEARCH_KEYWORDS, isSoftwareProject } from "../common/software-
 import { env } from "../config/env";
 import { DatabaseService, SyncRunDoc, SyncRunStatus } from "../database/database.service";
 import { EgpClient } from "./egp.client";
-import { EGP_ANNOUNCE_TYPES, EgpAnnounceType } from "./egp.constants";
+import { EGP_ANNOUNCE_TYPES, EGP_ENDPOINTS, EgpAnnounceType } from "./egp.constants";
 import { STAGE } from "../tor/tor.constants";
-import { EgpAnnouncement, EgpContract, EgpProject, EgpProjectDetail } from "./egp.types";
+import { EgpAnnouncement, EgpContract, EgpProject, EgpProjectDetail, EgpTor } from "./egp.types";
 import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
 import { UNKNOWN, formatBaht, parseDate, projectMonth } from "../tor/tor-normalize";
 import { TorContract } from "../database/database.service";
 
 /** What a project's own announcements and detail record contribute per type. */
+/** For building a Mongo $regex from a literal URL. */
+function escapeRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 type ProjectEnrichment = {
   announcements: EgpAnnouncement[];
   detail: EgpProjectDetail | null;
   contracts: EgpContract[];
+  tors: EgpTor[];
 };
 
 function toContract(contract: EgpContract): TorContract | null {
@@ -60,11 +66,18 @@ export type EgpMetrics = {
 const METRICS_HISTORY_LIMIT = 20;
 
 /**
- * Bumped whenever enrichment starts collecting something new (v4: the signed
- * contracts). Records enriched by an older version are refetched once, spread
- * over syncs by the usual wall-clock budget.
+ * Bumped whenever enrichment starts collecting something new (v5: the draft
+ * TORs). Records enriched by an older version are refetched once, spread over
+ * syncs by the usual wall-clock budget.
  */
-const ENRICH_VERSION = 4;
+const ENRICH_VERSION = 5;
+
+/**
+ * The portal often posts an announcement first and attaches its file later.
+ * A record still showing an announcement without one is asked again once
+ * this much time has passed, so the file turns up instead of staying a link.
+ */
+const MISSING_FILE_RECHECK_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Titles that read like IT work. The software filter decides what is imported;
@@ -369,6 +382,10 @@ export class EgpService {
     const enrichedRefs = await this.importer.enrichedRefs(
       entries.map((entry) => sourceRefFor(entry.project, entry.type)),
       ENRICH_VERSION,
+      {
+        "documents.url": { $regex: `^${escapeRegex(EGP_ENDPOINTS.listing)}/` },
+        enrichedAt: { $lt: new Date(Date.now() - MISSING_FILE_RECHECK_MS) },
+      },
     );
     const pending = entries.filter((entry) => !enrichedRefs.has(sourceRefFor(entry.project, entry.type)));
     const projectIds = [...new Set(pending.map((entry) => entry.project.projectId))];
@@ -381,12 +398,13 @@ export class EgpService {
       env.egp.concurrency,
       () => Date.now() < deadline,
       async (projectId) => {
-        const [announcements, detail, contracts] = await Promise.all([
+        const [announcements, detail, contracts, tors] = await Promise.all([
           this.client.announcements(projectId).catch(() => []),
           this.client.projectDetail(projectId).catch(() => null),
           this.client.contracts(projectId).catch(() => []),
+          this.client.tors(projectId).catch(() => []),
         ]);
-        enrichment.set(projectId, { announcements, detail, contracts });
+        enrichment.set(projectId, { announcements, detail, contracts, tors });
       },
     );
 
@@ -472,17 +490,27 @@ export class EgpService {
     // Every announcement e-GP has for this project, newest first — the detail
     // page shows them as the project's paper trail (TOR draft, invitation,
     // award), each linking to its own document.
-    const documents = (enrichment?.announcements ?? [])
-      .map((a) => ({
-        label: a.masterAnnounceTypeName?.trim() || type.label,
-        publishedAt: a.projectAnnouncementPublishDate
-          ? new Date(a.projectAnnouncementPublishDate)
-          : null,
-        url:
-          a.id && a.projectAnnouncementPath
-            ? this.client.fileUrl(a.id, a.projectAnnouncementPath)
-            : this.client.listingUrl(project.projectId),
-      }))
+    const announcementDocuments = (enrichment?.announcements ?? []).map((a) => ({
+      label: a.masterAnnounceTypeName?.trim() || type.label,
+      publishedAt: a.projectAnnouncementPublishDate ? new Date(a.projectAnnouncementPublishDate) : null,
+      url:
+        a.id && a.projectAnnouncementPath
+          ? this.client.fileUrl(a.id, a.projectAnnouncementPath)
+          : this.client.listingUrl(project.projectId),
+    }));
+    // Draft TORs sit in their own list on the portal; only ones with a file are worth showing.
+    const torDocuments = (enrichment?.tors ?? []).flatMap((tor) =>
+      tor.id && tor.projectTorPath
+        ? [
+            {
+              label: "ร่างขอบเขตของงาน (TOR)",
+              publishedAt: tor.projectTorHearingStartDate ? new Date(tor.projectTorHearingStartDate) : null,
+              url: this.client.fileUrl(tor.id, tor.projectTorPath),
+            },
+          ]
+        : [],
+    );
+    const documents = [...announcementDocuments, ...torDocuments]
       .filter((doc) => !doc.publishedAt || !Number.isNaN(doc.publishedAt.getTime()))
       .sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0));
 

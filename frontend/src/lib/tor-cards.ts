@@ -15,6 +15,25 @@ export const FEATURED_IDS = (process.env.FEATURED_TOR_IDS ?? "")
  * all — would be serialized into the page for every record and shipped to the
  * browser just to be ignored.
  */
+/**
+ * A card clamps the summary to two lines, yet it was over half of what the
+ * search page shipped (~600 KB for 665 records). This keeps comfortably more
+ * than two lines show, cut on a grapheme boundary so a Thai vowel or tone mark
+ * is never split from its consonant.
+ */
+const CARD_SUMMARY_CHARS = 220;
+const graphemes = new Intl.Segmenter("th", { granularity: "grapheme" });
+
+function cardSummary(summary: string): string {
+  if (summary.length <= CARD_SUMMARY_CHARS) return summary;
+  let end = 0;
+  for (const { index, segment } of graphemes.segment(summary)) {
+    if (index + segment.length > CARD_SUMMARY_CHARS) break;
+    end = index + segment.length;
+  }
+  return `${summary.slice(0, end).trimEnd()}…`;
+}
+
 function toCard(tor: TorRecord): TorRecord {
   return {
     id: tor.id,
@@ -26,7 +45,7 @@ function toCard(tor: TorRecord): TorRecord {
     match: tor.match,
     tags: tor.tags,
     stage: tor.stage,
-    summary: tor.summary,
+    summary: cardSummary(tor.summary),
     budgetStatus: tor.budgetStatus,
     createdAt: tor.createdAt,
     isNew: tor.isNew,

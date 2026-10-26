@@ -25,6 +25,27 @@ export function isReadableDocument(url: string): boolean {
   return isDocumentFile(url) && url.toLowerCase().split("?")[0].endsWith(".pdf");
 }
 
+/** A bundle of files (MEA posts its documents this way) that can be opened up and shown file by file. */
+export function isArchiveDocument(url: string): boolean {
+  return isDocumentFile(url) && url.toLowerCase().split("?")[0].endsWith(".zip");
+}
+
+/** What a browser shows on its own: the PDFs, and the scans some agencies post as images. */
+const VIEWABLE_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"] as const;
+
+/** Content types the document viewer relays, by what the portal declares. */
+export const VIEWABLE_CONTENT_TYPES = ["application/pdf", "image/jpeg", "image/png"] as const;
+
+/**
+ * A file the detail page can show in place. Wider than isReadableDocument: a
+ * winner list posted as a JPEG is no use to the extractor but perfectly
+ * readable for a person.
+ */
+export function isViewableDocument(url: string): boolean {
+  const path = url.toLowerCase().split("?")[0];
+  return isDocumentFile(url) && VIEWABLE_EXTENSIONS.some((extension) => path.endsWith(extension));
+}
+
 /**
  * The same rule as a Mongo pattern, so a query can select the records this
  * module would accept. It lives next to the predicate deliberately: a query

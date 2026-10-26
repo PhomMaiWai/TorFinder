@@ -120,10 +120,12 @@ function SortSelect({ value, onChange }: { value: SortKey; onChange: (key: SortK
 }
 
 const BUDGET_RANGES = [
-  { id: "under-5m", labelKey: "budgetRangeUnder5m", min: 0, max: 5_000_000 },
+  { id: "under-500k", labelKey: "budgetRangeUnder500k", min: 0, max: 500_000 },
+  { id: "500k-1m", labelKey: "budgetRange500kTo1m", min: 500_000, max: 1_000_000 },
+  { id: "1m-3m", labelKey: "budgetRange1to3m", min: 1_000_000, max: 3_000_000 },
+  { id: "3m-5m", labelKey: "budgetRange3to5m", min: 3_000_000, max: 5_000_000 },
   { id: "5m-10m", labelKey: "budgetRange5to10m", min: 5_000_000, max: 10_000_000 },
-  { id: "10m-20m", labelKey: "budgetRange10to20m", min: 10_000_000, max: 20_000_000 },
-  { id: "over-20m", labelKey: "budgetRangeOver20m", min: 20_000_000, max: Infinity },
+  { id: "over-10m", labelKey: "budgetRangeOver10m", min: 10_000_000, max: Infinity },
 ] as const;
 
 /** Bangkok time: an announcement made on 1 Jan local time is stored as 31 Dec UTC. */
@@ -511,6 +513,7 @@ export function TorSearch({
   const [feedbackText, setFeedbackText] = useState("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const { savedIds, toggleSaved } = useSavedTors();
+  const savedSet = useMemo(() => new Set(savedIds), [savedIds]);
   const t = useTranslations("PublicPage");
 
   // Filter options come from what was actually announced, not a fixed list.
@@ -531,40 +534,38 @@ export function TorSearch({
 
   // Typing stays responsive; the list catches up once React has a spare frame.
   const deferredSearch = useDeferredValue(search);
+  // Everything about a record that doesn't depend on the filters, worked out
+  // once per list instead of on every keystroke for every record.
+  const index = useMemo(
+    () =>
+      tors.map((tor) => ({
+        tor,
+        text: `${tor.title} ${tor.agency} ${tor.summary} ${tor.tags.join(" ")}`.toLowerCase(),
+        budget: parseBudget(tor.budget),
+        year: announcedYear(tor.createdAt),
+      })),
+    [tors],
+  );
   const filtered = useMemo(() => {
     const q = deferredSearch.trim().toLowerCase();
-    return tors.filter((tor) => {
-      const matchSearch =
-        !q ||
-        `${tor.title} ${tor.agency} ${tor.summary} ${tor.tags.join(" ")}`
-          .toLowerCase()
-          .includes(q);
-      const matchStatus = selectedStatuses.length === 0 || selectedStatuses.includes(statusOf(tor));
-      const matchDeadline = matchesDeadline(tor, selectedDeadline);
-      const year = announcedYear(tor.createdAt);
-      const matchYear =
-        selectedYears.length === 0 || (year !== null && selectedYears.includes(year));
-      const matchAgency = selectedAgencies.length === 0 || selectedAgencies.includes(tor.agency);
+    const ranges = BUDGET_RANGES.filter((range) => selectedBudgets.includes(range.id));
+    const statuses = new Set(selectedStatuses);
+    const years = new Set(selectedYears);
+    const agencies = new Set(selectedAgencies);
 
-      const budgetValue = parseBudget(tor.budget);
-      const matchBudget =
-        selectedBudgets.length === 0 ||
-        (budgetValue !== null &&
-          selectedBudgets.some((id) => {
-            const range = BUDGET_RANGES.find((r) => r.id === id);
-            return !!range && budgetValue >= range.min && budgetValue <= range.max;
-          }));
-
-      return (
-        matchSearch &&
-        matchStatus &&
-        matchDeadline &&
-        matchYear &&
-        matchAgency &&
-        matchBudget
-      );
-    });
-  }, [tors, deferredSearch, selectedStatuses, selectedDeadline, selectedYears, selectedAgencies, selectedBudgets]);
+    return index
+      .filter(
+        ({ tor, text, budget, year }) =>
+          (!q || text.includes(q)) &&
+          (statuses.size === 0 || statuses.has(statusOf(tor))) &&
+          matchesDeadline(tor, selectedDeadline) &&
+          (years.size === 0 || (year !== null && years.has(year))) &&
+          (agencies.size === 0 || agencies.has(tor.agency)) &&
+          (ranges.length === 0 ||
+            (budget !== null && ranges.some((range) => budget >= range.min && budget < range.max))),
+      )
+      .map(({ tor }) => tor);
+  }, [index, deferredSearch, selectedStatuses, selectedDeadline, selectedYears, selectedAgencies, selectedBudgets]);
 
   const sorted = useMemo(() => sortTors(filtered, sortKey, pinnedIds), [filtered, sortKey, pinnedIds]);
 
@@ -775,7 +776,7 @@ export function TorSearch({
                   }
                 }}
                 onSubmitFeedback={handleSubmitFeedback}
-                isSaved={savedIds.includes(tor.id)}
+                isSaved={savedSet.has(tor.id)}
                 onToggleSave={() => toggleSaved(tor.id)}
               />
             ))}

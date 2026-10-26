@@ -292,11 +292,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.feedback.createIndex({ status: 1, createdAt: -1 });
     // Doubles as the natural key: a save is idempotent, never duplicated.
     await this.savedTors.createIndex({ userId: 1, torId: 1 }, { unique: true });
+    // findOwn reads one account's saves newest first; this serves it without an in-memory sort.
+    await this.savedTors.createIndex({ userId: 1, createdAt: -1 });
     await this.notifications.createIndex({ userId: 1, createdAt: -1 });
     // The only query pattern the admin dashboard needs: newest runs first.
     await this.syncRuns.createIndex({ startedAt: -1 });
     await this.auditLogEntries.createIndex({ createdAt: -1 });
     await this.backfillAccountStatus();
+    await this.backfillCmmiLevel();
     await this.seed();
   }
 
@@ -311,6 +314,19 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       { $set: { status: "approved" } },
     );
     if (modifiedCount > 0) this.logger.log(`Backfilled status on ${modifiedCount} accounts`);
+  }
+
+  /**
+   * "cmmi" was one option before levels were split; level 3 is the floor any
+   * CMMI holder meets, so it never claims more than the company told us.
+   */
+  private async backfillCmmiLevel(): Promise<void> {
+    const legacy = "cmmi" as Certification;
+    const { modifiedCount } = await this.users.updateMany(
+      { "company.certifications": legacy },
+      { $set: { "company.certifications.$": "cmmi3" } },
+    );
+    if (modifiedCount > 0) this.logger.log(`Backfilled CMMI level on ${modifiedCount} accounts`);
   }
 
   /**

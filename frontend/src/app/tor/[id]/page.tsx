@@ -19,6 +19,7 @@ import { FeedbackForm } from "@/components/public/feedback-form";
 import { ProposalDraftForm } from "@/components/public/proposal-draft-form";
 import { SaveTorButton } from "@/components/public/save-tor-button";
 import { TorDocumentDetails } from "@/components/public/tor-document-details";
+import { TorDocumentList } from "@/components/public/tor-document-list";
 import { TorRecordFacts } from "@/components/public/tor-record-facts";
 import { TorTimeline } from "@/components/public/tor-timeline";
 import { TOR_DETAILS } from "@/data/tor-details";
@@ -85,6 +86,14 @@ export default async function TorDetailPage({
   const budgetStatus = written?.budgetStatus ?? tor.budgetStatus;
   const hasDocumentDetails = !!tor.extraction || !!written;
   const documents = tor.documents ?? [];
+  // When any announcement has no file of its own here — the Bangkok portal
+  // often publishes none — ask the national e-GP, which holds the project too.
+  const egpProjectNumber =
+    tor.projectNumber &&
+    /^\d{11}$/.test(tor.projectNumber) &&
+    (documents.length === 0 || documents.some((doc) => !doc.viewable))
+      ? tor.projectNumber
+      : undefined;
   const publishedAt = thaiDate(tor.createdAt);
 
   const content = (
@@ -209,36 +218,21 @@ export default async function TorDetailPage({
             </section>
           )}
 
-          {documents.length > 0 && (
+          {(documents.length > 0 || egpProjectNumber) && (
             <section className={CARD}>
               <h2 className={HEADING}>
                 <FileText size={18} className="text-ink-subtle" />
                 {t("documentsHeading")}
               </h2>
-              <ul className="divide-y divide-border">
-                {documents.map((doc) => (
-                  <li
-                    key={doc.url + doc.label + doc.publishedAt}
-                    className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0">
-                      <p className="break-words text-sm font-medium text-ink">{doc.label}</p>
-                      <p className="mt-0.5 text-xs text-ink-muted">
-                        {thaiDate(doc.publishedAt) ?? t("unknownValue")}
-                      </p>
-                    </div>
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-accent transition-colors hover:bg-accent-soft"
-                    >
-                      <ExternalLink size={14} />
-                      {t("openDocument")}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <TorDocumentList
+                torId={tor.id}
+                projectNumber={egpProjectNumber}
+                egpSourceUrl={`https://process5.gprocurement.go.th/egp-agpc01-web/announcement?keywordSearch=${encodeURIComponent(tor.projectNumber ?? "")}`}
+                documents={documents.map((doc) => ({
+                  ...doc,
+                  dateLabel: thaiDate(doc.publishedAt) ?? t("unknownValue"),
+                }))}
+              />
             </section>
           )}
 

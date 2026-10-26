@@ -8,6 +8,7 @@ import {
   EgpContract,
   EgpProjectDetail,
   EgpSearchResponse,
+  EgpTor,
 } from "./egp.types";
 
 @Injectable()
@@ -39,6 +40,19 @@ export class EgpClient {
   async announcements(projectId: string): Promise<EgpAnnouncement[]> {
     const body = await this.http.get<EgpAnnouncementResponse>(
       "/ProjectAnnouncements/GetAnnouncementDetailInProject",
+      { pageNo: "1", pageSize: "20", projectId },
+      { timeoutMs: EGP_REQUEST.enrichTimeoutMs, maxRetries: 1 },
+    );
+    return body.data ?? [];
+  }
+
+  /**
+   * Draft TORs put out for comment. The portal lists these apart from the
+   * announcements, and often they are the only file the project has.
+   */
+  async tors(projectId: string): Promise<EgpTor[]> {
+    const body = await this.http.get<{ data: EgpTor[] | null }>(
+      "/ProjectTors/GetTorInProject",
       { pageNo: "1", pageSize: "20", projectId },
       { timeoutMs: EGP_REQUEST.enrichTimeoutMs, maxRetries: 1 },
     );

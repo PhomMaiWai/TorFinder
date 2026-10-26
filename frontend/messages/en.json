@@ -17,7 +17,7 @@
     "notificationsAriaLabel": "Notifications",
     "recentNotices": "Recent notices",
     "login": "Log in",
-    "getStarted": "Get started free",
+    "logout": "Sign out",
     "closeMenuAriaLabel": "Close menu",
     "openMenuAriaLabel": "Open menu"
   },
@@ -124,7 +124,6 @@
     "titleLine1": "Never miss an opportunity",
     "titleLine2": "in BMA software procurement",
     "description": "Automatically collect, analyze, and match TORs from BMA agencies with your company. No more checking e-GP every day.",
-    "ctaPrimary": "Start for free",
     "ctaSecondary": "View preview"
   },
   "LandingFeatures": {
@@ -203,7 +202,21 @@
     "adminTitle": "Sign in as administrator",
     "adminDescription": "For TorFinder administrators only",
     "pageTitle": "Sign in",
-    "pageSubtitle": "Choose the account type you want to sign in with"
+    "pageSubtitle": "Choose the account type you want to sign in with",
+    "publicTitle": "Sign in as a member of the public",
+    "publicDescription": "Search and follow TORs with your Google account"
+  },
+  "LoginPublicPage": {
+    "badge": "Public",
+    "title": "Sign in as a member of the public",
+    "description": "Sign in with Google right away — no sign-up form, no approval wait.",
+    "switchLabel": "Organization sign-in instead →"
+  },
+  "ViewerSignIn": {
+    "googleButton": "Continue with Google",
+    "googleUnavailable": "Google sign-in is not configured yet (NEXT_PUBLIC_GOOGLE_CLIENT_ID)",
+    "pending": "The account for {companyName} is waiting for admin review.",
+    "useOrgLogin": "This email belongs to an organization account — please use the organization sign-in."
   },
   "LoginAdminPage": {
     "title": "Sign in as administrator",
@@ -309,13 +322,22 @@
     "largestPastContractLabel": "Largest public-sector contract completed (THB)",
     "largestPastContractHint": "Checked against \"experience of at least …\" requirements",
     "registeredCapitalLabel": "Paid-up registered capital (THB)",
-    "certificationsLabel": "Certifications held",
-    "noCertificationsLabel": "None of these",
     "budgetRangeSectionTitle": "Project size of interest",
     "budgetRangeDescription": "Leave blank for no limit",
     "budgetMinLabel": "From (THB)",
     "budgetMaxLabel": "Up to (THB)",
-    "workTypesFallback": "No work types chosen yet"
+    "workTypesFallback": "No work types chosen yet",
+    "dealerLabel": "Manufacturer documents",
+    "standardsSectionTitle": "International certifications (ISO / CMMI)",
+    "standardsDescription": "Pick the standards your organization or team is certified for, to check TOR eligibility criteria.",
+    "standardsSearchPlaceholder": "Search standards (e.g. ISO 29110, CMMI, ISO 27001)...",
+    "standardsCount": "International standards ({count} - click to select):",
+    "standardsSelected": "· {count} selected",
+    "standardsRequest": "+ Request a standard",
+    "standardsRequestSubject": "Standard request: {name}",
+    "standardsNoResults": "No standard matches “{query}” — use “Request a standard” to let us know",
+    "noStandardsLabel": "We don't hold any of these certifications",
+    "registeredCapitalHint": "Public record at the Department of Business Development (DBD), checked against a TOR's minimum capital"
   },
   "NotificationsPage": {
     "pageTitle": "Notifications",
@@ -360,10 +382,12 @@
     "filterBudgetTitle": "Budget",
     "filterAgencyTitle": "Agency (BMA)",
     "filterTagTitle": "Category / Technology",
-    "budgetRangeUnder5m": "Under 5 million baht",
-    "budgetRange5to10m": "5 - 10 million baht",
-    "budgetRange10to20m": "10 - 20 million baht",
-    "budgetRangeOver20m": "Over 20 million baht",
+    "budgetRangeUnder500k": "Under 500,000 baht",
+    "budgetRange500kTo1m": "500,000 - 1,000,000 baht",
+    "budgetRange1to3m": "1,000,000 - 3,000,000 baht",
+    "budgetRange3to5m": "3,000,000 - 5,000,000 baht",
+    "budgetRange5to10m": "5,000,000 - 10,000,000 baht",
+    "budgetRangeOver10m": "10,000,000 baht and up",
     "resultsCount": "<strong>{count}</strong> results found",
     "emptyStateTitle": "No matching projects found",
     "emptyStateDescription": "Try adjusting your search or removing filters",
@@ -627,7 +651,9 @@
     "statusPending": "Pending review",
     "statusApproved": "Approved",
     "statusRejected": "Rejected",
-    "reviewFailed": "Could not update the account status"
+    "reviewFailed": "Could not update the account status",
+    "registeredCapitalLabel": "Paid-up registered capital",
+    "bahtAmount": "{amount} baht"
   },
   "AdminAuditPage": {
     "description": "Complete activity history for the system and administrators",
@@ -654,7 +680,7 @@
   },
   "AdminUsersPage": {
     "title": "Manage Users",
-    "description": "All users in the system, including both company and administrator accounts",
+    "description": "Every account in the system: companies, members of the public, and staff",
     "searchPlaceholder": "Search by name, email, or company...",
     "emptyState": "No matching users found",
     "lastActiveInfo": "Last active {date}",
@@ -663,6 +689,10 @@
     "roleOrg": "Company",
     "roleProjectOwner": "Project owner",
     "roleAuditor": "Auditor",
+    "roleViewer": "Public viewer",
+    "roleFilterLabel": "Filter by account type",
+    "roleFilterAll": "All types",
+    "roleFilterStaff": "Staff",
     "roleAdmin": "Administrator",
     "statusActive": "Active",
     "statusSuspended": "Suspended",
@@ -760,11 +790,27 @@
     "workTypeGroup_services": "Services",
     "workTypeGroup_infrastructure": "Hardware & infrastructure",
     "workTypeGroup_domains": "Domain expertise",
-    "cert_iso9001": "ISO 9001",
-    "cert_iso14001": "ISO 14001",
-    "cert_iso27001": "ISO/IEC 27001",
-    "cert_iso20000": "ISO/IEC 20000",
-    "cert_cmmi": "CMMI",
-    "cert_dealer": "Manufacturer's dealer authorisation"
+    "cert_dealer": "Manufacturer's dealer authorisation",
+    "standardGroup_software": "Software engineering & development",
+    "standardGroup_security": "Security, data & cloud",
+    "standardGroup_service": "Service & data center management",
+    "standardGroup_quality": "Quality management & AI standards"
+  },
+  "TorDocuments": {
+    "view": "View",
+    "download": "Download",
+    "newTab": "Open in new tab",
+    "close": "Close",
+    "loading": "Loading document...",
+    "failed": "This document can't be shown right now",
+    "openSource": "Open on source site",
+    "fromEgp": "From the Comptroller General's e-GP",
+    "lookingUpEgp": "Looking up documents on e-GP...",
+    "none": "No announcement documents yet",
+    "openArchive": "Show files",
+    "archiveLoading": "Opening bundle — a large one can take a moment...",
+    "archiveFailed": "This bundle can't be opened here",
+    "archiveEmpty": "No PDFs or images in this bundle",
+    "downloadZip": "Download zip"
   }
 }

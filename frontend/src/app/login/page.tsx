@@ -1,9 +1,15 @@
-import { ArrowLeft, Building2, ChevronRight, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Building2, ChevronRight, ShieldAlert, Users } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 function getRoles(t: (key: string) => string) {
   return [
+    {
+      href: "/login/public",
+      icon: Users,
+      title: t("publicTitle"),
+      description: t("publicDescription"),
+    },
     {
       href: "/login/organization",
       icon: Building2,
@@ -19,9 +25,18 @@ function getRoles(t: (key: string) => string) {
   ];
 }
 
-export default function LoginChoicePage() {
-  const t = useTranslations("LoginPage");
-  const tc = useTranslations("Common");
+export default async function LoginChoicePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const [{ next }, t, tc] = await Promise.all([
+    searchParams,
+    getTranslations("LoginPage"),
+    getTranslations("Common"),
+  ]);
+  // Carried to whichever sign-in page they pick, so they land where they were headed.
+  const query = typeof next === "string" ? `?${new URLSearchParams({ next })}` : "";
   const ROLES = getRoles(t);
 
   return (
@@ -39,11 +54,12 @@ export default function LoginChoicePage() {
           {t("pageSubtitle")}
         </p>
 
+
         <div className="space-y-4">
           {ROLES.map(({ href, icon: Icon, title, description }) => (
             <Link
               key={href}
-              href={href}
+              href={`${href}${query}`}
               className="group flex items-center gap-5 rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-accent/40"
             >
               <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-surface-alt">
@@ -52,7 +68,7 @@ export default function LoginChoicePage() {
               <div className="min-w-0 flex-1">
                 <p className="text-base font-semibold text-ink">{title}</p>
                 <p className="mt-1 text-sm text-ink-muted">{description}</p>
-              </div>    
+              </div>
               <ChevronRight
                 size={20}
                 className="shrink-0 text-ink-subtle transition-transform group-hover:translate-x-0.5"

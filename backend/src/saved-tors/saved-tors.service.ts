@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { ObjectId } from "mongodb";
+import { MongoBulkWriteError, ObjectId } from "mongodb";
 
 import { DatabaseService } from "../database/database.service";
+
+const DUPLICATE_KEY = 11000;
 
 @Injectable()
 export class SavedTorsService {
@@ -24,6 +26,48 @@ export class SavedTorsService {
       { $setOnInsert: { createdAt: new Date() } },
       { upsert: true },
     );
+  }
+
+  /**
+   * Merges ids saved before signing in. Ids that aren't announcements (old
+   * mock ids, deleted TORs) are dropped silently: they were never the
+   * account's to begin with, so failing the whole merge over them would only
+   * lose the valid ones. One lookup and one bulk write, however many ids.
+   */
+  async import(userId: string, torIds: string[]): Promise<string[]> {
+    const candidates = [...new Set(torIds)].filter((id) => ObjectId.isValid(id)).map((id) => new ObjectId(id));
+
+    if (candidates.length > 0) {
+      const existing = await this.db.tors
+        .find({ _id: { $in: candidates } }, { projection: { _id: 1 } })
+        .toArray();
+
+      if (existing.length > 0) {
+        const owner = new ObjectId(userId);
+        const createdAt = new Date();
+        await this.db.savedTors
+          .bulkWrite(
+            existing.map(({ _id }) => ({
+              updateOne: {
+                filter: { userId: owner, torId: _id },
+                update: { $setOnInsert: { createdAt } },
+                upsert: true,
+              },
+            })),
+            // One failed upsert mustn't stop the rest.
+            { ordered: false },
+          )
+          .catch((error: unknown) => {
+            // A concurrent save of the same id already made the row: that's the outcome we wanted.
+            const onlyDuplicates =
+              error instanceof MongoBulkWriteError &&
+              [error.writeErrors].flat().every((writeError) => writeError.code === DUPLICATE_KEY);
+            if (!onlyDuplicates) throw error;
+          });
+      }
+    }
+
+    return this.findOwn(userId);
   }
 
   /** A repeat unsave is a no-op — nothing to remove is not an error. */

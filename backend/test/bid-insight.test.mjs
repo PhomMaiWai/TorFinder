@@ -60,3 +60,19 @@ describe("assessBid", () => {
     assert.equal(insight.peerCount, 5);
   });
 });
+
+describe("assessBid — one project, many announcements", () => {
+  it("counts a project once however many stage records carry its award", () => {
+    const sameProject = (n) => ({ ...award(0.9), projectNumber: `P-${n}` });
+    const peers = [1, 2, 3, 4, 5].flatMap((n) => [sameProject(n), sameProject(n), sameProject(n)]);
+    const insight = assessBid(TARGET, peers);
+    assert.equal(insight.peerCount, 5);
+  });
+
+  it("never compares the announcement with its own award notice", () => {
+    const own = { ...award(0.5), projectNumber: "SELF" };
+    const others = [1, 2, 3, 4, 5].map((n) => ({ ...award(0.9), projectNumber: `P-${n}` }));
+    const insight = assessBid({ ...TARGET, projectNumber: "SELF" }, [own, ...others]);
+    assert.equal(insight.peerCount, 5);
+  });
+});

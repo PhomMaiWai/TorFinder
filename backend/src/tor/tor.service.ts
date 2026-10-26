@@ -11,6 +11,7 @@ import { STAGE_LISTING_ORDER } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
 import { buildTimeline } from "./tor-stage";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
+import { isArchiveDocument, isViewableDocument } from "./tor-documents";
 import { currentDaysLeft } from "./tor-normalize";
 
 /**
@@ -143,6 +144,12 @@ export class TorService {
     return {
       id: _id.toString(),
       ...rest,
+      // Which files the detail page can show in place rather than link out to.
+      documents: rest.documents?.map((file) => ({
+        ...file,
+        viewable: isViewableDocument(file.url),
+        archive: isArchiveDocument(file.url),
+      })),
       daysLeft: currentDaysLeft(rest),
       bidding: biddingOf(
         {

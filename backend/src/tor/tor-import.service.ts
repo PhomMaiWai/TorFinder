@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 
 import { env } from "../config/env";
 import { DatabaseService, TorDoc } from "../database/database.service";
@@ -191,10 +191,20 @@ export class TorImportService {
    * for what hasn't been enriched yet — and refetches everything once when it
    * starts collecting something new and bumps its version.
    */
-  async enrichedRefs(sourceRefs: string[], version: number): Promise<Set<string>> {
+  /**
+   * Which of these records are already enriched at this version. `stale`
+   * describes records that count as not enriched anyway — ones worth asking
+   * the portal about again, such as an announcement still missing its file.
+   */
+  async enrichedRefs(sourceRefs: string[], version: number, stale?: Filter<TorDoc>): Promise<Set<string>> {
     const existing = await this.db.tors
       .find(
-        { sourceRef: { $in: sourceRefs }, enrichedAt: { $exists: true }, enrichVersion: version },
+        {
+          sourceRef: { $in: sourceRefs },
+          enrichedAt: { $exists: true },
+          enrichVersion: version,
+          ...(stale ? { $nor: [stale] } : {}),
+        },
         { projection: { sourceRef: 1 } },
       )
       .toArray();

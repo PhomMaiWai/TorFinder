@@ -227,6 +227,7 @@ export class MatchingService {
 
     const projection = {
       title: 1,
+      projectNumber: 1,
       summary: 1,
       tags: 1,
       budgetAmount: 1,

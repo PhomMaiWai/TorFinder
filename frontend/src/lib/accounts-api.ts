@@ -24,6 +24,8 @@ export type OrgAccount = {
     techStack?: string[];
     /** Free-text summary of past projects — absent until the company writes one. */
     pastExperience?: string;
+    /** Baht. Public record at the DBD, checked against a TOR's minimum capital. */
+    registeredCapital?: number;
   };
 };
 

@@ -10,8 +10,11 @@ import { AppShell } from "@/components/layout/app-sidebar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { isClosed, isKnown, torAmount } from "@/lib/tor-ui";
-import { useSavedTors, type SavedTorsScope } from "@/lib/use-saved-tors";
+import { useSavedTors } from "@/lib/use-saved-tors";
 import type { TorRecord } from "@/types/tor";
+
+/** Which shell the page renders in — the list itself is always the signed-in account's. */
+type SavedTorsScope = "public" | "org";
 
 function SavedList({
   tors,
@@ -22,7 +25,7 @@ function SavedList({
   scope: SavedTorsScope;
   showHeader?: boolean;
 }) {
-  const { savedIds, toggleSaved } = useSavedTors(scope);
+  const { savedIds, toggleSaved } = useSavedTors();
   const t = useTranslations("SavedPage");
   const savedTors = tors.filter((tor) => savedIds.includes(tor.id));
 

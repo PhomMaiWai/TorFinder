@@ -1,4 +1,4 @@
-import { ArrowRight, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -25,15 +25,8 @@ export function HeroSection() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/dashboard"
-            className="flex h-11 items-center gap-2 rounded-lg bg-accent px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark"
-          >
-            {t("ctaPrimary")}
-            <ArrowRight size={16} />
-          </Link>
-          <Link
             href="#preview"
-            className="flex h-11 items-center rounded-lg border border-border px-6 text-sm font-semibold text-ink transition-colors hover:bg-surface-alt"
+            className="flex h-11 items-center rounded-lg bg-accent px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark"
           >
             {t("ctaSecondary")}
           </Link>

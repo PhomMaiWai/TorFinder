@@ -1,15 +1,16 @@
 "use client";
 
-import { Bell, Bookmark, Menu, X } from "lucide-react";
+import { Bell, Bookmark, LogOut, Menu, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 import { PUBLIC_NOTICES } from "@/data/public-notices";
-import { useSavedTors } from "@/lib/use-saved-tors";
-import { homeFor, useSession } from "@/lib/use-session";
+import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
+import { homeFor, resetSession, useSession } from "@/lib/use-session";
 
 function useClickOutside(onOutside: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -28,11 +29,22 @@ function useClickOutside(onOutside: () => void) {
 export function SiteNavbar() {
   const t = useTranslations("Navbar");
   const session = useSession();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [noticesOpen, setNoticesOpen] = useState(false);
   const { savedIds } = useSavedTors();
 
   const noticesRef = useClickOutside(() => setNoticesOpen(false));
+  // Viewers have no app sidebar, so signing out has to live up here.
+  const isViewer = session?.role === "viewer";
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    resetSession();
+    resetSavedTors();
+    router.push("/");
+    router.refresh();
+  }
 
   const navLinks = [
     { label: t("navSearch"), href: "/public" },
@@ -107,6 +119,19 @@ export function SiteNavbar() {
 
           {session === undefined ? (
             <span className="hidden h-9 w-40 animate-pulse rounded-lg bg-surface-alt md:block" />
+          ) : isViewer ? (
+            <div className="hidden items-center gap-1 md:flex">
+              <span className="max-w-44 truncate px-2 text-sm font-medium text-ink">{session.name}</span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                aria-label={t("logout")}
+                title={t("logout")}
+                className="grid size-9 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
+              >
+                <LogOut size={17} />
+              </button>
+            </div>
           ) : session ? (
             <Link
               href={homeFor(session.role)}
@@ -115,20 +140,12 @@ export function SiteNavbar() {
               {session.name}
             </Link>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="hidden px-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink md:block"
-              >
-                {t("login")}
-              </Link>
-              <Link
-                href="/dashboard"
-                className="hidden h-9 items-center rounded-lg bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-dark md:flex"
-              >
-                {t("getStarted")}
-              </Link>
-            </>
+            <Link
+              href="/login"
+              className="hidden h-9 items-center rounded-lg bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-dark md:flex"
+            >
+              {t("login")}
+            </Link>
           )}
 
           <button
@@ -154,7 +171,16 @@ export function SiteNavbar() {
             </Link>
           ))}
           <div className="flex gap-3 border-t border-border py-3">
-            {session ? (
+            {isViewer ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-semibold text-ink"
+              >
+                <LogOut size={16} />
+                {t("logout")}
+              </button>
+            ) : session ? (
               <Link
                 href={homeFor(session.role)}
                 className="flex flex-1 items-center justify-center truncate rounded-lg bg-accent py-2 text-sm font-semibold text-white"
@@ -162,17 +188,12 @@ export function SiteNavbar() {
                 {session.name}
               </Link>
             ) : (
-              <>
-                <Link href="/login" className="flex-1 py-2 text-center text-sm text-ink-muted">
-                  {t("login")}
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="flex flex-1 items-center justify-center rounded-lg bg-accent py-2 text-sm font-semibold text-white"
-                >
-                  {t("getStarted")}
-                </Link>
-              </>
+              <Link
+                href="/login"
+                className="flex flex-1 items-center justify-center rounded-lg bg-accent py-2 text-sm font-semibold text-white"
+              >
+                {t("login")}
+              </Link>
             )}
           </div>
         </nav>

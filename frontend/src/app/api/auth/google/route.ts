@@ -7,6 +7,7 @@ const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const credential = typeof body?.credential === "string" ? body.credential : "";
+  const as = body?.as === "viewer" ? "viewer" : undefined;
 
   if (!credential) {
     return NextResponse.json({ error: "เข้าสู่ระบบด้วย Google ไม่สำเร็จ" }, { status: 400 });
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     backendRes = await fetch(`${BACKEND_URL}/api/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ credential }),
+      body: JSON.stringify({ credential, as }),
     });
   } catch {
     return NextResponse.json({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่" }, { status: 502 });
