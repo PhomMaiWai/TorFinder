@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!backendRes.ok || !data?.token) {
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
     return NextResponse.json(
-      { error: message ?? "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่" },
+      { error: message ?? "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่", code: data?.code },
       { status: backendRes.status || 401 },
     );
   }
