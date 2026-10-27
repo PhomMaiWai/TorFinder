@@ -49,6 +49,8 @@ const CLIENT_NAMESPACES = [
   "ErrorState",
   // SiteFooter renders inside client trees too: the error boundary and /saved.
   "Footer",
+  "LandingExplorer",
+  "LandingHeroFlow",
   "GoogleCompleteSignupForm",
   "LandingPreview",
   "Navbar",

@@ -21,7 +21,7 @@ export function LanguageToggle() {
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-border bg-surface px-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-alt disabled:opacity-60 dark:border-border dark:bg-transparent"
+      className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-bold text-ink-muted transition-colors hover:bg-surface hover:text-ink disabled:opacity-60"
       aria-label={locale === "th" ? "Switch to English" : "เปลี่ยนเป็นภาษาไทย"}
     >
       {locale === "th" ? "EN" : "TH"}

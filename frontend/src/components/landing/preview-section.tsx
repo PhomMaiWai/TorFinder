@@ -31,7 +31,7 @@ export function PreviewSection() {
   }
 
   return (
-    <section id="preview" className="bg-surface-alt py-24 sm:py-32">
+    <section id="preview" className="aurora bg-surface-alt/60 py-24 sm:py-32">
       <div className="mx-auto max-w-[1000px] px-6">
         <div className="mb-10 text-center sm:mb-14">
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
@@ -43,7 +43,7 @@ export function PreviewSection() {
         </div>
 
         {/* Mini Public Search Interface */}
-        <div className="rounded-2xl border border-border bg-surface p-2 shadow-sm sm:p-3">
+        <div className="glass rounded-2xl p-2 transition-shadow focus-within:shadow-[0_0_0_3px_rgb(225_29_72/18%)] sm:p-3">
           <div className="flex items-center gap-3 px-3 py-2">
             <Search size={20} className="shrink-0 text-ink-subtle" />
             <input
@@ -73,7 +73,7 @@ export function PreviewSection() {
             return (
               <article
                 key={tor.id}
-                className="group flex flex-col justify-between rounded-xl border border-border bg-surface p-5 transition-all hover:border-ink-subtle hover:shadow-[0_4px_20px_rgb(24,24,27/5%)]"
+                className="glass group flex flex-col justify-between rounded-xl p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_16px_40px_-12px_rgb(225_29_72/22%)]"
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -195,7 +195,7 @@ export function PreviewSection() {
         <div className="mt-10 text-center">
           <Link
             href="/public"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-6 text-base font-medium text-ink-muted shadow-sm transition-all hover:bg-surface-alt hover:text-ink"
+            className="glass inline-flex h-11 items-center justify-center gap-2 rounded-xl px-6 text-base font-medium text-ink-muted transition-all hover:-translate-y-0.5 hover:text-ink"
           >
             {t("viewPublicPortal")}
             <ArrowRight size={16} />

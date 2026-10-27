@@ -1,12 +1,26 @@
 "use client";
 
-import { Bookmark, Building2, Check, CircleAlert, CircleCheck, CircleHelp, Clock, ExternalLink, Search } from "lucide-react";
+import {
+  AlarmClock,
+  Bookmark,
+  Building2,
+  Check,
+  CircleAlert,
+  CircleCheck,
+  CircleHelp,
+  Clock,
+  ExternalLink,
+  FolderOpen,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/layout/app-sidebar";
 import { BiddingBadge } from "@/components/public/bidding-badge";
+import { CountUp } from "@/components/ui/count-up";
 import type { CompanySummary } from "@/lib/opportunities-api";
 import { biddingOf, daysUntilClose, isClosingSoon, torAmount } from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
@@ -29,6 +43,37 @@ const FILTER_LABEL = {
   highMatch: "filterHighMatch",
   closingSoon: "filterClosingSoon",
 } as const satisfies Record<Filter, string>;
+
+const RING_R = 26;
+const RING_C = 2 * Math.PI * RING_R;
+
+function MatchRing({ score, strong }: { score: number; strong: boolean }) {
+  return (
+    <div className="relative hidden size-14 shrink-0 sm:block">
+      <svg viewBox="0 0 60 60" className="size-full -rotate-90" aria-hidden>
+        <circle cx="30" cy="30" r={RING_R} fill="none" strokeWidth="4" className="stroke-border" />
+        <circle
+          cx="30"
+          cy="30"
+          r={RING_R}
+          fill="none"
+          strokeWidth="4"
+          strokeLinecap="round"
+          className={`animate-ring ${strong ? "stroke-accent" : "stroke-ink-subtle"}`}
+          strokeDasharray={RING_C}
+          strokeDashoffset={RING_C * (1 - score / 100)}
+          style={{ "--ring-c": RING_C } as React.CSSProperties}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={`text-base font-bold leading-none tracking-tight ${strong ? "text-accent" : "text-ink"}`}>
+          {score}
+        </span>
+        <span className="text-2xs font-medium text-ink-subtle">Match</span>
+      </div>
+    </div>
+  );
+}
 
 const CHECK_STYLE = {
   pass: { icon: CircleCheck, cls: "text-success" },
@@ -57,10 +102,12 @@ function OpportunityCard({
   opportunity,
   isSaved,
   onSaveToggle,
+  index,
 }: {
   opportunity: ScoredTor;
   isSaved: boolean;
   onSaveToggle: (id: string) => void;
+  index: number;
 }) {
   const t = useTranslations("Dashboard");
   const bidding = biddingOf(opportunity);
@@ -69,16 +116,12 @@ function OpportunityCard({
   const strong = opportunity.match >= HIGH_MATCH;
 
   return (
-    <article className="group p-5">
+    <article
+      className="animate-fade-up group p-5 transition-colors duration-200 hover:bg-accent-soft/30"
+      style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
+    >
       <div className="flex gap-4 sm:gap-5">
-        <div
-          className={`hidden size-14 shrink-0 flex-col items-center justify-center rounded-full border-[3px] sm:flex ${
-            strong ? "border-accent text-accent" : "border-border text-ink"
-          }`}
-        >
-          <span className="text-lg font-bold leading-none tracking-tight">{opportunity.match}</span>
-          <span className="text-2xs font-medium text-ink-subtle">Match</span>
-        </div>
+        <MatchRing score={opportunity.match} strong={strong} />
 
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -141,7 +184,7 @@ function OpportunityCard({
             </button>
             <Link
               href={`/tor/${opportunity.id}?in=app`}
-              className="flex h-8 items-center rounded-lg bg-ink px-3 text-sm font-medium text-white transition-colors hover:opacity-90"
+              className="flex h-8 items-center rounded-lg bg-ink px-3 text-sm font-medium text-surface transition-all duration-200 hover:-translate-y-px hover:opacity-90"
             >
               {t("viewDetails")}
             </Link>
@@ -162,9 +205,9 @@ function DeadlinePanel({ opportunities }: { opportunities: ScoredTor[] }) {
   if (closing.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
-      <p className="border-b border-border px-4 py-3 text-sm font-semibold text-ink">{t("deadlinePanelTitle")}</p>
-      <div className="divide-y divide-border">
+    <div className="glass animate-fade-up overflow-hidden rounded-2xl" style={{ animationDelay: "200ms" }}>
+      <p className="border-b border-border/60 px-4 py-3 text-sm font-semibold text-ink">{t("deadlinePanelTitle")}</p>
+      <div className="divide-y divide-border/60">
         {closing.map(({ opp, days }) => (
           <Link
             key={opp.id}
@@ -198,8 +241,8 @@ function ProfilePanel({ company }: { company: CompanySummary | null }) {
   const percent = Math.round((items.filter((item) => item.done).length / items.length) * 100);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+    <div className="glass animate-fade-up overflow-hidden rounded-2xl" style={{ animationDelay: "300ms" }}>
+      <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
         <p className="text-sm font-semibold text-ink">{t("companyProfileTitle")}</p>
         <Link href="/profile" className="text-xs font-medium text-accent hover:text-accent-dark">
           {t("editLink")}
@@ -208,10 +251,10 @@ function ProfilePanel({ company }: { company: CompanySummary | null }) {
       <div className="p-4">
         <div className="mb-3 flex items-center justify-between text-sm">
           <span className="text-ink-muted">{t("completionLabel")}</span>
-          <span className="font-bold text-ink">{percent}%</span>
+          <span className="font-bold text-ink"><CountUp value={`${percent}%`} /></span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-alt">
-          <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
+          <div className="animate-bar h-full origin-left rounded-full bg-gradient-to-r from-rose-400 to-accent" style={{ width: `${percent}%` }} />
         </div>
         <ul className="mt-4 space-y-2">
           {items.map(({ label, done }) => (
@@ -252,10 +295,10 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
   }, [filter, list, query]);
 
   const stats = [
-    { label: t("statOpen"), value: list.filter((opp) => biddingOf(opp).status === "open").length, cls: "text-ink" },
-    { label: t("statEligible"), value: list.filter((opp) => opp.eligible === true).length, cls: "text-success" },
-    { label: t("statUrgent"), value: list.filter(isClosingSoon).length, cls: "text-danger" },
-    { label: t("statSaved"), value: savedIds.length, cls: "text-ink" },
+    { label: t("statOpen"), icon: FolderOpen, value: list.filter((opp) => biddingOf(opp).status === "open").length, cls: "text-accent", tint: "bg-accent-soft" },
+    { label: t("statEligible"), icon: ShieldCheck, value: list.filter((opp) => opp.eligible === true).length, cls: "text-success", tint: "bg-success-soft" },
+    { label: t("statUrgent"), icon: AlarmClock, value: list.filter(isClosingSoon).length, cls: "text-danger", tint: "bg-danger-soft" },
+    { label: t("statSaved"), icon: Bookmark, value: savedIds.length, cls: "text-ink", tint: "bg-surface-alt" },
   ];
 
   function handleSaveToggle(id: string) {
@@ -267,10 +310,10 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
 
   return (
     <AppShell>
-      <main className="flex min-h-screen flex-col bg-surface-alt/50">
-        <header className="border-b border-border bg-surface px-4 py-7 sm:px-8">
-          <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+      <main className="aurora flex min-h-screen flex-col bg-surface-alt/50">
+        <header className="px-4 pb-2 pt-8 sm:px-8">
+          <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="animate-fade-up">
               <p className="mb-1 text-xs font-medium tracking-wide text-ink-muted">
                 {company?.companyName ?? t("companyFallback")}
               </p>
@@ -278,13 +321,21 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
               <p className="mt-1.5 max-w-xl text-sm text-ink-muted">{t("overviewDescription")}</p>
             </div>
             {opportunities && (
-              <dl className="flex items-center gap-4 text-sm">
+              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {stats.map((stat, i) => (
-                  <div key={stat.label} className="flex items-center gap-4">
-                    {i > 0 && <span className="h-8 w-px bg-border" />}
-                    <div className="flex flex-col items-end">
-                      <dd className={`text-lg font-bold leading-none ${stat.cls}`}>{stat.value}</dd>
-                      <dt className="mt-1 text-2xs font-medium text-ink-muted">{stat.label}</dt>
+                  <div
+                    key={stat.label}
+                    className="glass animate-fade-up flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-300 hover:-translate-y-0.5"
+                    style={{ animationDelay: `${100 + i * 80}ms` }}
+                  >
+                    <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${stat.tint} ${stat.cls}`}>
+                      <stat.icon size={17} />
+                    </span>
+                    <div className="flex min-w-0 flex-col">
+                      <dd className={`text-xl font-bold leading-none ${stat.cls}`}>
+                        <CountUp value={stat.value} duration={900} />
+                      </dd>
+                      <dt className="mt-1 truncate text-2xs font-medium text-ink-muted">{stat.label}</dt>
                     </div>
                   </div>
                 ))}
@@ -295,20 +346,20 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
 
         <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-8">
           {opportunities === null ? (
-            <div className="mx-auto max-w-lg rounded-2xl border border-border bg-surface px-6 py-14 text-center">
+            <div className="glass animate-fade-up mx-auto max-w-lg rounded-2xl px-6 py-14 text-center">
               <Building2 size={28} className="mx-auto mb-3 text-ink-subtle" />
               <p className="text-base font-semibold text-ink">{t("noProfileTitle")}</p>
               <p className="mt-1 text-sm text-ink-muted">{t("noProfileDescription")}</p>
               <Link
                 href="/profile"
-                className="mt-5 inline-flex h-10 items-center rounded-lg bg-accent px-5 text-sm font-semibold text-white hover:bg-accent-dark"
+                className="mt-5 inline-flex h-10 items-center rounded-lg bg-accent px-5 text-sm font-semibold text-white shadow-glow transition-all hover:-translate-y-0.5 hover:bg-accent-dark"
               >
                 {t("setupProfileLink")}
               </Link>
             </div>
           ) : (
             <>
-              <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-2 pl-4 shadow-sm">
+              <div className="glass-strong animate-fade-up sticky top-3 z-20 mb-6 flex flex-wrap items-center gap-3 rounded-2xl p-2 pl-4 transition-shadow focus-within:shadow-[0_0_0_3px_rgb(225_29_72/18%)]" style={{ animationDelay: "150ms" }}>
                 <div className="flex min-w-[220px] flex-1 items-center gap-3">
                   <Search size={18} className="shrink-0 text-ink-subtle" />
                   <input
@@ -324,8 +375,8 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
                       type="button"
                       key={key}
                       onClick={() => setFilter(key)}
-                      className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                        filter === key ? "bg-ink text-white" : "text-ink-muted hover:bg-surface-alt hover:text-ink"
+                      className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200 ${
+                        filter === key ? "bg-ink text-surface shadow-sm" : "text-ink-muted hover:bg-surface-alt hover:text-ink"
                       }`}
                     >
                       {t(FILTER_LABEL[key])}
@@ -345,7 +396,7 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
                       {t("viewNewOpportunities")} <ExternalLink size={13} />
                     </Link>
                   </div>
-                  <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+                  <div className="glass overflow-hidden rounded-2xl">
                     {visible.length === 0 ? (
                       <div className="px-5 py-20 text-center">
                         <Search size={28} className="mx-auto mb-3 text-ink-subtle" />
@@ -357,13 +408,14 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
                         </p>
                       </div>
                     ) : (
-                      <div className="divide-y divide-border">
-                        {visible.map((opp) => (
+                      <div className="divide-y divide-border/60">
+                        {visible.map((opp, index) => (
                           <OpportunityCard
                             key={opp.id}
                             opportunity={opp}
                             isSaved={savedIds.includes(opp.id)}
                             onSaveToggle={handleSaveToggle}
+                            index={index}
                           />
                         ))}
                       </div>
@@ -383,7 +435,7 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
 
       {toast && (
         <div
-          className="animate-toast fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-ink px-4 py-3 text-sm font-medium text-white shadow-lg"
+          className="animate-toast fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-zinc-900/90 px-4 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-md"
           role="status"
         >
           <Check size={14} />

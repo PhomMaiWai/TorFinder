@@ -46,16 +46,100 @@
   /* ── Shadows ─────────────────────────────────────── */
   --shadow-card: 0 1px 3px rgb(0 0 0 / 6%), 0 4px 16px rgb(0 0 0 / 4%);
 
+  /* ── Glass ───────────────────────────────────────── */
+  --shadow-glass: 0 1px 0 var(--glass-highlight) inset, 0 8px 32px rgb(24 24 27 / 7%);
+  --shadow-glow:  0 8px 24px -6px rgb(225 29 72 / 45%);
+
   /* ── Animation ───────────────────────────────────── */
   --animate-toast: toast-in 200ms ease-out;
+  --animate-fade-up: fade-up 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 10s ease-in-out infinite reverse;
+  --animate-blob: blob 18s ease-in-out infinite;
+  --animate-ring: ring-draw 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-bar: bar-grow 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 2.8s linear infinite;
+  --animate-scan: scan 3.6s ease-in-out infinite;
+  --animate-pop-in: pop-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-icon-swap: icon-swap 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-bell: bell 700ms ease-in-out;
+  --animate-slide-in: slide-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-dash: dash 900ms linear infinite;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-10px); }
+}
+
+/* Moves a dashed stroke along its path; pair with stroke-dasharray="4 6". */
+@keyframes dash {
+  to { stroke-dashoffset: -20; }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+}
+
+@keyframes icon-swap {
+  from { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+}
+
+@keyframes bell {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(14deg); }
+  40% { transform: rotate(-12deg); }
+  60% { transform: rotate(7deg); }
+  80% { transform: rotate(-4deg); }
+}
+
+:root {
+  --glass-highlight: rgb(255 255 255 / 70%);
+  --glass-fill: 62%;
 }
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(6px); }
 }
 
+@keyframes scan {
+  0%   { top: 0%;   opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+}
+
+@keyframes float {
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes blob {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(5%, -6%, 0) scale(1.08); }
+  66%      { transform: translate3d(-4%, 5%, 0) scale(0.95); }
+}
+
+@keyframes ring-draw {
+  from { stroke-dashoffset: var(--ring-c); }
+}
+
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+}
+
+@keyframes shimmer {
+  to { transform: translateX(250%); }
+}
+
 /* ── Dark mode overrides ──────────────────────────── */
 .dark {
+  --glass-highlight: rgb(255 255 255 / 8%);
+  --glass-fill: 55%;
+  --shadow-glass: 0 1px 0 var(--glass-highlight) inset, 0 8px 32px rgb(0 0 0 / 35%);
+
   --color-ink:        #f4f4f5;   /* zinc-100 */
   --color-ink-muted:  #a1a1aa;   /* zinc-400 */
   --color-ink-subtle: #71717a;   /* zinc-500 */
@@ -72,6 +156,76 @@
   --color-warn-soft:   #451a03;
 }
 
+/*
+ * Glass surfaces. Built from the theme's own surface/border tokens, so they
+ * follow light/dark without per-mode overrides. Needs something behind it to
+ * blur — pair with .aurora on the page background.
+ */
+@utility glass {
+  background: color-mix(in srgb, var(--color-surface) var(--glass-fill), transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  box-shadow: var(--shadow-glass);
+}
+
+@utility glass-strong {
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Soft rose light behind a page; children sit above it. */
+@utility aurora {
+  position: relative;
+  isolation: isolate;
+  /* clip, not hidden: keeps the glow inside without breaking position: sticky */
+  overflow-x: clip;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    border-radius: 9999px;
+    filter: blur(90px);
+    pointer-events: none;
+    animation: var(--animate-blob);
+  }
+  &::before {
+    top: -10%;
+    left: -8%;
+    width: 46rem;
+    height: 38rem;
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  }
+  &::after {
+    top: 14%;
+    right: -10%;
+    width: 40rem;
+    height: 34rem;
+    background: color-mix(in srgb, #fb7185 15%, transparent);
+    animation-delay: -9s;
+  }
+}
+
+/* Scroll reveal; <Reveal> flips data-visible once on screen. */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+}
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+@media (scripting: none) {
+  .reveal { opacity: 1; transform: none; }
+}
+
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -79,7 +233,11 @@
     background: var(--color-surface);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
+
+  /* Anchor jumps land below the floating navbar, not under it. */
+  section[id] { scroll-margin-top: 5.5rem; }
 
   body {
     margin: 0;
@@ -100,6 +258,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
