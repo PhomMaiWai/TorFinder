@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { SyncScheduler } from "../common/sync-scheduler";
 import { env } from "../config/env";
+import { AdminAlertsService } from "../notifications/admin-alerts.service";
 import { GprocService } from "./gproc.service";
 
 /**
@@ -10,12 +11,13 @@ import { GprocService } from "./gproc.service";
  */
 @Injectable()
 export class GprocScheduler extends SyncScheduler {
-  constructor(gproc: GprocService) {
+  constructor(gproc: GprocService, alerts: AdminAlertsService) {
     // After e-GP and MEA, so the steps read cover what they just imported.
     super(
       "process5",
       env.gproc,
-      async () => `${await gproc.refreshSteps()}; ${await gproc.refresh()}`,
+      alerts,
+      async () => ({ summary: `${await gproc.refreshSteps()}; ${await gproc.refresh()}` }),
       120_000,
     );
   }

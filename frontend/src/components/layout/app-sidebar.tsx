@@ -88,6 +88,7 @@ function getAdminNav(t: (key: string) => string): { section: string | null; link
         { label: t("navManageCompanies"), href: "/admin/companies", icon: Building2 },
         { label: t("navManageUsers"), href: "/admin/users", icon: Users },
         { label: t("navAuditLog"), href: "/admin/audit", icon: ClipboardList },
+        { label: t("navNotifications"), href: "/admin/notifications", icon: Bell },
       ],
     },
   ];
@@ -125,7 +126,7 @@ function NavLinks({
               const active = isActive(href);
               const badge = href.startsWith("/saved")
                 ? savedIds.length || undefined
-                : href === "/notifications"
+                : href.endsWith("/notifications")
                   ? unreadNotifications || undefined
                   : staticBadge;
               return (

@@ -37,6 +37,11 @@ export function summarizeSync({ imported, updated, skipped, superseded, failed }
     .join(", ");
 }
 
+/** A sync as its scheduler reports it: the summary, and any feeds that failed. */
+export function reportSync(result: SyncResult): { summary: string; failedFeeds: string[] } {
+  return { summary: summarizeSync(result), failedFeeds: result.failed };
+}
+
 export type ImportResult = {
   fetched: number;
   imported: number;
