@@ -1,10 +1,19 @@
 import { Logger, OnApplicationBootstrap, OnModuleDestroy } from "@nestjs/common";
 
+import { AdminAlertsService } from "../notifications/admin-alerts.service";
+
 /** The two knobs an operator turns per portal. 0 minutes turns polling off. */
 export type PollSettings = {
   pollMinutes: number;
   pollOnStartup: boolean;
 };
+
+/**
+ * What one run reports back: the line worth logging, and the feeds that didn't
+ * answer when some data still came back — a partial run, which the admins hear
+ * about just like one that failed outright.
+ */
+export type RunReport = { summary: string; failedFeeds?: string[] };
 
 /**
  * Keeps the database current without anyone pressing a button. Each background
@@ -24,8 +33,9 @@ export abstract class SyncScheduler implements OnApplicationBootstrap, OnModuleD
   protected constructor(
     private readonly label: string,
     private readonly settings: PollSettings,
-    /** Runs the job and returns the one line worth logging for it. */
-    private readonly run: () => Promise<string>,
+    private readonly alerts: AdminAlertsService,
+    /** Runs the job and reports how it went. */
+    private readonly run: () => Promise<RunReport>,
     /**
      * How long after boot this portal's first poll starts. Staggered per source
      * so three imports don't compete for the same startup — and because the
@@ -63,11 +73,22 @@ export abstract class SyncScheduler implements OnApplicationBootstrap, OnModuleD
   }
 
   private async poll(): Promise<void> {
+    let report: RunReport;
     try {
-      this.logger.log(`Scheduled ${this.label} run: ${await this.run()}`);
+      report = await this.run();
     } catch (error) {
       // The next tick retries; a portal outage shouldn't crash the server.
       this.logger.warn(`Scheduled ${this.label} run failed: ${String(error)}`);
+      await this.alerts.syncProblem(this.label, {
+        kind: "failed",
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+
+    this.logger.log(`Scheduled ${this.label} run: ${report.summary}`);
+    if (report.failedFeeds?.length) {
+      await this.alerts.syncProblem(this.label, { kind: "partial", failedFeeds: report.failedFeeds });
     }
   }
 }
