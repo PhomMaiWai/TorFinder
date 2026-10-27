@@ -21,7 +21,9 @@
 
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { before, describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
+
+import { MongoClient } from "mongodb";
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:4000";
 const API = `${BASE_URL}/api`;
@@ -473,8 +475,14 @@ describe("PATCH /api/accounts/:id — review, admin only", () => {
 });
 
 describe("approval gates login — the flow end to end", () => {
+  // The emailed link is covered by account-links.e2e; here the address is
+  // simply marked confirmed, so the only gate left is the admin's approval.
+  const mongo = new MongoClient(process.env.MONGODB_URI ?? "mongodb://localhost:27017/torfinder");
+  after(() => mongo.close());
+
   it("a pending org cannot sign in, but can once an admin approves it", async () => {
     const org = await signup();
+    await mongo.db().collection("users").updateOne({ email: org.email }, { $set: { emailVerified: true } });
 
     const beforeApproval = await api("/auth/login", {
       method: "POST",
