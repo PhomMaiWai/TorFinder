@@ -40,6 +40,10 @@ export type CompanyProfile = {
   /** The project size the company wants to bid on, in baht. */
   preferredBudgetMin?: number;
   preferredBudgetMax?: number;
+  /** Whether to hear about matching announcements; absent means yes. */
+  matchAlerts?: boolean;
+  /** The lowest match score worth an alert, 0-100; absent means the deployment's default. */
+  matchThreshold?: number;
 };
 
 export type NotificationChannels = {
@@ -195,7 +199,7 @@ export type SavedTorDoc = {
 };
 
 /**
- * "match" comes from each import (MatchingService.notifyNewMatches) and
+ * "match" comes from each import (MatchingService.notifyMatches) and
  * "approval" from account review. "feedback" has no producer yet, but the type
  * stays ready for when it does, the same way TorSource anticipates values
  * before every source exists.
@@ -210,7 +214,28 @@ export type NotificationDoc = {
   message: string;
   /** Set when the notification is about a specific announcement. */
   torId?: ObjectId;
+  /** A match alert's score, 0-100, so the list can show it apart from the title. */
+  score?: number;
   read: boolean;
+  createdAt: Date;
+};
+
+/**
+ * When a project is worth telling a company about: as soon as it appears
+ * (plan, draft or reference price — time to prepare), and again when bids open.
+ */
+export type MatchAlertPhase = "early" | "invitation";
+
+/**
+ * One match alert already sent, so a company hears about each project once
+ * per phase however many times it is imported or re-scored. Keyed by the
+ * e-GP project number where there is one: each stage of a project is its own
+ * record, and the draft and the invitation are still one project.
+ */
+export type MatchAlertDoc = {
+  userId: ObjectId;
+  projectKey: string;
+  phase: MatchAlertPhase;
   createdAt: Date;
 };
 
@@ -268,6 +293,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   notifications!: Collection<NotificationDoc>;
   syncRuns!: Collection<SyncRunDoc>;
   auditLogEntries!: Collection<AuditLogEntryDoc>;
+  matchAlerts!: Collection<MatchAlertDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -278,6 +304,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.notifications = this.client.db().collection<NotificationDoc>("notifications");
     this.syncRuns = this.client.db().collection<SyncRunDoc>("syncRuns");
     this.auditLogEntries = this.client.db().collection<AuditLogEntryDoc>("auditLogEntries");
+    this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -298,6 +325,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // The only query pattern the admin dashboard needs: newest runs first.
     await this.syncRuns.createIndex({ startedAt: -1 });
     await this.auditLogEntries.createIndex({ createdAt: -1 });
+    // Doubles as the guard: two runs racing on one project can't both alert.
+    await this.matchAlerts.createIndex({ userId: 1, projectKey: 1, phase: 1 }, { unique: true });
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
     await this.seed();
