@@ -3,10 +3,14 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { Reveal } from "@/components/ui/reveal";
+import { homeFor, type Role } from "@/lib/roles";
 
 /** Always dark, in both themes: a fixed zinc-950 stage for the rose glow. */
-export function CtaSection({ signedInHome }: { signedInHome: string | null }) {
+export function CtaSection({ signedInRole }: { signedInRole: Role | null }) {
   const t = useTranslations("LandingCta");
+  // Guests sign up; signed-in users go back to their own area (search, for a public viewer).
+  const href = signedInRole ? homeFor(signedInRole) : "/signup/organization";
+  const label = !signedInRole ? t("cta") : signedInRole === "viewer" ? t("ctaSearch") : t("ctaDashboard");
 
   return (
     <section className="relative isolate overflow-hidden bg-zinc-950 px-6 py-20 sm:py-28">
@@ -21,10 +25,10 @@ export function CtaSection({ signedInHome }: { signedInHome: string | null }) {
           <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{t("heading")}</h2>
           <p className="mt-4 text-base leading-relaxed text-zinc-300">{t("description")}</p>
           <Link
-            href={signedInHome ?? "/signup/organization"}
+            href={href}
             className="group mt-9 inline-flex h-12 items-center gap-2 rounded-xl bg-white px-8 text-sm font-bold text-zinc-900 shadow-[0_8px_30px_-6px_rgb(255_255_255/35%)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-rose-50"
           >
-            {signedInHome ? t("ctaDashboard") : t("cta")}
+            {label}
             <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
         </div>

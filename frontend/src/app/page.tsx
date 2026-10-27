@@ -14,20 +14,18 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 export default async function LandingPage() {
   // Read on the server so signed-in visitors never see a sign-up button flash.
   const session = await verifySessionToken((await cookies()).get(SESSION_COOKIE)?.value);
-  // Same rule as homeFor in proxy.ts and use-session.ts.
-  const signedInHome = session ? (session.role === "admin" ? "/admin" : "/dashboard") : null;
 
   return (
     <>
       <SiteNavbar />
       <main>
-        <HeroSection signedInHome={signedInHome} />
+        <HeroSection />
         <StatsBar />
         <TorMatchExplorer />
         <PreviewSection />
         <FeaturesSection />
         <StepsSection />
-        <CtaSection signedInHome={signedInHome} />
+        <CtaSection signedInRole={session?.role ?? null} />
       </main>
       <SiteFooter />
     </>

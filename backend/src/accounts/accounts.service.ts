@@ -7,6 +7,12 @@ import { NotificationsService } from "../notifications/notifications.service";
 import { ReviewAccountDto } from "./dto/review-account.dto";
 import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
 
+/**
+ * Who an admin may suspend: self-serve accounts. Staff roles (admin, owner,
+ * auditor) are seeded and managed outside the app, so they stay untouchable.
+ */
+const SUSPENDABLE_ROLES = ["org", "viewer"] as const;
+
 /** Never let password material leave the service. */
 const PUBLIC_FIELDS = {
   email: 1,
@@ -59,7 +65,7 @@ export class AccountsService {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
 
     const result = await this.db.users.findOneAndUpdate(
-      { _id: new ObjectId(id), role: "org" },
+      { _id: new ObjectId(id), role: { $in: [...SUSPENDABLE_ROLES] } },
       { $set: { suspended } },
       { returnDocument: "after", projection: PUBLIC_FIELDS },
     );
@@ -75,7 +81,17 @@ export class AccountsService {
           ? "ผู้ดูแลระบบระงับการใช้งานบัญชีนี้ชั่วคราว กรุณาติดต่อผู้ดูแลระบบหากมีข้อสงสัย"
           : "ผู้ดูแลระบบเปิดใช้งานบัญชีนี้อีกครั้ง เข้าใช้งานได้ทันที",
       ),
-      this.audit.record(actor, suspended ? "ระงับบัญชีบริษัท" : "เปิดใช้งานบัญชีบริษัทอีกครั้ง", companyName),
+      this.audit.record(
+        actor,
+        result.role === "viewer"
+          ? suspended
+            ? "ระงับบัญชีประชาชนทั่วไป"
+            : "เปิดใช้งานบัญชีประชาชนทั่วไปอีกครั้ง"
+          : suspended
+            ? "ระงับบัญชีบริษัท"
+            : "เปิดใช้งานบัญชีบริษัทอีกครั้ง",
+        companyName,
+      ),
     ]);
 
     const { _id, ...rest } = result;

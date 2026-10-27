@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  Landmark,
   Layers,
   Mail,
   MapPin,
@@ -202,6 +203,15 @@ function CompanyReviewDetail({ company }: { company: Company }) {
         <Detail icon={Phone} label={t("phoneLabel")} value={company.phone} />
         <Detail icon={Tag} label={t("specialtyLabel")} value={company.specialty} />
         <Detail icon={Users} label={t("sizeLabel")} value={company.size} />
+        <Detail
+          icon={Landmark}
+          label={t("registeredCapitalLabel")}
+          value={
+            company.registeredCapital === undefined
+              ? ""
+              : t("bahtAmount", { amount: company.registeredCapital.toLocaleString("th-TH") })
+          }
+        />
         <div className="sm:col-span-2">
           <Detail icon={MapPin} label={t("addressLabel")} value={company.address} />
         </div>

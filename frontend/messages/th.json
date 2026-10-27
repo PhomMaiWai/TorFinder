@@ -20,9 +20,9 @@
     "recentNotices": "ประกาศล่าสุด",
     "noticesCount": "{count} รายการ",
     "login": "เข้าสู่ระบบ",
-    "getStarted": "สมัครใช้งานฟรี",
     "closeMenuAriaLabel": "ปิดเมนู",
-    "openMenuAriaLabel": "เปิดเมนู"
+    "openMenuAriaLabel": "เปิดเมนู",
+    "logout": "ออกจากระบบ"
   },
   "Footer": {
     "productsHeading": "ผลิตภัณฑ์",
@@ -127,10 +127,7 @@
     "titleLine1": "ไม่พลาดโอกาส",
     "titleLine2": "จัดซื้อซอฟต์แวร์ BMA",
     "description": "รวบรวม วิเคราะห์ และจับคู่ TOR จากหน่วยงาน กทม. กับบริษัทของคุณโดยอัตโนมัติ ไม่ต้องตรวจสอบ e-GP ทุกวันอีกต่อไป",
-    "ctaPrimary": "สมัครใช้งานฟรี",
-    "ctaSecondary": "ค้นหา TOR",
-    "ctaDashboard": "ไปที่แดชบอร์ด",
-    "ctaNote": "ฟรี · ตรวจสอบบัญชีภายใน 1–2 วันทำการ"
+    "ctaSecondary": "ดูตัวอย่าง"
   },
   "LandingHeroFlow": {
     "step1Label": "ดึง TOR ใหม่",
@@ -199,7 +196,8 @@
     "heading": "พร้อมเริ่มต้นแล้วหรือยัง?",
     "description": "เข้าร่วมกับบริษัทซอฟต์แวร์ที่ใช้ TorFinder และไม่พลาดโอกาสจัดซื้อจัดจ้าง BMA อีกต่อไป",
     "cta": "สมัครใช้งานฟรี",
-    "ctaDashboard": "ไปที่แดชบอร์ด"
+    "ctaDashboard": "ไปที่แดชบอร์ด",
+    "ctaSearch": "ค้นหา TOR"
   },
   "LandingPreview": {
     "heading": "ค้นหาและตรวจสอบ TOR โปร่งใส",
@@ -276,7 +274,9 @@
     "adminTitle": "เข้าสู่ระบบผู้ดูแลระบบ",
     "adminDescription": "สำหรับผู้ดูแลระบบ TorFinder เท่านั้น",
     "pageTitle": "เข้าสู่ระบบ",
-    "pageSubtitle": "เลือกประเภทบัญชีที่ต้องการเข้าสู่ระบบ"
+    "pageSubtitle": "เลือกประเภทบัญชีที่ต้องการเข้าสู่ระบบ",
+    "publicTitle": "เข้าสู่ระบบสำหรับประชาชนทั่วไป",
+    "publicDescription": "ค้นหาและติดตาม TOR ด้วยบัญชี Google"
   },
   "LoginAdminPage": {
     "title": "เข้าสู่ระบบผู้ดูแลระบบ",
@@ -382,13 +382,22 @@
     "largestPastContractLabel": "มูลค่าผลงานสูงสุดกับหน่วยงานรัฐ (บาท)",
     "largestPastContractHint": "สัญญาเดียวที่มูลค่าสูงสุดที่ทำเสร็จแล้ว ใช้เทียบกับเกณฑ์ \"ผลงานไม่น้อยกว่า…\"",
     "registeredCapitalLabel": "ทุนจดทะเบียนที่ชำระแล้ว (บาท)",
-    "certificationsLabel": "ใบรับรองที่มี",
-    "noCertificationsLabel": "ไม่มีใบรับรองเหล่านี้",
     "budgetRangeSectionTitle": "ขนาดงานที่สนใจ",
     "budgetRangeDescription": "วงเงินโครงการที่บริษัทอยากยื่น เว้นว่างได้ถ้าไม่จำกัด",
     "budgetMinLabel": "ตั้งแต่ (บาท)",
     "budgetMaxLabel": "ไม่เกิน (บาท)",
-    "workTypesFallback": "ยังไม่ได้เลือกประเภทงาน"
+    "workTypesFallback": "ยังไม่ได้เลือกประเภทงาน",
+    "dealerLabel": "เอกสารจากผู้ผลิต",
+    "standardsSectionTitle": "ใบรับรองมาตรฐานสากล (ISO / CMMI)",
+    "standardsDescription": "เลือกมาตรฐานที่องค์กรหรือทีมของคุณได้รับการรับรอง เพื่อตรวจเกณฑ์คุณสมบัติใน TOR",
+    "standardsSearchPlaceholder": "ค้นหามาตรฐาน (เช่น ISO 29110, CMMI, ISO 27001)...",
+    "standardsCount": "มาตรฐานสากล ({count} รายการ - คลิกเพื่อเลือก):",
+    "standardsSelected": "· เลือกแล้ว {count} รายการ",
+    "standardsRequest": "+ ขอเพิ่มมาตรฐาน",
+    "standardsRequestSubject": "ขอเพิ่มมาตรฐาน: {name}",
+    "standardsNoResults": "ไม่พบมาตรฐาน “{query}” — กด “ขอเพิ่มมาตรฐาน” เพื่อแจ้งทีมงาน",
+    "noStandardsLabel": "บริษัทยังไม่มีใบรับรองมาตรฐาน",
+    "registeredCapitalHint": "ข้อมูลสาธารณะจากกรมพัฒนาธุรกิจการค้า (DBD) ใช้เทียบกับเกณฑ์ทุนจดทะเบียนใน TOR"
   },
   "NotificationsPage": {
     "pageTitle": "การแจ้งเตือน",
@@ -433,10 +442,7 @@
     "filterBudgetTitle": "งบประมาณ",
     "filterAgencyTitle": "หน่วยงาน (กทม.)",
     "filterTagTitle": "หมวดหมู่ / เทคโนโลยี",
-    "budgetRangeUnder5m": "ต่ำกว่า 5 ล้านบาท",
-    "budgetRange5to10m": "5 - 10 ล้านบาท",
-    "budgetRange10to20m": "10 - 20 ล้านบาท",
-    "budgetRangeOver20m": "มากกว่า 20 ล้านบาท",
+    "budgetRange5to10m": "5,000,000 - 10,000,000 บาท",
     "resultsCount": "พบ <strong>{count}</strong> รายการ",
     "emptyStateTitle": "ไม่พบโครงการที่ค้นหา",
     "emptyStateDescription": "ลองปรับเปลี่ยนคำค้นหา หรือเอาตัวกรองออก",
@@ -475,7 +481,12 @@
     "sortPrepare": "มีเวลาเตรียมตัว",
     "sortNewest": "เปิดล่าสุด",
     "sortClosing": "ใกล้ปิดรับ",
-    "sortBudget": "งบประมาณสูงสุด"
+    "sortBudget": "งบประมาณสูงสุด",
+    "budgetRangeUnder500k": "น้อยกว่า 500,000 บาท",
+    "budgetRange500kTo1m": "500,000 - 1,000,000 บาท",
+    "budgetRange1to3m": "1,000,000 - 3,000,000 บาท",
+    "budgetRange3to5m": "3,000,000 - 5,000,000 บาท",
+    "budgetRangeOver10m": "10,000,000 บาทขึ้นไป"
   },
   "TorDetailPage": {
     "backToSearch": "กลับไปค้นหา TOR",
@@ -700,7 +711,9 @@
     "statusPending": "รอตรวจสอบ",
     "statusApproved": "อนุมัติ",
     "statusRejected": "ปฏิเสธ",
-    "reviewFailed": "อัปเดตสถานะไม่สำเร็จ"
+    "reviewFailed": "อัปเดตสถานะไม่สำเร็จ",
+    "registeredCapitalLabel": "ทุนจดทะเบียนที่ชำระแล้ว",
+    "bahtAmount": "{amount} บาท"
   },
   "AdminAuditPage": {
     "description": "ประวัติการทำงานของระบบและผู้ดูแลระบบทั้งหมด",
@@ -727,7 +740,7 @@
   },
   "AdminUsersPage": {
     "title": "จัดการผู้ใช้งาน",
-    "description": "ผู้ใช้งานทั้งหมดในระบบ ทั้งฝั่งบริษัทและผู้ดูแลระบบ",
+    "description": "ผู้ใช้งานทั้งหมดในระบบ ทั้งบริษัท ประชาชนทั่วไป และเจ้าหน้าที่",
     "searchPlaceholder": "ค้นหาชื่อ, อีเมล, หรือบริษัท...",
     "emptyState": "ไม่พบผู้ใช้งานที่ค้นหา",
     "lastActiveInfo": "ใช้งานล่าสุด {date}",
@@ -741,7 +754,11 @@
     "statusSuspended": "ระงับ",
     "statusPending": "รออนุมัติ",
     "statusRejected": "ไม่อนุมัติ",
-    "neverSignedIn": "สมัครเมื่อ {date} · ยังไม่เคยเข้าใช้"
+    "neverSignedIn": "สมัครเมื่อ {date} · ยังไม่เคยเข้าใช้",
+    "roleViewer": "ประชาชนทั่วไป",
+    "roleFilterLabel": "กรองตามประเภทบัญชี",
+    "roleFilterAll": "ทุกประเภท",
+    "roleFilterStaff": "เจ้าหน้าที่"
   },
   "OpportunityCard": {
     "newBadge": "ใหม่",
@@ -833,11 +850,39 @@
     "workTypeGroup_services": "บริการ",
     "workTypeGroup_infrastructure": "ฮาร์ดแวร์และโครงสร้างพื้นฐาน",
     "workTypeGroup_domains": "ความเชี่ยวชาญเฉพาะด้าน",
-    "cert_iso9001": "ISO 9001",
-    "cert_iso14001": "ISO 14001",
-    "cert_iso27001": "ISO/IEC 27001",
-    "cert_iso20000": "ISO/IEC 20000",
-    "cert_cmmi": "CMMI",
-    "cert_dealer": "หนังสือแต่งตั้งตัวแทนจำหน่ายจากผู้ผลิต"
+    "cert_dealer": "หนังสือแต่งตั้งตัวแทนจำหน่ายจากผู้ผลิต",
+    "standardGroup_software": "วิศวกรรมซอฟต์แวร์และการพัฒนา",
+    "standardGroup_security": "ความมั่นคงปลอดภัย ข้อมูล และคลาวด์",
+    "standardGroup_service": "การบริหารจัดการบริการและศูนย์ข้อมูล",
+    "standardGroup_quality": "การบริหารคุณภาพและมาตรฐาน AI"
+  },
+  "LoginPublicPage": {
+    "badge": "ประชาชนทั่วไป",
+    "title": "เข้าสู่ระบบสำหรับประชาชนทั่วไป",
+    "description": "ใช้บัญชี Google เข้าสู่ระบบได้ทันที ไม่ต้องสมัครสมาชิกหรือรออนุมัติ",
+    "switchLabel": "เข้าสู่ระบบหน่วยงานแทน →"
+  },
+  "ViewerSignIn": {
+    "googleButton": "เข้าสู่ระบบด้วย Google",
+    "googleUnavailable": "ยังไม่ได้ตั้งค่าการเข้าสู่ระบบด้วย Google (NEXT_PUBLIC_GOOGLE_CLIENT_ID)",
+    "pending": "บัญชีของ {companyName} อยู่ระหว่างรอผู้ดูแลระบบตรวจสอบ",
+    "useOrgLogin": "อีเมลนี้ใช้กับบัญชีหน่วยงาน กรุณาเข้าสู่ระบบผ่านหน้าหน่วยงาน"
+  },
+  "TorDocuments": {
+    "view": "ดูเอกสาร",
+    "download": "ดาวน์โหลด",
+    "newTab": "เปิดแท็บใหม่",
+    "close": "ปิด",
+    "loading": "กำลังโหลดเอกสาร...",
+    "failed": "เปิดเอกสารนี้บนเว็บไม่ได้ในขณะนี้",
+    "openSource": "เปิดที่เว็บต้นทาง",
+    "fromEgp": "จาก e-GP กรมบัญชีกลาง",
+    "lookingUpEgp": "กำลังค้นหาเอกสารจาก e-GP กรมบัญชีกลาง...",
+    "none": "ยังไม่มีเอกสารประกาศ",
+    "openArchive": "ดูไฟล์ข้างใน",
+    "archiveLoading": "กำลังเปิดชุดเอกสาร ชุดใหญ่อาจใช้เวลาสักครู่...",
+    "archiveFailed": "เปิดชุดเอกสารนี้บนเว็บไม่ได้",
+    "archiveEmpty": "ไม่มีไฟล์ PDF หรือรูปภาพในชุดเอกสารนี้",
+    "downloadZip": "ดาวน์โหลดไฟล์ zip"
   }
 }

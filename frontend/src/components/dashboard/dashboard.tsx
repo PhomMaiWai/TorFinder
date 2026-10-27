@@ -279,7 +279,7 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
   const t = useTranslations("Dashboard");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
-  const { savedIds, toggleSaved } = useSavedTors("org");
+  const { savedIds, toggleSaved } = useSavedTors();
   const [toast, setToast] = useState("");
   const list = useMemo(() => opportunities ?? [], [opportunities]);
 

@@ -1,15 +1,36 @@
 import { foldThaiDigits } from "../tor/tor-normalize";
 
+/** "ISO 27001", "ISO/IEC 27001", "IEC 27001" — however a document spells the body. */
+function iso(standard: string): RegExp {
+  return new RegExp(`(?:ISO|IEC)[\\s/]*(?:IEC\\s*)?${standard}(?!\\d)`, "i");
+}
+
+const CMMI_LEVEL_5 = /CMMI.{0,25}?(?:Level|ระดับ|ML|L)\s*5/i;
+
 /**
  * The certifications a TOR asks for that a company can simply have or not.
  * Each is matched on the wording a bidding document uses for it.
  */
 export const CERTIFICATIONS = {
-  iso9001: { label: "ISO 9001", pattern: /ISO\s*9001/i },
-  iso14001: { label: "ISO 14001", pattern: /ISO\s*14001/i },
-  iso27001: { label: "ISO/IEC 27001", pattern: /(ISO|IEC)[\s/]*(IEC\s*)?27001/i },
-  iso20000: { label: "ISO/IEC 20000", pattern: /(ISO|IEC)[\s/]*(IEC\s*)?20000/i },
-  cmmi: { label: "CMMI", pattern: /CMMI/i },
+  iso29110: { label: "ISO/IEC 29110", pattern: iso("29110") },
+  // A CMMI requirement without a level, or at level 3, is met by level 3 or 5 — see requirementsOf.
+  cmmi3: { label: "CMMI Level 3", pattern: /CMMI(?!.{0,25}?(?:Level|ระดับ|ML|L)\s*5)/i },
+  cmmi5: { label: "CMMI Level 5", pattern: CMMI_LEVEL_5 },
+  iso12207: { label: "ISO/IEC 12207", pattern: iso("12207") },
+  iso25010: { label: "ISO/IEC 25010", pattern: iso("25010") },
+  iso27001: { label: "ISO/IEC 27001", pattern: iso("27001") },
+  iso27701: { label: "ISO/IEC 27701", pattern: iso("27701") },
+  iso27017: { label: "ISO/IEC 27017", pattern: iso("27017") },
+  iso27018: { label: "ISO/IEC 27018", pattern: iso("27018") },
+  pcidss: { label: "PCI DSS", pattern: /PCI[\s-]*DSS/i },
+  csastar: { label: "CSA STAR", pattern: /CSA\s*STAR/i },
+  iso15408: { label: "ISO/IEC 15408", pattern: /(?:ISO|IEC)[\s/]*(?:IEC\s*)?15408|Common\s*Criteria/i },
+  iso20000: { label: "ISO/IEC 20000-1", pattern: iso("20000") },
+  iso22301: { label: "ISO 22301", pattern: iso("22301") },
+  tia942: { label: "TIA-942", pattern: /TIA[\s-]*942/i },
+  iso9001: { label: "ISO 9001", pattern: iso("9001") },
+  iso14001: { label: "ISO 14001", pattern: iso("14001") },
+  iso42001: { label: "ISO/IEC 42001", pattern: iso("42001") },
   dealer: { label: "หนังสือแต่งตั้งตัวแทนจำหน่ายจากผู้ผลิต", pattern: /แต่งตั้ง.{0,20}ตัวแทนจำหน่าย|ตัวแทนจำหน่าย.{0,30}ผู้ผลิต/ },
 } as const satisfies Record<string, { label: string; pattern: RegExp }>;
 
@@ -68,7 +89,11 @@ export function requirementsOf(qualifications: string[]): TorRequirements {
     // Certifications named together on a line with an "or" are alternatives;
     // otherwise each one is required on its own.
     const lineGroups = named.length > 1 && ALTERNATIVES.test(line) ? [named] : named.map((key) => [key]);
-    for (const group of lineGroups) groups.set(group.join("|"), group);
+    for (const group of lineGroups) {
+      // A higher CMMI maturity level meets a lower one's requirement.
+      const satisfiedBy = group.includes("cmmi3") && !group.includes("cmmi5") ? [...group, "cmmi5" as const] : group;
+      groups.set(satisfiedBy.join("|"), satisfiedBy);
+    }
   }
 
   return {

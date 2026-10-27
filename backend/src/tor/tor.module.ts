@@ -4,13 +4,15 @@ import { AuditModule } from "../audit/audit.module";
 import { DatabaseModule } from "../database/database.module";
 import { MatchingModule } from "../matching/matching.module";
 import { TorController } from "./tor.controller";
+import { TorArchiveService } from "./tor-archive.service";
+import { TorDocumentService } from "./tor-document.service";
 import { TorImportService } from "./tor-import.service";
 import { TorService } from "./tor.service";
 
 @Module({
   imports: [AuditModule, DatabaseModule, MatchingModule],
   controllers: [TorController],
-  providers: [TorService, TorImportService],
+  providers: [TorService, TorImportService, TorDocumentService, TorArchiveService],
   exports: [TorImportService],
 })
 export class TorModule {}

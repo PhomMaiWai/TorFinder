@@ -47,6 +47,7 @@ const CLIENT_NAMESPACES = [
   "CompanyProfileOptions",
   "Dashboard",
   "ErrorState",
+  // SiteFooter renders inside client trees too: the error boundary and /saved.
   "Footer",
   "LandingExplorer",
   "LandingHeroFlow",
@@ -61,6 +62,8 @@ const CLIENT_NAMESPACES = [
   "SignInForm",
   "SignupOrganizationPage",
   "SignupPendingPage",
+  "TorDocuments",
+  "ViewerSignIn",
 ];
 
 export async function generateMetadata(): Promise<Metadata> {

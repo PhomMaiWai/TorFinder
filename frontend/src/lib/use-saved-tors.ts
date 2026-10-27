@@ -1,166 +1,227 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+
+import { useSession } from "@/lib/use-session";
 
 /**
- * Saved lists are scoped: "public" is the anonymous TOR-search visitor's
- * bookmarks (SiteNavbar / /public / /saved) — no account to attach them to,
- * so they live in localStorage. "org" is the logged-in company's own saved
- * list (AppShell sidebar, dashboard, /saved?scope=org) — backed by
- * /api/saved-tors so it survives a new device or browser. They must not mix.
+ * One saved list per person, wherever they save from. Signed in, it is the
+ * account's own list on the backend, so it follows them to any device.
+ * Signed out, it lives in this browser — and the first time that browser
+ * signs in, those bookmarks are folded into the account and cleared here,
+ * so nothing saved before signing in is lost or left behind.
  */
-export type SavedTorsScope = "public" | "org";
 
 /** Mock records are keyed by number, records from the backend by ObjectId string. */
 export type TorId = string | number;
 
-const PUBLIC_STORAGE_KEY = "torr:saved-tors:public";
+// Unchanged from when this list was the "public" scope, so existing bookmarks still load.
+const STORAGE_KEY = "torr:saved-tors:public";
+const EMPTY: TorId[] = [];
 
-const EMPTY_SNAPSHOT: TorId[] = [];
-
-type Store = {
-  subscribe: (callback: () => void) => () => void;
-  getSnapshot: () => TorId[];
-  toggle: (id: TorId) => void;
-  /** Only the remote ("org") store needs this — cleared on logout. */
-  reset?: () => void;
-};
-
-function readFromStorage(storageKey: string): TorId[] {
-  if (typeof window === "undefined") return EMPTY_SNAPSHOT;
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    return raw ? (JSON.parse(raw) as TorId[]) : EMPTY_SNAPSHOT;
-  } catch {
-    return EMPTY_SNAPSHOT;
-  }
+function createEmitter() {
+  const listeners = new Set<() => void>();
+  return {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    emit() {
+      listeners.forEach((listener) => listener());
+    },
+    get size() {
+      return listeners.size;
+    },
+  };
 }
 
-function createLocalStore(storageKey: string): Store {
-  let listeners: Array<() => void> = [];
-  let cachedSnapshot: TorId[] = readFromStorage(storageKey);
-
-  function subscribe(callback: () => void) {
-    listeners.push(callback);
-    return () => {
-      listeners = listeners.filter((l) => l !== callback);
-    };
-  }
-
-  function getSnapshot() {
-    return cachedSnapshot;
-  }
-
-  function toggle(id: TorId) {
-    cachedSnapshot = cachedSnapshot.includes(id)
-      ? cachedSnapshot.filter((savedId) => savedId !== id)
-      : [...cachedSnapshot, id];
-    window.localStorage.setItem(storageKey, JSON.stringify(cachedSnapshot));
-    listeners.forEach((notify) => notify());
-  }
-
-  return { subscribe, getSnapshot, toggle };
+function toggled(ids: TorId[], id: TorId, saved: boolean): TorId[] {
+  const key = String(id);
+  const rest = ids.filter((savedId) => String(savedId) !== key);
+  return saved ? [...rest, id] : rest;
 }
+
+/** This browser's bookmarks, for a visitor who hasn't signed in. */
+const browserStore = (() => {
+  const emitter = createEmitter();
+  let snapshot: TorId[] | null = null;
+
+  function read(): TorId[] {
+    try {
+      const parsed: unknown = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "[]");
+      return Array.isArray(parsed) ? parsed : EMPTY;
+    } catch {
+      // Private mode, blocked storage or a corrupt value: start empty rather than crash.
+      return EMPTY;
+    }
+  }
+
+  function write(next: TorId[]) {
+    snapshot = next;
+    try {
+      if (next.length > 0) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      else window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // The in-memory list still works for this visit.
+    }
+    emitter.emit();
+  }
+
+  // Another tab saved or unsaved: pick it up instead of overwriting it later.
+  function onStorage(event: StorageEvent) {
+    if (event.key !== STORAGE_KEY) return;
+    snapshot = read();
+    emitter.emit();
+  }
+
+  return {
+    subscribe(listener: () => void) {
+      if (emitter.size === 0) window.addEventListener("storage", onStorage);
+      const unsubscribe = emitter.subscribe(listener);
+      return () => {
+        unsubscribe();
+        if (emitter.size === 0) window.removeEventListener("storage", onStorage);
+      };
+    },
+    getSnapshot(): TorId[] {
+      snapshot ??= read();
+      return snapshot;
+    },
+    toggle(id: TorId) {
+      const current = browserStore.getSnapshot();
+      write(toggled(current, id, !current.some((savedId) => String(savedId) === String(id))));
+    },
+    clear() {
+      write(EMPTY);
+    },
+  };
+})();
 
 /**
- * Toggling updates optimistically so the button feels instant; a failed
- * request rolls back rather than leaving the UI claiming something the
- * server doesn't have.
+ * The signed-in account's list. Toggles apply at once and are sent in the
+ * background; requests for the same TOR run one after another so a quick
+ * save-unsave can't arrive out of order, and a failure rolls back only when
+ * no newer toggle of that TOR has replaced it.
  */
-function createRemoteStore(): Store {
-  let listeners: Array<() => void> = [];
-  let cachedSnapshot: TorId[] = EMPTY_SNAPSHOT;
-  let hasLoaded = false;
+const accountStore = (() => {
+  const emitter = createEmitter();
+  let ownerId: string | null = null;
+  let snapshot: TorId[] = EMPTY;
+  /** What the person last asked for, per TOR, until the server has confirmed it. */
+  const intended = new Map<string, boolean>();
+  const queues = new Map<string, Promise<void>>();
 
-  function notify() {
-    listeners.forEach((listener) => listener());
+  function set(next: TorId[]) {
+    snapshot = next;
+    emitter.emit();
   }
 
-  async function load() {
+  async function load(userId: string) {
+    const fromBrowser = browserStore.getSnapshot();
     try {
-      const res = await fetch("/api/saved-tors", { cache: "no-store" });
-      if (res.ok) {
-        cachedSnapshot = await res.json();
-        notify();
-      }
-    } catch {
-      // Left empty — the sidebar/dashboard just show nothing saved rather
-      // than an error state; toggling will still work on the next attempt.
-    }
-  }
+      const res =
+        fromBrowser.length > 0
+          ? await fetch("/api/saved-tors/import", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ torIds: fromBrowser.map(String) }),
+            })
+          : await fetch("/api/saved-tors", { cache: "no-store" });
+      if (!res.ok || ownerId !== userId) return;
 
-  function subscribe(callback: () => void) {
-    listeners.push(callback);
-    if (!hasLoaded) {
-      hasLoaded = true;
-      load();
-    }
-    return () => {
-      listeners = listeners.filter((l) => l !== callback);
-    };
-  }
-
-  function getSnapshot() {
-    return cachedSnapshot;
-  }
-
-  function toggle(id: TorId) {
-    const wasSaved = cachedSnapshot.includes(id);
-    const previous = cachedSnapshot;
-    cachedSnapshot = wasSaved
-      ? cachedSnapshot.filter((savedId) => savedId !== id)
-      : [...cachedSnapshot, id];
-    notify();
-
-    fetch(`/api/saved-tors/${id}`, { method: wasSaved ? "DELETE" : "POST" })
-      .then((res) => {
-        if (!res.ok) throw new Error("saved-tors request failed");
-      })
-      .catch(() => {
-        cachedSnapshot = previous;
-        notify();
+      const serverIds: string[] = await res.json();
+      if (fromBrowser.length > 0) browserStore.clear();
+      // Anything toggled while the list was loading still wins over what the server had.
+      let next: TorId[] = serverIds;
+      intended.forEach((saved, id) => {
+        next = toggled(next, id, saved);
       });
+      set(next);
+    } catch {
+      // Left as is: the list shows what it has, and the next toggle still goes through.
+    }
   }
 
-  /** Called on logout — a client-side navigation, not a reload, so this module stays loaded. */
-  function reset() {
-    cachedSnapshot = EMPTY_SNAPSHOT;
-    hasLoaded = false;
-    notify();
-  }
+  return {
+    subscribe: emitter.subscribe,
+    /** Only the owner's list, so a different account never flashes the last one's saves. */
+    snapshotFor(userId: string): TorId[] {
+      return ownerId === userId ? snapshot : EMPTY;
+    },
+    bind(userId: string) {
+      if (ownerId === userId) return;
+      ownerId = userId;
+      intended.clear();
+      queues.clear();
+      set(EMPTY);
+      void load(userId);
+    },
+    reset() {
+      ownerId = null;
+      intended.clear();
+      queues.clear();
+      set(EMPTY);
+    },
+    toggle(id: TorId) {
+      const owner = ownerId;
+      if (!owner) return;
+      const key = String(id);
+      const saved = !snapshot.some((savedId) => String(savedId) === key);
 
-  return { subscribe, getSnapshot, toggle, reset };
-}
+      intended.set(key, saved);
+      set(toggled(snapshot, id, saved));
 
-const localStores = new Map<string, Store>();
-let orgStore: ReturnType<typeof createRemoteStore> | null = null;
-
-function getStore(scope: SavedTorsScope): Store {
-  if (scope === "org") {
-    orgStore ??= createRemoteStore();
-    return orgStore;
-  }
-
-  let store = localStores.get(PUBLIC_STORAGE_KEY);
-  if (!store) {
-    store = createLocalStore(PUBLIC_STORAGE_KEY);
-    localStores.set(PUBLIC_STORAGE_KEY, store);
-  }
-  return store;
-}
+      const request = (queues.get(key) ?? Promise.resolve())
+        .then(async () => {
+          const res = await fetch(`/api/saved-tors/${encodeURIComponent(key)}`, {
+            method: saved ? "POST" : "DELETE",
+          });
+          if (!res.ok) throw new Error(`saved-tors ${res.status}`);
+        })
+        .catch(() => {
+          if (ownerId === owner && intended.get(key) === saved) set(toggled(snapshot, id, !saved));
+        })
+        .finally(() => {
+          if (queues.get(key) !== request) return;
+          queues.delete(key);
+          if (intended.get(key) === saved) intended.delete(key);
+        });
+      queues.set(key, request);
+    },
+  };
+})();
 
 function getServerSnapshot(): TorId[] {
-  return EMPTY_SNAPSHOT;
+  return EMPTY;
 }
 
-/** Clears the cached org saved-list so a different account logging in next doesn't see it. */
-export function resetOrgSavedTors() {
-  orgStore?.reset?.();
+/** Forget the signed-in list on sign-out, so the next person on this browser starts clean. */
+export function resetSavedTors() {
+  accountStore.reset();
 }
 
-export function useSavedTors(scope: SavedTorsScope = "public") {
-  const store = getStore(scope);
-  const savedIds = useSyncExternalStore(store.subscribe, store.getSnapshot, getServerSnapshot);
+export function useSavedTors() {
+  const session = useSession();
+  const userId = session?.id ?? null;
 
-  return { savedIds, toggleSaved: store.toggle };
+  useEffect(() => {
+    if (userId) accountStore.bind(userId);
+  }, [userId]);
+
+  const getAccountSnapshot = useCallback(() => (userId ? accountStore.snapshotFor(userId) : EMPTY), [userId]);
+  const accountIds = useSyncExternalStore(accountStore.subscribe, getAccountSnapshot, getServerSnapshot);
+  const browserIds = useSyncExternalStore(
+    browserStore.subscribe,
+    browserStore.getSnapshot,
+    getServerSnapshot,
+  );
+
+  // Until the session is known, show nothing rather than one list then the other;
+  // a save in that moment lands in the browser list, which the account then imports.
+  if (session === undefined) return { savedIds: EMPTY, toggleSaved: browserStore.toggle };
+  return userId
+    ? { savedIds: accountIds, toggleSaved: accountStore.toggle }
+    : { savedIds: browserIds, toggleSaved: browserStore.toggle };
 }

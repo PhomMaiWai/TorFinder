@@ -1,5 +1,6 @@
-/** Mirrors the backend's ROLES (backend/src/common/roles.ts). */
-export type Role = "admin" | "org" | "owner" | "auditor";
+import type { Role } from "@/lib/roles";
+
+export type { Role } from "@/lib/roles";
 
 export type SessionPayload = {
   sub: string;

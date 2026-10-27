@@ -1,4 +1,4 @@
-import { ArrowRight, Search, Zap } from "lucide-react";
+import { ArrowDown, Zap } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -8,7 +8,7 @@ import { HeroMockup } from "@/components/landing/hero-mockup";
 /** Staggered load-in without JS: each line starts a beat after the last. */
 const enter = (ms: number) => ({ animationDelay: `${ms}ms` });
 
-export function HeroSection({ signedInHome }: { signedInHome: string | null }) {
+export function HeroSection() {
   const t = useTranslations("LandingHero");
 
   return (
@@ -53,29 +53,19 @@ export function HeroSection({ signedInHome }: { signedInHome: string | null }) {
         </p>
 
         <div className="animate-fade-up mt-9 flex flex-wrap items-center justify-center gap-3" style={enter(340)}>
-          {/* New visitors sign up; signed-in ones go straight back to their work. */}
+          {/* One call to action, as on main: show the product before asking for an account. */}
           <Link
-            href={signedInHome ?? "/signup/organization"}
+            href="#preview"
             className="group relative flex h-12 items-center gap-2 overflow-hidden rounded-xl bg-accent px-7 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent-dark"
           >
             <span
               aria-hidden
               className="animate-shimmer absolute inset-y-0 -left-1/2 w-1/3 -skew-x-12 bg-white/25"
             />
-            <span className="relative">{signedInHome ? t("ctaDashboard") : t("ctaPrimary")}</span>
-            <ArrowRight size={16} className="relative transition-transform duration-200 group-hover:translate-x-1" />
-          </Link>
-          {/* Try it before committing: the public search needs no account. */}
-          <Link
-            href="/public"
-            className="glass group flex h-12 items-center gap-2 rounded-xl px-7 text-sm font-semibold text-ink transition-all duration-200 hover:-translate-y-0.5 hover:bg-surface/90"
-          >
-            <Search size={16} className="text-ink-muted transition-colors group-hover:text-accent" />
-            {t("ctaSecondary")}
+            <span className="relative">{t("ctaSecondary")}</span>
+            <ArrowDown size={16} className="relative transition-transform duration-200 group-hover:translate-y-0.5" />
           </Link>
         </div>
-
-        {!signedInHome && <p className="mt-4 text-xs text-ink-subtle">{t("ctaNote")}</p>}
 
         <div className="animate-fade-up" style={enter(480)}>
           <HeroMockup />

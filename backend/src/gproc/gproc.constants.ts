@@ -39,8 +39,10 @@ export const GPROC_REQUEST = {
   breaker: 3,
   /** Projects one capture accepts — the extension sends at most this many. */
   maxPerCapture: 100,
-  /** A bundle is the bidding document, the TOR and a dozen forms; a few MB in practice. */
-  maxBundleBytes: 30 * 1024 * 1024,
+  /** A bundle is the bidding document, the TOR and a dozen forms; usually a few MB, a scanned TOR can reach 20. */
+  maxBundleBytes: 40 * 1024 * 1024,
+  /** process5 took 28 s to serve a 20 MB bundle in testing. */
+  bundleTimeoutMs: 120_000,
   /** Finished runs kept for the extension to read back. */
   runsKept: 20,
 } as const;
