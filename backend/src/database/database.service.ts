@@ -75,6 +75,29 @@ export type UserDoc = {
   suspended?: boolean;
   /** Stamped on every successful login/Google sign-in — see AuthService.issueSession. */
   lastLoginAt?: Date;
+  /**
+   * `false` until the owner of a password sign-up opens the link mailed to
+   * them; set true by that link, a password reset (which proves the same
+   * inbox) or Google. Absent on accounts made before verification existed,
+   * which are treated as verified rather than locked out.
+   */
+  emailVerified?: boolean;
+};
+
+/** What a single-use emailed link is for. */
+export type AuthTokenPurpose = "password-reset" | "email-verify";
+
+/**
+ * One emailed link. Only the SHA-256 of the token is kept, so a copy of the
+ * database can't be turned into working links; Mongo's TTL index removes the
+ * row once it expires.
+ */
+export type AuthTokenDoc = {
+  userId: ObjectId;
+  purpose: AuthTokenPurpose;
+  tokenHash: string;
+  expiresAt: Date;
+  createdAt: Date;
 };
 
 export type TorContract = {
@@ -268,6 +291,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   notifications!: Collection<NotificationDoc>;
   syncRuns!: Collection<SyncRunDoc>;
   auditLogEntries!: Collection<AuditLogEntryDoc>;
+  authTokens!: Collection<AuthTokenDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -278,6 +302,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.notifications = this.client.db().collection<NotificationDoc>("notifications");
     this.syncRuns = this.client.db().collection<SyncRunDoc>("syncRuns");
     this.auditLogEntries = this.client.db().collection<AuditLogEntryDoc>("auditLogEntries");
+    this.authTokens = this.client.db().collection<AuthTokenDoc>("authTokens");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -298,6 +323,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // The only query pattern the admin dashboard needs: newest runs first.
     await this.syncRuns.createIndex({ startedAt: -1 });
     await this.auditLogEntries.createIndex({ createdAt: -1 });
+    await this.authTokens.createIndex({ tokenHash: 1 }, { unique: true });
+    await this.authTokens.createIndex({ userId: 1, purpose: 1 });
+    // Mongo deletes each link once it expires; a used one is deleted on use.
+    await this.authTokens.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
     await this.seed();
