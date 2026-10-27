@@ -1,5 +1,8 @@
 import { useTranslations } from "next-intl";
 
+import { CountUp } from "@/components/ui/count-up";
+import { Reveal } from "@/components/ui/reveal";
+
 type Stat = { value: string; label: string };
 
 export function StatsBar() {
@@ -7,17 +10,19 @@ export function StatsBar() {
   const STATS = t.raw("items") as Stat[];
 
   return (
-    <section className="border-y border-border bg-surface-alt">
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+    <section className="bg-surface px-6 pb-4">
+      <Reveal className="glass mx-auto max-w-5xl rounded-2xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 sm:divide-x sm:divide-border/60">
           {STATS.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-3xl font-bold text-ink">{stat.value}</p>
-              <p className="mt-1 text-sm text-ink-muted">{stat.label}</p>
+            <div key={stat.label} className="px-4 py-8 text-center">
+              <p className="bg-gradient-to-b from-ink to-ink-muted bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
+                <CountUp value={stat.value} />
+              </p>
+              <p className="mt-1.5 text-sm text-ink-muted">{stat.label}</p>
             </div>
           ))}
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

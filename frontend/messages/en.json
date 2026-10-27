@@ -13,11 +13,14 @@
   "Navbar": {
     "navSearch": "Search TORs",
     "navHowItWorks": "How it works",
+    "navFeatures": "Features",
+    "navPreview": "Preview",
     "savedAriaLabel": "Saved items",
     "notificationsAriaLabel": "Notifications",
     "recentNotices": "Recent notices",
+    "noticesCount": "{count} new",
     "login": "Log in",
-    "getStarted": "Get started free",
+    "getStarted": "Sign up free",
     "closeMenuAriaLabel": "Close menu",
     "openMenuAriaLabel": "Open menu"
   },
@@ -124,8 +127,31 @@
     "titleLine1": "Never miss an opportunity",
     "titleLine2": "in BMA software procurement",
     "description": "Automatically collect, analyze, and match TORs from BMA agencies with your company. No more checking e-GP every day.",
-    "ctaPrimary": "Start for free",
-    "ctaSecondary": "View preview"
+    "ctaPrimary": "Sign up free",
+    "ctaSecondary": "Search TORs",
+    "ctaDashboard": "Go to dashboard",
+    "ctaNote": "Free · Accounts reviewed within 1–2 business days"
+  },
+  "LandingHeroFlow": {
+    "step1Label": "Pull new TORs",
+    "step1Source": "e-GP · BMA",
+    "newBadge": "New",
+    "step1Items": [
+      "City data center platform",
+      "Disaster alert app",
+      "Hospital queue booking"
+    ],
+    "step2Label": "AI reads requirements",
+    "step2Chips": [
+      "Capital ≥ ฿5M",
+      "Past work ≥ ฿6M",
+      "ISO 27001"
+    ],
+    "step3Label": "Match your company",
+    "step3Caption": "Fits your company profile",
+    "step4Label": "Instant alert",
+    "step4Message": "New TOR matches you 92%",
+    "step4Meta": "Closes in 6 days"
   },
   "LandingFeatures": {
     "heading": "A platform built for both business and government",
@@ -172,7 +198,8 @@
   "LandingCta": {
     "heading": "Ready to get started?",
     "description": "Join the software companies already using TorFinder and never miss a BMA procurement opportunity again.",
-    "cta": "Start for free today"
+    "cta": "Sign up free",
+    "ctaDashboard": "Go to dashboard"
   },
   "LandingPreview": {
     "heading": "Search and review TORs transparently",
@@ -189,6 +216,52 @@
     "submitFeedback": "Submit feedback",
     "noResults": "No projects match your search",
     "viewPublicPortal": "Go to Public Portal to search all projects"
+  },
+  "LandingExplorer": {
+    "eyebrow": "How matching works",
+    "heading": "See exactly why a TOR fits you",
+    "description": "TorFinder reads each TOR's bidder qualifications and checks them against your company profile. Hover a requirement to see how it scores.",
+    "docLabel": "TOR document",
+    "scanning": "AI reading",
+    "docTitle": "Smart city data center management platform",
+    "docAgency": "Strategy and Evaluation Department",
+    "docDays": "6 days left",
+    "requirementsHeading": "Bidder qualifications",
+    "yourCompany": "Your company",
+    "matchLabel": "Match",
+    "required": "Required",
+    "yours": "Yours",
+    "hint": "Hover or tap a requirement to inspect it",
+    "requirements": [
+      {
+        "label": "Registered capital",
+        "required": "≥ ฿5M",
+        "yours": "฿8M",
+        "status": "pass",
+        "weight": 30
+      },
+      {
+        "label": "Largest past contract",
+        "required": "≥ ฿6.25M",
+        "yours": "฿9.4M",
+        "status": "pass",
+        "weight": 30
+      },
+      {
+        "label": "Work type",
+        "required": "Data platform",
+        "yours": "Data platform, Cloud",
+        "status": "pass",
+        "weight": 25
+      },
+      {
+        "label": "ISO/IEC 27001",
+        "required": "Certified",
+        "yours": "Not certified yet",
+        "status": "fail",
+        "weight": 15
+      }
+    ]
   },
   "SignInForm": {
     "emailLabel": "Email",
