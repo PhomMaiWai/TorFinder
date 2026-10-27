@@ -145,11 +145,26 @@ export type TorExtraction = {
   penalty?: string | null;
   warrantyPeriod?: string | null;
   contact?: string | null;
-  /** 0-1; low values are shown as needing a look at the source document. */
+  /** The model's own estimate, 0-1. Shown only through `assessment`. */
   confidence: number;
   model: string;
   documentUrl: string;
   extractedAt: string;
+  /** Worked out by the backend on read; absent on mock records. */
+  assessment?: ExtractionAssessment;
+};
+
+/** Figures both the document and the portal state, so one checks the other. */
+export type CheckedField = "budgetAmount" | "referencePrice";
+
+/** How far an extraction can be trusted, judged on evidence, not the model's word. */
+export type ExtractionAssessment = {
+  score: number;
+  level: "high" | "medium" | "low";
+  /** Figures that match what the agency published on e-GP. */
+  confirmed: CheckedField[];
+  /** Figures that differ from e-GP's: the reader should check the document. */
+  verify: CheckedField[];
 };
 
 /** How this budget compares with announcements about the same kind of work. */

@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
+import { assessConfidence } from "../ai/extraction-confidence";
 import { AuditService } from "../audit/audit.service";
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { env } from "../config/env";
@@ -144,6 +145,10 @@ export class TorService {
     return {
       id: _id.toString(),
       ...rest,
+      extraction: rest.extraction && {
+        ...rest.extraction,
+        assessment: assessConfidence(rest.extraction, rest),
+      },
       // Which files the detail page can show in place rather than link out to.
       documents: rest.documents?.map((file) => ({
         ...file,
