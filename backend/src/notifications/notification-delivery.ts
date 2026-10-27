@@ -1,3 +1,4 @@
+import { escapeHtml, sendEmail as send } from "../common/email";
 import { env } from "../config/env";
 import { NotificationChannels } from "../database/database.service";
 
@@ -34,22 +35,14 @@ async function post(url: string, body: unknown, headers: Record<string, string> 
   if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 200)}`);
 }
 
-const escapeHtml = (text: string) =>
-  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
 function sendEmail(to: string, notification: OutgoingNotification): Promise<void> {
   const { title, message, link } = notification;
-  return post(
-    "https://api.resend.com/emails",
-    {
-      from: env.notify.emailFrom,
-      to: [to],
-      subject: title,
-      text: plainText(notification),
-      html: `<p>${escapeHtml(message)}</p>${link ? `<p><a href="${escapeHtml(link)}">เปิดดูใน TOR Finder</a></p>` : ""}`,
-    },
-    { Authorization: `Bearer ${env.notify.resendApiKey}` },
-  );
+  return send({
+    to,
+    subject: title,
+    text: plainText(notification),
+    html: `<p>${escapeHtml(message)}</p>${link ? `<p><a href="${escapeHtml(link)}">เปิดดูใน TOR Finder</a></p>` : ""}`,
+  });
 }
 
 function sendSlack(webhookUrl: string, notification: OutgoingNotification): Promise<void> {

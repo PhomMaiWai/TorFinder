@@ -1,16 +1,19 @@
 "use client";
 
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+
+import { ResendVerification } from "@/components/auth/resend-verification";
 
 function PendingCard() {
   const t = useTranslations("SignupPendingPage");
   const tc = useTranslations("Common");
   const params = useSearchParams();
   const name = params.get("name") ?? t("defaultCompanyName");
+  const email = params.get("email");
 
   return (
     <div className="w-full max-w-md text-center">
@@ -32,6 +35,21 @@ function PendingCard() {
             bold: (chunks) => <span className="font-medium text-ink">{chunks}</span>,
           })}
         </p>
+
+        {email && (
+          <div className="mt-6 border-t border-border pt-6 text-left">
+            <p className="mb-4 flex items-start gap-2.5 text-sm leading-relaxed text-ink-muted">
+              <Mail size={18} className="mt-0.5 shrink-0 text-accent" />
+              <span>
+                {t.rich("verifyNote", {
+                  email,
+                  bold: (chunks) => <span className="font-medium text-ink">{chunks}</span>,
+                })}
+              </span>
+            </p>
+            <ResendVerification email={email} />
+          </div>
+        )}
       </div>
 
       <div className="mt-6 flex flex-col items-center gap-3">
