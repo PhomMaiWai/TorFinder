@@ -16,10 +16,13 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-ink transition-colors hover:bg-surface-alt"
+      className="inline-flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink"
       aria-label="Toggle theme"
     >
-      {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+      {/* Re-keyed so the new icon spins in on every switch */}
+      <span key={theme} className="animate-icon-swap">
+        {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+      </span>
     </button>
   );
 }
