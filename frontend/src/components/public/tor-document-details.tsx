@@ -29,6 +29,8 @@ function assessmentOf(extraction: TorExtraction): ExtractionAssessment {
   return { score, level: score >= 0.8 ? "high" : score >= 0.6 ? "medium" : "low", confirmed: [], verify: [] };
 }
 
+type Term = { label: string; value: string | null | undefined; field?: CheckedField };
+
 const LEVEL_STYLE = {
   high: "bg-success-soft text-success",
   medium: "bg-warn-soft text-warn",
@@ -143,16 +145,16 @@ export function TorDocumentDetails({
 
   const assessment = extraction && assessmentOf(extraction);
 
-  const terms: { label: string; value: string | null | undefined; field?: CheckedField }[] = extraction
-    ? [
+  const terms = extraction
+    ? ([
         {
           label: t("referencePriceLabel"),
-          value: extraction.referencePrice && BAHT.format(extraction.referencePrice),
+          value: extraction.referencePrice ? BAHT.format(extraction.referencePrice) : null,
           field: "referencePrice",
         },
         {
           label: t("documentBudgetLabel"),
-          value: extraction.budgetAmount && BAHT.format(extraction.budgetAmount),
+          value: extraction.budgetAmount ? BAHT.format(extraction.budgetAmount) : null,
           field: "budgetAmount",
         },
         { label: t("contractPeriodLabel"), value: extraction.contractPeriod },
@@ -160,7 +162,7 @@ export function TorDocumentDetails({
         { label: t("penaltyLabel"), value: extraction.penalty },
         { label: t("warrantyLabel"), value: extraction.warrantyPeriod },
         { label: t("contactLabel"), value: extraction.contact },
-      ].filter((term) => !!term.value)
+      ] satisfies Term[]).filter((term): term is Term & { value: string } => !!term.value)
     : [];
 
   return (
