@@ -10,6 +10,8 @@ export type Notification = {
   title: string;
   message: string;
   torId?: string;
+  /** A match alert's score, 0-100. */
+  score?: number;
   read: boolean;
   createdAt: string;
 };

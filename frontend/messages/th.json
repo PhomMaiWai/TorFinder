@@ -397,7 +397,13 @@
     "standardsRequestSubject": "ขอเพิ่มมาตรฐาน: {name}",
     "standardsNoResults": "ไม่พบมาตรฐาน “{query}” — กด “ขอเพิ่มมาตรฐาน” เพื่อแจ้งทีมงาน",
     "noStandardsLabel": "บริษัทยังไม่มีใบรับรองมาตรฐาน",
-    "registeredCapitalHint": "ข้อมูลสาธารณะจากกรมพัฒนาธุรกิจการค้า (DBD) ใช้เทียบกับเกณฑ์ทุนจดทะเบียนใน TOR"
+    "registeredCapitalHint": "ข้อมูลสาธารณะจากกรมพัฒนาธุรกิจการค้า (DBD) ใช้เทียบกับเกณฑ์ทุนจดทะเบียนใน TOR",
+    "matchAlertsSectionTitle": "แจ้งเตือน TOR ที่ตรงกับบริษัท",
+    "matchAlertsLabel": "แจ้งเตือนเมื่อมีโครงการที่ตรงกับบริษัท",
+    "matchAlertsDescription": "แจ้งตั้งแต่โครงการเริ่มปรากฏในขั้นแผนหรือร่าง TOR เพื่อให้มีเวลาเตรียมตัว และแจ้งอีกครั้งเมื่อเปิดรับข้อเสนอ",
+    "matchThresholdLabel": "คะแนนขั้นต่ำที่จะแจ้งเตือน",
+    "matchThresholdDescription": "ยิ่งตั้งสูง ยิ่งได้รับแจ้งน้อยลงแต่ตรงขึ้น ค่าเริ่มต้นคือ 70%",
+    "matchThresholdOption": "{value}% ขึ้นไป"
   },
   "NotificationsPage": {
     "pageTitle": "การแจ้งเตือน",
@@ -416,7 +422,10 @@
     "channelsTest": "ส่งข้อความทดสอบ",
     "channelsSaved": "บันทึกแล้ว",
     "channelsSaveFailed": "บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง",
-    "channelsTestNone": "ยังไม่ได้เปิดช่องทางใด กรุณาบันทึกก่อนทดสอบ"
+    "channelsTestNone": "ยังไม่ได้เปิดช่องทางใด กรุณาบันทึกก่อนทดสอบ",
+    "openTor": "ดูรายละเอียด TOR",
+    "matchScore": "ตรง {score}%",
+    "matchScoreHint": "คะแนนความเหมาะสมของ TOR นี้กับโปรไฟล์บริษัท"
   },
   "PublicPage": {
     "pageTitle": "ค้นหาประกาศ TOR ซอฟต์แวร์",
