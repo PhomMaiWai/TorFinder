@@ -189,7 +189,7 @@ describe("admin edits a user", () => {
 
     const res = await api("/audit", ADMIN_TOKEN);
     assert.equal(res.status, 200);
-    const actions = res.body
+    const actions = res.body.items
       .filter((entry) => entry.detail.startsWith(`${viewer.email}:`))
       .map((entry) => entry.action)
       .sort();

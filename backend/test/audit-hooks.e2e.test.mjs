@@ -91,7 +91,7 @@ describe("admin actions write an audit entry", () => {
 
     const feed = await api("/audit", { token: ADMIN_TOKEN });
     assert.ok(
-      feed.body.some((e) => e.actor === ACTOR && e.detail === title && e.type === "manual"),
+      feed.body.items.some((e) => e.actor === ACTOR && e.detail === title && e.type === "manual"),
       "expected the entry in the admin's audit feed",
     );
   });

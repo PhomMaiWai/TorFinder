@@ -1,6 +1,7 @@
 import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 
 import { mapWithLimit } from "../common/concurrency";
+import { escapeRegex } from "../common/regex";
 import { SOFTWARE_SEARCH_KEYWORDS, isSoftwareProject } from "../common/software-filter";
 import { env } from "../config/env";
 import { DatabaseService, SyncRunDoc, SyncRunStatus } from "../database/database.service";
@@ -13,10 +14,6 @@ import { UNKNOWN, formatBaht, parseDate, projectMonth } from "../tor/tor-normali
 import { TorContract } from "../database/database.service";
 
 /** What a project's own announcements and detail record contribute per type. */
-/** For building a Mongo $regex from a literal URL. */
-function escapeRegex(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 type ProjectEnrichment = {
   announcements: EgpAnnouncement[];
