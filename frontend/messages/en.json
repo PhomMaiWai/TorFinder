@@ -542,7 +542,7 @@
   },
   "TorDetailPage": {
     "backToSearch": "Back to TOR search",
-    "feedbackOpenUntil": "Feedback open until {date}",
+    "feedbackOpenUntil": "Open for comments until {date}",
     "urgentBadge": "Deadline approaching",
     "newBadge": "New",
     "saveButton": "Save",
@@ -553,7 +553,6 @@
     "deliverables": "Deliverables",
     "relatedTechnologies": "Related technologies",
     "shareFeedback": "Share your feedback",
-    "feedbackOpenUntil": "Open for comments until {date}",
     "feedbackWindowInfo": "Feedback window open until {date} · {count} submissions so far",
     "feedbackTextareaPlaceholder": "Suggestions or comments about this scope of work or conditions...",
     "feedbackModerationNote": "Comments will be reviewed before being shown publicly",
@@ -1099,5 +1098,25 @@
     "resendPrompt": "Enter your email to get a new confirmation link.",
     "resendButton": "Resend confirmation link",
     "resendSent": "A new confirmation link is on its way. Check your inbox (and spam)."
+  },
+  "ReportProblem": {
+    "openButton": "Report a problem with this notice",
+    "heading": "Report a problem with this notice",
+    "description": "For example, a date or budget that doesn't match the original, or a listing that isn't software. An admin will check and fix it. This isn't shown publicly.",
+    "reasonLabel": "What's wrong",
+    "reasonPlaceholder": "Choose what's wrong",
+    "reason_wrong-info": "Wrong information (budget, date, agency)",
+    "reason_not-software": "Not software work",
+    "reason_broken-link": "A link or document doesn't open",
+    "reason_duplicate": "Duplicate of another notice",
+    "reason_other": "Something else",
+    "messageLabel": "Details",
+    "messagePlaceholder": "What is wrong, and the correct information if you know it",
+    "contactLabel": "How to reach you (optional)",
+    "contactPlaceholder": "Email or phone",
+    "submit": "Send",
+    "submitting": "Sending...",
+    "cancel": "Cancel",
+    "submitted": "Received. An admin will check this notice. Thank you for helping keep it accurate."
   }
 }

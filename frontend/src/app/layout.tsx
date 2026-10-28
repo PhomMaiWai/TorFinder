@@ -68,6 +68,7 @@ const CLIENT_NAMESPACES = [
   "OwnerPage",
   "ProfilePage",
   "PublicPage",
+  "ReportProblem",
   "SavedPage",
   "SignInForm",
   "SignupOrganizationPage",
