@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
 
+import { AuditService } from "../audit/audit.service";
 import { AdminGuard } from "../common/admin.guard";
 import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
 
@@ -8,7 +9,10 @@ import { MatchingService } from "./matching.service";
 
 @Controller("matching")
 export class MatchingController {
-  constructor(private readonly matching: MatchingService) {}
+  constructor(
+    private readonly matching: MatchingService,
+    private readonly audit: AuditService,
+  ) {}
 
   /**
    * Announcements ranked for the caller's own company. The identity comes from
@@ -35,8 +39,14 @@ export class MatchingController {
   /** Recompute and store every record's budget verdict. */
   @Post("budget/refresh")
   @UseGuards(AdminGuard)
-  refreshBudgets() {
-    return this.matching.refreshBudgetStatuses();
+  async refreshBudgets(@Req() request: AuthenticatedRequest) {
+    const result = await this.matching.refreshBudgetStatuses();
+    await this.audit.record(
+      request.session.email,
+      "คำนวณสถานะงบประมาณใหม่",
+      `ประเมิน ${result.assessed} รายการ · ติดธง ${result.flagged} รายการ`,
+    );
+    return result;
   }
 
   /** How this announcement's budget compares with similar ones. */

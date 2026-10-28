@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { AuditModule } from "../audit/audit.module";
 import { DatabaseModule } from "../database/database.module";
 import { TorModule } from "../tor/tor.module";
 import { NotificationsModule } from "../notifications/notifications.module";
@@ -9,7 +10,7 @@ import { EgpScheduler } from "./egp.scheduler";
 import { EgpService } from "./egp.service";
 
 @Module({
-  imports: [DatabaseModule, TorModule, NotificationsModule],
+  imports: [AuditModule, DatabaseModule, TorModule, NotificationsModule],
   controllers: [EgpController],
   providers: [EgpService, EgpClient, EgpScheduler],
 })

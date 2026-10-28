@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
+import { AuditService } from "../audit/audit.service";
 import { mapWithLimit } from "../common/concurrency";
 import { USER_AGENT } from "../common/http-client";
 import { env } from "../config/env";
@@ -75,15 +76,17 @@ export class ExtractionService {
     private readonly vertex: VertexClient,
     private readonly gproc: GprocClient,
     private readonly matching: MatchingService,
+    private readonly audit: AuditService,
   ) {}
 
   /**
    * Reads one announcement's document and stores what it says. The result lives
    * under `extraction`, separate from the fields the portal published: one is
    * what an agency stated, the other is what a model read, and a reader has to
-   * be able to tell them apart.
+   * be able to tell them apart. `actor` is set when an admin asked for this one
+   * record; a batch run reads many and is logged once, by whoever started it.
    */
-  async extractForTor(torId: string): Promise<StoredExtraction> {
+  async extractForTor(torId: string, actor?: string): Promise<StoredExtraction> {
     if (!ObjectId.isValid(torId)) throw new NotFoundException("ไม่พบรายการ TOR");
     const tor = await this.db.tors.findOne({ _id: new ObjectId(torId) });
     if (!tor) throw new NotFoundException("ไม่พบรายการ TOR");
@@ -122,6 +125,7 @@ export class ExtractionService {
       { $set: { extraction: stored }, $unset: { extractionFailure: "" } },
     );
     this.logger.log(`Extracted ${torId} (confidence ${extraction.confidence})`);
+    if (actor) await this.audit.record(actor, "อ่านเอกสาร TOR ด้วย AI", tor.title);
     // What the document asks for can lift a score over a company's line (or rule
     // it out); a project already alerted on isn't alerted again.
     await this.matching

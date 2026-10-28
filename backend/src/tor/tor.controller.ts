@@ -35,8 +35,8 @@ export class TorController {
 
   @Post()
   @UseGuards(AdminGuard)
-  create(@Body() dto: CreateTorDto) {
-    return this.torService.create(dto);
+  create(@Body() dto: CreateTorDto, @Req() request: AuthenticatedRequest) {
+    return this.torService.create(dto, request.session.email);
   }
 
   @Get()

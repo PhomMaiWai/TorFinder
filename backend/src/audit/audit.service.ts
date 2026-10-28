@@ -18,19 +18,26 @@ const SYNC_ACTION_LABELS: Record<SyncRunStatus, string> = {
   failed: "ซิงค์ข้อมูล e-GP ล้มเหลว",
 };
 
-/** Reads back as one line: what came in, what changed, what didn't. */
+/**
+ * Reads back as one line: what came in, what changed, what didn't. Shared by
+ * the recorded sync runs and the entries for an import an admin started.
+ */
+export function importDetail({ imported, updated, failed }: { imported: number; updated: number; failed: string[] }): string {
+  const parts = [`นำเข้าใหม่ ${imported} รายการ`, `อัปเดต ${updated} รายการ`];
+  if (failed.length > 0) parts.push(`ดึงข้อมูลล้มเหลว ${failed.length} แหล่ง`);
+  return parts.join(" · ");
+}
+
 function syncDetail(run: SyncRunDoc): string {
   if (run.status === "failed") return run.error ?? "ไม่สามารถเชื่อมต่อระบบ e-GP ได้";
-
-  const parts = [`นำเข้าใหม่ ${run.imported} รายการ`, `อัปเดต ${run.updated} รายการ`];
-  if (run.failedFeeds.length > 0) parts.push(`ดึงข้อมูลล้มเหลว ${run.failedFeeds.length} แหล่ง`);
-  return parts.join(" · ");
+  return importDetail({ ...run, failed: run.failedFeeds });
 }
 
 /**
  * The admin dashboard's audit feed. Manual entries (see record()) come from
  * an admin doing something attributable — approving an account, moderating a
- * comment, hiding/restoring a TOR. Automatic entries are never written here:
+ * comment, adding, editing, hiding or restoring a TOR, starting an import, an
+ * AI extraction or a budget refresh. Automatic entries are never written here:
  * e-GP sync runs already live in `syncRuns` (see EgpService), and are read
  * straight from there and merged in at query time, so there is exactly one
  * place a sync's outcome is stored.

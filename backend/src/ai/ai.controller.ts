@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 
+import { AuditService } from "../audit/audit.service";
 import { AdminGuard } from "../common/admin.guard";
 import { OrgGuard } from "../common/org.guard";
 import { AuthenticatedRequest } from "../common/session.guard";
@@ -16,6 +17,7 @@ export class AiController {
     private readonly vertex: VertexClient,
     private readonly extraction: ExtractionService,
     private readonly proposals: ProposalService,
+    private readonly audit: AuditService,
   ) {}
 
   /**
@@ -36,15 +38,21 @@ export class AiController {
   /** Read everything still unextracted, up to this run's call budget. */
   @Post("extract")
   @UseGuards(AdminGuard)
-  extractPending() {
-    return this.extraction.extractPending();
+  async extractPending(@Req() request: AuthenticatedRequest) {
+    const result = await this.extraction.extractPending();
+    await this.audit.record(
+      request.session.email,
+      "สั่งอ่านเอกสาร TOR ด้วย AI",
+      `อ่านสำเร็จ ${result.extracted} · ไม่มีเอกสารให้อ่าน ${result.skipped} · ล้มเหลว ${result.failed} จาก ${result.attempted} รายการ`,
+    );
+    return result;
   }
 
   /** Read one announcement's document now, rather than waiting for a batch. */
   @Post("extract/:torId")
   @UseGuards(AdminGuard)
-  extract(@Param("torId") torId: string) {
-    return this.extraction.extractForTor(torId);
+  extract(@Param("torId") torId: string, @Req() request: AuthenticatedRequest) {
+    return this.extraction.extractForTor(torId, request.session.email);
   }
 
   /**

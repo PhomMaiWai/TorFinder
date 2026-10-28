@@ -1,21 +1,29 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from "@nestjs/common";
 
+import { AuditService, importDetail } from "../audit/audit.service";
 import { AdminGuard } from "../common/admin.guard";
+import { AuthenticatedRequest } from "../common/session.guard";
 import { EgpService } from "./egp.service";
 
 @Controller("egp")
 export class EgpController {
-  constructor(private readonly egpService: EgpService) {}
+  constructor(
+    private readonly egpService: EgpService,
+    private readonly audit: AuditService,
+  ) {}
 
   /**
    * Starting an import is privileged: it spends the portal's patience and
-   * rewrites what every visitor sees, so it takes an admin session.
+   * rewrites what every visitor sees, so it takes an admin session. The run
+   * itself is logged as a sync run; this entry says who asked for it.
    */
   @Post("sync")
   @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.OK)
-  sync() {
-    return this.egpService.sync();
+  async sync(@Req() request: AuthenticatedRequest) {
+    const result = await this.egpService.sync();
+    await this.audit.record(request.session.email, "สั่งซิงค์ข้อมูล e-GP", importDetail(result));
+    return result;
   }
 
   /**
