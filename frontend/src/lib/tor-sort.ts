@@ -2,13 +2,13 @@ import { biddingOf, daysUntilClose, isKnown } from "@/lib/tor-ui";
 import type { TorRecord } from "@/types/tor";
 
 /**
- * How the search results are ordered. The default is the one a bid manager
- * asked for: not the TOR that closes today — there is no time left to prepare
- * for it — but a good one that is open with time to spare, newest first.
+ * How the search results are ordered. The default puts what closes soonest
+ * first among the announcements still open, so nothing a reader could still
+ * bid on runs out unseen; "prepare" — open with time to spare — is one click away.
  */
 export const SORT_KEYS = ["prepare", "newest", "closing", "budget"] as const;
 export type SortKey = (typeof SORT_KEYS)[number];
-export const DEFAULT_SORT: SortKey = "prepare";
+export const DEFAULT_SORT: SortKey = "closing";
 
 export function isSortKey(value: unknown): value is SortKey {
   return typeof value === "string" && (SORT_KEYS as readonly string[]).includes(value);
