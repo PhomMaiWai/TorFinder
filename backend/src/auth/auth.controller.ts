@@ -1,6 +1,7 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
+import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 
+import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
 import { env } from "../config/env";
 import { AuthService } from "./auth.service";
 import { EmailOnlyDto, ResetPasswordDto, VerifyEmailDto } from "./dto/account-links.dto";
@@ -24,6 +25,15 @@ export class AuthController {
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  /** Revokes the caller's session token so it can't be replayed after logout (ASVS 7.4.1). */
+  @Post("logout")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SessionGuard)
+  async logout(@Req() request: AuthenticatedRequest) {
+    await this.authService.logout(request.session.sub);
+    return { ok: true as const };
   }
 
   @Post("google")

@@ -86,6 +86,12 @@ export type UserDoc = {
    * which are treated as verified rather than locked out.
    */
   emailVerified?: boolean;
+  /**
+   * The floor for a session token's `iat` (issued-at) to still be accepted —
+   * see SessionRevocationService. Bumped on logout, password reset, and
+   * suspension; absent means no token for this account has ever been revoked.
+   */
+  sessionMinIssuedAt?: Date;
 };
 
 /** What a single-use emailed link is for. */

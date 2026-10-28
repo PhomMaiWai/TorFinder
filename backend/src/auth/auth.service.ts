@@ -9,7 +9,8 @@ import {
 import { OAuth2Client } from "google-auth-library";
 import { MongoServerError, ObjectId, WithId } from "mongodb";
 
-import { hashPassword, verifyPassword } from "../common/password";
+import { hashPassword, isCommonPassword, verifyPassword } from "../common/password";
+import { SessionRevocationService } from "../common/session-revocation.service";
 import { createSessionToken } from "../common/token";
 import { env } from "../config/env";
 import { DatabaseService, UserDoc } from "../database/database.service";
@@ -39,9 +40,15 @@ export class AuthService {
   constructor(
     private readonly db: DatabaseService,
     private readonly links: AccountLinksService,
+    private readonly revocation: SessionRevocationService,
   ) {}
 
   async signup({ email, password, ...company }: SignupDto) {
+    // ASVS 6.2.4: reject passwords that would fall to a first-pass dictionary
+    // attack, before they're ever hashed.
+    if (isCommonPassword(password)) {
+      throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
+    }
     const { hash, salt } = await hashPassword(password);
     const address = email.trim().toLowerCase();
 
@@ -115,13 +122,25 @@ export class AuthService {
   async resetPassword({ token, password }: ResetPasswordDto) {
     const userId = await this.links.consume(token, "password-reset");
     if (!userId) throw new BadRequestException("ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
+    if (isCommonPassword(password)) {
+      throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
+    }
 
     const { hash, salt } = await hashPassword(password);
     await this.db.users.updateOne(
       { _id: userId },
       { $set: { passwordHash: hash, passwordSalt: salt, emailVerified: true } },
     );
+    // Proves the account's owner is back in control, so any token issued
+    // before now — including one an attacker who triggered this might hold —
+    // stops working (ASVS 7.4.3).
+    await this.revocation.revoke(userId.toString());
     return { ok: true as const };
+  }
+
+  /** Invalidates every session token already issued to this account (ASVS 7.4.1). */
+  async logout(userId: string): Promise<void> {
+    await this.revocation.revoke(userId);
   }
 
   /** Confirms the address. Says whether the account still waits on an admin, so the page can say so. */
