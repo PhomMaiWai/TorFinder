@@ -10,7 +10,7 @@ import { currentDaysLeft } from "../tor/tor-normalize";
 import { assessBid, BidInsight } from "./bid-insight";
 import { assessBudget, BudgetAssessment } from "./budget-analysis";
 import { alertText, planAlerts, projectKeyOf, sentKey } from "./match-alerts";
-import { rankCompanies, scoreMatch } from "./matching.scoring";
+import { rankCompanies, ScorableTor, scoreMatch } from "./matching.scoring";
 import { MatchCandidate, MatchResult, RankedCompany } from "./matching.types";
 
 const AWARD_STAGE = STAGE.award;
@@ -42,27 +42,48 @@ export class MatchingService {
   async rankForTor(torId: string): Promise<RankedCompany[]> {
     const tor = await this.findTor(torId);
 
-    // Only approved accounts with a profile can be matched — a pending signup
-    // has nothing to score and shouldn't be suggested to an agency.
-    const accounts = await this.db.users
-      .find(
-        { role: "org", status: "approved", company: { $exists: true } },
-        { projection: { company: 1 } },
-      )
-      .toArray();
+    return rankCompanies(tor, await this.approvedCandidates()).map(
+      ({ companyName, workTypes, score, reasons, gaps, eligibility, eligible }) => ({
+        companyName,
+        workTypes,
+        score,
+        reasons,
+        gaps,
+        eligibility,
+        eligible,
+      }),
+    );
+  }
 
-    return rankCompanies(
-      tor,
-      accounts.flatMap((account) => (account.company ? [candidateOf(account.company)] : [])),
-    ).map(({ companyName, workTypes, score, reasons, gaps, eligibility, eligible }) => ({
-      companyName,
-      workTypes,
-      score,
-      reasons,
-      gaps,
-      eligibility,
-      eligible,
-    }));
+  /**
+   * For an owner's own announcements: how many approved companies fit each one
+   * at or above the alert threshold — the ones the system would tell about it —
+   * and the best score. Companies are loaded once for the whole list.
+   */
+  async matchSummaries(
+    tors: (ScorableTor & { _id: ObjectId })[],
+    threshold = env.notify.matchThreshold,
+  ): Promise<Map<string, { matchCount: number; topScore: number | null }>> {
+    const candidates = await this.approvedCandidates();
+    return new Map(
+      tors.map((tor) => {
+        const fits = rankCompanies(tor, candidates).filter(
+          ({ score, eligible }) => score >= threshold && eligible !== false,
+        );
+        return [tor._id.toString(), { matchCount: fits.length, topScore: fits[0]?.score ?? null }];
+      }),
+    );
+  }
+
+  /**
+   * Only approved accounts with a profile can be matched — a pending signup
+   * has nothing to score and shouldn't be suggested to an agency.
+   */
+  private async approvedCandidates(): Promise<MatchCandidate[]> {
+    const accounts = await this.db.users
+      .find({ role: "org", status: "approved", company: { $exists: true } }, { projection: { company: 1 } })
+      .toArray();
+    return accounts.flatMap((account) => (account.company ? [candidateOf(account.company)] : []));
   }
 
   /**

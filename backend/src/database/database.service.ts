@@ -207,6 +207,8 @@ export type TorDoc = {
   enrichedAt?: Date;
   /** Which generation of enrichment produced the fields above (see EgpService). */
   enrichVersion?: number;
+  /** The project owner account responsible for this announcement; what /api/owner reads by. */
+  ownerId?: ObjectId;
 };
 
 /** A public comment on one announcement, shown only once it is approved. */
@@ -360,6 +362,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
     await this.tors.createIndex({ createdAt: -1 });
+    // An owner's dashboard lists only their own announcements, newest first.
+    await this.tors.createIndex({ ownerId: 1, createdAt: -1 });
     // Makes the e-GP import idempotent: re-running it updates instead of duplicating.
     await this.tors.createIndex({ sourceRef: 1 }, { unique: true, sparse: true });
     // Serves the "which projects already have a winner" lookup every listing makes.

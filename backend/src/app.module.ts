@@ -16,6 +16,7 @@ import { MeaModule } from "./mea/mea.module";
 import { MatchingModule } from "./matching/matching.module";
 import { HealthController } from "./health.controller";
 import { NotificationsModule } from "./notifications/notifications.module";
+import { OwnerModule } from "./owner/owner.module";
 import { SavedSearchesModule } from "./saved-searches/saved-searches.module";
 import { SavedTorsModule } from "./saved-tors/saved-tors.module";
 import { TorModule } from "./tor/tor.module";
@@ -37,6 +38,7 @@ import { TorModule } from "./tor/tor.module";
     GprocModule,
     FeedbackModule,
     MatchingModule,
+    OwnerModule,
     SavedSearchesModule,
     SavedTorsModule,
     NotificationsModule,
