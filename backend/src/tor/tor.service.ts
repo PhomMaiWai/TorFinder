@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
 import { assessConfidence } from "../ai/extraction-confidence";
@@ -360,6 +360,37 @@ export class TorService {
 
     const { _id: updated, ...rest } = result;
     return { id: updated.toString(), ...rest };
+  }
+
+  /**
+   * Links an announcement to the project owner account responsible for it, or
+   * unlinks it (`null`); /api/owner reads by this link. It is not a correction
+   * of the published data, so it locks nothing and leaves "last edited" alone —
+   * the audit log records who linked whom.
+   */
+  async setOwner(id: string, ownerId: string | null, actor: string) {
+    if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบรายการ TOR");
+    const _id = new ObjectId(id);
+    const tor = await this.db.tors.findOne({ _id }, { projection: { title: 1, ownerId: 1 } });
+    if (!tor) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    const owner = ownerId
+      ? await this.db.users.findOne({ _id: new ObjectId(ownerId) }, { projection: { email: 1, name: 1, role: 1 } })
+      : null;
+    // Only an owner account has an owner dashboard to see the record on.
+    if (ownerId && owner?.role !== "owner") {
+      throw new BadRequestException("บัญชีนี้ไม่ใช่บัญชีเจ้าของโครงการ");
+    }
+
+    if ((tor.ownerId?.toString() ?? null) !== ownerId) {
+      await this.db.tors.updateOne({ _id }, owner ? { $set: { ownerId: owner._id } } : { $unset: { ownerId: "" } });
+      await this.audit.record(
+        actor,
+        owner ? "กำหนดเจ้าของประกาศ TOR" : "ยกเลิกเจ้าของประกาศ TOR",
+        owner ? `${tor.title} → ${owner.name} (${owner.email})` : tor.title,
+      );
+    }
+    return this.findOne(id);
   }
 
   /** Announcements an admin marked as outside software work — the list that can put them back. */
