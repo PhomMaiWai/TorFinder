@@ -704,7 +704,9 @@
       "success": "Succeeded",
       "partial": "Partial",
       "failed": "Failed"
-    }
+    },
+    "runAgainCta": "Run again",
+    "runAgainPending": "Running…"
   },
   "AdminAccountsPage": {
     "title": "Pending Accounts",

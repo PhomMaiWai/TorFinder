@@ -704,7 +704,9 @@
       "success": "สำเร็จ",
       "partial": "บางส่วน",
       "failed": "ล้มเหลว"
-    }
+    },
+    "runAgainCta": "ลองใหม่อีกครั้ง",
+    "runAgainPending": "กำลังดึงข้อมูล…"
   },
   "AdminAccountsPage": {
     "title": "บัญชีรออนุมัติ",
