@@ -252,3 +252,8 @@ npm run lint    # ESLint
 
 Built for Collaborative Software Process and Project Management (01219346),
 Kasetsart University.
+
+## Documentation
+
+- [docs/](docs/) — project plan, SRS, and a retrospective write-up of each iteration
+- [LICENSE](LICENSE) — MIT
