@@ -95,6 +95,43 @@
 :root {
   --glass-highlight: rgb(255 255 255 / 70%);
   --glass-fill: 62%;
+
+  /*
+   * Chart marks. Emphasis form: the accent carries the series or the one band
+   * that matters, the muted gray carries context. Validated with the dataviz
+   * palette checker against each mode's surface (light: contrast, CVD ΔE 10.8;
+   * dark: CVD ΔE 10.0, gray below 3:1 so every bar carries a visible label).
+   */
+  --chart-accent: #e11d48;
+  --chart-muted: #8e8e97;
+  /* Third part-to-whole slot (donut "unknown"); below 3:1, so always labelled. */
+  --chart-subtle: #d4d4d8;
+  --chart-grid: var(--color-border);
+  /* Sequential rose, weak → strong (treemap, heatmap). Validated as an ordinal ramp. */
+  --ramp-1: #fb7185;
+  --ramp-2: #e11d48;
+  --ramp-3: #be123c;
+  --ramp-4: #881337;
+  /* Text set inside a ramp fill: ink on the light step, white on the rest. */
+  --on-ramp-1: #18181b;
+  --on-ramp-2: #ffffff;
+  --on-ramp-3: #ffffff;
+  --on-ramp-4: #ffffff;
+}
+
+.dark {
+  --chart-accent: #f43f5e;
+  --chart-muted: #52525b;
+  --chart-subtle: #a1a1aa;
+  /* On a dark surface "strong" is the light end. */
+  --ramp-1: #9f1239;
+  --ramp-2: #e11d48;
+  --ramp-3: #fb7185;
+  --ramp-4: #fecdd3;
+  --on-ramp-1: #ffffff;
+  --on-ramp-2: #ffffff;
+  --on-ramp-3: #18181b;
+  --on-ramp-4: #18181b;
 }
 
 @keyframes toast-in {

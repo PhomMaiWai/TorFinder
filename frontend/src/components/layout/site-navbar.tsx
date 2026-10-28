@@ -129,6 +129,7 @@ export function SiteNavbar() {
 
   const navLinks = [
     { label: t("navSearch"), href: "/public", active: pathname.startsWith("/public") },
+    { label: t("navDashboard"), href: "/dashboard", active: pathname.startsWith("/dashboard") },
     { label: t("navFeatures"), href: "/#features", active: activeSection === "features" },
     { label: t("navHowItWorks"), href: "/#how-it-works", active: activeSection === "how-it-works" },
     { label: t("navPreview"), href: "/#preview", active: activeSection === "preview" },
