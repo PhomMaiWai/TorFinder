@@ -127,6 +127,13 @@ export type TorDoc = {
   budget: string;
   deadline: string;
   daysLeft: number;
+  /**
+   * The last day of public comment on the draft, as an ISO date in Bangkok —
+   * set when the portal publishes the comment window (MEA's drafts). Kept once
+   * the project moves on, when `deadline` starts meaning the bid deadline.
+   * Without it, what the model read off the draft (`extraction`) is used.
+   */
+  feedbackDeadline?: string;
   match: number;
   tags: string[];
   stage: (typeof TOR_STAGES)[number];

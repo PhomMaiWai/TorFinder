@@ -75,6 +75,7 @@ export function TorRecordFacts({ tor }: { tor: TorRecord }) {
           hint: t("checkedOn", { date: thaiDate(tor.procurementStep.checkedAt) ?? "" }),
         }
       : null,
+    tor.feedbackDeadline ? { label: t("feedbackDeadlineLabel"), value: thaiDate(tor.feedbackDeadline) } : null,
     bidding.opensAt ? { label: t("opensAtLabel"), value: thaiDate(bidding.opensAt) } : null,
     bidding.closesAt
       ? {

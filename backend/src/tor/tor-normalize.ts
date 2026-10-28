@@ -94,6 +94,12 @@ export function projectMonth(projectNumber: string): Date | null {
   return new Date(Date.UTC(2500 + Number(match[1]) - 543, month - 1, 1));
 }
 
+/** The calendar day `date` falls on in Bangkok, as YYYY-MM-DD; undefined for no date. */
+export function bangkokDay(date: Date | null): string | undefined {
+  // en-CA formats as YYYY-MM-DD.
+  return date ? date.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }) : undefined;
+}
+
 /** The deadline as a reader sees it, e.g. "24 ก.ย. 2569". */
 export function formatThaiDate(date: Date | null): string {
   if (!date) return UNKNOWN;

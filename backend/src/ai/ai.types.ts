@@ -20,6 +20,11 @@ export type TorExtraction = {
    * only the end is printed) — bids are taken in a window, e.g. 09:00–12:00.
    */
   deadlineTime: string | null;
+  /**
+   * The last day of public comment on a draft TOR, in ISO date form. Unlike
+   * `deadline` it keeps meaning the comment window after bidding opens.
+   */
+  feedbackDeadline: string | null;
   /** เกณฑ์การพิจารณา — lowest price, or price-performance and its weights. */
   evaluationCriteria: string | null;
   /** งวดงานและการจ่ายเงิน, one instalment per item. */

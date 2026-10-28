@@ -124,6 +124,8 @@ export class TorService {
             $set: {
               documentDeadline: "$extraction.deadline",
               documentDeadlineTime: "$extraction.deadlineTime",
+              // The portal's own comment window first; what the model read only fills a gap.
+              feedbackDeadline: { $ifNull: ["$feedbackDeadline", "$extraction.feedbackDeadline", "$$REMOVE"] },
             },
           },
           { $unset: ["extraction", "extractionFailure"] },
@@ -179,6 +181,7 @@ export class TorService {
         archive: isArchiveDocument(file.url),
       })),
       daysLeft: currentDaysLeft(rest),
+      feedbackDeadline: rest.feedbackDeadline ?? rest.extraction?.feedbackDeadline ?? undefined,
       bidding: biddingOf(
         {
           ...rest,
