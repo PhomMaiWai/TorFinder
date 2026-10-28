@@ -91,10 +91,15 @@ const formOf = (tor) => ({
 
 const save = (id, body, token = ADMIN_TOKEN) =>
   api(`/tor/${id}`, { method: "PATCH", token, body });
+/** The entries a correction wrote; creating the record writes one of its own. */
 const auditFor = (title) =>
   db()
     .collection("auditLogEntries")
-    .find({ actor: ACTOR, detail: { $regex: title.replace(/[()]/g, ".") } })
+    .find({
+      actor: ACTOR,
+      action: { $ne: "เพิ่มประกาศ TOR" },
+      detail: { $regex: title.replace(/[()]/g, ".") },
+    })
     .toArray();
 
 /** Every listed announcement's id, across pages. */

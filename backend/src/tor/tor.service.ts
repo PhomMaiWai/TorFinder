@@ -63,7 +63,7 @@ export class TorService {
     private readonly matching: MatchingService,
   ) {}
 
-  async create(dto: CreateTorDto) {
+  async create(dto: CreateTorDto, actor: string) {
     const duplicate = await this.findLikelyDuplicate(dto.title, dto.agency);
     if (duplicate) {
       throw new ConflictException(
@@ -75,6 +75,7 @@ export class TorService {
     // insertOne mutates what it is given by adding _id — pass a copy so the
     // response keeps exposing only `id`.
     const { insertedId } = await this.db.tors.insertOne({ ...doc });
+    await this.audit.record(actor, "เพิ่มประกาศ TOR", dto.title);
     // Same as an import: companies it suits hear about it. A failed send doesn't undo the record.
     await this.matching
       .notifyMatches([insertedId])
