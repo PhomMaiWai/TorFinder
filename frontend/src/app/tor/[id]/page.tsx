@@ -7,6 +7,7 @@ import {
   Scale,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -17,12 +18,14 @@ import { BidInsightPanel } from "@/components/public/bid-insight-panel";
 import { BiddingBadge } from "@/components/public/bidding-badge";
 import { FeedbackForm } from "@/components/public/feedback-form";
 import { ProposalDraftForm } from "@/components/public/proposal-draft-form";
+import { ReportProblemForm } from "@/components/public/report-problem-form";
 import { SaveTorButton } from "@/components/public/save-tor-button";
 import { TorDocumentDetails } from "@/components/public/tor-document-details";
 import { TorDocumentList } from "@/components/public/tor-document-list";
 import { TorRecordFacts } from "@/components/public/tor-record-facts";
 import { TorTimeline } from "@/components/public/tor-timeline";
 import { TOR_DETAILS } from "@/data/tor-details";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { thaiDateTime } from "@/lib/datetime";
 import { fetchBidInsight, fetchBudgetAssessment, fetchFeedback } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
@@ -67,7 +70,11 @@ export default async function TorDetailPage({
 }) {
   const [{ id }, { in: context }] = await Promise.all([params, searchParams]);
   const inApp = context === "app";
-  const [tor, t] = await Promise.all([getTorById(id), getTranslations("TorDetailPage")]);
+  const [tor, t, session] = await Promise.all([
+    getTorById(id),
+    getTranslations("TorDetailPage"),
+    cookies().then((jar) => verifySessionToken(jar.get(SESSION_COOKIE)?.value)),
+  ]);
   if (!tor) notFound();
 
   // Supplementary panels exist only for real records; the showcase ones aren't
@@ -323,6 +330,8 @@ export default async function TorDetailPage({
               </section>
             )}
 
+          {/* Only a real record can be checked and corrected; the showcase ones are fixed text. */}
+          {tor.sourceRef && <ReportProblemForm torId={tor.id} signedIn={Boolean(session)} />}
         </aside>
       </div>
     </div>
