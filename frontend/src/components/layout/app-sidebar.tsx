@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ClipboardList,
   FileText,
+  FolderKanban,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -90,6 +91,19 @@ function getAdminNav(t: (key: string) => string): { section: string | null; link
         { label: t("navManageUsers"), href: "/admin/users", icon: Users },
         { label: t("navAuditLog"), href: "/admin/audit", icon: ClipboardList },
         { label: t("navNotifications"), href: "/admin/notifications", icon: Bell },
+      ],
+    },
+  ];
+}
+
+function getOwnerNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
+  return [
+    {
+      section: null,
+      links: [
+        { label: t("navMyProjects"), href: "/owner", icon: FolderKanban },
+        { label: t("navOverview"), href: "/dashboard", icon: Activity },
+        { label: t("navSearchTor"), href: "/search", icon: Search },
       ],
     },
   ];
@@ -178,7 +192,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const isAdmin = pathname.startsWith("/admin");
   const isAuditor = pathname.startsWith("/auditor");
-  const nav = isAdmin ? getAdminNav(t) : isAuditor ? getAuditorNav(t) : getOrgNav(t);
+  const isOwner = pathname.startsWith("/owner");
+  const nav = isAdmin
+    ? getAdminNav(t)
+    : isAuditor
+      ? getAuditorNav(t)
+      : isOwner
+        ? getOwnerNav(t)
+        : getOrgNav(t);
 
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);

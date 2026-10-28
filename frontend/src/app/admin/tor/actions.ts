@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { authHeaders } from "@/lib/session-headers";
+import { deleteTor, restoreTor } from "@/lib/tor-admin-api";
 
 /** The portals an admin can pull from, named the way the failure is reported. */
 const SOURCES = {
@@ -43,4 +44,17 @@ export async function syncFromMea() {
 
 export async function syncFromDataGov() {
   await sync("datagov");
+}
+
+/** Hides an announcement from every listing; the owner's own page follows. */
+export async function hideTor(id: string) {
+  await deleteTor(id);
+  revalidatePath("/admin/tor");
+  revalidatePath("/owner");
+}
+
+export async function unhideTor(id: string) {
+  await restoreTor(id);
+  revalidatePath("/admin/tor");
+  revalidatePath("/owner");
 }
