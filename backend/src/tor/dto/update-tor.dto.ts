@@ -1,6 +1,6 @@
 import { IsIn, IsInt, IsOptional, IsString, Min, MinLength } from "class-validator";
 
-import { TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor.constants";
+import { TOR_BUDGET_STATUSES, TOR_CLASSIFICATIONS, TOR_STAGES } from "../tor.constants";
 
 export class UpdateTorDto {
   @IsOptional()
@@ -44,4 +44,8 @@ export class UpdateTorDto {
   @IsOptional()
   @IsIn(TOR_BUDGET_STATUSES)
   budgetStatus?: (typeof TOR_BUDGET_STATUSES)[number];
+
+  @IsOptional()
+  @IsIn(TOR_CLASSIFICATIONS)
+  classification?: (typeof TOR_CLASSIFICATIONS)[number];
 }

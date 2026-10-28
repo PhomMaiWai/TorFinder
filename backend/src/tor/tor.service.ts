@@ -10,7 +10,7 @@ import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
 import { FLAGGED_TOR_FILTERS } from "./dto/list-flagged-tor-query.dto";
-import { LOW_COMPETITION_METHODS, STAGE_LISTING_ORDER, TOR_BUDGET_FLAGS } from "./tor.constants";
+import { LISTED_TOR, LOW_COMPETITION_METHODS, STAGE_LISTING_ORDER, TOR_BUDGET_FLAGS } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
 import { buildTimeline } from "./tor-stage";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
@@ -102,7 +102,7 @@ export class TorService {
     // Deleted records stay in the collection but out of every listing except
     // the one that exists to restore them.
     const filter: Filter<TorDoc> = {
-      deletedAt: { $exists: false },
+      ...LISTED_TOR,
       createdAt: { $gte: env.torListedSince },
     };
     // Imported records carry their portal as the prefix of `sourceRef`, so the
@@ -224,7 +224,7 @@ export class TorService {
             ? competitionCondition
             : { $or: [budgetCondition, competitionCondition] };
 
-    const filter: Filter<TorDoc> = { deletedAt: { $exists: false }, ...flagCondition };
+    const filter: Filter<TorDoc> = { ...LISTED_TOR, ...flagCondition };
     const projection = {
       title: 1,
       agency: 1,
@@ -310,21 +310,106 @@ export class TorService {
     return { id: _id.toString(), ...rest };
   }
 
-  async update(id: string, dto: UpdateTorDto) {
+  /**
+   * An admin's correction. Only the fields that actually differ from what is
+   * stored are written, and each one is locked so the next import of the same
+   * record leaves it alone (TorImportService). The record remembers who made
+   * the last correction and when; the audit log says what changed.
+   */
+  async update(id: string, dto: UpdateTorDto, editor: { email: string; name: string }) {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบรายการ TOR");
+    const _id = new ObjectId(id);
 
-    // Mongo's driver serializes `undefined` values as null in $set, which would
-    // wipe out fields the caller never touched — so only send the ones present.
-    const updates = Object.fromEntries(Object.entries(dto).filter(([, v]) => v !== undefined));
+    const current = await this.db.tors.findOne({ _id });
+    if (!current) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    const changes = changedFields(current, dto);
+    if (Object.keys(changes).length === 0) {
+      const { _id: unchanged, ...rest } = current;
+      return { id: unchanged.toString(), ...rest };
+    }
 
     const result = await this.db.tors.findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: updates },
+      { _id },
+      {
+        $set: { ...changes, lastEdited: { by: editor.name, at: new Date() } },
+        $addToSet: { lockedFields: { $each: Object.keys(changes) } },
+      },
       { returnDocument: "after" },
     );
     if (!result) throw new NotFoundException("ไม่พบรายการ TOR");
 
-    const { _id, ...rest } = result;
-    return { id: _id.toString(), ...rest };
+    const { classification, ...corrected } = changes;
+    await Promise.all([
+      Object.keys(corrected).length > 0 &&
+        this.audit.record(
+          editor.email,
+          "แก้ไขข้อมูลประกาศ TOR",
+          `${result.title}: ${Object.keys(corrected)
+            .map((field) => FIELD_LABELS[field as keyof typeof FIELD_LABELS] ?? field)
+            .join(", ")}`,
+        ),
+      classification &&
+        this.audit.record(
+          editor.email,
+          "จัดประเภทประกาศ TOR ใหม่",
+          `${result.title} → ${classification === "not-software" ? "ไม่ใช่งานซอฟต์แวร์" : "งานซอฟต์แวร์"}`,
+        ),
+    ]);
+
+    const { _id: updated, ...rest } = result;
+    return { id: updated.toString(), ...rest };
   }
+
+  /** Announcements an admin marked as outside software work — the list that can put them back. */
+  async findNotSoftware() {
+    const docs = await this.db.tors
+      .find(
+        { classification: "not-software", deletedAt: { $exists: false } },
+        { projection: { extraction: 0, extractionFailure: 0 } },
+      )
+      .sort({ "lastEdited.at": -1 })
+      .toArray();
+    return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+  }
+}
+
+/** How the audit log names each field an admin can correct. */
+const FIELD_LABELS = {
+  title: "ชื่อโครงการ",
+  agency: "หน่วยงาน",
+  budget: "งบประมาณ",
+  deadline: "วันที่ปิดรับ",
+  daysLeft: "จำนวนวันที่เหลือ",
+  tags: "แท็ก",
+  stage: "สถานะ",
+  summary: "รายละเอียด",
+  budgetStatus: "สถานะงบประมาณ",
+} as const;
+
+/**
+ * The fields of an edit that differ from the stored record. The edit form
+ * sends every field every time, so without this a save would lock fields the
+ * admin never touched. Two values read the same to the admin are not a change:
+ * "ปกติ" against no budget status, and the days left the detail page showed
+ * (worked out from the deadline) against the stored count.
+ */
+function changedFields(current: TorDoc, dto: UpdateTorDto): Partial<TorDoc> {
+  const changes: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(dto)) {
+    if (value === undefined) continue;
+    const stored = current[key as keyof TorDoc];
+    const same =
+      key === "tags"
+        ? JSON.stringify(stored ?? []) === JSON.stringify(value)
+        : key === "budgetStatus"
+          ? (stored ?? "ปกติ") === value
+          : key === "classification"
+            ? (stored ?? "software") === value
+            : key === "daysLeft"
+              ? stored === value || currentDaysLeft(current) === value
+              : stored === value;
+    if (!same) changes[key] = value;
+  }
+  return changes as Partial<TorDoc>;
 }

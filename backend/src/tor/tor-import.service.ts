@@ -60,7 +60,11 @@ type StoredRecord = {
   stage: string;
   projectNumber?: string;
   sourceRef?: string;
+  lockedFields?: string[];
 };
+
+/** A record no admin has corrected — the only kind an import may delete. */
+const UNCORRECTED = { lockedFields: { $exists: false } } as const;
 
 /**
  * The same real project reaches us once per portal, and each portal splits it
@@ -115,12 +119,14 @@ export class TorImportService {
     }
 
     const result = await this.db.tors.bulkWrite(
-      writes.map((record) => ({ updateOne: { ...upsertFor(record), upsert: true } })),
+      writes.map((record) => ({
+        updateOne: { ...upsertFor(record, known.get(record.doc.sourceRef)), upsert: true },
+      })),
       { ordered: false },
     );
 
     if (superseded.length) {
-      await this.db.tors.deleteMany({ _id: { $in: superseded } });
+      await this.db.tors.deleteMany({ _id: { $in: superseded }, ...UNCORRECTED });
     }
     // The budget verdict is relative to every other announcement, so an import
     // that adds or removes records invalidates the stored ones.
@@ -157,7 +163,8 @@ export class TorImportService {
   ): Promise<ObjectId[]> {
     const imported = await this.db.tors
       .find(
-        { sourceRef: { $regex: `^${source}:` } },
+        // An admin who corrected a record decided it belongs; a rule change doesn't overrule that.
+        { sourceRef: { $regex: `^${source}:` }, ...UNCORRECTED },
         { projection: { title: 1, agency: 1, goodsCategory: 1, location: 1, createdAt: 1 } },
       )
       .toArray();
@@ -217,14 +224,17 @@ export class TorImportService {
   }
 
   /** Records this source has imported before — an update, not a new arrival. */
-  private async knownRefs(records: ImportRecord[]): Promise<Set<string>> {
+  /** The refs already stored, each with the fields an admin locked on it. */
+  private async knownRefs(records: ImportRecord[]): Promise<Map<string, readonly string[]>> {
     const existing = await this.db.tors
       .find(
         { sourceRef: { $in: records.map((record) => record.doc.sourceRef) } },
-        { projection: { sourceRef: 1 } },
+        { projection: { sourceRef: 1, lockedFields: 1 } },
       )
       .toArray();
-    return new Set(existing.map((doc) => doc.sourceRef).filter((ref) => ref !== undefined));
+    return new Map(
+      existing.flatMap((doc) => (doc.sourceRef ? [[doc.sourceRef, doc.lockedFields ?? []] as const] : [])),
+    );
   }
 
   /**
@@ -252,7 +262,7 @@ export class TorImportService {
     const stored = (await this.db.tors
       .find(
         { deletedAt: { $exists: false }, stage: { $in: stages } },
-        { projection: { title: 1, agency: 1, stage: 1, projectNumber: 1, sourceRef: 1 } },
+        { projection: { title: 1, agency: 1, stage: 1, projectNumber: 1, sourceRef: 1, lockedFields: 1 } },
       )
       .toArray()) as StoredRecord[];
 
@@ -293,7 +303,8 @@ export class TorImportService {
         accepted.push(record);
         continue;
       }
-      if (sourceRank(sourceOf(duplicate.sourceRef)) >= incomingRank) {
+      // A corrected record is kept over any portal's copy: replacing it would undo the correction.
+      if (duplicate.lockedFields || sourceRank(sourceOf(duplicate.sourceRef)) >= incomingRank) {
         skipped++;
         continue;
       }
@@ -334,13 +345,14 @@ function collapseDuplicates(records: ImportRecord[]): ImportRecord[] {
  * `$setOnInsert`. Undefined values are dropped rather than written, because the
  * driver serializes `undefined` as an explicit null.
  */
-function upsertFor({ doc, provisional }: ImportRecord) {
+function upsertFor({ doc, provisional }: ImportRecord, locked: readonly string[] = []) {
   const { createdAt, sourceRef, ...fields } = doc;
   const set: Record<string, unknown> = {};
   const setOnInsert: Record<string, unknown> = { createdAt, sourceRef };
 
   for (const [key, value] of Object.entries(fields)) {
-    if (value === undefined) continue;
+    // What an admin corrected stays corrected (TorService.update).
+    if (value === undefined || locked.includes(key)) continue;
     if (provisional?.includes(key as keyof TorDoc)) setOnInsert[key] = value;
     else set[key] = value;
   }

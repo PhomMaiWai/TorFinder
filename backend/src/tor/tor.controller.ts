@@ -54,6 +54,13 @@ export class TorController {
     return this.torService.findDeleted();
   }
 
+  /** Declared before `:id` for the same reason as "deleted". */
+  @Get("not-software")
+  @UseGuards(AdminGuard)
+  findNotSoftware() {
+    return this.torService.findNotSoftware();
+  }
+
   /**
    * Announcements the budget check flagged, for the Auditor Office. Auditor-only
    * and declared before `:id` for the same reason `deleted` is.
@@ -122,8 +129,8 @@ export class TorController {
 
   @Patch(":id")
   @UseGuards(AdminGuard)
-  update(@Param("id") id: string, @Body() dto: UpdateTorDto) {
-    return this.torService.update(id, dto);
+  update(@Param("id") id: string, @Body() dto: UpdateTorDto, @Req() request: AuthenticatedRequest) {
+    return this.torService.update(id, dto, request.session);
   }
 
   /**

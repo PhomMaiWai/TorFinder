@@ -9,7 +9,7 @@ import { GprocClient } from "../gproc/gproc.client";
 import { PROJECT_NUMBER, gprocProjectUrl } from "../gproc/gproc.constants";
 import { MatchingService } from "../matching/matching.service";
 import { READABLE_DOCUMENT_PATTERN, isReadableDocument } from "../tor/tor-documents";
-import { ACTIONABLE_WINDOW_MS, STAGE } from "../tor/tor.constants";
+import { ACTIONABLE_WINDOW_MS, LISTED_TOR, STAGE } from "../tor/tor.constants";
 import { AI_REQUEST, EXTRACTION_INSTRUCTION, EXTRACTION_SCHEMA, EXTRACTION_VERSION } from "./ai.constants";
 import { ExtractionRunResult, StoredExtraction } from "./ai.types";
 import { isUseful, parseExtraction } from "./tor-extraction";
@@ -214,7 +214,7 @@ export class ExtractionService {
 
     return {
       // No point spending a model call on an announcement nobody can see.
-      deletedAt: { $exists: false },
+      ...LISTED_TOR,
       $and: [
         {
           $or: [

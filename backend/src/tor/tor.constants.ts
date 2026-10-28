@@ -37,6 +37,18 @@ export const STAGE_LISTING_ORDER = [
 
 export const TOR_BUDGET_STATUSES = ["สูงกว่าปกติ", "ต่ำกว่าปกติ", "ปกติ"] as const;
 
+/**
+ * Whether an announcement is software work at all. Every import passes the
+ * software filter, so a record without the field counts as software; an admin
+ * marks one "not-software" when the filter let it through by mistake, which
+ * takes it out of the listings and matching without hiding it as spam.
+ */
+export const TOR_CLASSIFICATIONS = ["software", "not-software"] as const;
+export type TorClassification = (typeof TOR_CLASSIFICATIONS)[number];
+
+/** Listed, matched and scored: not hidden, and not marked as outside software work. */
+export const LISTED_TOR = { deletedAt: { $exists: false }, classification: { $ne: "not-software" } } as const;
+
 /** The two TOR_BUDGET_STATUSES worth an auditor's attention — "ปกติ" isn't a flag. */
 export const TOR_BUDGET_FLAGS = ["สูงกว่าปกติ", "ต่ำกว่าปกติ"] as const;
 
