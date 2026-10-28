@@ -121,6 +121,31 @@ describe("SyncScheduler alerts", () => {
     assert.equal(alerts.calls.length, 0);
   });
 
+  it("counts a run that only succeeds on its very last allowed attempt as a success", async () => {
+    const alerts = recordingAlerts();
+    let attempts = 0;
+    await new TestScheduler(alerts, async () => {
+      attempts++;
+      if (attempts < 3) throw new Error("portal down");
+      return { summary: "1 new", failedFeeds: [] };
+    }).poll();
+
+    assert.equal(attempts, 3);
+    assert.equal(alerts.calls.length, 0);
+  });
+
+  it("never retries a partial run — it already has real data to keep", async () => {
+    const alerts = recordingAlerts();
+    let attempts = 0;
+    await new TestScheduler(alerts, async () => {
+      attempts++;
+      return { summary: "1 new", failedFeeds: ["D0/ระบบ"] };
+    }).poll();
+
+    assert.equal(attempts, 1);
+    assert.equal(alerts.calls.length, 1);
+  });
+
   it("alerts on a partial run", async () => {
     const alerts = recordingAlerts();
     await new TestScheduler(alerts, async () => ({ summary: "1 new", failedFeeds: ["D0/ระบบ"] })).poll();
