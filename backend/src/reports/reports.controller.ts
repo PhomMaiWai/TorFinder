@@ -1,14 +1,16 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { Request } from "express";
 import { ObjectId } from "mongodb";
 
 import { AdminGuard } from "../common/admin.guard";
+import { AuthenticatedRequest } from "../common/session.guard";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { SessionPayload, verifySessionToken } from "../common/token";
 import { env } from "../config/env";
 import { CreateReportDto } from "./dto/create-report.dto";
 import { ReportQueryDto } from "./dto/report-query.dto";
+import { ReviewReportDto } from "./dto/review-report.dto";
 import { ReportsService } from "./reports.service";
 
 @Controller()
@@ -35,6 +37,13 @@ export class ReportsController {
   @UseGuards(AdminGuard)
   findAll(@Query() query: ReportQueryDto) {
     return this.reports.findAll(query);
+  }
+
+  /** Resolve a report once it has been dealt with, or reopen it. */
+  @Patch("reports/:id")
+  @UseGuards(AdminGuard)
+  setStatus(@Param("id") id: string, @Body() dto: ReviewReportDto, @Req() request: AuthenticatedRequest) {
+    return this.reports.setStatus(id, dto.status, request.session.email);
   }
 
   /**

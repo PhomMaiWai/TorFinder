@@ -74,6 +74,7 @@ const stored = (id) => db().collection("torReports").findOne({ _id: new ObjectId
 before(() => mongo.connect());
 after(async () => {
   await db().collection("torReports").deleteMany({ torId: { $in: created } });
+  await db().collection("auditLogEntries").deleteMany({ actor: "0123456789abcdef01234567@ci.test" });
   await db().collection("tors").deleteMany({ _id: { $in: created } });
   await db().collection("notifications").deleteMany({ torId: { $in: created } });
   await mongo.close();
@@ -159,5 +160,66 @@ describe("GET /api/reports — the admins' list", () => {
 
   it("refuses a status it doesn't know (400)", async () => {
     assert.equal((await api("/reports?status=closed", { token: ADMIN_TOKEN })).status, 400);
+  });
+});
+
+describe("PATCH /api/reports/:id — resolving and reopening (#163)", () => {
+  const ADMIN_EMAIL = "0123456789abcdef01234567@ci.test";
+  const setStatus = (id, status, token = ADMIN_TOKEN) =>
+    api(`/reports/${id}`, { method: "PATCH", body: { status }, token });
+  const auditFor = (action, title) =>
+    db().collection("auditLogEntries").find({ actor: ADMIN_EMAIL, action, detail: { $regex: `^${title}` } }).toArray();
+
+  it("is admin-only", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id);
+    assert.equal((await setStatus(filed.body.id, "resolved", "")).status, 403);
+    assert.equal((await setStatus(filed.body.id, "resolved", ORG_TOKEN)).status, 403);
+    assert.equal((await stored(filed.body.id)).status, "open");
+  });
+
+  it("resolves a report, says who and when, and logs it", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id);
+    const res = await setStatus(filed.body.id, "resolved");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.status, "resolved");
+    assert.equal(res.body.resolvedBy, ADMIN_EMAIL);
+    assert.ok(Date.now() - new Date(res.body.resolvedAt).getTime() < 60_000);
+
+    const [entry, ...rest] = await auditFor("ปิดเรื่องแจ้งปัญหา TOR", tor.title);
+    assert.equal(rest.length, 0);
+    assert.equal(entry.detail, `${tor.title}: ${REPORT.message}`);
+
+    const listed = await api("/reports?status=resolved&pageSize=100", { token: ADMIN_TOKEN });
+    assert.ok(listed.body.items.some((item) => item.id === filed.body.id));
+  });
+
+  it("logs nothing when the status is already the one asked for", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id);
+    await setStatus(filed.body.id, "resolved");
+    assert.equal((await setStatus(filed.body.id, "resolved")).status, 200);
+    assert.equal((await auditFor("ปิดเรื่องแจ้งปัญหา TOR", tor.title)).length, 1);
+  });
+
+  it("reopens a resolved report, clearing who resolved it", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id);
+    await setStatus(filed.body.id, "resolved");
+    const res = await setStatus(filed.body.id, "open");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.status, "open");
+    assert.equal(res.body.resolvedBy, undefined);
+    assert.equal(res.body.resolvedAt, undefined);
+    assert.equal((await auditFor("เปิดเรื่องแจ้งปัญหา TOR อีกครั้ง", tor.title)).length, 1);
+  });
+
+  it("refuses a status it doesn't know (400), and an unknown report (404)", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id);
+    assert.equal((await setStatus(filed.body.id, "closed")).status, 400);
+    assert.equal((await setStatus(new ObjectId().toString(), "resolved")).status, 404);
+    assert.equal((await setStatus("not-an-id", "resolved")).status, 404);
   });
 });

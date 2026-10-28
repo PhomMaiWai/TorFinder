@@ -70,7 +70,8 @@
     "navCreateTor": "Add TOR",
     "navMatches": "Matched TORs",
     "navFlaggedTors": "Flagged TORs",
-    "navMyProjects": "My projects"
+    "navMyProjects": "My projects",
+    "navReports": "TOR reports"
   },
   "Dashboard": {
     "newBadge": "New",
@@ -1120,5 +1121,27 @@
     "submitting": "Sending...",
     "cancel": "Cancel",
     "submitted": "Received. An admin will check this notice. Thank you for helping keep it accurate."
+  },
+  "AdminReportsPage": {
+    "title": "TOR reports",
+    "description": "Problems people reported on announcements. Check against the source, fix the record, then resolve.",
+    "tabsLabel": "Report status",
+    "tab_open": "Open",
+    "tab_resolved": "Resolved",
+    "tab_all": "All",
+    "statusOpen": "Open",
+    "statusResolved": "Resolved",
+    "guest": "Guest",
+    "viewTor": "View TOR",
+    "resolve": "Resolve",
+    "reopen": "Reopen",
+    "resolvedBy": "Resolved by {who} on {date}",
+    "missingTor": "This announcement is no longer on record",
+    "emptyOpen": "No open reports",
+    "empty": "No reports",
+    "pagination": "Pages",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} · {total} reports"
   }
 }
