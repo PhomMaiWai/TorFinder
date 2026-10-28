@@ -15,6 +15,9 @@ export async function fetchDeletedTors(): Promise<TorRecord[]> {
 
 export type BudgetFlag = "สูงกว่าปกติ" | "ต่ำกว่าปกติ";
 
+/** The auditor list's own tabs — one flagged reason, or every reason when omitted. */
+export type FlaggedTorFilter = "budget-high" | "budget-low" | "competition";
+
 export type FlaggedTor = {
   id: string;
   title: string;
@@ -22,8 +25,10 @@ export type FlaggedTor = {
   budget: string;
   budgetAmount?: number;
   stage: TorRecord["stage"];
-  budgetStatus: BudgetFlag;
-  reason: string;
+  budgetStatus?: BudgetFlag;
+  procurementMethod?: string;
+  /** One sentence per reason this record is on the list — budget, competition, or both. */
+  reasons: string[];
   sourceUrl?: string;
   projectNumber?: string;
   createdAt: string;
@@ -39,13 +44,13 @@ export type FlaggedTorPage = {
 const EMPTY_FLAGGED_PAGE: FlaggedTorPage = { total: 0, page: 1, pageSize: 20, items: [] };
 
 /**
- * The budget check's flagged announcements, for the Auditor Office. Returns
- * the empty page for a caller who isn't an auditor — the list simply isn't
- * theirs to see.
+ * Announcements flagged for the Auditor Office — an unusual price, a
+ * low-competition procurement method, or both. Returns the empty page for a
+ * caller who isn't an auditor — the list simply isn't theirs to see.
  */
-export async function fetchFlaggedTors(page: number, budgetStatus?: BudgetFlag): Promise<FlaggedTorPage> {
+export async function fetchFlaggedTors(page: number, flag?: FlaggedTorFilter): Promise<FlaggedTorPage> {
   const params = new URLSearchParams({ page: String(page) });
-  if (budgetStatus) params.set("budgetStatus", budgetStatus);
+  if (flag) params.set("flag", flag);
 
   return orEmptyWhenAnswered(
     fetchJson<FlaggedTorPage>(`/api/tor/flagged?${params}`, { headers: await authHeaders() }),

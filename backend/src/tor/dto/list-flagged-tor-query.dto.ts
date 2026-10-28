@@ -1,13 +1,13 @@
 import { Type } from "class-transformer";
 import { IsIn, IsInt, IsOptional, Max, Min } from "class-validator";
 
-import { TOR_BUDGET_FLAGS } from "../tor.constants";
+/** The tabs the auditor's list can be narrowed to; omitted means every flagged reason. */
+export const FLAGGED_TOR_FILTERS = ["budget-high", "budget-low", "competition"] as const;
 
 export class ListFlaggedTorQueryDto {
-  /** Omitted means both flagged reasons — high and low. */
   @IsOptional()
-  @IsIn(TOR_BUDGET_FLAGS)
-  budgetStatus?: (typeof TOR_BUDGET_FLAGS)[number];
+  @IsIn(FLAGGED_TOR_FILTERS)
+  flag?: (typeof FLAGGED_TOR_FILTERS)[number];
 
   @IsOptional()
   @Type(() => Number)

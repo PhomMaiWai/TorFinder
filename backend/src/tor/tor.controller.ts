@@ -61,7 +61,7 @@ export class TorController {
   @Get("flagged")
   @UseGuards(AuditorGuard)
   findFlagged(@Query() query: ListFlaggedTorQueryDto) {
-    return this.torService.findFlagged(query.page, query.pageSize, query.budgetStatus);
+    return this.torService.findFlagged(query.page, query.pageSize, query.flag);
   }
 
   /**

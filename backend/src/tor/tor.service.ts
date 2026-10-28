@@ -9,7 +9,8 @@ import { env } from "../config/env";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
-import { STAGE_LISTING_ORDER, TOR_BUDGET_FLAGS } from "./tor.constants";
+import { FLAGGED_TOR_FILTERS } from "./dto/list-flagged-tor-query.dto";
+import { LOW_COMPETITION_METHODS, STAGE_LISTING_ORDER, TOR_BUDGET_FLAGS } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
 import { buildTimeline } from "./tor-stage";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
@@ -44,6 +45,13 @@ const BUDGET_FLAG_REASON: Record<(typeof TOR_BUDGET_FLAGS)[number], string> = {
   สูงกว่าปกติ: "วงเงินงบประมาณสูงกว่าปกติ เมื่อเทียบกับโครงการลักษณะเดียวกัน",
   ต่ำกว่าปกติ: "วงเงินงบประมาณต่ำกว่าปกติ เมื่อเทียบกับโครงการลักษณะเดียวกัน",
 };
+
+/** A substring match on the free-text `procurementMethod` field — see LOW_COMPETITION_METHODS. */
+const LOW_COMPETITION_PATTERN = new RegExp(LOW_COMPETITION_METHODS.join("|"));
+
+function competitionReason(method: string): string {
+  return `จัดซื้อจัดจ้างด้วยวิธี${method} ซึ่งโดยลักษณะวิธีมีผู้เสนอราคาน้อยราย`;
+}
 
 @Injectable()
 export class TorService {
@@ -193,16 +201,30 @@ export class TorService {
   }
 
   /**
-   * Announcements the budget check flagged, for the Auditor Office: a price
-   * well outside what comparable projects asked for, in either direction —
-   * never a conclusion on its own, just worth a second look. "ปกติ" and
-   * never-assessed records never appear here; see refreshBudgetStatuses.
+   * Announcements worth the Auditor Office's attention, on either of two
+   * independent grounds — never a conclusion on its own, just worth a second
+   * look:
+   *  - budget: a price well outside what comparable projects asked for, in
+   *    either direction ("ปกติ" and never-assessed records never appear here;
+   *    see refreshBudgetStatuses).
+   *  - competition: procured by a method whose nature involves few bidders
+   *    (see LOW_COMPETITION_METHODS — the Auditor Office's own agreed list).
+   * A record can be on the list for one reason, the other, or both.
    */
-  async findFlagged(page = 1, pageSize = 20, budgetStatus?: (typeof TOR_BUDGET_FLAGS)[number]) {
-    const filter: Filter<TorDoc> = {
-      deletedAt: { $exists: false },
-      budgetStatus: budgetStatus ? budgetStatus : { $in: TOR_BUDGET_FLAGS },
-    };
+  async findFlagged(page = 1, pageSize = 20, flag?: (typeof FLAGGED_TOR_FILTERS)[number]) {
+    const budgetCondition: Filter<TorDoc> = { budgetStatus: { $in: TOR_BUDGET_FLAGS } };
+    const competitionCondition: Filter<TorDoc> = { procurementMethod: { $regex: LOW_COMPETITION_PATTERN } };
+
+    const flagCondition: Filter<TorDoc> =
+      flag === "budget-high"
+        ? { budgetStatus: "สูงกว่าปกติ" }
+        : flag === "budget-low"
+          ? { budgetStatus: "ต่ำกว่าปกติ" }
+          : flag === "competition"
+            ? competitionCondition
+            : { $or: [budgetCondition, competitionCondition] };
+
+    const filter: Filter<TorDoc> = { deletedAt: { $exists: false }, ...flagCondition };
     const projection = {
       title: 1,
       agency: 1,
@@ -210,6 +232,7 @@ export class TorService {
       budgetAmount: 1,
       stage: 1,
       budgetStatus: 1,
+      procurementMethod: 1,
       sourceUrl: 1,
       projectNumber: 1,
       createdAt: 1,
@@ -229,14 +252,30 @@ export class TorService {
       total,
       page,
       pageSize,
-      items: docs.map(({ _id, budgetStatus: status, ...rest }) => ({
-        id: _id.toString(),
-        ...rest,
-        budgetStatus: status,
-        // The filter above only ever returns a flagged status, never "ปกติ" —
-        // the cast reflects that narrower reality the query already enforces.
-        reason: status ? BUDGET_FLAG_REASON[status as (typeof TOR_BUDGET_FLAGS)[number]] : "",
-      })),
+      items: docs.map(({ _id, budgetStatus: status, procurementMethod, ...rest }) => {
+        const budgetFlagged =
+          status && TOR_BUDGET_FLAGS.includes(status as (typeof TOR_BUDGET_FLAGS)[number])
+            ? (status as (typeof TOR_BUDGET_FLAGS)[number])
+            : undefined;
+        const competitionFlagged =
+          procurementMethod && LOW_COMPETITION_PATTERN.test(procurementMethod) ? procurementMethod : undefined;
+
+        const reasons: string[] = [];
+        if (budgetFlagged) reasons.push(BUDGET_FLAG_REASON[budgetFlagged]);
+        if (competitionFlagged) reasons.push(competitionReason(competitionFlagged));
+
+        // Only ever surfaced when it's actually *why* the record is on the
+        // list — a "ปกติ" budgetStatus or a competitive procurementMethod
+        // (e.g. "e-bidding") on a record flagged for the other reason must
+        // never render as if it were itself a flag.
+        return {
+          id: _id.toString(),
+          ...rest,
+          budgetStatus: budgetFlagged,
+          procurementMethod: competitionFlagged,
+          reasons,
+        };
+      }),
     };
   }
 
