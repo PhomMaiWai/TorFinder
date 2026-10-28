@@ -226,6 +226,7 @@ describe("account review -> notification lifecycle", () => {
     assert.equal(n.title, "บัญชีของคุณได้รับการอนุมัติแล้ว");
     assert.ok(n.message.includes(solo.org.companyName));
     assert.equal(n.torId, undefined, "an approval notification is not about a specific TOR");
+    assert.equal(n.score, undefined, "score is only ever set on a match notification");
     assert.equal(n.userId, undefined, "the owning user id never leaves the service");
     assert.ok(n.createdAt);
   });

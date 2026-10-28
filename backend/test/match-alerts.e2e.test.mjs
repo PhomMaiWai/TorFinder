@@ -22,7 +22,8 @@ const mongo = new MongoClient(process.env.MONGODB_URI ?? "mongodb://localhost:27
 const COMPANY_EMAIL = "contact@arundigital.co.th";
 
 function makeToken(role, sub, email) {
-  const payload = { sub, email, name: `CI ${role}`, role, exp: Math.floor(Date.now() / 1000) + 3600 };
+  const iat = Math.floor(Date.now() / 1000);
+  const payload = { sub, email, name: `CI ${role}`, role, iat, exp: iat + 3600 };
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${data}.${createHmac("sha256", SESSION_SECRET).update(data).digest("base64url")}`;
 }
@@ -43,7 +44,7 @@ async function api(path, { method = "GET", body, token } = {}) {
 
 let serial = 0;
 /** A software project the seeded company fits, at the given stage. */
-async function createTor(stage) {
+async function createTor(stage, overrides = {}) {
   serial += 1;
   const res = await api("/tor", {
     method: "POST",
@@ -57,6 +58,7 @@ async function createTor(stage) {
       tags: ["software", "web"],
       stage,
       summary: "พัฒนาระบบสารสนเทศ เว็บแอปพลิเคชัน และบำรุงรักษาระบบ",
+      ...overrides,
     },
   });
   assert.equal(res.status, 201, `create failed: ${JSON.stringify(res.body)}`);
@@ -107,6 +109,19 @@ describe("match alert settings in the profile", () => {
     assert.equal(res.body.company.matchAlerts, true);
     assert.equal(res.body.company.matchThreshold, 40);
   });
+
+  it("accepts both ends of the 40–95 range", async () => {
+    assert.equal((await setAlerts({ matchThreshold: 40 })).status, 200);
+    assert.equal((await setAlerts({ matchThreshold: 95 })).status, 200);
+  });
+
+  it("updating one field leaves the other as it was", async () => {
+    await setAlerts({ matchAlerts: true, matchThreshold: 55 });
+    const res = await setAlerts({ matchAlerts: false });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.company.matchAlerts, false);
+    assert.equal(res.body.company.matchThreshold, 55, "omitting matchThreshold shouldn't reset it");
+  });
 });
 
 describe("alerts on a new announcement", () => {
@@ -135,5 +150,67 @@ describe("alerts on a new announcement", () => {
     const score = await scoreOf(torId);
     if (score >= 95) return; // Can't test the threshold with a project this good a fit.
     assert.equal((await alertsFor(torId)).length, 0);
+  });
+});
+
+describe("alerts skip records and companies that aren't real opportunities", () => {
+  it("stays quiet for a draft whose comment window has already closed", async () => {
+    await setAlerts({ matchAlerts: true, matchThreshold: 40 });
+    const torId = await createTor("เปิดรับฟังความคิดเห็น", { deadline: "31 ธ.ค. 2560" });
+    const score = await scoreOf(torId);
+    assert.ok(score >= 40, `precondition: the test project should fit the company (scored ${score})`);
+    assert.equal((await alertsFor(torId)).length, 0, "a closed window shouldn't alert, however good the fit");
+  });
+
+  it("stays quiet for an award notice", async () => {
+    await setAlerts({ matchAlerts: true, matchThreshold: 40 });
+    const torId = await createTor("ประกาศผู้ชนะ");
+    assert.equal((await alertsFor(torId)).length, 0);
+  });
+
+  it("stays quiet when the company is suspended", async () => {
+    await setAlerts({ matchAlerts: true, matchThreshold: 40 });
+    const suspend = await api(`/accounts/${companyId}/suspend`, { method: "PATCH", token: ADMIN_TOKEN });
+    assert.equal(suspend.status, 200);
+
+    const torId = await createTor("เปิดรับฟังความคิดเห็น");
+
+    const reactivate = await api(`/accounts/${companyId}/reactivate`, { method: "PATCH", token: ADMIN_TOKEN });
+    assert.equal(reactivate.status, 200);
+    // Suspending revokes every session on the account (see
+    // SessionRevocationService) — the old companyToken is now permanently
+    // dead, exactly like a real logged-in tab would be. A fresh one is what
+    // the company would get by logging back in, and lets the rest of the
+    // suite keep using `companyToken` as before. `iat` is floored to the
+    // second (same as the real token minter), so a nearly-1s wait keeps the
+    // new token's whole issuing second safely after the revocation's
+    // millisecond-precision timestamp.
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    companyToken = makeToken("org", companyId, COMPANY_EMAIL);
+
+    assert.equal((await alertsFor(torId)).length, 0, "a suspended company shouldn't be notified");
+  });
+
+  it("falls back to the deployment default threshold once the company never set one", async () => {
+    await mongo
+      .db()
+      .collection("users")
+      .updateOne(
+        { _id: new ObjectId(companyId) },
+        { $unset: { "company.matchThreshold": "", "company.matchAlerts": "" } },
+      );
+
+    try {
+      const torId = await createTor("เปิดรับฟังความคิดเห็น");
+      const score = await scoreOf(torId);
+      const alerts = await alertsFor(torId);
+      if (score >= 70) {
+        assert.equal(alerts.length, 1, "no threshold set should fall back to the deployment default (70)");
+      } else {
+        assert.equal(alerts.length, 0);
+      }
+    } finally {
+      await setAlerts({ matchAlerts: true, matchThreshold: 70 });
+    }
   });
 });
