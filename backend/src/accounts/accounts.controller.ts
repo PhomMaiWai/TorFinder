@@ -6,6 +6,7 @@ import { AccountsService } from "./accounts.service";
 import { AccountQueryDto } from "./dto/account-query.dto";
 import { ReviewAccountDto } from "./dto/review-account.dto";
 import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
 
 @Controller("accounts")
 export class AccountsController {
@@ -41,6 +42,13 @@ export class AccountsController {
   @UseGuards(AdminGuard)
   review(@Param("id") id: string, @Body() dto: ReviewAccountDto, @Req() request: AuthenticatedRequest) {
     return this.accountsService.review(id, dto, request.session.email);
+  }
+
+  /** Rename an account or move it between roles; see AccountsService.updateUser. */
+  @Patch(":id/details")
+  @UseGuards(AdminGuard)
+  updateUser(@Param("id") id: string, @Body() dto: UpdateUserDto, @Req() request: AuthenticatedRequest) {
+    return this.accountsService.updateUser(id, dto, request.session.email);
   }
 
   /** Blocks sign-in on an already-approved account, without reversing its approval. */
