@@ -777,7 +777,15 @@
     "roleViewer": "Public viewer",
     "roleFilterLabel": "Filter by account type",
     "roleFilterAll": "All types",
-    "roleFilterStaff": "Staff"
+    "roleFilterStaff": "Staff",
+    "editAction": "Edit",
+    "nameLabel": "Name",
+    "roleLabel": "Role",
+    "roleLockedOrg": "A company account's role can't be changed",
+    "saveAction": "Save",
+    "savingAction": "Saving...",
+    "cancelAction": "Cancel",
+    "roleChangeNote": "Changing the role signs this user out; they'll need to sign in again"
   },
   "OpportunityCard": {
     "newBadge": "New",
