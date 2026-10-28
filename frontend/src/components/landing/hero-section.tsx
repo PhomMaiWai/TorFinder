@@ -1,4 +1,4 @@
-import { ArrowDown, Zap } from "lucide-react";
+import { ArrowDown, ChartColumn, Zap } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -53,7 +53,7 @@ export function HeroSection() {
         </p>
 
         <div className="animate-fade-up mt-9 flex flex-wrap items-center justify-center gap-3" style={enter(340)}>
-          {/* One call to action, as on main: show the product before asking for an account. */}
+          {/* Show the product before asking for an account: a preview, and the live market overview. */}
           <Link
             href="#preview"
             className="group relative flex h-12 items-center gap-2 overflow-hidden rounded-xl bg-accent px-7 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent-dark"
@@ -64,6 +64,13 @@ export function HeroSection() {
             />
             <span className="relative">{t("ctaSecondary")}</span>
             <ArrowDown size={16} className="relative transition-transform duration-200 group-hover:translate-y-0.5" />
+          </Link>
+          <Link
+            href="/dashboard"
+            className="glass group flex h-12 items-center gap-2 rounded-xl px-7 text-sm font-semibold text-ink transition-all duration-200 hover:-translate-y-0.5 hover:bg-surface/90"
+          >
+            <ChartColumn size={16} className="text-ink-muted transition-colors group-hover:text-accent" />
+            {t("ctaDashboard")}
           </Link>
         </div>
 

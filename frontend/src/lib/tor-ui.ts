@@ -155,3 +155,16 @@ export function stageBadgeCls(stage: TorStage): string {
   if (stage === "ประกาศราคากลาง") return "bg-sky-50 text-sky-700";
   return "bg-accent-soft text-accent";
 }
+
+/**
+ * Project-size bands, half-open: a value counts in [min, max). Shared by the
+ * search filter and the overview's size chart so the two can never disagree.
+ */
+export const BUDGET_RANGES = [
+  { id: "under-500k", labelKey: "budgetRangeUnder500k", min: 0, max: 500_000 },
+  { id: "500k-1m", labelKey: "budgetRange500kTo1m", min: 500_000, max: 1_000_000 },
+  { id: "1m-3m", labelKey: "budgetRange1to3m", min: 1_000_000, max: 3_000_000 },
+  { id: "3m-5m", labelKey: "budgetRange3to5m", min: 3_000_000, max: 5_000_000 },
+  { id: "5m-10m", labelKey: "budgetRange5to10m", min: 5_000_000, max: 10_000_000 },
+  { id: "over-10m", labelKey: "budgetRangeOver10m", min: 10_000_000, max: Infinity },
+] as const;

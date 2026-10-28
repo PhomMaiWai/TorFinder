@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlarmClock,
   Bookmark,
   Building2,
   Check,
@@ -10,17 +9,18 @@ import {
   CircleHelp,
   Clock,
   ExternalLink,
-  FolderOpen,
   Search,
-  ShieldCheck,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
+import { DashboardInsights, KpiRow } from "@/components/dashboard/dashboard-insights";
 import { AppShell } from "@/components/layout/app-sidebar";
 import { BiddingBadge } from "@/components/public/bidding-badge";
 import { CountUp } from "@/components/ui/count-up";
+import { HIGH_MATCH } from "@/lib/dashboard-stats";
 import type { CompanySummary } from "@/lib/opportunities-api";
 import { biddingOf, daysUntilClose, isClosingSoon, torAmount } from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
@@ -31,9 +31,6 @@ type DashboardProps = {
   /** Null when there is no profile to match against yet. */
   opportunities: ScoredTor[] | null;
 };
-
-/** Where real scores separate: a contract of the company's kind that it qualifies for. */
-const HIGH_MATCH = 70;
 
 const FILTERS = ["all", "eligible", "highMatch", "closingSoon"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -277,6 +274,7 @@ function ProfilePanel({ company }: { company: CompanySummary | null }) {
 
 export function Dashboard({ company, opportunities }: DashboardProps) {
   const t = useTranslations("Dashboard");
+  const locale = useLocale();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const { savedIds, toggleSaved } = useSavedTors();
@@ -294,13 +292,6 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
     });
   }, [filter, list, query]);
 
-  const stats = [
-    { label: t("statOpen"), icon: FolderOpen, value: list.filter((opp) => biddingOf(opp).status === "open").length, cls: "text-accent", tint: "bg-accent-soft" },
-    { label: t("statEligible"), icon: ShieldCheck, value: list.filter((opp) => opp.eligible === true).length, cls: "text-success", tint: "bg-success-soft" },
-    { label: t("statUrgent"), icon: AlarmClock, value: list.filter(isClosingSoon).length, cls: "text-danger", tint: "bg-danger-soft" },
-    { label: t("statSaved"), icon: Bookmark, value: savedIds.length, cls: "text-ink", tint: "bg-surface-alt" },
-  ];
-
   function handleSaveToggle(id: string) {
     const wasSaved = savedIds.includes(id);
     toggleSaved(id);
@@ -312,34 +303,42 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
     <AppShell>
       <main className="aurora flex min-h-screen flex-col bg-surface-alt/50">
         <header className="px-4 pb-2 pt-8 sm:px-8">
-          <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="animate-fade-up">
-              <p className="mb-1 text-xs font-medium tracking-wide text-ink-muted">
-                {company?.companyName ?? t("companyFallback")}
-              </p>
-              <h1 className="text-2xl font-bold tracking-tight text-ink">{t("overviewTitle")}</h1>
-              <p className="mt-1.5 max-w-xl text-sm text-ink-muted">{t("overviewDescription")}</p>
+          <div className="mx-auto w-full max-w-[1400px]">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="animate-fade-up">
+                <p className="mb-1 text-xs font-medium tracking-wide text-ink-muted">
+                  {new Intl.DateTimeFormat(locale === "th" ? "th-TH" : "en-GB", {
+                    dateStyle: "full",
+                    timeZone: "Asia/Bangkok",
+                  }).format(new Date())}
+                </p>
+                <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                  {t("greeting", { name: company?.companyName ?? t("companyFallback") })}
+                </h1>
+                <p className="mt-1.5 max-w-xl text-sm text-ink-muted">{t("overviewDescription")}</p>
+              </div>
+              <div className="animate-fade-up flex flex-wrap gap-2" style={{ animationDelay: "80ms" }}>
+                <Link
+                  href="/profile"
+                  className="glass flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-ink transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  <UserRound size={16} className="text-ink-muted" />
+                  {t("companyProfileTitle")}
+                </Link>
+                <Link
+                  href="/search"
+                  className="group flex h-10 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent-dark"
+                >
+                  <Search size={16} />
+                  {t("viewNewOpportunities")}
+                </Link>
+              </div>
             </div>
+
             {opportunities && (
-              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {stats.map((stat, i) => (
-                  <div
-                    key={stat.label}
-                    className="glass animate-fade-up flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-300 hover:-translate-y-0.5"
-                    style={{ animationDelay: `${100 + i * 80}ms` }}
-                  >
-                    <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${stat.tint} ${stat.cls}`}>
-                      <stat.icon size={17} />
-                    </span>
-                    <div className="flex min-w-0 flex-col">
-                      <dd className={`text-xl font-bold leading-none ${stat.cls}`}>
-                        <CountUp value={stat.value} duration={900} />
-                      </dd>
-                      <dt className="mt-1 truncate text-2xs font-medium text-ink-muted">{stat.label}</dt>
-                    </div>
-                  </div>
-                ))}
-              </dl>
+              <div className="mt-6">
+                <KpiRow list={list} savedCount={savedIds.length} />
+              </div>
             )}
           </div>
         </header>
@@ -359,6 +358,8 @@ export function Dashboard({ company, opportunities }: DashboardProps) {
             </div>
           ) : (
             <>
+              <DashboardInsights list={list} />
+
               <div className="glass-strong animate-fade-up sticky top-3 z-20 mb-6 flex flex-wrap items-center gap-3 rounded-2xl p-2 pl-4 transition-shadow focus-within:shadow-[0_0_0_3px_rgb(225_29_72/18%)]" style={{ animationDelay: "150ms" }}>
                 <div className="flex min-w-[220px] flex-1 items-center gap-3">
                   <Search size={18} className="shrink-0 text-ink-subtle" />
