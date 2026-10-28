@@ -266,7 +266,8 @@
     "passwordLabel": "Password",
     "submitLabel": "Sign in",
     "noAccountQuestion": "Don't have an account?",
-    "chooseOtherAccountType": "← Choose a different account type"
+    "chooseOtherAccountType": "← Choose a different account type",
+    "forgotPassword": "Forgot password?"
   },
   "LoginPage": {
     "orgTitle": "Sign in for organizations",
@@ -331,7 +332,8 @@
     "defaultCompanyName": "Your company",
     "title": "Awaiting administrator approval",
     "pendingMessage": "The account for <bold>{name}</bold> has been submitted. Our admin team will review the information and notify you by email within 1-2 business days.",
-    "backToLogin": "← Back to sign in"
+    "backToLogin": "← Back to sign in",
+    "verifyNote": "We've sent a confirmation link to <bold>{email}</bold>. Confirm your email first — you'll be able to sign in once the account is approved."
   },
   "SavedPage": {
     "savedListTitle": "Saved Items",
@@ -898,5 +900,43 @@
     "archiveFailed": "This bundle can't be opened here",
     "archiveEmpty": "No PDFs or images in this bundle",
     "downloadZip": "Download zip"
+  },
+  "AccountLinks": {
+    "emailLabel": "Email",
+    "forgotTitle": "Forgot password",
+    "forgotDescription": "Enter the email you signed up with and we'll send you a link to set a new password.",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending...",
+    "forgotSentTitle": "Check your email",
+    "forgotSentBody": "If <bold>{email}</bold> has an account, we've sent it a link to set a new password. The link works for 1 hour. Not in your inbox? Check spam.",
+    "tryAnotherEmail": "Use a different email",
+    "rememberedPassword": "Remembered it?",
+    "signIn": "Sign in",
+    "resetTitle": "Set a new password",
+    "resetDescription": "At least {min} characters.",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm new password",
+    "passwordTooShort": "The password needs at least {min} characters.",
+    "passwordMismatch": "The two passwords don't match.",
+    "savePassword": "Save new password",
+    "saving": "Saving...",
+    "resetDoneTitle": "Password updated",
+    "resetDoneBody": "Sign in with your new password.",
+    "goToLogin": "Go to sign in",
+    "missingTokenTitle": "Incomplete link",
+    "missingTokenBody": "Open the link from your email again, or request a new one.",
+    "linkExpiredTitle": "This link no longer works",
+    "requestNewLink": "Request a new link",
+    "verifyTitle": "Confirm your email",
+    "verifyDescription": "Press the button below to confirm this email address is yours.",
+    "verifyButton": "Confirm email",
+    "verifying": "Confirming...",
+    "verifiedTitle": "Email confirmed",
+    "verifiedPending": "Your account is waiting for an administrator's approval. We'll email you within 1–2 business days.",
+    "verifiedReady": "You can sign in now.",
+    "verifyFailedTitle": "Couldn't confirm your email",
+    "resendPrompt": "Enter your email to get a new confirmation link.",
+    "resendButton": "Resend confirmation link",
+    "resendSent": "A new confirmation link is on its way. Check your inbox (and spam)."
   }
 }

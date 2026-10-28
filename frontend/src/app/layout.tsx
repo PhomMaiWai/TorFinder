@@ -38,6 +38,7 @@ const notoSansThai = Noto_Sans_Thai({
  * A new `useTranslations("X")` in a client component needs X added here.
  */
 const CLIENT_NAMESPACES = [
+  "AccountLinks",
   "AdminAccountsPage",
   "AdminCompaniesPage",
   "AdminUsersPage",

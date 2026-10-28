@@ -33,5 +33,8 @@ export async function signupOrganization(
     return { error: message ?? "สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่" };
   }
 
-  redirect(`/signup/pending?name=${encodeURIComponent(payload.companyName)}`);
+  // The email marks a password sign-up: its address still has to be confirmed (Google's already is).
+  redirect(
+    `/signup/pending?name=${encodeURIComponent(payload.companyName)}&email=${encodeURIComponent(payload.email)}`,
+  );
 }

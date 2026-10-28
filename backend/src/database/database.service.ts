@@ -79,6 +79,29 @@ export type UserDoc = {
   suspended?: boolean;
   /** Stamped on every successful login/Google sign-in — see AuthService.issueSession. */
   lastLoginAt?: Date;
+  /**
+   * `false` until the owner of a password sign-up opens the link mailed to
+   * them; set true by that link, a password reset (which proves the same
+   * inbox) or Google. Absent on accounts made before verification existed,
+   * which are treated as verified rather than locked out.
+   */
+  emailVerified?: boolean;
+};
+
+/** What a single-use emailed link is for. */
+export type AuthTokenPurpose = "password-reset" | "email-verify";
+
+/**
+ * One emailed link. Only the SHA-256 of the token is kept, so a copy of the
+ * database can't be turned into working links; Mongo's TTL index removes the
+ * row once it expires.
+ */
+export type AuthTokenDoc = {
+  userId: ObjectId;
+  purpose: AuthTokenPurpose;
+  tokenHash: string;
+  expiresAt: Date;
+  createdAt: Date;
 };
 
 export type TorContract = {
