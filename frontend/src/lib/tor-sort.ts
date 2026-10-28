@@ -2,13 +2,13 @@ import { biddingOf, daysUntilClose, isKnown } from "@/lib/tor-ui";
 import type { TorRecord } from "@/types/tor";
 
 /**
- * How the search results are ordered. The default is the one a bid manager
- * asked for: not the TOR that closes today — there is no time left to prepare
- * for it — but a good one that is open with time to spare, newest first.
+ * How the search results are ordered. The default puts what closes soonest
+ * first among the announcements still open, so nothing a reader could still
+ * bid on runs out unseen; "prepare" — open with time to spare — is one click away.
  */
 export const SORT_KEYS = ["prepare", "newest", "closing", "budget"] as const;
 export type SortKey = (typeof SORT_KEYS)[number];
-export const DEFAULT_SORT: SortKey = "prepare";
+export const DEFAULT_SORT: SortKey = "closing";
 
 export function isSortKey(value: unknown): value is SortKey {
   return typeof value === "string" && (SORT_KEYS as readonly string[]).includes(value);
@@ -81,8 +81,19 @@ const COMPARE: Record<SortKey, (a: SortFields, b: SortFields) => number> = {
 };
 
 /**
- * A sorted copy. `pinned` ids lead in their own order whatever the sort — the
- * walkthrough records a demo opens first.
+ * What leads every order: announcements still taking proposals, then drafts
+ * still open for comment, then everything else. A reader comes to find what
+ * they can still bid on; nothing — not a pin, not a big budget — goes above it.
+ */
+function openTier(tor: SortFields): number {
+  if (biddingOf(tor).status !== "open") return 2;
+  return tor.stage === "ประกาศ TOR" ? 0 : 1;
+}
+
+/**
+ * A sorted copy. `pinned` ids — the walkthrough records a demo opens first —
+ * lead within their tier, so a pinned record that has since closed no longer
+ * sits above the ones that are open.
  */
 export function sortTors<T extends SortFields & { id: string }>(
   tors: readonly T[],
@@ -93,5 +104,5 @@ export function sortTors<T extends SortFields & { id: string }>(
     const at = pinned.indexOf(tor.id);
     return at === -1 ? pinned.length : at;
   };
-  return [...tors].sort((a, b) => pin(a) - pin(b) || COMPARE[key](a, b));
+  return [...tors].sort((a, b) => openTier(a) - openTier(b) || pin(a) - pin(b) || COMPARE[key](a, b));
 }

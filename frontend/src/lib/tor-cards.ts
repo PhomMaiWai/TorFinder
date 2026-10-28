@@ -2,8 +2,8 @@ import type { TorRecord } from "@/types/tor";
 
 /**
  * Comma-separated ids that lead the list, in that order — the announcements a
- * walkthrough opens first. The search applies them on top of whichever sort the
- * reader picks (see sortTors).
+ * walkthrough opens first. They lead within their open/closed tier, on top of
+ * whichever sort the reader picks (see sortTors).
  */
 export const FEATURED_IDS = (process.env.FEATURED_TOR_IDS ?? "")
   .split(",")
