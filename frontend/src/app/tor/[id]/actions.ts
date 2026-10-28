@@ -30,9 +30,10 @@ export async function submitFeedback(
 
   if (!res.ok) {
     // 429 is the rate limit, and saying so beats a generic failure.
-    return {
-      error: res.status === 429 ? "ส่งความคิดเห็นถี่เกินไป กรุณารอสักครู่" : "ส่งความคิดเห็นไม่สำเร็จ",
-    };
+    if (res.status === 429) return { error: "ส่งความคิดเห็นถี่เกินไป กรุณารอสักครู่" };
+    // A 400 says why in its own words — e.g. the comment period closed while the page was open.
+    const body = res.status === 400 ? await res.json().catch(() => null) : null;
+    return { error: typeof body?.message === "string" ? body.message : "ส่งความคิดเห็นไม่สำเร็จ" };
   }
 
   revalidatePath(`/tor/${torId}`);

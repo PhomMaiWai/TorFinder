@@ -27,6 +27,8 @@ export function FeedbackForm({
   torId: string;
   labels: {
     heading: string;
+    /** "Open for comments until …", when the date is known. */
+    until?: string;
     authorPlaceholder: string;
     textPlaceholder: string;
     submit: string;
@@ -50,10 +52,11 @@ export function FeedbackForm({
 
   return (
     <form action={formAction} className="rounded-xl border border-border bg-surface p-6 shadow-sm">
-      <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink">
+      <h2 className={`flex items-center gap-2 text-lg font-bold text-ink ${labels.until ? "mb-1" : "mb-4"}`}>
         <MessageSquare size={18} className="text-ink-subtle" />
         {labels.heading}
       </h2>
+      {labels.until && <p className="mb-4 text-sm text-ink-muted">{labels.until}</p>}
 
       <input
         name="author"

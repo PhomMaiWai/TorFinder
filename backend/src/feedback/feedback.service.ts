@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
 import { DatabaseService, FeedbackDoc } from "../database/database.service";
+import { bangkokDay } from "../tor/tor-normalize";
 import { CreateFeedbackDto } from "./dto/create-feedback.dto";
 import { FEEDBACK_STATUSES, FeedbackStatus } from "./feedback.constants";
 
@@ -24,9 +25,17 @@ export class FeedbackService {
     private readonly audit: AuditService,
   ) {}
 
-  /** Files a comment against an announcement. It stays unpublished until reviewed. */
+  /**
+   * Files a comment against an announcement. It stays unpublished until
+   * reviewed. Once the comment deadline has passed the agency is no longer
+   * listening, so a late comment is refused rather than queued for nobody.
+   */
   async create(torId: string, dto: CreateFeedbackDto) {
     const tor = await this.findTorId(torId);
+    const deadline = await this.feedbackDeadlineOf(tor);
+    if (deadline && bangkokDay(new Date())! > deadline) {
+      throw new BadRequestException("ปิดรับฟังความคิดเห็นสำหรับประกาศนี้แล้ว");
+    }
 
     const doc: FeedbackDoc = {
       torId: tor,
@@ -122,6 +131,15 @@ export class FeedbackService {
   }
 
   /** A comment can only exist against an announcement that does. */
+  /** The comment deadline the API reports for this record: the portal's, else the model's. */
+  private async feedbackDeadlineOf(id: ObjectId): Promise<string | null> {
+    const tor = await this.db.tors.findOne(
+      { _id: id },
+      { projection: { feedbackDeadline: 1, "extraction.feedbackDeadline": 1 } },
+    );
+    return tor?.feedbackDeadline ?? tor?.extraction?.feedbackDeadline ?? null;
+  }
+
   private async findTorId(torId: string): Promise<ObjectId> {
     if (!ObjectId.isValid(torId)) throw new NotFoundException("ไม่พบรายการ TOR");
     const id = new ObjectId(torId);
