@@ -15,6 +15,16 @@ export type PollSettings = {
  */
 export type RunReport = { summary: string; failedFeeds?: string[] };
 
+/** A run that throws outright is retried this many times before admins are told. */
+const MAX_SYNC_ATTEMPTS = 3;
+
+/** Backoff between retries: 5s, then 10s — short enough to still land within one poll tick. */
+const DEFAULT_RETRY_BASE_DELAY_MS = 5_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Keeps the database current without anyone pressing a button. Each background
  * job — a portal import, a batch of documents read — subclasses this with its
@@ -42,6 +52,8 @@ export abstract class SyncScheduler implements OnApplicationBootstrap, OnModuleD
      * interval starts from here, they stay apart on every tick after it.
      */
     private readonly startupDelayMs = 0,
+    /** Overridable so tests don't sit through real backoff delays. */
+    private readonly retryBaseDelayMs = DEFAULT_RETRY_BASE_DELAY_MS,
   ) {
     this.logger = new Logger(`${label}Scheduler`);
   }
@@ -72,13 +84,30 @@ export abstract class SyncScheduler implements OnApplicationBootstrap, OnModuleD
     clearInterval(this.timer);
   }
 
+  /** Runs the job, retrying a run that throws outright up to MAX_SYNC_ATTEMPTS times. */
+  private async runWithRetry(): Promise<RunReport> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.run();
+      } catch (error) {
+        if (attempt === MAX_SYNC_ATTEMPTS) throw error;
+        const delay = this.retryBaseDelayMs * 2 ** (attempt - 1);
+        this.logger.warn(
+          `${this.label} run failed (attempt ${attempt}/${MAX_SYNC_ATTEMPTS}): ${String(error)} — retrying in ${delay}ms`,
+        );
+        await sleep(delay);
+      }
+    }
+  }
+
   private async poll(): Promise<void> {
     let report: RunReport;
     try {
-      report = await this.run();
+      report = await this.runWithRetry();
     } catch (error) {
-      // The next tick retries; a portal outage shouldn't crash the server.
-      this.logger.warn(`Scheduled ${this.label} run failed: ${String(error)}`);
+      // Already retried MAX_SYNC_ATTEMPTS times; the next scheduled tick is the
+      // next chance — a portal outage shouldn't crash the server.
+      this.logger.warn(`${this.label} run failed after ${MAX_SYNC_ATTEMPTS} attempts: ${String(error)}`);
       await this.alerts.syncProblem(this.label, {
         kind: "failed",
         error: error instanceof Error ? error.message : String(error),

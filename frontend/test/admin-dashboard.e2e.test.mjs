@@ -159,6 +159,7 @@ describe("admin dashboard — empty state (requires a fresh, untouched database)
     assert.equal(metricValue(html, "Users"), "0");
     assert.ok(html.includes(">none suspended<"));
     assert.ok(html.includes("No imports recorded yet"), "the sync-history panel should show its empty state");
+    assert.ok(!html.includes(">Run again<"), "a pipeline that has never run isn't offered a manual retry");
   });
 
   it("/admin/audit shows its empty state", async () => {
@@ -222,6 +223,7 @@ describe("admin dashboard — renders real data", () => {
     assert.ok(html.includes(">1 suspended<"));
     assert.ok(html.includes("+5 new items"), "the sync-history row should show this run's imported count");
     assert.ok(html.includes("Succeeded"));
+    assert.ok(!html.includes(">Run again<"), "a healthy pipeline isn't offered a manual retry");
   });
 
   it("/admin/audit shows the manual approve/suspend entries and the automatic sync entry", async () => {
@@ -246,5 +248,43 @@ describe("admin dashboard — renders real data", () => {
     assert.ok(html.includes(">Pending<"), "the untouched signup should still read pending");
     assert.ok(html.includes(">Suspended<"), "suspension should override the approved status in the badge");
     assert.ok(html.includes(">Company<"), "an org account should never be badged as an administrator");
+  });
+});
+
+// Each run below becomes the newest row (later startedAt than the "success"
+// run the previous describe block inserted), so metrics.status — and the
+// "Run again" button it gates — reflects this run, not that earlier one.
+describe("admin dashboard — offers a manual retry after a failed or partial run", () => {
+  it("/admin shows 'Run again' once the latest run failed outright", async () => {
+    await mongo.db().collection("syncRuns").insertOne({
+      startedAt: new Date(),
+      finishedAt: new Date(),
+      status: "failed",
+      fetched: 0,
+      imported: 0,
+      updated: 0,
+      failedFeeds: [],
+      error: "e-GP ไม่ตอบกลับ",
+    });
+
+    const html = await renderPage("/admin");
+    assert.ok(html.includes(">Failing<"), "pipeline status should read Failing");
+    assert.ok(html.includes(">Run again<"), "a failed run should offer a manual retry");
+  });
+
+  it("/admin shows 'Run again' once the latest run came back partial", async () => {
+    await mongo.db().collection("syncRuns").insertOne({
+      startedAt: new Date(),
+      finishedAt: new Date(),
+      status: "partial",
+      fetched: 10,
+      imported: 2,
+      updated: 1,
+      failedFeeds: ["D0/ระบบ"],
+    });
+
+    const html = await renderPage("/admin");
+    assert.ok(html.includes(">Partial<"), "pipeline status should read Partial");
+    assert.ok(html.includes(">Run again<"), "a partial run should offer a manual retry");
   });
 });

@@ -85,8 +85,9 @@ describe("AdminAlertsService", () => {
 
 describe("SyncScheduler alerts", () => {
   class TestScheduler extends SyncScheduler {
-    constructor(alerts, run) {
-      super("Test", { pollMinutes: 0, pollOnStartup: false }, alerts, run);
+    // A near-zero backoff so the retry tests don't sit through real delays.
+    constructor(alerts, run, retryBaseDelayMs = 1) {
+      super("Test", { pollMinutes: 0, pollOnStartup: false }, alerts, run, 0, retryBaseDelayMs);
     }
   }
 
@@ -95,10 +96,54 @@ describe("SyncScheduler alerts", () => {
     return { calls, syncProblem: async (source, problem) => calls.push({ source, problem }) };
   }
 
-  it("alerts on a run that throws", async () => {
+  it("alerts once a run that keeps throwing has exhausted its retries", async () => {
     const alerts = recordingAlerts();
-    await new TestScheduler(alerts, async () => Promise.reject(new Error("portal down"))).poll();
+    let attempts = 0;
+    await new TestScheduler(alerts, async () => {
+      attempts++;
+      throw new Error("portal down");
+    }).poll();
+
+    assert.equal(attempts, 3);
     assert.deepEqual(alerts.calls, [{ source: "Test", problem: { kind: "failed", error: "portal down" } }]);
+  });
+
+  it("stops retrying and stays quiet as soon as a retry succeeds", async () => {
+    const alerts = recordingAlerts();
+    let attempts = 0;
+    await new TestScheduler(alerts, async () => {
+      attempts++;
+      if (attempts < 2) throw new Error("portal down");
+      return { summary: "1 new", failedFeeds: [] };
+    }).poll();
+
+    assert.equal(attempts, 2);
+    assert.equal(alerts.calls.length, 0);
+  });
+
+  it("counts a run that only succeeds on its very last allowed attempt as a success", async () => {
+    const alerts = recordingAlerts();
+    let attempts = 0;
+    await new TestScheduler(alerts, async () => {
+      attempts++;
+      if (attempts < 3) throw new Error("portal down");
+      return { summary: "1 new", failedFeeds: [] };
+    }).poll();
+
+    assert.equal(attempts, 3);
+    assert.equal(alerts.calls.length, 0);
+  });
+
+  it("never retries a partial run — it already has real data to keep", async () => {
+    const alerts = recordingAlerts();
+    let attempts = 0;
+    await new TestScheduler(alerts, async () => {
+      attempts++;
+      return { summary: "1 new", failedFeeds: ["D0/ระบบ"] };
+    }).poll();
+
+    assert.equal(attempts, 1);
+    assert.equal(alerts.calls.length, 1);
   });
 
   it("alerts on a partial run", async () => {
