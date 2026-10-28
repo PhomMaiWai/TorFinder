@@ -777,7 +777,15 @@
     "roleViewer": "ประชาชนทั่วไป",
     "roleFilterLabel": "กรองตามประเภทบัญชี",
     "roleFilterAll": "ทุกประเภท",
-    "roleFilterStaff": "เจ้าหน้าที่"
+    "roleFilterStaff": "เจ้าหน้าที่",
+    "editAction": "แก้ไข",
+    "nameLabel": "ชื่อ",
+    "roleLabel": "บทบาท",
+    "roleLockedOrg": "บัญชีบริษัทเปลี่ยนบทบาทไม่ได้",
+    "saveAction": "บันทึก",
+    "savingAction": "กำลังบันทึก...",
+    "cancelAction": "ยกเลิก",
+    "roleChangeNote": "เมื่อบันทึก ผู้ใช้จะถูกออกจากระบบและต้องเข้าสู่ระบบใหม่ด้วยบทบาทใหม่"
   },
   "OpportunityCard": {
     "newBadge": "ใหม่",
