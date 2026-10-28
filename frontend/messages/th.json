@@ -67,7 +67,8 @@
     "openMenuAriaLabel": "เปิดเมนู",
     "navTorList": "รายการ TOR",
     "navCreateTor": "เพิ่มรายการ TOR",
-    "navMatches": "งานที่ตรงกับบริษัท"
+    "navMatches": "งานที่ตรงกับบริษัท",
+    "navFlaggedTors": "รายการที่ถูกตรวจสอบ"
   },
   "Dashboard": {
     "newBadge": "ใหม่",
