@@ -5,6 +5,7 @@ import { StoredExtraction } from "../ai/ai.types";
 import { Certification } from "../matching/requirements";
 import { WorkType } from "../matching/work-types";
 import { FeedbackStatus } from "../feedback/feedback.constants";
+import { ReportReason, ReportStatus } from "../reports/reports.constants";
 import { hashPassword } from "../common/password";
 import { Role } from "../common/roles";
 import { env } from "../config/env";
@@ -238,6 +239,22 @@ export type FeedbackDoc = {
   reviewedAt?: Date;
 };
 
+/** Someone telling the admins an announcement is wrong (FR-21); never shown publicly. */
+export type TorReportDoc = {
+  torId: ObjectId;
+  reason: ReportReason;
+  message: string;
+  /** The signed-in account that reported it; absent for a guest. */
+  reporter?: { userId: ObjectId; email: string; name: string };
+  /** How a guest asked to be reached, if they did. */
+  contact?: string;
+  status: ReportStatus;
+  createdAt: Date;
+  resolvedAt?: Date;
+  /** The admin who resolved it, by email, as the audit log names actors. */
+  resolvedBy?: string;
+};
+
 /** One organization's bookmark of one TOR — the logged-in-only "saved" list. */
 export type SavedTorDoc = {
   userId: ObjectId;
@@ -354,6 +371,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   users!: Collection<UserDoc>;
   tors!: Collection<TorDoc>;
   feedback!: Collection<FeedbackDoc>;
+  torReports!: Collection<TorReportDoc>;
   savedTors!: Collection<SavedTorDoc>;
   savedSearches!: Collection<SavedSearchDoc>;
   notifications!: Collection<NotificationDoc>;
@@ -367,6 +385,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.users = this.client.db().collection<UserDoc>("users");
     this.tors = this.client.db().collection<TorDoc>("tors");
     this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
+    this.torReports = this.client.db().collection<TorReportDoc>("torReports");
     this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
     this.savedSearches = this.client.db().collection<SavedSearchDoc>("savedSearches");
     this.notifications = this.client.db().collection<NotificationDoc>("notifications");
@@ -388,6 +407,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // moderation queue.
     await this.feedback.createIndex({ torId: 1, createdAt: -1 });
     await this.feedback.createIndex({ status: 1, createdAt: -1 });
+    // The admin list reads open reports newest first; a TOR's own reports by TOR.
+    await this.torReports.createIndex({ status: 1, createdAt: -1 });
+    await this.torReports.createIndex({ torId: 1, createdAt: -1 });
     // Doubles as the natural key: a save is idempotent, never duplicated.
     await this.savedTors.createIndex({ userId: 1, torId: 1 }, { unique: true });
     // findOwn reads one account's saves newest first; this serves it without an in-memory sort.
