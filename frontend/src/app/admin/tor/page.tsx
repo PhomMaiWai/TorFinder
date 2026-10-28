@@ -4,7 +4,7 @@ import Link from "next/link";
 import { DeleteTorButton } from "@/components/admin/delete-tor-button";
 import { GprocCapture } from "@/components/admin/gproc-capture";
 import { AdminPageShell } from "@/components/layout/admin-page";
-import { fetchDeletedTors } from "@/lib/tor-admin-api";
+import { fetchDeletedTors, fetchNotSoftwareTors } from "@/lib/tor-admin-api";
 import { fetchTorList } from "@/lib/tor-api";
 import { stageBadgeCls } from "@/lib/tor-ui";
 
@@ -19,6 +19,7 @@ const TABS = [
   { id: "mea", label: "จาก กฟน." },
   { id: "datagov", label: "จาก data.go.th" },
   { id: "all", label: "ทั้งหมด" },
+  { id: "not-software", label: "ไม่ใช่ซอฟต์แวร์" },
   { id: "deleted", label: "ถังขยะ" },
 ] as const;
 
@@ -52,23 +53,26 @@ export default async function AdminTorListPage({
   const page = Math.max(1, Number(pageParam) || 1);
   const source = isTab(sourceParam) ? sourceParam : "manual";
 
-  // The trash has its own guarded route; the rest of the tabs are one listing
-  // with a source filter.
+  // The trash and the not-software list have their own guarded routes; the
+  // rest of the tabs are one listing with a source filter.
   const isTrash = source === "deleted";
+  const isOwnList = isTrash || source === "not-software";
   const tors = isTrash
     ? await fetchDeletedTors()
-    : await fetchTorList(page, PAGE_SIZE, source === "all" ? undefined : source);
+    : source === "not-software"
+      ? await fetchNotSoftwareTors()
+      : await fetchTorList(page, PAGE_SIZE, source === "all" ? undefined : source);
 
   return (
     <AdminPageShell title="รายการ TOR" description="รายการ TOR ทั้งหมดในระบบ">
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-1 rounded-lg border border-border bg-surface p-1">
+          <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-surface p-1">
             {TABS.map((tab) => (
               <Link
                 key={tab.id}
                 href={`/admin/tor?source=${tab.id}`}
-                className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                className={`whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
                   source === tab.id
                     ? "bg-ink text-white"
                     : "text-ink-muted hover:bg-surface-alt hover:text-ink"
@@ -105,7 +109,11 @@ export default async function AdminTorListPage({
         <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {tors.length === 0 ? (
             <p className="p-6 text-sm text-ink-muted">
-              {isTrash ? "ถังขยะว่าง" : "ยังไม่มีรายการ TOR"}
+              {isTrash
+                ? "ถังขยะว่าง"
+                : source === "not-software"
+                  ? "ไม่มีรายการที่ถูกจัดเป็นงานที่ไม่ใช่ซอฟต์แวร์"
+                  : "ยังไม่มีรายการ TOR"}
             </p>
           ) : (
               <div className="overflow-x-auto">
@@ -155,7 +163,7 @@ export default async function AdminTorListPage({
           )}
         </div>
 
-        <div className={`flex items-center justify-between ${isTrash ? "hidden" : ""}`}>
+        <div className={`flex items-center justify-between ${isOwnList ? "hidden" : ""}`}>
           <Link
             href={`/admin/tor?source=${source}&page=${Math.max(1, page - 1)}`}
             aria-disabled={page <= 1}
