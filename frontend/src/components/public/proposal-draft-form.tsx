@@ -16,7 +16,7 @@ const MIN_LENGTH = 200;
  * draft comes back section by section with the gaps the model would not fill.
  */
 export function ProposalDraftForm({ torId }: { torId: string }) {
-  const t = useTranslations("TorDetailPage");
+  const t = useTranslations("ProposalDraft");
   const [previous, setPrevious] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,9 +44,9 @@ export function ProposalDraftForm({ torId }: { torId: string }) {
       setDraft(body);
       return;
     }
-    if (res?.status === 401) setError(t("proposalSignInRequired"));
-    else if (res?.status === 503) setError(t("proposalAiUnavailable"));
-    else setError((Array.isArray(body?.message) ? body.message.join(" · ") : body?.message) ?? t("proposalFailed"));
+    if (res?.status === 401) setError(t("signInRequired"));
+    else if (res?.status === 503) setError(t("aiUnavailable"));
+    else setError((Array.isArray(body?.message) ? body.message.join(" · ") : body?.message) ?? t("failed"));
   }
 
   async function copyAll() {
@@ -61,21 +61,21 @@ export function ProposalDraftForm({ torId }: { torId: string }) {
     <section className="rounded-xl border border-border bg-surface p-6 shadow-sm">
       <h2 className="mb-1 flex items-center gap-2 text-lg font-bold text-ink">
         <FilePen size={18} className="text-ink-subtle" />
-        {t("proposalHeading")}
+        {t("heading")}
       </h2>
-      <p className="mb-4 text-sm text-ink-muted">{t("proposalDescription")}</p>
+      <p className="mb-4 text-sm text-ink-muted">{t("description")}</p>
 
       <textarea
         value={previous}
         onChange={(e) => setPrevious(e.target.value.slice(0, MAX_LENGTH))}
         rows={8}
-        placeholder={t("proposalPlaceholder")}
+        placeholder={t("placeholder")}
         className="w-full rounded-lg border border-border bg-surface p-3 text-sm leading-relaxed text-ink placeholder:text-ink-subtle focus:border-accent focus:outline-none"
       />
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <label className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-dark">
           <Upload size={14} />
-          {t("proposalLoadFile")}
+          {t("loadFile")}
           <input
             type="file"
             accept=".txt,.md,text/plain,text/markdown"
@@ -94,10 +94,10 @@ export function ProposalDraftForm({ torId }: { torId: string }) {
         className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark disabled:opacity-50"
       >
         {busy && <Loader2 size={15} className="animate-spin" />}
-        {busy ? t("proposalGenerating") : t("proposalGenerate")}
+        {busy ? t("generating") : t("generate")}
       </button>
       {previous.trim().length > 0 && previous.trim().length < MIN_LENGTH && (
-        <p className="mt-2 text-xs text-ink-subtle">{t("proposalTooShort", { min: MIN_LENGTH })}</p>
+        <p className="mt-2 text-xs text-ink-subtle">{t("tooShort", { min: MIN_LENGTH })}</p>
       )}
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}
 
@@ -107,7 +107,7 @@ export function ProposalDraftForm({ torId }: { torId: string }) {
             <div className="mb-5 rounded-lg bg-warn-soft p-4">
               <p className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-warn">
                 <AlertTriangle size={14} />
-                {t("proposalGaps")}
+                {t("gaps")}
               </p>
               <ul className="list-disc space-y-1 pl-5 text-sm text-warn">
                 {draft.gaps.map((gap) => (
@@ -122,7 +122,7 @@ export function ProposalDraftForm({ torId }: { torId: string }) {
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-ink transition-colors hover:bg-surface-alt"
             >
               <Copy size={13} />
-              {copied ? t("proposalCopied") : t("proposalCopy")}
+              {copied ? t("copied") : t("copy")}
             </button>
           </div>
           <div className="space-y-5">
@@ -133,7 +133,7 @@ export function ProposalDraftForm({ torId }: { torId: string }) {
               </div>
             ))}
           </div>
-          <p className="mt-5 border-t border-border pt-3 text-xs text-ink-subtle">{t("proposalDisclaimer")}</p>
+          <p className="mt-5 border-t border-border pt-3 text-xs text-ink-subtle">{t("disclaimer")}</p>
         </div>
       )}
     </section>
