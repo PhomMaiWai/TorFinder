@@ -1,5 +1,6 @@
 import type { Role } from "@/lib/auth";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
+import type { ReportReason } from "@/lib/report-reasons";
 import { authHeaders } from "@/lib/session-headers";
 
 export type SyncRunStatus = "success" | "partial" | "failed";
@@ -130,4 +131,43 @@ export async function updateUser(id: string, edit: UserEdit): Promise<{ error?: 
   const body = (await res.json().catch(() => null)) as { message?: string | string[] } | null;
   const message = Array.isArray(body?.message) ? body.message[0] : body?.message;
   return { error: message ?? "บันทึกไม่สำเร็จ" };
+}
+
+export type ReportStatus = "open" | "resolved";
+
+/** One "report a problem" entry as the admin list shows it. Mirrors the backend's ReportsService. */
+export type TorReport = {
+  id: string;
+  torId: string;
+  /** Null when the TOR has since been removed from the collection. */
+  torTitle: string | null;
+  reason: ReportReason;
+  message: string;
+  /** The signed-in account that reported it; absent for a guest. */
+  reporter?: { email: string; name: string };
+  /** How a guest asked to be reached, if they did. */
+  contact?: string;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+};
+
+export type ReportsPage = { items: TorReport[]; total: number; page: number; pageSize: number };
+
+export function fetchReports(status: ReportStatus | undefined, page: number): Promise<ReportsPage> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (status) params.set("status", status);
+  return readAsAdmin<ReportsPage>(`/api/reports?${params}`, { items: [], total: 0, page, pageSize: 20 });
+}
+
+export async function setReportStatus(id: string, status: ReportStatus): Promise<void> {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/reports/${id}`, {
+    method: "PATCH",
+    headers: { ...(await authHeaders()), "content-type": "application/json" },
+    body: JSON.stringify({ status }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) throw new Error(status === "resolved" ? "ปิดเรื่องไม่สำเร็จ" : "เปิดเรื่องอีกครั้งไม่สำเร็จ");
 }
