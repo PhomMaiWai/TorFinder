@@ -1,44 +1,35 @@
-import { AppShell } from "@/components/layout/app-sidebar";
 import { Skeleton, SkeletonCard, SkeletonScreen } from "@/components/ui/skeleton";
 
-/** The sidebar stays put while the ranked list is being worked out. */
+/**
+ * No shell here: whether the overview opens in the workspace sidebar or the
+ * public navbar depends on the session, which isn't known until it renders.
+ */
 export default function DashboardLoading() {
   return (
-    <AppShell>
-      <main className="flex min-h-screen flex-col bg-surface-alt/50">
-        <header className="shrink-0 border-b border-border bg-surface px-8 py-7">
-          <div className="mx-auto w-full max-w-[1400px] space-y-2">
-            <Skeleton className="h-7 w-52" />
-            <Skeleton className="h-4 w-80 max-w-full" />
+    <main className="aurora min-h-screen bg-surface-alt/40">
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-8">
+        <SkeletonScreen label="กำลังรวบรวมภาพรวมของประกาศทั้งหมด">
+          <div className="grid gap-8 rounded-3xl border border-border/60 bg-surface/60 p-8 lg:grid-cols-2">
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-56 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-14 w-64" />
+              <Skeleton className="h-4 w-72 max-w-full" />
+            </div>
+            <Skeleton className="h-60 w-full rounded-2xl" />
           </div>
-        </header>
-
-        <div className="mx-auto w-full max-w-[1400px] px-8 py-8">
-          <SkeletonScreen label="กำลังจัดอันดับประกาศที่ตรงกับบริษัทของคุณ">
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {Array.from({ length: 4 }, (_, i) => (
-                <SkeletonCard key={i} />
-              ))}
-            </div>
-
-            <div className="space-y-4">
-              {Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="flex gap-5 rounded-xl border border-border bg-surface p-5">
-                  <Skeleton className="hidden size-14 shrink-0 rounded-full sm:block" />
-                  <div className="flex-1 space-y-2.5">
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <div className="flex gap-2 pt-1">
-                      <Skeleton className="h-6 w-24 rounded-md" />
-                      <Skeleton className="h-6 w-20 rounded-md" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SkeletonScreen>
-        </div>
-      </main>
-    </AppShell>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} className="h-72 w-full rounded-2xl" />
+            ))}
+          </div>
+        </SkeletonScreen>
+      </div>
+    </main>
   );
 }

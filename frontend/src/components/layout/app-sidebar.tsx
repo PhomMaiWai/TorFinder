@@ -2,7 +2,6 @@
 
 import {
   Activity,
-  ArrowLeft,
   Bell,
   Bookmark,
   Building2,
@@ -50,9 +49,10 @@ function getOrgNav(t: (key: string) => string): { section: string | null; links:
     {
       section: null,
       links: [
-        // The profile first: every match below is computed from it.
+        { label: t("navOverview"), href: "/dashboard", icon: Activity },
+        // The profile before the matches: every match is computed from it.
         { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
-        { label: t("navMatches"), href: "/dashboard", icon: LayoutDashboard },
+        { label: t("navMatches"), href: "/matches", icon: LayoutDashboard },
         { label: t("navSearchTor"), href: "/search", icon: Search },
         { label: t("navSavedList"), href: "/saved?scope=org", icon: Bookmark },
         {
@@ -228,18 +228,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <NavLinks nav={nav} onNavigate={onNavigate} />
-
-      {/* Back to landing */}
-      <div className="px-3 pb-2">
-        <Link
-          href="/"
-          onClick={onNavigate}
-          className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
-        >
-          <ArrowLeft size={15} className="opacity-60" />
-          {t("backToHome")}
-        </Link>
-      </div>
 
       {/* User */}
       <div className="shrink-0 border-t border-border/80 p-3">

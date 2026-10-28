@@ -4,7 +4,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { homeFor } from "@/lib/roles";
 
 /** Pages only a signed-in account may see. */
-const PROTECTED_PREFIXES = ["/dashboard", "/admin", "/owner", "/profile", "/saved", "/notifications"];
+const PROTECTED_PREFIXES = ["/matches", "/admin", "/owner", "/profile", "/saved", "/notifications"];
 /**
  * Pages only an admin may see. /owner is here until there is an owner role to
  * give it to — its hide/restore actions are admin-only already, and it embeds
@@ -58,6 +58,13 @@ export async function proxy(request: NextRequest) {
       : NextResponse.json({ error: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
   }
 
+  // The landing page is the first impression for guests; once signed in, the
+  // logo and every link to "/" lead to the role's own home instead (#252).
+  if (pathname === "/") {
+    const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+    return session ? NextResponse.redirect(new URL(homeFor(session.role), request.url)) : NextResponse.next();
+  }
+
   const isProtected = matches(pathname, PROTECTED_PREFIXES);
   const isGuestOnly = matches(pathname, GUEST_ONLY_PREFIXES);
   if (!isProtected && !isGuestOnly) return NextResponse.next();
@@ -91,8 +98,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/api/:path*",
-    "/dashboard/:path*",
+    "/matches/:path*",
     "/admin/:path*",
     "/owner/:path*",
     "/profile/:path*",

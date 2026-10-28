@@ -1,9 +1,7 @@
 /** Mirrors the backend's ROLES (backend/src/common/roles.ts). */
 export type Role = "admin" | "org" | "owner" | "auditor" | "viewer";
 
-/** Where a signed-in user's own area starts. Viewers have none, so they land on search. */
+/** Where a signed-in user lands: the public overview, except admins, who start in their console. */
 export function homeFor(role: Role): string {
-  if (role === "admin") return "/admin";
-  if (role === "viewer") return "/public";
-  return "/dashboard";
+  return role === "admin" ? "/admin" : "/dashboard";
 }
