@@ -24,12 +24,14 @@ const audit = () => mongo.db().collection("auditLogEntries");
 const ACTOR = `admin+edit-${Date.now()}@ci.test`;
 
 function makeToken(role, sub, email) {
+  const iat = Math.floor(Date.now() / 1000);
   const payload = {
     sub,
     email,
     name: `CI ${role}`,
     role,
-    exp: Math.floor(Date.now() / 1000) + 3600,
+    iat,
+    exp: iat + 3600,
   };
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${data}.${createHmac("sha256", SESSION_SECRET).update(data).digest("base64url")}`;
@@ -48,6 +50,11 @@ async function edit(id, body, token = ADMIN_TOKEN) {
   });
   const text = await res.text();
   return { status: res.status, body: text ? JSON.parse(text) : undefined };
+}
+
+async function api(path, token) {
+  const res = await fetch(`${API}${path}`, { headers: { authorization: `Bearer ${token}` } });
+  return { status: res.status, body: await res.json() };
 }
 
 const created = [];
@@ -148,6 +155,63 @@ describe("admin edits a user", () => {
       404,
     );
   });
+
+  it("notifies the account when its role changes", async () => {
+    const viewer = await insertUser("viewer");
+    assert.equal((await edit(viewer.id, { role: "owner" })).status, 200);
+
+    // A role change revokes every session already issued (sessionMinIssuedAt,
+    // precise to the millisecond); `iat` is floored to the second, so a token
+    // minted in the same second as the revoke can land just before it. A
+    // near-1s wait keeps this token's whole issuing second safely after.
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    const token = makeToken("owner", viewer.id, viewer.email);
+    const res = await api("/notifications", token);
+    assert.equal(res.status, 200);
+    const notice = res.body.find((n) => n.title === "บทบาทของบัญชีคุณเปลี่ยนแล้ว");
+    assert.ok(notice, "the account should hear about its own role change");
+    assert.equal(notice.type, "system");
+    assert.match(notice.message, /เจ้าของโครงการ/);
+  });
+
+  it("doesn't notify when only the name changes", async () => {
+    const viewer = await insertUser("viewer");
+    assert.equal((await edit(viewer.id, { name: "เฉยๆ" })).status, 200);
+
+    const token = makeToken("viewer", viewer.id, viewer.email);
+    const res = await api("/notifications", token);
+    assert.ok(!res.body.some((n) => n.title === "บทบาทของบัญชีคุณเปลี่ยนแล้ว"));
+  });
+
+  it("surfaces the audit entries through the admin dashboard's feed, not just the collection", async () => {
+    const viewer = await insertUser("viewer");
+    await edit(viewer.id, { name: "ปรากฏในฟีด", role: "owner" });
+
+    const res = await api("/audit", ADMIN_TOKEN);
+    assert.equal(res.status, 200);
+    const actions = res.body
+      .filter((entry) => entry.detail.startsWith(`${viewer.email}:`))
+      .map((entry) => entry.action)
+      .sort();
+    assert.deepEqual(actions, ["เปลี่ยนบทบาทผู้ใช้", "แก้ไขชื่อผู้ใช้"].sort());
+  });
+
+  it("the loser of a concurrent edit gets 409, told to reload", async () => {
+    const viewer = await insertUser("viewer");
+    const [a, b] = await Promise.all([
+      edit(viewer.id, { role: "owner" }),
+      edit(viewer.id, { role: "auditor" }),
+    ]);
+
+    const statuses = [a.status, b.status].sort();
+    assert.deepEqual(statuses, [200, 409]);
+    const winner = a.status === 200 ? a : b;
+    const loser = a.status === 200 ? b : a;
+    assert.match(loser.body.message, /ถูกแก้ไขไปแล้ว/);
+
+    const stored = await users().findOne({ _id: new ObjectId(viewer.id) });
+    assert.equal(stored.role, winner.body.role);
+  });
 });
 
 describe("the last admin", () => {
@@ -194,5 +258,43 @@ describe("the last admin", () => {
     const res = await edit(last.id, { role: "owner" });
     assert.equal(res.status, 200);
     assert.equal(res.body.role, "owner");
+  });
+});
+
+// The pre-write count check (above) can't catch two admins demoting each
+// other at once — each one's own count still sees the other as admin. The
+// post-write re-check is the safety net for exactly that race; this is the
+// only way to actually exercise it rather than just trust it's there.
+describe("two admins demoted at the same moment", () => {
+  let others = [];
+  let first, second;
+
+  before(async () => {
+    first = await insertUser("admin");
+    second = await insertUser("admin");
+    const theseTwo = [new ObjectId(first.id), new ObjectId(second.id)];
+    others = (await users().find({ role: "admin", _id: { $nin: theseTwo } }).toArray()).map(
+      (u) => u._id,
+    );
+    await users().updateMany({ _id: { $in: others } }, { $set: { role: "owner" } });
+  });
+
+  after(() => users().updateMany({ _id: { $in: others } }, { $set: { role: "admin" } }));
+
+  it("never lets the count reach zero, however the two requests interleave", async () => {
+    const [a, b] = await Promise.all([
+      edit(first.id, { role: "owner" }),
+      edit(second.id, { role: "owner" }),
+    ]);
+
+    for (const res of [a, b]) {
+      assert.ok([200, 409].includes(res.status), `unexpected status ${res.status}`);
+    }
+
+    const remaining = await users().countDocuments({
+      _id: { $in: [new ObjectId(first.id), new ObjectId(second.id)] },
+      role: "admin",
+    });
+    assert.ok(remaining >= 1, "at least one of the two must still be admin");
   });
 });
