@@ -32,36 +32,28 @@ import {
   torAmount,
   torDocumentUrl,
 } from "@/lib/tor-ui";
+import {
+  NO_FILTERS,
+  type SearchFilters,
+  STATUS_LABEL_KEY,
+  STATUSES,
+  type TorStatus,
+  yearLabel,
+} from "@/lib/search-filters";
 import { DEFAULT_SORT, isSortKey, parseBudget, SORT_KEYS, type SortKey, sortTors } from "@/lib/tor-sort";
 import { useSavedTors } from "@/lib/use-saved-tors";
+import { useSession } from "@/lib/use-session";
 import type { TorRecord } from "@/types/tor";
 
 import { BiddingBadge } from "./bidding-badge";
+import { SaveSearchForm } from "./save-search-form";
 
 import { AgencyFilter } from "./agency-filter";
 import { FilterCheckbox } from "./filter-checkbox";
 import { FilterRadio } from "./filter-radio";
 
-/**
- * One status a reader filters by, in the order they care: what they can still
- * act on first. It folds together three things that used to be separate
- * filters — whether bidding is open, the announcement stage, and the
- * announcement type — which said the same thing three ways.
- */
-type TorStatus = "bidding" | "comment" | "awarded" | "closed" | "unknown";
-
-const STATUSES: readonly TorStatus[] = ["bidding", "comment", "awarded", "closed", "unknown"];
-
 /** Everything a reader can still act on: bid now, or comment on what is coming. */
 const OPEN_STATUSES: readonly TorStatus[] = ["bidding", "comment"];
-
-const STATUS_LABEL_KEY: Record<TorStatus, string> = {
-  bidding: "statusBidding",
-  comment: "statusComment",
-  awarded: "statusAwarded",
-  closed: "statusClosed",
-  unknown: "statusUnknown",
-};
 
 function statusOf(tor: TorRecord): TorStatus {
   const { status, reason } = biddingOf(tor);
@@ -130,9 +122,6 @@ function announcedYear(createdAt: string): number | null {
 }
 
 /** Thai readers count in พ.ศ.; the ค.ศ. year is kept alongside for everyone else. */
-function yearLabel(year: number): string {
-  return `${year + 543} (${year})`;
-}
 
 function CheckboxFilter({
   title,
@@ -479,26 +468,29 @@ function PublicTorCard({
 
 /**
  * `inApp`: rendered inside the signed-in shell, so a TOR opens there too.
- * `initialSort` comes from the address (`?sort=`); `pinnedIds` lead whatever the sort.
+ * `initialFilters` come from the address — a shared link, or an applied saved
+ * search; `pinnedIds` lead whatever the sort.
  */
 export function TorSearch({
   tors,
   inApp = false,
-  initialSort = DEFAULT_SORT,
+  initialFilters = NO_FILTERS,
   pinnedIds = NO_PINS,
 }: {
   tors: TorRecord[];
   inApp?: boolean;
-  initialSort?: SortKey;
+  initialFilters?: SearchFilters;
   pinnedIds?: string[];
 }) {
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>(initialSort);
-  const [selectedStatuses, setSelectedStatuses] = useState<TorStatus[]>([]);
-  const [selectedDeadline, setSelectedDeadline] = useState<string | null>(null);
-  const [selectedYears, setSelectedYears] = useState<number[]>([]);
-  const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
-  const [selectedBudgets, setSelectedBudgets] = useState<string[]>([]);
+  const [search, setSearch] = useState(initialFilters.query);
+  const [sortKey, setSortKey] = useState<SortKey>(initialFilters.sort);
+  const [selectedStatuses, setSelectedStatuses] = useState<TorStatus[]>(initialFilters.statuses);
+  const [selectedDeadline, setSelectedDeadline] = useState<string | null>(initialFilters.deadline);
+  const [selectedYears, setSelectedYears] = useState<number[]>(initialFilters.years);
+  const [selectedAgencies, setSelectedAgencies] = useState<string[]>(initialFilters.agencies);
+  const [selectedBudgets, setSelectedBudgets] = useState<string[]>(initialFilters.budgets);
+  // Saving needs an account; a guest's list would have nowhere to live.
+  const signedIn = Boolean(useSession());
   const [feedbackOpenId, setFeedbackOpenId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [lastQueryKey, setLastQueryKey] = useState("");
@@ -713,6 +705,23 @@ export function TorSearch({
             onChange={setSelectedAgencies}
           />
 
+          {signedIn && (hasActiveFilters || search.trim() !== "") && (
+            <>
+              <div className="my-7 h-px w-full bg-surface-alt" />
+              <SaveSearchForm
+                savedHref={inApp ? "/saved?scope=org" : "/saved"}
+                filters={{
+                  query: search.trim(),
+                  sort: sortKey,
+                  statuses: selectedStatuses,
+                  deadline: selectedDeadline,
+                  years: selectedYears,
+                  agencies: selectedAgencies,
+                  budgets: selectedBudgets,
+                }}
+              />
+            </>
+          )}
         </div>
       </aside>
 
