@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Noto_Sans_Thai } from "next/font/google";
+import localFont from "next/font/local";
 import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
@@ -20,15 +20,23 @@ const THEME_INIT_SCRIPT = `
   } catch (e) {}
 `;
 
-const geistSans = Geist({
+/**
+ * Fonts are served from the repo rather than `next/font/google`, whose
+ * build-time fetch made Turbopack builds fail intermittently. Both files are
+ * the Google Fonts variable fonts subset to what Google served before: Geist
+ * for latin, latin-ext, cyrillic and vietnamese; Noto Sans Thai for thai,
+ * latin and latin-ext at weights 400–700. Licences sit beside them (OFL).
+ */
+const geistSans = localFont({
+  src: "./fonts/Geist-Variable.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  weight: "100 900",
 });
 
-const notoSansThai = Noto_Sans_Thai({
+const notoSansThai = localFont({
+  src: "./fonts/NotoSansThai-Variable.woff2",
   variable: "--font-noto-thai",
-  subsets: ["thai"],
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
 });
 
 /**
