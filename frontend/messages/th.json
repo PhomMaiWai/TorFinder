@@ -861,7 +861,20 @@
     "description": "ประวัติการทำงานของระบบและผู้ดูแลระบบทั้งหมด",
     "typeAuto": "อัตโนมัติ",
     "typeManual": "ผู้ดูแล",
-    "emptyState": "ยังไม่มีประวัติการทำงาน"
+    "emptyState": "ยังไม่มีประวัติการทำงาน",
+    "noMatches": "ไม่พบประวัติที่ตรงกับตัวกรอง",
+    "filterAction": "การกระทำ",
+    "filterAllActions": "ทุกการกระทำ",
+    "filterActor": "ผู้ดำเนินการ",
+    "filterActorPlaceholder": "อีเมลหรือชื่อ",
+    "filterFrom": "ตั้งแต่วันที่",
+    "filterTo": "ถึงวันที่",
+    "filterApply": "กรอง",
+    "filterClear": "ล้างตัวกรอง",
+    "pagination": "เปลี่ยนหน้า",
+    "previous": "ก่อนหน้า",
+    "next": "ถัดไป",
+    "pageOf": "หน้า {page} · ทั้งหมด {total} รายการ"
   },
   "AdminCompaniesPage": {
     "title": "จัดการบริษัท",

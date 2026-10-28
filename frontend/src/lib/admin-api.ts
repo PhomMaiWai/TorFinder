@@ -32,6 +32,24 @@ export type AuditFeedEntry = {
   date: string;
 };
 
+export type AuditFeedPage = {
+  items: AuditFeedEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  /** Every action label there is, for the filter. */
+  actions: string[];
+};
+
+/** What the audit page narrows by; all optional, days as YYYY-MM-DD. */
+export type AuditFeedQuery = {
+  action?: string;
+  actor?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+};
+
 /** Every account the system knows, admins included — not the approval queue. */
 export type DirectoryUser = {
   id: string;
@@ -65,7 +83,18 @@ const NO_METRICS: EgpMetrics = {
 };
 
 export const fetchEgpMetrics = () => readAsAdmin<EgpMetrics>("/api/egp/metrics", NO_METRICS);
-export const fetchAuditFeed = () => readAsAdmin<AuditFeedEntry[]>("/api/audit", []);
+export function fetchAuditFeed(query: AuditFeedQuery = {}): Promise<AuditFeedPage> {
+  const params = new URLSearchParams(
+    Object.entries(query).flatMap(([key, value]) => (value ? [[key, String(value)]] : [])),
+  );
+  return readAsAdmin<AuditFeedPage>(`/api/audit?${params}`, {
+    items: [],
+    total: 0,
+    page: query.page ?? 1,
+    pageSize: 20,
+    actions: [],
+  });
+}
 export const fetchUserDirectory = () =>
   readAsAdmin<DirectoryUser[]>("/api/accounts/directory", []);
 

@@ -1,8 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 
-import { DatabaseService, SyncRunDoc, SyncRunStatus } from "../database/database.service";
+import { Document } from "mongodb";
 
-const AUDIT_FEED_LIMIT = 50;
+import { escapeRegex } from "../common/regex";
+import { DatabaseService, SyncRunDoc, SyncRunStatus } from "../database/database.service";
+import { ListAuditQueryDto } from "./dto/list-audit-query.dto";
 
 export type AuditFeedEntry = {
   action: string;
@@ -12,11 +14,49 @@ export type AuditFeedEntry = {
   date: string;
 };
 
+export type AuditFeedPage = {
+  items: AuditFeedEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  /** Every action label there is, for the filter. */
+  actions: string[];
+};
+
+/** A feed row as the union yields it: a sync run keeps its raw fields until the page is cut. */
+type FeedRow = Omit<AuditFeedEntry, "date" | "detail"> & {
+  detail?: string;
+  date: Date;
+  run?: SyncRunDoc;
+};
+
+const SYNC_ACTOR = "e-GP Sync Bot";
+
 const SYNC_ACTION_LABELS: Record<SyncRunStatus, string> = {
   success: "ซิงค์ข้อมูล e-GP สำเร็จ",
   partial: "ซิงค์ข้อมูล e-GP สำเร็จบางส่วน",
   failed: "ซิงค์ข้อมูล e-GP ล้มเหลว",
 };
+
+const DAY_MS = 86_400_000;
+
+/** The start of a calendar day in Bangkok, where every admin reads the log. */
+const bangkokDay = (day: string) => new Date(`${day}T00:00:00+07:00`);
+
+/** The query's filters as a $match on the unioned feed; none set matches everything. */
+function feedFilter({ action, actor, from, to }: ListAuditQueryDto): Document {
+  const match: Document = {};
+  if (action) match.action = action;
+  if (actor?.trim()) match.actor = { $regex: escapeRegex(actor.trim()), $options: "i" };
+  if (from || to) {
+    match.date = {
+      ...(from && { $gte: bangkokDay(from) }),
+      // The whole of the last day: up to, not including, the next midnight.
+      ...(to && { $lt: new Date(bangkokDay(to).getTime() + DAY_MS) }),
+    };
+  }
+  return match;
+}
 
 /**
  * Reads back as one line: what came in, what changed, what didn't. Shared by
@@ -61,31 +101,67 @@ export class AuditService {
     }
   }
 
-  /** Manual entries merged with recent e-GP sync runs, newest first. */
-  async findAll(limit = AUDIT_FEED_LIMIT): Promise<AuditFeedEntry[]> {
-    const [manual, syncRuns] = await Promise.all([
-      this.db.auditLogEntries.find().sort({ createdAt: -1 }).limit(limit).toArray(),
-      this.db.syncRuns.find().sort({ startedAt: -1 }).limit(limit).toArray(),
-    ]);
+  /**
+   * One page of manual entries and e-GP sync runs together, newest first. The
+   * two collections are unioned before filtering, so the page, the total and
+   * every filter cover both — a sync run is found by its action label, the
+   * bot's name or its day like any other entry.
+   */
+  async list(query: ListAuditQueryDto): Promise<AuditFeedPage> {
+    const { page, pageSize } = query;
 
-    const manualEntries: AuditFeedEntry[] = manual.map((entry) => ({
-      action: entry.action,
-      detail: entry.detail,
-      actor: entry.actor,
-      type: "manual",
-      date: entry.createdAt.toISOString(),
-    }));
+    const [result] = await this.db.auditLogEntries
+      .aggregate<{ items: FeedRow[]; total: { count: number }[] }>([
+        { $project: { _id: 0, action: 1, detail: 1, actor: 1, type: { $literal: "manual" }, date: "$createdAt" } },
+        {
+          $unionWith: {
+            coll: this.db.syncRuns.collectionName,
+            pipeline: [
+              {
+                $project: {
+                  _id: 0,
+                  action: {
+                    $switch: {
+                      branches: Object.entries(SYNC_ACTION_LABELS).map(([status, label]) => ({
+                        case: { $eq: ["$status", status] },
+                        then: label,
+                      })),
+                      default: SYNC_ACTION_LABELS.failed,
+                    },
+                  },
+                  actor: { $literal: SYNC_ACTOR },
+                  type: { $literal: "auto" },
+                  date: "$startedAt",
+                  run: { status: "$status", imported: "$imported", updated: "$updated", failedFeeds: "$failedFeeds", error: "$error" },
+                },
+              },
+            ],
+          },
+        },
+        { $match: feedFilter(query) },
+        { $sort: { date: -1 } },
+        {
+          $facet: {
+            items: [{ $skip: (page - 1) * pageSize }, { $limit: pageSize }],
+            total: [{ $count: "count" }],
+          },
+        },
+      ])
+      .toArray();
 
-    const syncEntries: AuditFeedEntry[] = syncRuns.map((run) => ({
-      action: SYNC_ACTION_LABELS[run.status],
-      detail: syncDetail(run),
-      actor: "e-GP Sync Bot",
-      type: "auto",
-      date: run.startedAt.toISOString(),
-    }));
+    const actions = await this.db.auditLogEntries.distinct("action");
 
-    return [...manualEntries, ...syncEntries]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, limit);
+    return {
+      total: result?.total[0]?.count ?? 0,
+      page,
+      pageSize,
+      // What the action filter can offer: every label that has ever been written.
+      actions: [...new Set([...actions, ...Object.values(SYNC_ACTION_LABELS)])].sort((a, b) => a.localeCompare(b, "th")),
+      items: (result?.items ?? []).map(({ run, date, ...entry }) => ({
+        ...entry,
+        detail: run ? syncDetail(run) : (entry.detail ?? ""),
+        date: date.toISOString(),
+      })),
+    };
   }
 }

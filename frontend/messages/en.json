@@ -861,7 +861,20 @@
     "description": "Complete activity history for the system and administrators",
     "typeAuto": "Automatic",
     "typeManual": "Admin",
-    "emptyState": "Nothing has happened yet"
+    "emptyState": "Nothing has happened yet",
+    "noMatches": "No entries match these filters",
+    "filterAction": "Action",
+    "filterAllActions": "All actions",
+    "filterActor": "Actor",
+    "filterActorPlaceholder": "Email or name",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "filterApply": "Filter",
+    "filterClear": "Clear filters",
+    "pagination": "Pages",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} · {total} entries"
   },
   "AdminCompaniesPage": {
     "title": "Manage Companies",

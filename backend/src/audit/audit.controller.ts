@@ -1,16 +1,20 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Query, UseGuards } from "@nestjs/common";
 
 import { AdminGuard } from "../common/admin.guard";
 import { AuditService } from "./audit.service";
+import { ListAuditQueryDto } from "./dto/list-audit-query.dto";
 
 @Controller("audit")
 export class AuditController {
   constructor(private readonly audit: AuditService) {}
 
-  /** The admin dashboard's audit log: recent admin actions + e-GP sync runs, newest first. */
+  /**
+   * The admin's audit log: admin actions and e-GP sync runs, newest first, a
+   * page at a time, narrowed by action, actor and day.
+   */
   @Get()
   @UseGuards(AdminGuard)
-  findAll() {
-    return this.audit.findAll();
+  list(@Query() query: ListAuditQueryDto) {
+    return this.audit.list(query);
   }
 }
