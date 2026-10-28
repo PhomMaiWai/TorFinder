@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { TorCorrectionInfo } from "@/components/admin/tor-correction-info";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
+import { fetchUserDirectory } from "@/lib/admin-api";
 import { fetchTor } from "@/lib/tor-api";
 import {
   CLASSIFICATION_LABEL,
@@ -21,8 +22,12 @@ export default async function AdminEditTorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const tor = await fetchTor(id);
+  const [tor, users] = await Promise.all([fetchTor(id), fetchUserDirectory()]);
   if (!tor) notFound();
+  // Only an owner account has an owner dashboard to see the record on.
+  const owners = users.filter((user) => user.role === "owner");
+  // A linked account that is no longer an owner still shows, so a save doesn't silently unlink it.
+  const linkedElsewhere = tor.ownerId && !owners.some((owner) => owner.id === tor.ownerId);
 
   const updateWithId = updateTorEntry.bind(null, id);
   // An imported record's agency is often outside the BMA list; without its own
@@ -56,6 +61,28 @@ export default async function AdminEditTorPage({
             <span className="mt-1.5 block text-xs text-ink-muted">
               ถ้าระบบจัดผิดว่าเป็นงานซอฟต์แวร์ เลือก
               &quot;ไม่ใช่งานซอฟต์แวร์&quot; รายการจะหายจากหน้าค้นหาและการจับคู่
+            </span>
+          </Field>
+
+          <Field label="เจ้าของโครงการ">
+            <input type="hidden" name="currentOwnerId" value={tor.ownerId ?? ""} />
+            <select name="ownerId" defaultValue={tor.ownerId ?? ""} className={inputCls}>
+              <option value="">ไม่ระบุเจ้าของโครงการ</option>
+              {linkedElsewhere && (
+                <option value={tor.ownerId}>
+                  บัญชีที่ไม่ใช่เจ้าของโครงการแล้ว
+                </option>
+              )}
+              {owners.map((owner) => (
+                <option key={owner.id} value={owner.id}>
+                  {owner.name} ({owner.email}){owner.suspended ? " · ถูกระงับ" : ""}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1.5 block text-xs text-ink-muted">
+              {owners.length === 0
+                ? "ยังไม่มีบัญชีเจ้าของโครงการ เปลี่ยนบทบาทผู้ใช้เป็น \"เจ้าของโครงการ\" ได้ที่หน้าผู้ใช้"
+                : "เจ้าของโครงการจะเห็นรายการนี้ในหน้าโครงการของฉัน พร้อมจำนวนบริษัทที่ตรงและความคิดเห็น"}
             </span>
           </Field>
 

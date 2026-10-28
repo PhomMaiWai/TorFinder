@@ -131,6 +131,8 @@ export type TorRecord = {
   lastEdited?: { by: string; at: string };
   /** Fields an admin corrected, which a re-import leaves alone. */
   lockedFields?: string[];
+  /** The project owner account an admin linked it to; absent when nobody is. */
+  ownerId?: string;
   /** Present once a model has read the announcement document. */
   extraction?: TorExtraction;
   /** Sent by the backend; absent on the showcase records. */

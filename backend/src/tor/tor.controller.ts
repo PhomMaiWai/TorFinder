@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -20,6 +21,7 @@ import { AuthenticatedRequest } from "../common/session.guard";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { ListFlaggedTorQueryDto } from "./dto/list-flagged-tor-query.dto";
 import { ListTorQueryDto } from "./dto/list-tor-query.dto";
+import { SetTorOwnerDto } from "./dto/set-tor-owner.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
 import { TorArchiveService } from "./tor-archive.service";
 import { TorDocumentService } from "./tor-document.service";
@@ -131,6 +133,13 @@ export class TorController {
   @UseGuards(AdminGuard)
   update(@Param("id") id: string, @Body() dto: UpdateTorDto, @Req() request: AuthenticatedRequest) {
     return this.torService.update(id, dto, request.session);
+  }
+
+  /** Links the announcement to an owner account, or unlinks it with `{ ownerId: null }`. */
+  @Put(":id/owner")
+  @UseGuards(AdminGuard)
+  setOwner(@Param("id") id: string, @Body() dto: SetTorOwnerDto, @Req() request: AuthenticatedRequest) {
+    return this.torService.setOwner(id, dto.ownerId, request.session.email);
   }
 
   /**
