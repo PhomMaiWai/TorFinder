@@ -29,6 +29,7 @@ import { getTorById, mockNumericId } from "@/lib/tor-source";
 import {
   biddingOf,
   daysUntilClose,
+  feedbackWindow,
   isClosingSoon,
   sourcePageUrl,
   stageBadgeCls,
@@ -80,6 +81,7 @@ export default async function TorDetailPage({
   const written = numericId === null ? null : TOR_DETAILS.find((d) => d.id === numericId);
 
   const bidding = biddingOf(tor);
+  const feedback = feedbackWindow(tor);
   const daysLeft = daysUntilClose(tor);
   const urgent = isClosingSoon(tor);
   const amount = torAmount(tor);
@@ -266,11 +268,14 @@ export default async function TorDetailPage({
           )}
 
           {/* Comments are only useful while the draft can still change. */}
-          {tor.sourceRef && tor.stage === "เปิดรับฟังความคิดเห็น" && bidding.status !== "closed" && (
+          {tor.sourceRef && feedback.open && (
             <FeedbackForm
               torId={tor.id}
               labels={{
                 heading: t("shareFeedback"),
+                until: feedback.until
+                  ? t("feedbackOpenUntil", { date: thaiDate(feedback.until) ?? "" })
+                  : undefined,
                 authorPlaceholder: t("feedbackAuthorPlaceholder"),
                 textPlaceholder: t("feedbackTextareaPlaceholder"),
                 submit: t("submitFeedbackButton"),

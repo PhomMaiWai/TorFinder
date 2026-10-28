@@ -34,6 +34,26 @@ export function torAmount(tor: Pick<TorRecord, "budget" | "awardedAmount" | "ref
 
 type DeadlineFields = Pick<TorRecord, "deadline" | "daysLeft" | "stage" | "bidding">;
 
+/** Today's calendar date in Bangkok, YYYY-MM-DD — the form a feedback deadline is stored in. */
+function bangkokToday(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+}
+
+/**
+ * Whether the public can still comment on this announcement, and until when.
+ * Only a draft takes comments. Its own comment deadline decides when there is
+ * one — open through the whole of that day in Bangkok, closed the day after;
+ * without one, the draft's closing date stands in, as it always has.
+ */
+export function feedbackWindow(
+  tor: DeadlineFields & Pick<TorRecord, "feedbackDeadline">,
+): { open: boolean; until: string | null } {
+  if (tor.stage !== "เปิดรับฟังความคิดเห็น") return { open: false, until: tor.feedbackDeadline ?? null };
+  if (tor.feedbackDeadline) return { open: bangkokToday() <= tor.feedbackDeadline, until: tor.feedbackDeadline };
+  const bidding = biddingOf(tor);
+  return { open: bidding.status !== "closed", until: bidding.closesAt };
+}
+
 const DAY_MS = 86_400_000;
 
 /**

@@ -58,6 +58,8 @@ function toCard(tor: TorRecord): TorRecord {
     // fallback, and a third of the payload when sent for every record.
     documents: tor.sourceUrl ? undefined : tor.documents,
     bidding: tor.bidding,
+    // Decides whether the card still offers a comment, and says until when.
+    feedbackDeadline: tor.feedbackDeadline,
   };
 }
 

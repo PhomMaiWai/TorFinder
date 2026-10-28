@@ -25,6 +25,7 @@ import {
   BUDGET_RANGES,
   DEADLINE_RANGES,
   daysUntilClose,
+  feedbackWindow,
   isClosingSoon,
   matchesDeadline,
   sourcePageUrl,
@@ -71,6 +72,9 @@ const AMOUNT_LABEL = {
   reference: "referencePriceLabel",
 } as const satisfies Record<AmountKind, string>;
 const PER_PAGE = 10;
+
+/** "5 พ.ย." — a card has room for the day, not the year. */
+const SHORT_DATE = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", timeZone: "Asia/Bangkok" });
 
 /** A stable empty list, so the sorted results aren't recomputed on every render. */
 const NO_PINS: string[] = [];
@@ -286,7 +290,8 @@ function PublicTorCard({
   const t = useTranslations("PublicPage");
   const bidding = biddingOf(tor);
   const amount = torAmount(tor);
-  const isFeedbackStage = tor.stage === "เปิดรับฟังความคิดเห็น" && bidding.status !== "closed";
+  const feedback = feedbackWindow(tor);
+  const isFeedbackStage = feedback.open;
   const daysLeft = daysUntilClose(tor);
   const isUrgent = isClosingSoon(tor);
   // The announcement's own page on the portal; a file only when there is no page.
@@ -303,6 +308,12 @@ function PublicTorCard({
               {tor.stage}
             </span>
             <BiddingBadge bidding={bidding} />
+            {feedback.open && feedback.until && (
+              <span className="flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-2xs font-semibold text-amber-700">
+                <MessageSquare size={12} />
+                {t("feedbackOpenUntilBadge", { date: SHORT_DATE.format(new Date(feedback.until)) })}
+              </span>
+            )}
             {tor.budgetStatus === "สูงกว่าปกติ" && (
               <span className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-1 text-2xs font-semibold text-red-700">
                 <TrendingUp size={12} />
