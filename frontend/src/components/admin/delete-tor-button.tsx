@@ -3,7 +3,7 @@
 import { RotateCcw, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
-import { hideTor, unhideTor } from "@/app/owner/actions";
+import { hideTor, unhideTor } from "@/app/admin/tor/actions";
 
 /**
  * Delete and restore for one row. Asks once in place rather than opening a
