@@ -53,9 +53,16 @@ jobs:
       # Generous general limit so the full suite fits one 60s window; only the
       # auth brute-force test cares about the (separate, tighter) login limit.
       THROTTLE_LIMIT: "300"
-      # The auth and OAuth integration tests rely on this exact limit for their
-      # brute-force assertions (each auth route has its own limiter bucket).
-      AUTH_THROTTLE_LIMIT: "30"
+      # The auth and OAuth brute-force tests size their own request counts off
+      # this value (see auth.e2e.test.mjs / oauth.e2e.test.mjs), so raising it
+      # doesn't weaken those assertions — it only changes how many requests
+      # they need to send to still prove a 429 shows up. It has to stay above
+      # the number of *legitimate* /auth/login and /auth/signup calls the rest
+      # of the suite makes across every file sharing this one backend process
+      # (account-links, accounts, roles, saved-tors, ...); at 30 that budget
+      # was already exhausted by files that run alphabetically before
+      # auth.e2e.test.mjs, well before its own brute-force test ever ran.
+      AUTH_THROTTLE_LIMIT: "300"
       AUTH_THROTTLE_TTL_MS: "60000"
       E2E_BASE_URL: http://localhost:4000
     steps:
