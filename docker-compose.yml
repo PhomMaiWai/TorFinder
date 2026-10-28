@@ -40,6 +40,8 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=torr
     volumes:
       - torr_db_data:/data/db
+      # Fills an empty database with a snapshot of real TOR records on first start.
+      - ./docker/mongo-seed:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 2s

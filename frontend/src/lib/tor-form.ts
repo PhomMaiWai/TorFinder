@@ -8,6 +8,8 @@ export type TorFormValues = {
   stage: string;
   summary: string;
   budgetStatus: string;
+  /** Sent only by the edit form; creating a record has no classification to set. */
+  classification?: string;
 };
 
 export function parseTorFormData(formData: FormData): TorFormValues {
@@ -26,6 +28,7 @@ export function parseTorFormData(formData: FormData): TorFormValues {
     stage: String(formData.get("stage") ?? ""),
     summary: String(formData.get("summary") ?? "").trim(),
     budgetStatus: String(formData.get("budgetStatus") ?? ""),
+    ...(formData.has("classification") && { classification: String(formData.get("classification")) }),
   };
 }
 

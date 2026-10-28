@@ -31,7 +31,7 @@ cd torr
 docker compose up -d --build
 ```
 
-That's it. The database is created, demo data is seeded, and both services start:
+That's it. The database is created and filled with a snapshot of real TOR records (`docker/mongo-seed/`), demo accounts are seeded, and both services start:
 
 |              | URL                          |
 | ------------ | ---------------------------- |
@@ -46,6 +46,8 @@ docker compose logs -f backend   # follow backend logs
 docker compose down              # stop (keeps the database)
 docker compose down -v           # stop and wipe the database, so the next start re-seeds
 ```
+
+Already ran it before the snapshot existed? The snapshot only loads into an empty database, so wipe it once: `docker compose down -v && docker compose up -d`.
 
 ---
 

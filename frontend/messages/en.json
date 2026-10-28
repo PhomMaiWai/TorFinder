@@ -68,7 +68,8 @@
     "openMenuAriaLabel": "Open menu",
     "navTorList": "TOR list",
     "navCreateTor": "Add TOR",
-    "navMatches": "Matched TORs"
+    "navMatches": "Matched TORs",
+    "navFlaggedTors": "Flagged TORs"
   },
   "Dashboard": {
     "newBadge": "New",
@@ -287,7 +288,8 @@
     "passwordLabel": "Password",
     "submitLabel": "Sign in",
     "noAccountQuestion": "Don't have an account?",
-    "chooseOtherAccountType": "← Choose a different account type"
+    "chooseOtherAccountType": "← Choose a different account type",
+    "forgotPassword": "Forgot password?"
   },
   "LoginPage": {
     "orgTitle": "Sign in for organizations",
@@ -352,7 +354,8 @@
     "defaultCompanyName": "Your company",
     "title": "Awaiting administrator approval",
     "pendingMessage": "The account for <bold>{name}</bold> has been submitted. Our admin team will review the information and notify you by email within 1-2 business days.",
-    "backToLogin": "← Back to sign in"
+    "backToLogin": "← Back to sign in",
+    "verifyNote": "We've sent a confirmation link to <bold>{email}</bold>. Confirm your email first — you'll be able to sign in once the account is approved."
   },
   "SavedPage": {
     "savedListTitle": "Saved Items",
@@ -418,7 +421,13 @@
     "standardsRequestSubject": "Standard request: {name}",
     "standardsNoResults": "No standard matches “{query}” — use “Request a standard” to let us know",
     "noStandardsLabel": "We don't hold any of these certifications",
-    "registeredCapitalHint": "Public record at the Department of Business Development (DBD), checked against a TOR's minimum capital"
+    "registeredCapitalHint": "Public record at the Department of Business Development (DBD), checked against a TOR's minimum capital",
+    "matchAlertsSectionTitle": "Matching TOR alerts",
+    "matchAlertsLabel": "Alert me about projects that fit my company",
+    "matchAlertsDescription": "From the moment a project appears at the plan or draft stage, so there's time to prepare — and again when bids open.",
+    "matchThresholdLabel": "Minimum match score",
+    "matchThresholdDescription": "Higher means fewer, closer matches. The default is 70%.",
+    "matchThresholdOption": "{value}% or more"
   },
   "NotificationsPage": {
     "pageTitle": "Notifications",
@@ -437,7 +446,10 @@
     "channelsTest": "Send a test",
     "channelsSaved": "Saved",
     "channelsSaveFailed": "Couldn't save — try again",
-    "channelsTestNone": "No channel is on yet — save one first"
+    "channelsTestNone": "No channel is on yet — save one first",
+    "openTor": "View TOR",
+    "matchScore": "{score}% match",
+    "matchScoreHint": "How well this TOR fits your company profile"
   },
   "PublicPage": {
     "pageTitle": "Search software TOR announcements",
@@ -517,7 +529,6 @@
     "saveButton": "Save",
     "viewOriginalEgp": "View original",
     "aiAnalyzedBy": "Automatically analyzed by Vertex AI",
-    "aiExtractedFrom": "Extracted from TOR PDF · 94% confidence",
     "scopeOfWork": "Scope of work",
     "qualifications": "Bidder qualifications",
     "deliverables": "Deliverables",
@@ -578,7 +589,13 @@
     "penaltyLabel": "Penalty",
     "warrantyLabel": "Warranty",
     "contactLabel": "Contact",
-    "lowConfidenceNote": "The document was hard to read and these details may be incomplete — check against the original.",
+    "lowConfidenceNote": "Low confidence — these details may be incomplete or wrong. Check against the original document before relying on them.",
+    "confidenceLabel": "{score}% confidence",
+    "confidenceHint": "Based on how much of the document could be read and whether its figures match what the agency published on e-GP",
+    "openSourceDocument": "Open original document",
+    "fieldVerify": "Please verify",
+    "fieldVerifyHint": "Differs from the figure the agency published on e-GP",
+    "fieldConfirmed": "Matches e-GP",
     "timelineHeading": "Project timeline",
     "timelineLegendReached": "Announced",
     "timelineLegendCurrent": "Current stage",
@@ -647,7 +664,8 @@
     "proposalDisclaimer": "An AI-written starting point. Always review and edit it before submitting.",
     "proposalSignInRequired": "Sign in to draft a proposal",
     "proposalAiUnavailable": "The AI service isn't available right now",
-    "proposalFailed": "Couldn't create the draft — try again"
+    "proposalFailed": "Couldn't create the draft — try again",
+    "lastEdited": "Last corrected by {by} on {date}"
   },
   "OwnerPage": {
     "stagePillAll": "All",
@@ -810,7 +828,9 @@
       "success": "Succeeded",
       "partial": "Partial",
       "failed": "Failed"
-    }
+    },
+    "runAgainCta": "Run again",
+    "runAgainPending": "Running…"
   },
   "AdminAccountsPage": {
     "title": "Pending Accounts",
@@ -880,7 +900,15 @@
     "roleViewer": "Public viewer",
     "roleFilterLabel": "Filter by account type",
     "roleFilterAll": "All types",
-    "roleFilterStaff": "Staff"
+    "roleFilterStaff": "Staff",
+    "editAction": "Edit",
+    "nameLabel": "Name",
+    "roleLabel": "Role",
+    "roleLockedOrg": "A company account's role can't be changed",
+    "saveAction": "Save",
+    "savingAction": "Saving...",
+    "cancelAction": "Cancel",
+    "roleChangeNote": "Changing the role signs this user out; they'll need to sign in again"
   },
   "OpportunityCard": {
     "newBadge": "New",
@@ -1006,5 +1034,43 @@
     "archiveFailed": "This bundle can't be opened here",
     "archiveEmpty": "No PDFs or images in this bundle",
     "downloadZip": "Download zip"
+  },
+  "AccountLinks": {
+    "emailLabel": "Email",
+    "forgotTitle": "Forgot password",
+    "forgotDescription": "Enter the email you signed up with and we'll send you a link to set a new password.",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending...",
+    "forgotSentTitle": "Check your email",
+    "forgotSentBody": "If <bold>{email}</bold> has an account, we've sent it a link to set a new password. The link works for 1 hour. Not in your inbox? Check spam.",
+    "tryAnotherEmail": "Use a different email",
+    "rememberedPassword": "Remembered it?",
+    "signIn": "Sign in",
+    "resetTitle": "Set a new password",
+    "resetDescription": "At least {min} characters.",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm new password",
+    "passwordTooShort": "The password needs at least {min} characters.",
+    "passwordMismatch": "The two passwords don't match.",
+    "savePassword": "Save new password",
+    "saving": "Saving...",
+    "resetDoneTitle": "Password updated",
+    "resetDoneBody": "Sign in with your new password.",
+    "goToLogin": "Go to sign in",
+    "missingTokenTitle": "Incomplete link",
+    "missingTokenBody": "Open the link from your email again, or request a new one.",
+    "linkExpiredTitle": "This link no longer works",
+    "requestNewLink": "Request a new link",
+    "verifyTitle": "Confirm your email",
+    "verifyDescription": "Press the button below to confirm this email address is yours.",
+    "verifyButton": "Confirm email",
+    "verifying": "Confirming...",
+    "verifiedTitle": "Email confirmed",
+    "verifiedPending": "Your account is waiting for an administrator's approval. We'll email you within 1–2 business days.",
+    "verifiedReady": "You can sign in now.",
+    "verifyFailedTitle": "Couldn't confirm your email",
+    "resendPrompt": "Enter your email to get a new confirmation link.",
+    "resendButton": "Resend confirmation link",
+    "resendSent": "A new confirmation link is on its way. Check your inbox (and spam)."
   }
 }

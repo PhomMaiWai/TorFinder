@@ -1,6 +1,7 @@
 "use client";
 
-import { BellOff } from "lucide-react";
+import { ArrowUpRight, BellOff } from "lucide-react";
+import Link from "next/link";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -95,14 +96,11 @@ export default function NotificationsPage() {
           <div className="overflow-hidden rounded-xl border border-border bg-surface divide-y divide-border">
             {filtered.map((n) => {
               const Icon = NOTIFICATION_ICONS[n.type];
-              return (
-                <button
-                  key={n.id}
-                  onClick={() => markRead(n.id)}
-                  className={`flex w-full items-start gap-4 border-l-2 px-5 py-4 text-left transition-colors hover:bg-surface-alt/70 ${
-                    n.read ? "border-transparent" : "border-accent bg-accent-soft/30"
-                  }`}
-                >
+              const rowCls = `flex w-full items-start gap-4 border-l-2 px-5 py-4 text-left transition-colors hover:bg-surface-alt/70 ${
+                n.read ? "border-transparent" : "border-accent bg-accent-soft/30"
+              }`;
+              const content = (
+                <>
                   <span
                     className={`grid size-9 shrink-0 place-items-center rounded-lg ${TONE_ICON_CLS[NOTIFICATION_TONE[n.type]]}`}
                   >
@@ -115,11 +113,38 @@ export default function NotificationsPage() {
                       {!n.read && <span className="size-1.5 shrink-0 rounded-full bg-accent" />}
                     </div>
                     <p className="mt-0.5 text-sm text-ink-muted">{n.message}</p>
+                    {n.torId && (
+                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-accent">
+                        {t("openTor")}
+                        <ArrowUpRight size={13} />
+                      </span>
+                    )}
                   </div>
 
-                  <span className="shrink-0 text-xs text-ink-subtle">
-                    {format.relativeTime(new Date(n.createdAt), now)}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <span className="text-xs text-ink-subtle">
+                      {format.relativeTime(new Date(n.createdAt), now)}
+                    </span>
+                    {n.score !== undefined && (
+                      <span
+                        title={t("matchScoreHint")}
+                        className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold tabular-nums text-accent-text"
+                      >
+                        {t("matchScore", { score: n.score })}
+                      </span>
+                    )}
+                  </div>
+                </>
+              );
+
+              // An alert about an announcement opens it; reading it there counts as read.
+              return n.torId ? (
+                <Link key={n.id} href={`/tor/${n.torId}`} onClick={() => markRead(n.id)} className={rowCls}>
+                  {content}
+                </Link>
+              ) : (
+                <button key={n.id} onClick={() => markRead(n.id)} className={rowCls}>
+                  {content}
                 </button>
               );
             })}

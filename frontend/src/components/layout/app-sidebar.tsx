@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Plus,
   Search,
+  SearchCheck,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -88,7 +89,17 @@ function getAdminNav(t: (key: string) => string): { section: string | null; link
         { label: t("navManageCompanies"), href: "/admin/companies", icon: Building2 },
         { label: t("navManageUsers"), href: "/admin/users", icon: Users },
         { label: t("navAuditLog"), href: "/admin/audit", icon: ClipboardList },
+        { label: t("navNotifications"), href: "/admin/notifications", icon: Bell },
       ],
+    },
+  ];
+}
+
+function getAuditorNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
+  return [
+    {
+      section: null,
+      links: [{ label: t("navFlaggedTors"), href: "/auditor", icon: SearchCheck }],
     },
   ];
 }
@@ -125,7 +136,7 @@ function NavLinks({
               const active = isActive(href);
               const badge = href.startsWith("/saved")
                 ? savedIds.length || undefined
-                : href === "/notifications"
+                : href.endsWith("/notifications")
                   ? unreadNotifications || undefined
                   : staticBadge;
               return (
@@ -166,7 +177,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const isAdmin = pathname.startsWith("/admin");
-  const nav = isAdmin ? getAdminNav(t) : getOrgNav(t);
+  const isAuditor = pathname.startsWith("/auditor");
+  const nav = isAdmin ? getAdminNav(t) : isAuditor ? getAuditorNav(t) : getOrgNav(t);
 
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -204,13 +216,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-border/50">
           <span
             className={`flex size-7 items-center justify-center rounded-md text-2xs font-bold text-white ${
-              isAdmin ? "bg-danger" : "bg-accent"
+              isAdmin ? "bg-danger" : isAuditor ? "bg-warn" : "bg-accent"
             }`}
           >
             T
           </span>
           <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-ink">
-            {isAdmin ? "Torr Admin" : "Arun Digital"}
+            {isAdmin ? "Torr Admin" : isAuditor ? "Torr Auditor" : "Arun Digital"}
           </span>
           <ChevronDown size={14} className="shrink-0 text-ink-subtle" />
         </button>
@@ -233,11 +245,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="shrink-0 border-t border-border/80 p-3">
         <div className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink-muted ring-1 ring-border">
-            {(user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : "..."))[0]}
+            {(user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : isAuditor ? "ผู้ตรวจสอบ" : "..."))[0]}
           </span>
           <div className="min-w-0 flex-1 text-left">
             <p className="truncate text-sm font-medium text-ink">
-              {user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : "กำลังโหลด...")}
+              {user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : isAuditor ? "ผู้ตรวจสอบ" : "กำลังโหลด...")}
             </p>
             <p className="truncate text-xs text-ink-muted">{user?.email ?? ""}</p>
           </div>

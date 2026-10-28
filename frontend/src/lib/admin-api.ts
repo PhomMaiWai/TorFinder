@@ -84,3 +84,21 @@ async function setSuspended(id: string, suspended: boolean): Promise<void> {
 
 export const suspendUser = (id: string) => setSuspended(id, true);
 export const reactivateUser = (id: string) => setSuspended(id, false);
+
+/** An organization's role is fixed by its sign-up; see the backend's EDITABLE_ROLES. */
+export type UserEdit = { name?: string; role?: Exclude<Role, "org"> };
+
+/** The backend's own message on a refusal (e.g. demoting the last admin), so the admin sees why. */
+export async function updateUser(id: string, edit: UserEdit): Promise<{ error?: string }> {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${id}/details`, {
+    method: "PATCH",
+    headers: { ...(await authHeaders()), "content-type": "application/json" },
+    body: JSON.stringify(edit),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  if (res.ok) return {};
+  const body = (await res.json().catch(() => null)) as { message?: string | string[] } | null;
+  const message = Array.isArray(body?.message) ? body.message[0] : body?.message;
+  return { error: message ?? "บันทึกไม่สำเร็จ" };
+}

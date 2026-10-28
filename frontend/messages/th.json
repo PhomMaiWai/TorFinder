@@ -68,7 +68,8 @@
     "openMenuAriaLabel": "เปิดเมนู",
     "navTorList": "รายการ TOR",
     "navCreateTor": "เพิ่มรายการ TOR",
-    "navMatches": "งานที่ตรงกับบริษัท"
+    "navMatches": "งานที่ตรงกับบริษัท",
+    "navFlaggedTors": "รายการที่ถูกตรวจสอบ"
   },
   "Dashboard": {
     "newBadge": "ใหม่",
@@ -287,7 +288,8 @@
     "passwordLabel": "รหัสผ่าน",
     "submitLabel": "เข้าสู่ระบบ",
     "noAccountQuestion": "ยังไม่มีบัญชี?",
-    "chooseOtherAccountType": "← เลือกประเภทบัญชีอื่น"
+    "chooseOtherAccountType": "← เลือกประเภทบัญชีอื่น",
+    "forgotPassword": "ลืมรหัสผ่าน?"
   },
   "LoginPage": {
     "orgTitle": "เข้าสู่ระบบสำหรับหน่วยงาน",
@@ -352,7 +354,8 @@
     "defaultCompanyName": "บริษัทของคุณ",
     "title": "รอการอนุมัติจากผู้ดูแลระบบ",
     "pendingMessage": "บัญชีของ <bold>{name}</bold> ถูกส่งเรียบร้อยแล้ว ทีมผู้ดูแลระบบจะตรวจสอบข้อมูลและแจ้งผลผ่านอีเมลภายใน 1-2 วันทำการ",
-    "backToLogin": "← กลับหน้าเข้าสู่ระบบ"
+    "backToLogin": "← กลับหน้าเข้าสู่ระบบ",
+    "verifyNote": "เราส่งลิงก์ยืนยันไปที่ <bold>{email}</bold> แล้ว กรุณายืนยันอีเมลก่อน จึงจะเข้าสู่ระบบได้เมื่อบัญชีได้รับอนุมัติ"
   },
   "SavedPage": {
     "savedListTitle": "รายการที่บันทึกไว้",
@@ -418,7 +421,13 @@
     "standardsRequestSubject": "ขอเพิ่มมาตรฐาน: {name}",
     "standardsNoResults": "ไม่พบมาตรฐาน “{query}” — กด “ขอเพิ่มมาตรฐาน” เพื่อแจ้งทีมงาน",
     "noStandardsLabel": "บริษัทยังไม่มีใบรับรองมาตรฐาน",
-    "registeredCapitalHint": "ข้อมูลสาธารณะจากกรมพัฒนาธุรกิจการค้า (DBD) ใช้เทียบกับเกณฑ์ทุนจดทะเบียนใน TOR"
+    "registeredCapitalHint": "ข้อมูลสาธารณะจากกรมพัฒนาธุรกิจการค้า (DBD) ใช้เทียบกับเกณฑ์ทุนจดทะเบียนใน TOR",
+    "matchAlertsSectionTitle": "แจ้งเตือน TOR ที่ตรงกับบริษัท",
+    "matchAlertsLabel": "แจ้งเตือนเมื่อมีโครงการที่ตรงกับบริษัท",
+    "matchAlertsDescription": "แจ้งตั้งแต่โครงการเริ่มปรากฏในขั้นแผนหรือร่าง TOR เพื่อให้มีเวลาเตรียมตัว และแจ้งอีกครั้งเมื่อเปิดรับข้อเสนอ",
+    "matchThresholdLabel": "คะแนนขั้นต่ำที่จะแจ้งเตือน",
+    "matchThresholdDescription": "ยิ่งตั้งสูง ยิ่งได้รับแจ้งน้อยลงแต่ตรงขึ้น ค่าเริ่มต้นคือ 70%",
+    "matchThresholdOption": "{value}% ขึ้นไป"
   },
   "NotificationsPage": {
     "pageTitle": "การแจ้งเตือน",
@@ -437,7 +446,10 @@
     "channelsTest": "ส่งข้อความทดสอบ",
     "channelsSaved": "บันทึกแล้ว",
     "channelsSaveFailed": "บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง",
-    "channelsTestNone": "ยังไม่ได้เปิดช่องทางใด กรุณาบันทึกก่อนทดสอบ"
+    "channelsTestNone": "ยังไม่ได้เปิดช่องทางใด กรุณาบันทึกก่อนทดสอบ",
+    "openTor": "ดูรายละเอียด TOR",
+    "matchScore": "ตรง {score}%",
+    "matchScoreHint": "คะแนนความเหมาะสมของ TOR นี้กับโปรไฟล์บริษัท"
   },
   "PublicPage": {
     "pageTitle": "ค้นหาประกาศ TOR ซอฟต์แวร์",
@@ -517,7 +529,6 @@
     "saveButton": "บันทึก",
     "viewOriginalEgp": "ดูต้นฉบับ",
     "aiAnalyzedBy": "วิเคราะห์โดย Vertex AI อัตโนมัติ",
-    "aiExtractedFrom": "สกัดข้อมูลจาก TOR PDF · ความเชื่อมั่น 94%",
     "scopeOfWork": "ขอบเขตงาน",
     "qualifications": "คุณสมบัติผู้เสนอ",
     "deliverables": "สิ่งที่ต้องส่งมอบ",
@@ -578,7 +589,13 @@
     "penaltyLabel": "ค่าปรับ",
     "warrantyLabel": "การรับประกัน",
     "contactLabel": "ติดต่อสอบถาม",
-    "lowConfidenceNote": "เอกสารอ่านได้ไม่ชัดเจน รายละเอียดอาจไม่ครบ โปรดตรวจสอบกับต้นฉบับ",
+    "lowConfidenceNote": "ความเชื่อมั่นต่ำ ข้อมูลอาจไม่ครบหรือคลาดเคลื่อน โปรดตรวจสอบกับเอกสารต้นฉบับก่อนใช้อ้างอิง",
+    "confidenceLabel": "ความเชื่อมั่น {score}%",
+    "confidenceHint": "คำนวณจากความครบถ้วนของข้อมูลที่อ่านได้ และการเทียบตัวเลขกับที่หน่วยงานประกาศบน e-GP",
+    "openSourceDocument": "เปิดเอกสารต้นฉบับ",
+    "fieldVerify": "โปรดตรวจสอบ",
+    "fieldVerifyHint": "ไม่ตรงกับตัวเลขที่หน่วยงานประกาศบน e-GP",
+    "fieldConfirmed": "ตรงกับ e-GP",
     "timelineHeading": "สถานะโครงการ",
     "timelineLegendReached": "มีประกาศแล้ว",
     "timelineLegendCurrent": "สถานะปัจจุบัน",
@@ -647,7 +664,8 @@
     "proposalDisclaimer": "ร่างนี้สร้างโดย AI เพื่อใช้เป็นจุดเริ่มต้น โปรดตรวจทานและแก้ไขก่อนยื่นจริงทุกครั้ง",
     "proposalSignInRequired": "กรุณาเข้าสู่ระบบก่อนสร้างร่าง Proposal",
     "proposalAiUnavailable": "ระบบ AI ยังไม่พร้อมใช้งานในขณะนี้",
-    "proposalFailed": "สร้างร่างไม่สำเร็จ ลองใหม่อีกครั้ง"
+    "proposalFailed": "สร้างร่างไม่สำเร็จ ลองใหม่อีกครั้ง",
+    "lastEdited": "ข้อมูลแก้ไขล่าสุดโดย {by} เมื่อ {date}"
   },
   "OwnerPage": {
     "stagePillAll": "ทั้งหมด",
@@ -810,7 +828,9 @@
       "success": "สำเร็จ",
       "partial": "บางส่วน",
       "failed": "ล้มเหลว"
-    }
+    },
+    "runAgainCta": "ลองใหม่อีกครั้ง",
+    "runAgainPending": "กำลังดึงข้อมูล…"
   },
   "AdminAccountsPage": {
     "title": "บัญชีรออนุมัติ",
@@ -880,7 +900,15 @@
     "roleViewer": "ประชาชนทั่วไป",
     "roleFilterLabel": "กรองตามประเภทบัญชี",
     "roleFilterAll": "ทุกประเภท",
-    "roleFilterStaff": "เจ้าหน้าที่"
+    "roleFilterStaff": "เจ้าหน้าที่",
+    "editAction": "แก้ไข",
+    "nameLabel": "ชื่อ",
+    "roleLabel": "บทบาท",
+    "roleLockedOrg": "บัญชีบริษัทเปลี่ยนบทบาทไม่ได้",
+    "saveAction": "บันทึก",
+    "savingAction": "กำลังบันทึก...",
+    "cancelAction": "ยกเลิก",
+    "roleChangeNote": "เมื่อบันทึก ผู้ใช้จะถูกออกจากระบบและต้องเข้าสู่ระบบใหม่ด้วยบทบาทใหม่"
   },
   "OpportunityCard": {
     "newBadge": "ใหม่",
@@ -1006,5 +1034,43 @@
     "archiveFailed": "เปิดชุดเอกสารนี้บนเว็บไม่ได้",
     "archiveEmpty": "ไม่มีไฟล์ PDF หรือรูปภาพในชุดเอกสารนี้",
     "downloadZip": "ดาวน์โหลดไฟล์ zip"
+  },
+  "AccountLinks": {
+    "emailLabel": "อีเมล",
+    "forgotTitle": "ลืมรหัสผ่าน",
+    "forgotDescription": "กรอกอีเมลที่ใช้สมัคร เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้",
+    "sendResetLink": "ส่งลิงก์ตั้งรหัสผ่านใหม่",
+    "sending": "กำลังส่ง...",
+    "forgotSentTitle": "ตรวจสอบอีเมลของคุณ",
+    "forgotSentBody": "ถ้า <bold>{email}</bold> มีบัญชีอยู่ในระบบ เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่ไปแล้ว ลิงก์ใช้ได้ภายใน 1 ชั่วโมง ถ้าไม่เห็นในกล่องจดหมาย ลองดูในโฟลเดอร์สแปม",
+    "tryAnotherEmail": "ใช้อีเมลอื่น",
+    "rememberedPassword": "นึกรหัสผ่านออกแล้ว?",
+    "signIn": "เข้าสู่ระบบ",
+    "resetTitle": "ตั้งรหัสผ่านใหม่",
+    "resetDescription": "รหัสผ่านต้องมีอย่างน้อย {min} ตัวอักษร",
+    "newPasswordLabel": "รหัสผ่านใหม่",
+    "confirmPasswordLabel": "ยืนยันรหัสผ่านใหม่",
+    "passwordTooShort": "รหัสผ่านต้องมีอย่างน้อย {min} ตัวอักษร",
+    "passwordMismatch": "รหัสผ่านทั้งสองช่องไม่ตรงกัน",
+    "savePassword": "บันทึกรหัสผ่านใหม่",
+    "saving": "กำลังบันทึก...",
+    "resetDoneTitle": "ตั้งรหัสผ่านใหม่แล้ว",
+    "resetDoneBody": "เข้าสู่ระบบด้วยรหัสผ่านใหม่ได้เลย",
+    "goToLogin": "ไปหน้าเข้าสู่ระบบ",
+    "missingTokenTitle": "ลิงก์ไม่สมบูรณ์",
+    "missingTokenBody": "เปิดลิงก์จากอีเมลอีกครั้ง หรือขอลิงก์ใหม่",
+    "linkExpiredTitle": "ลิงก์ใช้ไม่ได้แล้ว",
+    "requestNewLink": "ขอลิงก์ใหม่",
+    "verifyTitle": "ยืนยันอีเมลของคุณ",
+    "verifyDescription": "กดปุ่มด้านล่างเพื่อยืนยันว่าอีเมลนี้เป็นของคุณ",
+    "verifyButton": "ยืนยันอีเมล",
+    "verifying": "กำลังยืนยัน...",
+    "verifiedTitle": "ยืนยันอีเมลแล้ว",
+    "verifiedPending": "บัญชีของคุณรอผู้ดูแลระบบอนุมัติ เราจะแจ้งผลทางอีเมลภายใน 1-2 วันทำการ",
+    "verifiedReady": "เข้าสู่ระบบได้เลย",
+    "verifyFailedTitle": "ยืนยันอีเมลไม่สำเร็จ",
+    "resendPrompt": "กรอกอีเมลเพื่อรับลิงก์ยืนยันใหม่",
+    "resendButton": "ส่งลิงก์ยืนยันอีกครั้ง",
+    "resendSent": "ส่งลิงก์ยืนยันใหม่แล้ว ตรวจสอบกล่องจดหมาย (และโฟลเดอร์สแปม)"
   }
 }

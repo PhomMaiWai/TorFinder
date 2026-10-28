@@ -65,6 +65,28 @@ export type TorContract = {
   durationDays: number | string | null;
 };
 
+export const TOR_CLASSIFICATIONS = ["software", "not-software"] as const;
+export type TorClassification = (typeof TOR_CLASSIFICATIONS)[number];
+
+export const CLASSIFICATION_LABEL: Record<TorClassification, string> = {
+  software: "งานซอฟต์แวร์",
+  "not-software": "ไม่ใช่งานซอฟต์แวร์",
+};
+
+/** How the admin pages name each field an admin can correct (and lock). */
+export const TOR_FIELD_LABEL: Record<string, string> = {
+  title: "ชื่อโครงการ",
+  agency: "หน่วยงาน",
+  budget: "งบประมาณ",
+  deadline: "วันที่ปิดรับ",
+  daysLeft: "จำนวนวันที่เหลือ",
+  tags: "แท็ก",
+  stage: "สถานะ TOR",
+  summary: "รายละเอียด",
+  budgetStatus: "สถานะงบประมาณ",
+  classification: "ประเภทงาน",
+};
+
 export type TorRecord = {
   id: string;
   title: string;
@@ -103,6 +125,12 @@ export type TorRecord = {
   }[];
   /** Set while the announcement is hidden from listings; absent when live. */
   deletedAt?: string;
+  /** Absent means software; an admin marks a record "not-software" to take it out of the listings. */
+  classification?: TorClassification;
+  /** The last admin correction. */
+  lastEdited?: { by: string; at: string };
+  /** Fields an admin corrected, which a re-import leaves alone. */
+  lockedFields?: string[];
   /** Present once a model has read the announcement document. */
   extraction?: TorExtraction;
   /** Sent by the backend; absent on the showcase records. */
@@ -145,11 +173,26 @@ export type TorExtraction = {
   penalty?: string | null;
   warrantyPeriod?: string | null;
   contact?: string | null;
-  /** 0-1; low values are shown as needing a look at the source document. */
+  /** The model's own estimate, 0-1. Shown only through `assessment`. */
   confidence: number;
   model: string;
   documentUrl: string;
   extractedAt: string;
+  /** Worked out by the backend on read; absent on mock records. */
+  assessment?: ExtractionAssessment;
+};
+
+/** Figures both the document and the portal state, so one checks the other. */
+export type CheckedField = "budgetAmount" | "referencePrice";
+
+/** How far an extraction can be trusted, judged on evidence, not the model's word. */
+export type ExtractionAssessment = {
+  score: number;
+  level: "high" | "medium" | "low";
+  /** Figures that match what the agency published on e-GP. */
+  confirmed: CheckedField[];
+  /** Figures that differ from e-GP's: the reader should check the document. */
+  verify: CheckedField[];
 };
 
 /** How this budget compares with announcements about the same kind of work. */

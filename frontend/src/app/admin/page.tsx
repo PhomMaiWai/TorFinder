@@ -2,9 +2,12 @@ import { Activity, AlertTriangle, Check, FileText, Plus, UserCheck, Users } from
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
+import { RunAgainButton } from "@/components/admin/run-again-button";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { fetchEgpMetrics, fetchUserDirectory } from "@/lib/admin-api";
 import { thaiDateTime, timeAgo } from "@/lib/datetime";
+
+import { runEgpSyncAgain } from "./actions";
 
 export default async function AdminOverviewPage() {
   const [metrics, users, t] = await Promise.all([
@@ -90,7 +93,14 @@ export default async function AdminOverviewPage() {
 
         {/* Sync history */}
         <div className="rounded-xl border border-border bg-surface p-6">
-          <h2 className="mb-4 text-base font-bold text-ink">{t("scrapeHistoryHeading")}</h2>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold text-ink">{t("scrapeHistoryHeading")}</h2>
+            {!healthy && (
+              <form action={runEgpSyncAgain}>
+                <RunAgainButton label={t("runAgainCta")} pendingLabel={t("runAgainPending")} />
+              </form>
+            )}
+          </div>
           {metrics.history.length === 0 ? (
             <p className="text-sm text-ink-muted">{t("noRunsYet")}</p>
           ) : (

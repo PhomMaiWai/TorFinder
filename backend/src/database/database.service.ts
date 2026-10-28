@@ -8,7 +8,7 @@ import { FeedbackStatus } from "../feedback/feedback.constants";
 import { hashPassword } from "../common/password";
 import { Role } from "../common/roles";
 import { env } from "../config/env";
-import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor/tor.constants";
+import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES, TorClassification } from "../tor/tor.constants";
 import { SEED_USERS } from "./seed-data";
 
 export const ACCOUNT_STATUSES = ["pending", "approved", "rejected"] as const;
@@ -40,6 +40,10 @@ export type CompanyProfile = {
   /** The project size the company wants to bid on, in baht. */
   preferredBudgetMin?: number;
   preferredBudgetMax?: number;
+  /** Whether to hear about matching announcements; absent means yes. */
+  matchAlerts?: boolean;
+  /** The lowest match score worth an alert, 0-100; absent means the deployment's default. */
+  matchThreshold?: number;
 };
 
 export type NotificationChannels = {
@@ -75,6 +79,35 @@ export type UserDoc = {
   suspended?: boolean;
   /** Stamped on every successful login/Google sign-in — see AuthService.issueSession. */
   lastLoginAt?: Date;
+  /**
+   * `false` until the owner of a password sign-up opens the link mailed to
+   * them; set true by that link, a password reset (which proves the same
+   * inbox) or Google. Absent on accounts made before verification existed,
+   * which are treated as verified rather than locked out.
+   */
+  emailVerified?: boolean;
+  /**
+   * The floor for a session token's `iat` (issued-at) to still be accepted —
+   * see SessionRevocationService. Bumped on logout, password reset, and
+   * suspension; absent means no token for this account has ever been revoked.
+   */
+  sessionMinIssuedAt?: Date;
+};
+
+/** What a single-use emailed link is for. */
+export type AuthTokenPurpose = "password-reset" | "email-verify";
+
+/**
+ * One emailed link. Only the SHA-256 of the token is kept, so a copy of the
+ * database can't be turned into working links; Mongo's TTL index removes the
+ * row once it expires.
+ */
+export type AuthTokenDoc = {
+  userId: ObjectId;
+  purpose: AuthTokenPurpose;
+  tokenHash: string;
+  expiresAt: Date;
+  createdAt: Date;
 };
 
 export type TorContract = {
@@ -174,6 +207,17 @@ export type TorDoc = {
   enrichedAt?: Date;
   /** Which generation of enrichment produced the fields above (see EgpService). */
   enrichVersion?: number;
+  /** Absent means software — see TOR_CLASSIFICATIONS. Only an admin sets it. */
+  classification?: TorClassification;
+  /** The last admin correction: who made it and when. Shown with the record. */
+  lastEdited?: { by: string; at: Date };
+  /**
+   * Fields an admin corrected. A re-import leaves them as the admin left them,
+   * and a record with any is never purged or superseded by an import.
+   */
+  lockedFields?: string[];
+  /** The project owner account responsible for this announcement; what /api/owner reads by. */
+  ownerId?: ObjectId;
 };
 
 /** A public comment on one announcement, shown only once it is approved. */
@@ -194,8 +238,26 @@ export type SavedTorDoc = {
   createdAt: Date;
 };
 
+/** The search page's filters, stored as it sent them; see SearchFiltersDto. */
+export type SavedSearchFilters = {
+  query?: string;
+  sort?: string;
+  statuses?: string[];
+  deadline?: string;
+  years?: number[];
+  agencies?: string[];
+  budgets?: string[];
+};
+
+export type SavedSearchDoc = {
+  userId: ObjectId;
+  name: string;
+  filters: SavedSearchFilters;
+  createdAt: Date;
+};
+
 /**
- * "match" comes from each import (MatchingService.notifyNewMatches) and
+ * "match" comes from each import (MatchingService.notifyMatches) and
  * "approval" from account review. "feedback" has no producer yet, but the type
  * stays ready for when it does, the same way TorSource anticipates values
  * before every source exists.
@@ -210,7 +272,28 @@ export type NotificationDoc = {
   message: string;
   /** Set when the notification is about a specific announcement. */
   torId?: ObjectId;
+  /** A match alert's score, 0-100, so the list can show it apart from the title. */
+  score?: number;
   read: boolean;
+  createdAt: Date;
+};
+
+/**
+ * When a project is worth telling a company about: as soon as it appears
+ * (plan, draft or reference price — time to prepare), and again when bids open.
+ */
+export type MatchAlertPhase = "early" | "invitation";
+
+/**
+ * One match alert already sent, so a company hears about each project once
+ * per phase however many times it is imported or re-scored. Keyed by the
+ * e-GP project number where there is one: each stage of a project is its own
+ * record, and the draft and the invitation are still one project.
+ */
+export type MatchAlertDoc = {
+  userId: ObjectId;
+  projectKey: string;
+  phase: MatchAlertPhase;
   createdAt: Date;
 };
 
@@ -265,9 +348,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   tors!: Collection<TorDoc>;
   feedback!: Collection<FeedbackDoc>;
   savedTors!: Collection<SavedTorDoc>;
+  savedSearches!: Collection<SavedSearchDoc>;
   notifications!: Collection<NotificationDoc>;
   syncRuns!: Collection<SyncRunDoc>;
   auditLogEntries!: Collection<AuditLogEntryDoc>;
+  authTokens!: Collection<AuthTokenDoc>;
+  matchAlerts!: Collection<MatchAlertDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -275,13 +361,18 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.tors = this.client.db().collection<TorDoc>("tors");
     this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
     this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
+    this.savedSearches = this.client.db().collection<SavedSearchDoc>("savedSearches");
     this.notifications = this.client.db().collection<NotificationDoc>("notifications");
     this.syncRuns = this.client.db().collection<SyncRunDoc>("syncRuns");
     this.auditLogEntries = this.client.db().collection<AuditLogEntryDoc>("auditLogEntries");
+    this.authTokens = this.client.db().collection<AuthTokenDoc>("authTokens");
+    this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
     await this.tors.createIndex({ createdAt: -1 });
+    // An owner's dashboard lists only their own announcements, newest first.
+    await this.tors.createIndex({ ownerId: 1, createdAt: -1 });
     // Makes the e-GP import idempotent: re-running it updates instead of duplicating.
     await this.tors.createIndex({ sourceRef: 1 }, { unique: true, sparse: true });
     // Serves the "which projects already have a winner" lookup every listing makes.
@@ -294,10 +385,18 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.savedTors.createIndex({ userId: 1, torId: 1 }, { unique: true });
     // findOwn reads one account's saves newest first; this serves it without an in-memory sort.
     await this.savedTors.createIndex({ userId: 1, createdAt: -1 });
+    await this.savedSearches.createIndex({ userId: 1, name: 1 }, { unique: true });
+    await this.savedSearches.createIndex({ userId: 1, createdAt: -1 });
     await this.notifications.createIndex({ userId: 1, createdAt: -1 });
     // The only query pattern the admin dashboard needs: newest runs first.
     await this.syncRuns.createIndex({ startedAt: -1 });
     await this.auditLogEntries.createIndex({ createdAt: -1 });
+    await this.authTokens.createIndex({ tokenHash: 1 }, { unique: true });
+    await this.authTokens.createIndex({ userId: 1, purpose: 1 });
+    // Mongo deletes each link once it expires; a used one is deleted on use.
+    await this.authTokens.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    // Doubles as the guard: two runs racing on one project can't both alert.
+    await this.matchAlerts.createIndex({ userId: 1, projectKey: 1, phase: 1 }, { unique: true });
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
     await this.seed();

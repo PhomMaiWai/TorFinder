@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,18 +7,27 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { OAuth2Client } from "google-auth-library";
-import { MongoServerError, WithId } from "mongodb";
+import { MongoServerError, ObjectId, WithId } from "mongodb";
 
-import { hashPassword, verifyPassword } from "../common/password";
+import { hashPassword, isCommonPassword, verifyPassword } from "../common/password";
+import { SessionRevocationService } from "../common/session-revocation.service";
 import { createSessionToken } from "../common/token";
 import { env } from "../config/env";
 import { DatabaseService, UserDoc } from "../database/database.service";
+import { AccountLinksService } from "./account-links.service";
+import { EmailOnlyDto, ResetPasswordDto, VerifyEmailDto } from "./dto/account-links.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
 import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
 
 const DUPLICATE_KEY = 11000;
+
+/** Told to the client so it can offer to resend the link, rather than a dead end. */
+export const EMAIL_UNVERIFIED = "email-unverified";
+
+/** The one answer to "send me a link": the same whether or not the address has an account. */
+const LINK_SENT = { ok: true as const };
 
 // A dedicated client per request would re-fetch Google's signing keys every
 // time; the library caches them internally, so one shared instance is correct.
@@ -27,14 +37,25 @@ const googleClient = new OAuth2Client(env.googleClientId);
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly links: AccountLinksService,
+    private readonly revocation: SessionRevocationService,
+  ) {}
 
   async signup({ email, password, ...company }: SignupDto) {
+    // ASVS 6.2.4: reject passwords that would fall to a first-pass dictionary
+    // attack, before they're ever hashed.
+    if (isCommonPassword(password)) {
+      throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
+    }
     const { hash, salt } = await hashPassword(password);
+    const address = email.trim().toLowerCase();
 
+    let userId: ObjectId;
     try {
-      await this.db.users.insertOne({
-        email: email.trim().toLowerCase(),
+      ({ insertedId: userId } = await this.db.users.insertOne({
+        email: address,
         name: company.companyName,
         role: "org",
         // Every organization starts pending; an admin decides from /admin/accounts.
@@ -43,7 +64,8 @@ export class AuthService {
         passwordSalt: salt,
         createdAt: new Date(),
         company,
-      });
+        emailVerified: false,
+      }));
     } catch (error) {
       // The unique index on email is what actually guards against duplicates —
       // checking first would still race between two concurrent signups.
@@ -53,6 +75,7 @@ export class AuthService {
       throw error;
     }
 
+    await this.links.send({ _id: userId, email: address }, "email-verify");
     return { status: "pending" as const, companyName: company.companyName };
   }
 
@@ -69,8 +92,78 @@ export class AuthService {
     ) {
       throw new UnauthorizedException("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     }
+    // After the password, so only the account's owner learns its address is unconfirmed.
+    if (user.emailVerified === false) {
+      throw new ForbiddenException({
+        statusCode: 403,
+        message: "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ โดยกดลิงก์ที่ส่งไปทางอีเมล",
+        code: EMAIL_UNVERIFIED,
+      });
+    }
 
     return this.issueSession(user);
+  }
+
+  /**
+   * Mails a reset link when the address has an account. The answer is the
+   * same either way, so the form can't be used to find out who has one.
+   * Works for a Google-only account too: the link proves the same inbox.
+   */
+  async forgotPassword({ email }: EmailOnlyDto) {
+    const user = await this.db.users.findOne(
+      { email: email.trim().toLowerCase() },
+      { projection: { email: 1, suspended: 1 } },
+    );
+    if (user && !user.suspended) await this.links.send(user, "password-reset");
+    return LINK_SENT;
+  }
+
+  /** Sets the new password. The link also proves the inbox, so the address counts as verified. */
+  async resetPassword({ token, password }: ResetPasswordDto) {
+    const userId = await this.links.consume(token, "password-reset");
+    if (!userId) throw new BadRequestException("ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
+    if (isCommonPassword(password)) {
+      throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
+    }
+
+    const { hash, salt } = await hashPassword(password);
+    await this.db.users.updateOne(
+      { _id: userId },
+      { $set: { passwordHash: hash, passwordSalt: salt, emailVerified: true } },
+    );
+    // Proves the account's owner is back in control, so any token issued
+    // before now — including one an attacker who triggered this might hold —
+    // stops working (ASVS 7.4.3).
+    await this.revocation.revoke(userId.toString());
+    return { ok: true as const };
+  }
+
+  /** Invalidates every session token already issued to this account (ASVS 7.4.1). */
+  async logout(userId: string): Promise<void> {
+    await this.revocation.revoke(userId);
+  }
+
+  /** Confirms the address. Says whether the account still waits on an admin, so the page can say so. */
+  async verifyEmail({ token }: VerifyEmailDto) {
+    const userId = await this.links.consume(token, "email-verify");
+    if (!userId) throw new BadRequestException("ลิงก์ยืนยันอีเมลไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
+
+    const user = await this.db.users.findOneAndUpdate(
+      { _id: userId },
+      { $set: { emailVerified: true } },
+      { returnDocument: "after", projection: { status: 1 } },
+    );
+    return { ok: true as const, status: user?.status ?? "approved" };
+  }
+
+  /** Mails a fresh verification link to an address still waiting on one; same answer otherwise. */
+  async resendVerification({ email }: EmailOnlyDto) {
+    const user = await this.db.users.findOne(
+      { email: email.trim().toLowerCase(), emailVerified: false },
+      { projection: { email: 1 } },
+    );
+    if (user) await this.links.send(user, "email-verify");
+    return LINK_SENT;
   }
 
   async googleAuth({ credential, as }: GoogleAuthDto) {
@@ -127,6 +220,8 @@ export class AuthService {
       googleId,
       createdAt: new Date(),
       company,
+      // Google only hands over addresses it has verified (see verifyGoogleCredential).
+      emailVerified: true,
     };
 
     try {
@@ -162,7 +257,15 @@ export class AuthService {
    * the account is approved the moment Google vouches for the identity.
    */
   private async createViewer(googleId: string, email: string, name: string) {
-    const doc: UserDoc = { email, name, role: "viewer", status: "approved", googleId, createdAt: new Date() };
+    const doc: UserDoc = {
+      email,
+      name,
+      role: "viewer",
+      status: "approved",
+      googleId,
+      createdAt: new Date(),
+      emailVerified: true,
+    };
     try {
       const { insertedId } = await this.db.users.insertOne(doc);
       return { ...doc, _id: insertedId };
@@ -185,8 +288,9 @@ export class AuthService {
     const existing = await this.db.users.findOne({ email });
     if (!existing) return null;
 
-    await this.db.users.updateOne({ _id: existing._id }, { $set: { googleId } });
-    return { ...existing, googleId };
+    // Google has just proven this inbox, which settles any pending address check too.
+    await this.db.users.updateOne({ _id: existing._id }, { $set: { googleId, emailVerified: true } });
+    return { ...existing, googleId, emailVerified: true };
   }
 
   private async issueSession(user: WithId<UserDoc>) {

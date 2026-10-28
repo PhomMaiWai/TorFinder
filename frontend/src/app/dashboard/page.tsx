@@ -19,11 +19,14 @@ export default async function DashboardPage() {
     cookies().then((jar) => verifySessionToken(jar.get(SESSION_COOKIE)?.value)),
   ]);
 
+  // Only company accounts get the workspace sidebar: its menu is the company's
+  // (profile, matches). Admins and auditors have their own consoles, and a
+  // viewer has none, so they all see the public navbar here.
   const audience: Audience = !session
     ? "guest"
-    : session.role === "viewer" || session.role === "admin"
-      ? "viewer"
-      : "workspace";
+    : session.role === "org" || session.role === "owner"
+      ? "workspace"
+      : "viewer";
   // Only the summary crosses to the client, never the records themselves.
   const body = tors.length === 0 ? <OverviewEmpty /> : <Overview data={buildSiteOverview(tors)} audience={audience} />;
 

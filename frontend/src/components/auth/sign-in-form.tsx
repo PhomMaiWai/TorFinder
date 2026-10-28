@@ -8,6 +8,7 @@ import { type SubmitEvent, useState } from "react";
 
 import { GoogleCompleteSignupForm } from "@/components/auth/google-complete-signup-form";
 import { GoogleSignInButton, isGoogleSignInEnabled } from "@/components/auth/google-sign-in-button";
+import { ResendVerification } from "@/components/auth/resend-verification";
 import { PasswordInput } from "@/components/ui/password-input";
 
 const ICONS = {
@@ -52,6 +53,8 @@ export function SignInForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  /** Set when the password was right but the address is still unconfirmed. */
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleSignup, setGoogleSignup] = useState<{ credential: string; email: string } | null>(
     null,
@@ -67,6 +70,7 @@ export function SignInForm({
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setUnverifiedEmail(null);
     setIsSubmitting(true);
 
     try {
@@ -79,6 +83,7 @@ export function SignInForm({
 
       if (!response.ok) {
         setError(data.error ?? "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่");
+        if (data.code === "email-unverified") setUnverifiedEmail(email);
         return;
       }
 
@@ -148,6 +153,11 @@ export function SignInForm({
                   {error}
                 </p>
               )}
+              {unverifiedEmail && (
+                <div className="mt-3">
+                  <ResendVerification key={unverifiedEmail} email={unverifiedEmail} />
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                 <label className="block">
@@ -163,7 +173,12 @@ export function SignInForm({
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-ink">{t("passwordLabel")}</span>
+                  <span className="mb-2 flex items-center justify-between text-sm font-medium text-ink">
+                    {t("passwordLabel")}
+                    <Link href="/forgot-password" className="font-medium text-accent hover:text-accent-dark">
+                      {t("forgotPassword")}
+                    </Link>
+                  </span>
                   <PasswordInput
                     required
                     autoComplete="current-password"

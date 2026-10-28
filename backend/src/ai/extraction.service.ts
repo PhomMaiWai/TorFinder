@@ -7,8 +7,9 @@ import { env } from "../config/env";
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { GprocClient } from "../gproc/gproc.client";
 import { PROJECT_NUMBER, gprocProjectUrl } from "../gproc/gproc.constants";
+import { MatchingService } from "../matching/matching.service";
 import { READABLE_DOCUMENT_PATTERN, isReadableDocument } from "../tor/tor-documents";
-import { ACTIONABLE_WINDOW_MS, STAGE } from "../tor/tor.constants";
+import { ACTIONABLE_WINDOW_MS, LISTED_TOR, STAGE } from "../tor/tor.constants";
 import { AI_REQUEST, EXTRACTION_INSTRUCTION, EXTRACTION_SCHEMA, EXTRACTION_VERSION } from "./ai.constants";
 import { ExtractionRunResult, StoredExtraction } from "./ai.types";
 import { isUseful, parseExtraction } from "./tor-extraction";
@@ -73,6 +74,7 @@ export class ExtractionService {
     private readonly db: DatabaseService,
     private readonly vertex: VertexClient,
     private readonly gproc: GprocClient,
+    private readonly matching: MatchingService,
   ) {}
 
   /**
@@ -120,6 +122,11 @@ export class ExtractionService {
       { $set: { extraction: stored }, $unset: { extractionFailure: "" } },
     );
     this.logger.log(`Extracted ${torId} (confidence ${extraction.confidence})`);
+    // What the document asks for can lift a score over a company's line (or rule
+    // it out); a project already alerted on isn't alerted again.
+    await this.matching
+      .notifyMatches([tor._id])
+      .catch((error: unknown) => this.logger.warn(`Match notifications after extraction failed: ${String(error)}`));
     return stored;
   }
 
@@ -207,7 +214,7 @@ export class ExtractionService {
 
     return {
       // No point spending a model call on an announcement nobody can see.
-      deletedAt: { $exists: false },
+      ...LISTED_TOR,
       $and: [
         {
           $or: [

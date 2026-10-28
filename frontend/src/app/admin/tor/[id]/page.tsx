@@ -2,6 +2,7 @@ import { ArrowLeft, ExternalLink, Pencil } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { TorCorrectionInfo } from "@/components/admin/tor-correction-info";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { fetchTor } from "@/lib/tor-api";
 import { stageBadgeCls } from "@/lib/tor-ui";
@@ -34,6 +35,8 @@ export default async function AdminTorDetailPage({
             แก้ไข
           </Link>
         </div>
+
+        <TorCorrectionInfo tor={tor} />
 
         <div className="rounded-xl border border-border bg-surface p-6">
           <div className="mb-3 flex flex-wrap items-center gap-2">

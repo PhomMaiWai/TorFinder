@@ -23,6 +23,7 @@ import { TorDocumentList } from "@/components/public/tor-document-list";
 import { TorRecordFacts } from "@/components/public/tor-record-facts";
 import { TorTimeline } from "@/components/public/tor-timeline";
 import { TOR_DETAILS } from "@/data/tor-details";
+import { thaiDateTime } from "@/lib/datetime";
 import { fetchBidInsight, fetchBudgetAssessment, fetchFeedback } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
 import {
@@ -129,6 +130,11 @@ export default async function TorDetailPage({
               <Building2 size={15} className="mt-0.5 shrink-0 text-ink-subtle" />
               {tor.agency}
             </p>
+            {tor.lastEdited && (
+              <p className="mt-1.5 text-xs text-ink-subtle">
+                {t("lastEdited", { by: tor.lastEdited.by, date: thaiDateTime(tor.lastEdited.at) })}
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 gap-2 lg:flex-col">
             {sourceUrl && (

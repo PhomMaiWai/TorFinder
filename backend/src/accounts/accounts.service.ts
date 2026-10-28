@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
+import { SessionRevocationService } from "../common/session-revocation.service";
+import { Role } from "../common/roles";
 import { AccountStatus, DatabaseService, UserDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { ReviewAccountDto } from "./dto/review-account.dto";
+import { EDITABLE_ROLES, UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
 
 /**
@@ -12,6 +15,16 @@ import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
  * auditor) are seeded and managed outside the app, so they stay untouchable.
  */
 const SUSPENDABLE_ROLES = ["org", "viewer"] as const;
+
+const ROLE_LABELS: Record<Role, string> = {
+  admin: "ผู้ดูแลระบบ",
+  org: "บริษัท",
+  owner: "เจ้าของโครงการ",
+  auditor: "ผู้ตรวจสอบ",
+  viewer: "ประชาชนทั่วไป",
+};
+
+const LAST_ADMIN = "ต้องมีผู้ดูแลระบบอย่างน้อย 1 คน จึงเปลี่ยนบทบาทของผู้ดูแลระบบคนสุดท้ายไม่ได้";
 
 /** Never let password material leave the service. */
 const PUBLIC_FIELDS = {
@@ -32,6 +45,7 @@ export class AccountsService {
     private readonly db: DatabaseService,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
+    private readonly revocation: SessionRevocationService,
   ) {}
 
   async findAll(status?: AccountStatus) {
@@ -71,6 +85,10 @@ export class AccountsService {
     );
     if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
 
+    // Otherwise a token issued before the suspension keeps working for the
+    // rest of its 7-day lifetime regardless of this decision (ASVS 7.4.2).
+    if (suspended) await this.revocation.revoke(id);
+
     const companyName = result.company?.companyName ?? result.name;
     await Promise.all([
       this.notifications.create(
@@ -96,6 +114,76 @@ export class AccountsService {
 
     const { _id, ...rest } = result;
     return { id: _id.toString(), ...rest };
+  }
+
+  /**
+   * An admin renames an account or moves it between roles. Each field that
+   * actually changes gets its own audit entry. A role lives in the session
+   * token, so changing it signs the account out everywhere; otherwise a
+   * demoted admin would keep admin access until the token expired.
+   *
+   * The last admin can't be demoted — nobody would be left to undo it. The
+   * check runs again after the write, so two admins demoting each other at
+   * the same moment can't both get through.
+   */
+  async updateUser(id: string, { name, role }: UpdateUserDto, actor: string) {
+    if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
+    const _id = new ObjectId(id);
+
+    const current = await this.db.users.findOne({ _id }, { projection: PUBLIC_FIELDS });
+    if (!current) throw new NotFoundException("ไม่พบบัญชีนี้");
+
+    const roleChanges = role !== undefined && role !== current.role;
+    const nameChanges = name !== undefined && name !== current.name;
+    if (roleChanges && !(EDITABLE_ROLES as readonly Role[]).includes(current.role)) {
+      throw new BadRequestException("เปลี่ยนบทบาทของบัญชีบริษัทไม่ได้");
+    }
+    const demotesAdmin = roleChanges && current.role === "admin";
+    if (demotesAdmin && (await this.otherAdmins(_id)) === 0) throw new ConflictException(LAST_ADMIN);
+
+    if (!roleChanges && !nameChanges) {
+      const { _id: unchanged, ...rest } = current;
+      return { id: unchanged.toString(), ...rest };
+    }
+
+    const result = await this.db.users.findOneAndUpdate(
+      { _id, role: current.role },
+      { $set: { ...(nameChanges && { name }), ...(roleChanges && { role }) } },
+      { returnDocument: "after", projection: PUBLIC_FIELDS },
+    );
+    // The role moved under us between the read and the write.
+    if (!result) throw new ConflictException("บัญชีนี้ถูกแก้ไขไปแล้ว กรุณาโหลดหน้าใหม่");
+
+    if (demotesAdmin && (await this.db.users.countDocuments({ role: "admin" })) === 0) {
+      await this.db.users.updateOne({ _id }, { $set: { role: "admin" } });
+      throw new ConflictException(LAST_ADMIN);
+    }
+
+    if (roleChanges) await this.revocation.revoke(id);
+
+    await Promise.all([
+      nameChanges && this.audit.record(actor, "แก้ไขชื่อผู้ใช้", `${current.email}: ${current.name} → ${name}`),
+      roleChanges &&
+        this.audit.record(
+          actor,
+          "เปลี่ยนบทบาทผู้ใช้",
+          `${current.email}: ${ROLE_LABELS[current.role]} → ${ROLE_LABELS[result.role]}`,
+        ),
+      roleChanges &&
+        this.notifications.create(
+          _id,
+          "system",
+          "บทบาทของบัญชีคุณเปลี่ยนแล้ว",
+          `ผู้ดูแลระบบเปลี่ยนบทบาทของคุณเป็น${ROLE_LABELS[result.role]} กรุณาเข้าสู่ระบบอีกครั้ง`,
+        ),
+    ]);
+
+    const { _id: updated, ...rest } = result;
+    return { id: updated.toString(), ...rest };
+  }
+
+  private otherAdmins(id: ObjectId) {
+    return this.db.users.countDocuments({ role: "admin", _id: { $ne: id } });
   }
 
   async review(id: string, { status }: ReviewAccountDto, actor: string) {

@@ -1,13 +1,16 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
+import { assessConfidence } from "../ai/extraction-confidence";
 import { AuditService } from "../audit/audit.service";
 import { DatabaseService, TorDoc } from "../database/database.service";
+import { MatchingService } from "../matching/matching.service";
 import { env } from "../config/env";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
-import { STAGE_LISTING_ORDER } from "./tor.constants";
+import { FLAGGED_TOR_FILTERS } from "./dto/list-flagged-tor-query.dto";
+import { LISTED_TOR, LOW_COMPETITION_METHODS, STAGE_LISTING_ORDER, TOR_BUDGET_FLAGS } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
 import { buildTimeline } from "./tor-stage";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
@@ -37,11 +40,27 @@ const STAGE_RANK = {
   },
 };
 
+/** Why a flagged record is on the auditor's list, in the auditor's own terms. */
+const BUDGET_FLAG_REASON: Record<(typeof TOR_BUDGET_FLAGS)[number], string> = {
+  สูงกว่าปกติ: "วงเงินงบประมาณสูงกว่าปกติ เมื่อเทียบกับโครงการลักษณะเดียวกัน",
+  ต่ำกว่าปกติ: "วงเงินงบประมาณต่ำกว่าปกติ เมื่อเทียบกับโครงการลักษณะเดียวกัน",
+};
+
+/** A substring match on the free-text `procurementMethod` field — see LOW_COMPETITION_METHODS. */
+const LOW_COMPETITION_PATTERN = new RegExp(LOW_COMPETITION_METHODS.join("|"));
+
+function competitionReason(method: string): string {
+  return `จัดซื้อจัดจ้างด้วยวิธี${method} ซึ่งโดยลักษณะวิธีมีผู้เสนอราคาน้อยราย`;
+}
+
 @Injectable()
 export class TorService {
+  private readonly logger = new Logger(TorService.name);
+
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly matching: MatchingService,
   ) {}
 
   async create(dto: CreateTorDto) {
@@ -56,6 +75,10 @@ export class TorService {
     // insertOne mutates what it is given by adding _id — pass a copy so the
     // response keeps exposing only `id`.
     const { insertedId } = await this.db.tors.insertOne({ ...doc });
+    // Same as an import: companies it suits hear about it. A failed send doesn't undo the record.
+    await this.matching
+      .notifyMatches([insertedId])
+      .catch((error: unknown) => this.logger.warn(`Match notifications failed: ${String(error)}`));
     return { id: insertedId.toString(), ...doc };
   }
 
@@ -79,7 +102,7 @@ export class TorService {
     // Deleted records stay in the collection but out of every listing except
     // the one that exists to restore them.
     const filter: Filter<TorDoc> = {
-      deletedAt: { $exists: false },
+      ...LISTED_TOR,
       createdAt: { $gte: env.torListedSince },
     };
     // Imported records carry their portal as the prefix of `sourceRef`, so the
@@ -144,6 +167,10 @@ export class TorService {
     return {
       id: _id.toString(),
       ...rest,
+      extraction: rest.extraction && {
+        ...rest.extraction,
+        assessment: assessConfidence(rest.extraction, rest),
+      },
       // Which files the detail page can show in place rather than link out to.
       documents: rest.documents?.map((file) => ({
         ...file,
@@ -171,6 +198,85 @@ export class TorService {
       .sort({ deletedAt: -1 })
       .toArray();
     return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+  }
+
+  /**
+   * Announcements worth the Auditor Office's attention, on either of two
+   * independent grounds — never a conclusion on its own, just worth a second
+   * look:
+   *  - budget: a price well outside what comparable projects asked for, in
+   *    either direction ("ปกติ" and never-assessed records never appear here;
+   *    see refreshBudgetStatuses).
+   *  - competition: procured by a method whose nature involves few bidders
+   *    (see LOW_COMPETITION_METHODS — the Auditor Office's own agreed list).
+   * A record can be on the list for one reason, the other, or both.
+   */
+  async findFlagged(page = 1, pageSize = 20, flag?: (typeof FLAGGED_TOR_FILTERS)[number]) {
+    const budgetCondition: Filter<TorDoc> = { budgetStatus: { $in: TOR_BUDGET_FLAGS } };
+    const competitionCondition: Filter<TorDoc> = { procurementMethod: { $regex: LOW_COMPETITION_PATTERN } };
+
+    const flagCondition: Filter<TorDoc> =
+      flag === "budget-high"
+        ? { budgetStatus: "สูงกว่าปกติ" }
+        : flag === "budget-low"
+          ? { budgetStatus: "ต่ำกว่าปกติ" }
+          : flag === "competition"
+            ? competitionCondition
+            : { $or: [budgetCondition, competitionCondition] };
+
+    const filter: Filter<TorDoc> = { ...LISTED_TOR, ...flagCondition };
+    const projection = {
+      title: 1,
+      agency: 1,
+      budget: 1,
+      budgetAmount: 1,
+      stage: 1,
+      budgetStatus: 1,
+      procurementMethod: 1,
+      sourceUrl: 1,
+      projectNumber: 1,
+      createdAt: 1,
+    };
+
+    const [docs, total] = await Promise.all([
+      this.db.tors
+        .find(filter, { projection })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .toArray(),
+      this.db.tors.countDocuments(filter),
+    ]);
+
+    return {
+      total,
+      page,
+      pageSize,
+      items: docs.map(({ _id, budgetStatus: status, procurementMethod, ...rest }) => {
+        const budgetFlagged =
+          status && TOR_BUDGET_FLAGS.includes(status as (typeof TOR_BUDGET_FLAGS)[number])
+            ? (status as (typeof TOR_BUDGET_FLAGS)[number])
+            : undefined;
+        const competitionFlagged =
+          procurementMethod && LOW_COMPETITION_PATTERN.test(procurementMethod) ? procurementMethod : undefined;
+
+        const reasons: string[] = [];
+        if (budgetFlagged) reasons.push(BUDGET_FLAG_REASON[budgetFlagged]);
+        if (competitionFlagged) reasons.push(competitionReason(competitionFlagged));
+
+        // Only ever surfaced when it's actually *why* the record is on the
+        // list — a "ปกติ" budgetStatus or a competitive procurementMethod
+        // (e.g. "e-bidding") on a record flagged for the other reason must
+        // never render as if it were itself a flag.
+        return {
+          id: _id.toString(),
+          ...rest,
+          budgetStatus: budgetFlagged,
+          procurementMethod: competitionFlagged,
+          reasons,
+        };
+      }),
+    };
   }
 
   /**
@@ -204,21 +310,106 @@ export class TorService {
     return { id: _id.toString(), ...rest };
   }
 
-  async update(id: string, dto: UpdateTorDto) {
+  /**
+   * An admin's correction. Only the fields that actually differ from what is
+   * stored are written, and each one is locked so the next import of the same
+   * record leaves it alone (TorImportService). The record remembers who made
+   * the last correction and when; the audit log says what changed.
+   */
+  async update(id: string, dto: UpdateTorDto, editor: { email: string; name: string }) {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบรายการ TOR");
+    const _id = new ObjectId(id);
 
-    // Mongo's driver serializes `undefined` values as null in $set, which would
-    // wipe out fields the caller never touched — so only send the ones present.
-    const updates = Object.fromEntries(Object.entries(dto).filter(([, v]) => v !== undefined));
+    const current = await this.db.tors.findOne({ _id });
+    if (!current) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    const changes = changedFields(current, dto);
+    if (Object.keys(changes).length === 0) {
+      const { _id: unchanged, ...rest } = current;
+      return { id: unchanged.toString(), ...rest };
+    }
 
     const result = await this.db.tors.findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: updates },
+      { _id },
+      {
+        $set: { ...changes, lastEdited: { by: editor.name, at: new Date() } },
+        $addToSet: { lockedFields: { $each: Object.keys(changes) } },
+      },
       { returnDocument: "after" },
     );
     if (!result) throw new NotFoundException("ไม่พบรายการ TOR");
 
-    const { _id, ...rest } = result;
-    return { id: _id.toString(), ...rest };
+    const { classification, ...corrected } = changes;
+    await Promise.all([
+      Object.keys(corrected).length > 0 &&
+        this.audit.record(
+          editor.email,
+          "แก้ไขข้อมูลประกาศ TOR",
+          `${result.title}: ${Object.keys(corrected)
+            .map((field) => FIELD_LABELS[field as keyof typeof FIELD_LABELS] ?? field)
+            .join(", ")}`,
+        ),
+      classification &&
+        this.audit.record(
+          editor.email,
+          "จัดประเภทประกาศ TOR ใหม่",
+          `${result.title} → ${classification === "not-software" ? "ไม่ใช่งานซอฟต์แวร์" : "งานซอฟต์แวร์"}`,
+        ),
+    ]);
+
+    const { _id: updated, ...rest } = result;
+    return { id: updated.toString(), ...rest };
   }
+
+  /** Announcements an admin marked as outside software work — the list that can put them back. */
+  async findNotSoftware() {
+    const docs = await this.db.tors
+      .find(
+        { classification: "not-software", deletedAt: { $exists: false } },
+        { projection: { extraction: 0, extractionFailure: 0 } },
+      )
+      .sort({ "lastEdited.at": -1 })
+      .toArray();
+    return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+  }
+}
+
+/** How the audit log names each field an admin can correct. */
+const FIELD_LABELS = {
+  title: "ชื่อโครงการ",
+  agency: "หน่วยงาน",
+  budget: "งบประมาณ",
+  deadline: "วันที่ปิดรับ",
+  daysLeft: "จำนวนวันที่เหลือ",
+  tags: "แท็ก",
+  stage: "สถานะ",
+  summary: "รายละเอียด",
+  budgetStatus: "สถานะงบประมาณ",
+} as const;
+
+/**
+ * The fields of an edit that differ from the stored record. The edit form
+ * sends every field every time, so without this a save would lock fields the
+ * admin never touched. Two values read the same to the admin are not a change:
+ * "ปกติ" against no budget status, and the days left the detail page showed
+ * (worked out from the deadline) against the stored count.
+ */
+function changedFields(current: TorDoc, dto: UpdateTorDto): Partial<TorDoc> {
+  const changes: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(dto)) {
+    if (value === undefined) continue;
+    const stored = current[key as keyof TorDoc];
+    const same =
+      key === "tags"
+        ? JSON.stringify(stored ?? []) === JSON.stringify(value)
+        : key === "budgetStatus"
+          ? (stored ?? "ปกติ") === value
+          : key === "classification"
+            ? (stored ?? "software") === value
+            : key === "daysLeft"
+              ? stored === value || currentDaysLeft(current) === value
+              : stored === value;
+    if (!same) changes[key] = value;
+  }
+  return changes as Partial<TorDoc>;
 }
