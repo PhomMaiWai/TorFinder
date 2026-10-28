@@ -37,6 +37,9 @@ export const STAGE_LISTING_ORDER = [
 
 export const TOR_BUDGET_STATUSES = ["สูงกว่าปกติ", "ต่ำกว่าปกติ", "ปกติ"] as const;
 
+/** The two TOR_BUDGET_STATUSES worth an auditor's attention — "ปกติ" isn't a flag. */
+export const TOR_BUDGET_FLAGS = ["สูงกว่าปกติ", "ต่ำกว่าปกติ"] as const;
+
 /**
  * Where a project stands in the national e-GP's procurement flow, in the order
  * it moves: preparing the TOR, the purchase report, the invitation to bid, the

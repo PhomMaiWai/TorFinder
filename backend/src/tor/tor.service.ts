@@ -9,7 +9,7 @@ import { env } from "../config/env";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
-import { STAGE_LISTING_ORDER } from "./tor.constants";
+import { STAGE_LISTING_ORDER, TOR_BUDGET_FLAGS } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
 import { buildTimeline } from "./tor-stage";
 import { isLikelyDuplicateTitle, isLikelySameAgency } from "./tor-dedup";
@@ -37,6 +37,12 @@ const STAGE_RANK = {
     // A stage from outside the list sorts last rather than silently first.
     in: { $cond: [{ $lt: ["$$rank", 0] }, STAGE_LISTING_ORDER.length, "$$rank"] },
   },
+};
+
+/** Why a flagged record is on the auditor's list, in the auditor's own terms. */
+const BUDGET_FLAG_REASON: Record<(typeof TOR_BUDGET_FLAGS)[number], string> = {
+  สูงกว่าปกติ: "วงเงินงบประมาณสูงกว่าปกติ เมื่อเทียบกับโครงการลักษณะเดียวกัน",
+  ต่ำกว่าปกติ: "วงเงินงบประมาณต่ำกว่าปกติ เมื่อเทียบกับโครงการลักษณะเดียวกัน",
 };
 
 @Injectable()
@@ -184,6 +190,54 @@ export class TorService {
       .sort({ deletedAt: -1 })
       .toArray();
     return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+  }
+
+  /**
+   * Announcements the budget check flagged, for the Auditor Office: a price
+   * well outside what comparable projects asked for, in either direction —
+   * never a conclusion on its own, just worth a second look. "ปกติ" and
+   * never-assessed records never appear here; see refreshBudgetStatuses.
+   */
+  async findFlagged(page = 1, pageSize = 20, budgetStatus?: (typeof TOR_BUDGET_FLAGS)[number]) {
+    const filter: Filter<TorDoc> = {
+      deletedAt: { $exists: false },
+      budgetStatus: budgetStatus ? budgetStatus : { $in: TOR_BUDGET_FLAGS },
+    };
+    const projection = {
+      title: 1,
+      agency: 1,
+      budget: 1,
+      budgetAmount: 1,
+      stage: 1,
+      budgetStatus: 1,
+      sourceUrl: 1,
+      projectNumber: 1,
+      createdAt: 1,
+    };
+
+    const [docs, total] = await Promise.all([
+      this.db.tors
+        .find(filter, { projection })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .toArray(),
+      this.db.tors.countDocuments(filter),
+    ]);
+
+    return {
+      total,
+      page,
+      pageSize,
+      items: docs.map(({ _id, budgetStatus: status, ...rest }) => ({
+        id: _id.toString(),
+        ...rest,
+        budgetStatus: status,
+        // The filter above only ever returns a flagged status, never "ปกติ" —
+        // the cast reflects that narrower reality the query already enforces.
+        reason: status ? BUDGET_FLAG_REASON[status as (typeof TOR_BUDGET_FLAGS)[number]] : "",
+      })),
+    };
   }
 
   /**

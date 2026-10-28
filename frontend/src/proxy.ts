@@ -4,13 +4,23 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { homeFor } from "@/lib/roles";
 
 /** Pages only a signed-in account may see. */
-const PROTECTED_PREFIXES = ["/dashboard", "/admin", "/owner", "/profile", "/saved", "/notifications"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/admin",
+  "/owner",
+  "/auditor",
+  "/profile",
+  "/saved",
+  "/notifications",
+];
 /**
  * Pages only an admin may see. /owner is here until there is an owner role to
  * give it to — its hide/restore actions are admin-only already, and it embeds
  * the ranked-companies panel, which is too.
  */
 const ADMIN_ONLY_PREFIXES = ["/admin", "/owner"];
+/** Pages only the Auditor Office may see. */
+const AUDITOR_ONLY_PREFIXES = ["/auditor"];
 /** The one protected page a public viewer has: their own saved list. */
 const VIEWER_PREFIXES = ["/saved"];
 /** Pages that make no sense once you are signed in. */
@@ -86,6 +96,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  if (matches(pathname, AUDITOR_ONLY_PREFIXES) && session.role !== "auditor") {
+    return NextResponse.redirect(new URL(homeFor(session.role), request.url));
+  }
+
   return NextResponse.next();
 }
 
@@ -95,6 +109,7 @@ export const config = {
     "/dashboard/:path*",
     "/admin/:path*",
     "/owner/:path*",
+    "/auditor/:path*",
     "/profile/:path*",
     "/saved/:path*",
     "/notifications/:path*",

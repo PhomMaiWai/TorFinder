@@ -67,7 +67,8 @@
     "openMenuAriaLabel": "Open menu",
     "navTorList": "TOR list",
     "navCreateTor": "Add TOR",
-    "navMatches": "Matched TORs"
+    "navMatches": "Matched TORs",
+    "navFlaggedTors": "Flagged TORs"
   },
   "Dashboard": {
     "newBadge": "New",

@@ -13,6 +13,46 @@ export async function fetchDeletedTors(): Promise<TorRecord[]> {
   );
 }
 
+export type BudgetFlag = "สูงกว่าปกติ" | "ต่ำกว่าปกติ";
+
+export type FlaggedTor = {
+  id: string;
+  title: string;
+  agency: string;
+  budget: string;
+  budgetAmount?: number;
+  stage: TorRecord["stage"];
+  budgetStatus: BudgetFlag;
+  reason: string;
+  sourceUrl?: string;
+  projectNumber?: string;
+  createdAt: string;
+};
+
+export type FlaggedTorPage = {
+  total: number;
+  page: number;
+  pageSize: number;
+  items: FlaggedTor[];
+};
+
+const EMPTY_FLAGGED_PAGE: FlaggedTorPage = { total: 0, page: 1, pageSize: 20, items: [] };
+
+/**
+ * The budget check's flagged announcements, for the Auditor Office. Returns
+ * the empty page for a caller who isn't an auditor — the list simply isn't
+ * theirs to see.
+ */
+export async function fetchFlaggedTors(page: number, budgetStatus?: BudgetFlag): Promise<FlaggedTorPage> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (budgetStatus) params.set("budgetStatus", budgetStatus);
+
+  return orEmptyWhenAnswered(
+    fetchJson<FlaggedTorPage>(`/api/tor/flagged?${params}`, { headers: await authHeaders() }),
+    EMPTY_FLAGGED_PAGE,
+  );
+}
+
 export async function deleteTor(id: string): Promise<void> {
   const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${id}`, {
     method: "DELETE",

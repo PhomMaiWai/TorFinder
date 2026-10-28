@@ -5,7 +5,7 @@ import { env } from "../config/env";
 import { CompanyProfile, DatabaseService, TorDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { awardedProjectNumbers, biddingOf } from "../tor/tor-bidding";
-import { ACTIONABLE_WINDOW_MS, STAGE } from "../tor/tor.constants";
+import { ACTIONABLE_WINDOW_MS, STAGE, TOR_BUDGET_FLAGS } from "../tor/tor.constants";
 import { currentDaysLeft } from "../tor/tor-normalize";
 import { assessBid, BidInsight } from "./bid-insight";
 import { assessBudget, BudgetAssessment } from "./budget-analysis";
@@ -359,7 +359,7 @@ export class MatchingService {
     await this.db.tors.bulkWrite(writes, { ordered: false });
 
     const flagged = await this.db.tors.countDocuments({
-      budgetStatus: { $in: ["สูงกว่าปกติ", "ต่ำกว่าปกติ"] },
+      budgetStatus: { $in: TOR_BUDGET_FLAGS },
     });
     this.logger.log(`Budget statuses refreshed: ${writes.length} assessed, ${flagged} flagged`);
     return { assessed: writes.length, flagged };
