@@ -643,7 +643,8 @@
     "proposalDisclaimer": "ร่างนี้สร้างโดย AI เพื่อใช้เป็นจุดเริ่มต้น โปรดตรวจทานและแก้ไขก่อนยื่นจริงทุกครั้ง",
     "proposalSignInRequired": "กรุณาเข้าสู่ระบบก่อนสร้างร่าง Proposal",
     "proposalAiUnavailable": "ระบบ AI ยังไม่พร้อมใช้งานในขณะนี้",
-    "proposalFailed": "สร้างร่างไม่สำเร็จ ลองใหม่อีกครั้ง"
+    "proposalFailed": "สร้างร่างไม่สำเร็จ ลองใหม่อีกครั้ง",
+    "lastEdited": "ข้อมูลแก้ไขล่าสุดโดย {by} เมื่อ {date}"
   },
   "OwnerPage": {
     "stagePillAll": "ทั้งหมด",

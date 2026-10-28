@@ -13,6 +13,14 @@ export async function fetchDeletedTors(): Promise<TorRecord[]> {
   );
 }
 
+/** Announcements an admin marked as outside software work; nothing for a non-admin. */
+export async function fetchNotSoftwareTors(): Promise<TorRecord[]> {
+  return orEmptyWhenAnswered(
+    fetchJson<TorRecord[]>("/api/tor/not-software", { headers: await authHeaders() }),
+    [],
+  );
+}
+
 export type BudgetFlag = "สูงกว่าปกติ" | "ต่ำกว่าปกติ";
 
 /** The auditor list's own tabs — one flagged reason, or every reason when omitted. */

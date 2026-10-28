@@ -643,7 +643,8 @@
     "proposalDisclaimer": "An AI-written starting point. Always review and edit it before submitting.",
     "proposalSignInRequired": "Sign in to draft a proposal",
     "proposalAiUnavailable": "The AI service isn't available right now",
-    "proposalFailed": "Couldn't create the draft — try again"
+    "proposalFailed": "Couldn't create the draft — try again",
+    "lastEdited": "Last corrected by {by} on {date}"
   },
   "OwnerPage": {
     "stagePillAll": "All",

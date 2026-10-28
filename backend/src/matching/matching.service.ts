@@ -5,7 +5,7 @@ import { env } from "../config/env";
 import { CompanyProfile, DatabaseService, TorDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { awardedProjectNumbers, biddingOf } from "../tor/tor-bidding";
-import { ACTIONABLE_WINDOW_MS, STAGE, TOR_BUDGET_FLAGS } from "../tor/tor.constants";
+import { ACTIONABLE_WINDOW_MS, LISTED_TOR, STAGE, TOR_BUDGET_FLAGS } from "../tor/tor.constants";
 import { currentDaysLeft } from "../tor/tor-normalize";
 import { assessBid, BidInsight } from "./bid-insight";
 import { assessBudget, BudgetAssessment } from "./budget-analysis";
@@ -104,7 +104,7 @@ export class MatchingService {
       this.db.tors
         .find(
           {
-            deletedAt: { $exists: false },
+            ...LISTED_TOR,
             stage: { $ne: AWARD_STAGE },
             createdAt: { $gte: new Date(Date.now() - ACTIONABLE_WINDOW_MS) },
           },
@@ -168,7 +168,7 @@ export class MatchingService {
           {
             _id: { $in: torIds },
             stage: { $ne: AWARD_STAGE },
-            deletedAt: { $exists: false },
+            ...LISTED_TOR,
             createdAt: { $gte: new Date(Date.now() - ACTIONABLE_WINDOW_MS) },
           },
           {
@@ -295,7 +295,7 @@ export class MatchingService {
     const [tor, all] = await Promise.all([
       this.db.tors.findOne({ _id: new ObjectId(torId) }, { projection }),
       this.db.tors
-        .find({ budgetAmount: { $gt: 0 }, deletedAt: { $exists: false } }, { projection })
+        .find({ budgetAmount: { $gt: 0 }, ...LISTED_TOR }, { projection })
         .toArray(),
     ]);
     if (!tor) throw new NotFoundException("ไม่พบรายการ TOR");
@@ -331,7 +331,7 @@ export class MatchingService {
       this.db.tors
         .find(
           {
-            deletedAt: { $exists: false },
+            ...LISTED_TOR,
             $or: [{ awardedAmount: { $gt: 0 } }, { "contracts.amount": { $gt: 0 } }],
           },
           { projection },
@@ -353,11 +353,20 @@ export class MatchingService {
    * written once — a new announcement can move the percentile another sits at.
    */
   async refreshBudgetStatuses(): Promise<{ assessed: number; flagged: number }> {
-    const projection = { title: 1, summary: 1, tags: 1, budgetAmount: 1, "extraction.budgetAmount": 1 };
-    const all = await this.db.tors.find({ deletedAt: { $exists: false } }, { projection }).toArray();
+    const projection = {
+      title: 1,
+      summary: 1,
+      tags: 1,
+      budgetAmount: 1,
+      lockedFields: 1,
+      "extraction.budgetAmount": 1,
+    };
+    const all = await this.db.tors.find(LISTED_TOR, { projection }).toArray();
     const priced = all.filter((tor) => tor.budgetAmount);
 
-    const writes: AnyBulkWriteOperation<TorDoc>[] = priced.map((tor) => {
+    // A verdict an admin corrected stays theirs; the record still counts as a peer for the rest.
+    const assessed = priced.filter((tor) => !tor.lockedFields?.includes("budgetStatus"));
+    const writes: AnyBulkWriteOperation<TorDoc>[] = assessed.map((tor) => {
       const { status } = assessBudget(
         { ...tor, documentBudget: tor.extraction?.budgetAmount ?? null },
         priced.map((peer) => (peer._id.equals(tor._id) ? { ...peer, budgetAmount: undefined } : peer)),

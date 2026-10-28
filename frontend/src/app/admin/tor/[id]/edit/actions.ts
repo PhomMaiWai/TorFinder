@@ -21,5 +21,5 @@ export async function updateTorEntry(id: string, formData: FormData) {
     throw new Error("อัปเดตรายการ TOR ไม่สำเร็จ");
   }
 
-  redirect("/admin");
+  redirect(`/admin/tor/${id}`);
 }

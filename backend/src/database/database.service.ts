@@ -8,7 +8,7 @@ import { FeedbackStatus } from "../feedback/feedback.constants";
 import { hashPassword } from "../common/password";
 import { Role } from "../common/roles";
 import { env } from "../config/env";
-import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES } from "../tor/tor.constants";
+import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES, TorClassification } from "../tor/tor.constants";
 import { SEED_USERS } from "./seed-data";
 
 export const ACCOUNT_STATUSES = ["pending", "approved", "rejected"] as const;
@@ -207,6 +207,15 @@ export type TorDoc = {
   enrichedAt?: Date;
   /** Which generation of enrichment produced the fields above (see EgpService). */
   enrichVersion?: number;
+  /** Absent means software — see TOR_CLASSIFICATIONS. Only an admin sets it. */
+  classification?: TorClassification;
+  /** The last admin correction: who made it and when. Shown with the record. */
+  lastEdited?: { by: string; at: Date };
+  /**
+   * Fields an admin corrected. A re-import leaves them as the admin left them,
+   * and a record with any is never purged or superseded by an import.
+   */
+  lockedFields?: string[];
   /** The project owner account responsible for this announcement; what /api/owner reads by. */
   ownerId?: ObjectId;
 };
