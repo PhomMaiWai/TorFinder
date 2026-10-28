@@ -102,9 +102,13 @@ export class ExtractionService {
     );
 
     const parsed = parseExtraction(answer);
-    const extraction = documents.some((doc) => deadlineApplies(tor.stage, doc.label))
-      ? parsed
-      : { ...parsed, deadline: null };
+    const extraction = {
+      ...parsed,
+      deadline: documents.some((doc) => deadlineApplies(tor.stage, doc.label)) ? parsed.deadline : null,
+      // Only a draft states a comment period; a date read off anything else is
+      // the bid deadline under another name.
+      feedbackDeadline: documents.some((doc) => isDraftDocument(doc.label)) ? parsed.feedbackDeadline : null,
+    };
     if (!isUseful(extraction)) {
       throw new NotFoundException("อ่านเอกสารแล้วไม่พบรายละเอียดที่ใช้ได้");
     }

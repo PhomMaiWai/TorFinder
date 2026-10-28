@@ -7,6 +7,7 @@ import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.se
 import { meaInScope } from "../tor/thai-locality";
 import {
   UNKNOWN,
+  bangkokDay,
   cleanText,
   daysUntil,
   extractProjectNumber,
@@ -179,6 +180,8 @@ export class MeaService {
       budget: formatBaht(budgetAmount),
       deadline: formatThaiDate(closesAt),
       daysLeft: daysUntil(closesAt),
+      // A draft's listing publishes the comment window itself.
+      feedbackDeadline: type.path === "Draft" ? bangkokDay(closesAt) : undefined,
       match: 0,
       tags: [type.label],
       stage: type.stage,

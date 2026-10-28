@@ -123,6 +123,7 @@ export function parseExtraction(raw: unknown): TorExtraction {
     // is better than showing a deadline 543 years out.
     deadline: dropImplausibleYear(isoDate(value.deadline)),
     deadlineTime: timeWindow(value.deadlineTime),
+    feedbackDeadline: dropImplausibleYear(isoDate(value.feedbackDeadline)),
     evaluationCriteria: text(value.evaluationCriteria),
     paymentTerms: mergeInstalments(list(value.paymentTerms)),
     bidSecurity: text(value.bidSecurity),

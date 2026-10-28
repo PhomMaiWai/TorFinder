@@ -131,6 +131,11 @@ export type TorRecord = {
   lastEdited?: { by: string; at: string };
   /** Fields an admin corrected, which a re-import leaves alone. */
   lockedFields?: string[];
+  /**
+   * The last day of public comment on the draft, as an ISO date — from the
+   * portal when it publishes one, else read off the draft document.
+   */
+  feedbackDeadline?: string;
   /** The project owner account an admin linked it to; absent when nobody is. */
   ownerId?: string;
   /** Present once a model has read the announcement document. */

@@ -623,6 +623,7 @@
     "agencyLabel": "Agency",
     "subAgencyLabel": "Unit / division",
     "biddingStatusLabel": "Bidding status",
+    "feedbackDeadlineLabel": "Comments accepted until",
     "opensAtLabel": "Bidding opened",
     "closesAtLabel": "Bidding closes",
     "submissionTime": "{time}",
