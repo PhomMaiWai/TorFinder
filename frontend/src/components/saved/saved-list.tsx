@@ -13,6 +13,8 @@ import { isClosed, isKnown, torAmount } from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
 import type { TorRecord } from "@/types/tor";
 
+import { SavedSearches } from "./saved-searches";
+
 /** Which shell the page renders in — the list itself is always the signed-in account's. */
 type SavedTorsScope = "public" | "org";
 
@@ -39,6 +41,10 @@ function SavedList({
           <p className="mt-2 text-base text-ink-muted">{t("savedListDescription")}</p>
         </div>
       )}
+
+      <SavedSearches searchPath={scope === "org" ? "/search" : "/public"} />
+
+      <h2 className="mb-4 text-lg font-bold text-ink">{t("savedTorsTitle")}</h2>
 
       {savedTors.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-transparent py-24 text-center">
