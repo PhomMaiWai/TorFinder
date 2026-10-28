@@ -8,6 +8,8 @@ export type SessionPayload = {
   email: string;
   name: string;
   role: Role;
+  /** When this token was issued, in epoch seconds — SessionRevocationService's unit of revocation. */
+  iat: number;
   exp: number;
 };
 
@@ -17,8 +19,9 @@ function sign(data: string) {
   return createHmac("sha256", env.sessionSecret).update(data).digest("base64url");
 }
 
-export function createSessionToken(payload: Omit<SessionPayload, "exp">): string {
-  const body: SessionPayload = { ...payload, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE };
+export function createSessionToken(payload: Omit<SessionPayload, "iat" | "exp">): string {
+  const iat = Math.floor(Date.now() / 1000);
+  const body: SessionPayload = { ...payload, iat, exp: iat + SESSION_MAX_AGE };
   const data = Buffer.from(JSON.stringify(body)).toString("base64url");
   return `${data}.${sign(data)}`;
 }

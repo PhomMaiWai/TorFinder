@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
+import { SessionRevocationService } from "../common/session-revocation.service";
 import { AccountStatus, DatabaseService, UserDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { ReviewAccountDto } from "./dto/review-account.dto";
@@ -32,6 +33,7 @@ export class AccountsService {
     private readonly db: DatabaseService,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
+    private readonly revocation: SessionRevocationService,
   ) {}
 
   async findAll(status?: AccountStatus) {
@@ -70,6 +72,10 @@ export class AccountsService {
       { returnDocument: "after", projection: PUBLIC_FIELDS },
     );
     if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
+
+    // Otherwise a token issued before the suspension keeps working for the
+    // rest of its 7-day lifetime regardless of this decision (ASVS 7.4.2).
+    if (suspended) await this.revocation.revoke(id);
 
     const companyName = result.company?.companyName ?? result.name;
     await Promise.all([

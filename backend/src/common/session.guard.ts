@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Request } from "express";
 
+import { SessionRevocationService } from "./session-revocation.service";
 import { SessionPayload, verifySessionToken } from "./token";
 
 /** The route's own view of who is calling. */
@@ -13,12 +14,19 @@ export type AuthenticatedRequest = Request & { session: SessionPayload };
  */
 @Injectable()
 export class SessionGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  constructor(private readonly revocation: SessionRevocationService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
     const session = scheme === "Bearer" ? verifySessionToken(token) : null;
 
-    if (!session) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
+    // Signature and exp alone aren't enough: a token can be well-formed and
+    // unexpired yet still revoked (logout, password reset, suspension) — see
+    // SessionRevocationService.
+    if (!session || !(await this.revocation.isValid(session.sub, session.iat))) {
+      throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
+    }
 
     request.session = session;
     return true;
