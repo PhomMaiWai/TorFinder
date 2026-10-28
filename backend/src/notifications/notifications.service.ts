@@ -36,6 +36,7 @@ export class NotificationsService {
     title: string,
     message: string,
     torId?: ObjectId,
+    score?: number,
   ): Promise<void> {
     await this.db.notifications.insertOne({
       userId,
@@ -43,6 +44,7 @@ export class NotificationsService {
       title,
       message,
       torId,
+      ...(score !== undefined ? { score } : {}),
       read: false,
       createdAt: new Date(),
     });

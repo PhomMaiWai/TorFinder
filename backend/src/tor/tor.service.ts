@@ -1,9 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Filter, ObjectId } from "mongodb";
 
 import { assessConfidence } from "../ai/extraction-confidence";
 import { AuditService } from "../audit/audit.service";
 import { DatabaseService, TorDoc } from "../database/database.service";
+import { MatchingService } from "../matching/matching.service";
 import { env } from "../config/env";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
@@ -40,9 +41,12 @@ const STAGE_RANK = {
 
 @Injectable()
 export class TorService {
+  private readonly logger = new Logger(TorService.name);
+
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly matching: MatchingService,
   ) {}
 
   async create(dto: CreateTorDto) {
@@ -57,6 +61,10 @@ export class TorService {
     // insertOne mutates what it is given by adding _id — pass a copy so the
     // response keeps exposing only `id`.
     const { insertedId } = await this.db.tors.insertOne({ ...doc });
+    // Same as an import: companies it suits hear about it. A failed send doesn't undo the record.
+    await this.matching
+      .notifyMatches([insertedId])
+      .catch((error: unknown) => this.logger.warn(`Match notifications failed: ${String(error)}`));
     return { id: insertedId.toString(), ...doc };
   }
 

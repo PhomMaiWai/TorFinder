@@ -127,7 +127,7 @@ export class TorImportService {
     await this.matching.refreshBudgetStatuses();
     // Telling companies is a side effect; a failed send must not fail the import.
     await this.matching
-      .notifyNewMatches(Object.values(result.upsertedIds))
+      .notifyMatches(Object.values(result.upsertedIds))
       .catch((error: unknown) => this.logger.warn(`Match notifications failed: ${String(error)}`));
 
     this.logger.log(

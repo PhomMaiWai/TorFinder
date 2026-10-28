@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
 
 import { CERTIFICATION_KEYS, Certification } from "../../matching/requirements";
 import { WORK_TYPE_KEYS, WorkType } from "../../matching/work-types";
@@ -87,4 +87,16 @@ export class UpdateCompanyProfileDto {
   @Min(0)
   @Max(100_000_000_000)
   preferredBudgetMax?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  matchAlerts?: boolean;
+
+  /** Below 40 a "match" is mostly noise; 100 would mean never. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(40)
+  @Max(95)
+  matchThreshold?: number;
 }

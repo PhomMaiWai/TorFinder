@@ -32,8 +32,14 @@ type Account = {
     certifications?: Certification[];
     preferredBudgetMin?: number;
     preferredBudgetMax?: number;
+    matchAlerts?: boolean;
+    matchThreshold?: number;
   };
 };
+
+/** The backend's NOTIFY_MATCH_THRESHOLD default, used until the company picks its own. */
+const DEFAULT_MATCH_THRESHOLD = 70;
+const MATCH_THRESHOLDS = [50, 60, 70, 80, 90];
 
 /** Digits only, shown with thousands separators; "" for nothing. */
 function bahtInput(value: number | undefined): string {
@@ -102,6 +108,8 @@ export default function ProfilePage() {
   const [certifications, setCertifications] = useState<Certification[] | undefined>(undefined);
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
+  const [matchAlerts, setMatchAlerts] = useState(true);
+  const [matchThreshold, setMatchThreshold] = useState(DEFAULT_MATCH_THRESHOLD);
   const [touchedTaxId, setTouchedTaxId] = useState(false);
 
   // A Google sign-in never collects these, so they start blank on those
@@ -126,6 +134,8 @@ export default function ProfilePage() {
     setCertifications(account.company?.certifications);
     setBudgetMin(bahtInput(account.company?.preferredBudgetMin));
     setBudgetMax(bahtInput(account.company?.preferredBudgetMax));
+    setMatchAlerts(account.company?.matchAlerts ?? true);
+    setMatchThreshold(account.company?.matchThreshold ?? DEFAULT_MATCH_THRESHOLD);
     setCompanyNameLocked(!!account.company?.companyName);
     setTaxIdLocked(!!account.company?.taxId);
   }
@@ -178,6 +188,8 @@ export default function ProfilePage() {
         certifications,
         preferredBudgetMin: parseBaht(budgetMin),
         preferredBudgetMax: parseBaht(budgetMax),
+        matchAlerts,
+        matchThreshold,
       }),
     });
 
@@ -441,6 +453,46 @@ export default function ProfilePage() {
                   />
                 </label>
               </div>
+            </div>
+          </Section>
+
+          <Section title={t("matchAlertsSectionTitle")}>
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-ink">{t("matchAlertsLabel")}</p>
+                  <p className="mt-0.5 text-sm text-ink-muted">{t("matchAlertsDescription")}</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={matchAlerts}
+                  aria-label={t("matchAlertsLabel")}
+                  onClick={() => setMatchAlerts(!matchAlerts)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                    matchAlerts ? "bg-accent" : "bg-border"
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-sm transition-transform ${
+                      matchAlerts ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <fieldset disabled={!matchAlerts} className="mt-5 border-t border-border pt-4 disabled:opacity-50">
+                <legend className="sr-only">{t("matchThresholdLabel")}</legend>
+                <p className="mb-1 text-sm font-medium text-ink">{t("matchThresholdLabel")}</p>
+                <p className="mb-3 text-sm text-ink-muted">{t("matchThresholdDescription")}</p>
+                <div className="flex flex-wrap gap-2">
+                  {MATCH_THRESHOLDS.map((value) => (
+                    <Chip key={value} active={matchThreshold === value} onClick={() => setMatchThreshold(value)}>
+                      {t("matchThresholdOption", { value })}
+                    </Chip>
+                  ))}
+                </div>
+              </fieldset>
             </div>
           </Section>
 
