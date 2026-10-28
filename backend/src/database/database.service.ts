@@ -227,6 +227,24 @@ export type SavedTorDoc = {
   createdAt: Date;
 };
 
+/** The search page's filters, stored as it sent them; see SearchFiltersDto. */
+export type SavedSearchFilters = {
+  query?: string;
+  sort?: string;
+  statuses?: string[];
+  deadline?: string;
+  years?: number[];
+  agencies?: string[];
+  budgets?: string[];
+};
+
+export type SavedSearchDoc = {
+  userId: ObjectId;
+  name: string;
+  filters: SavedSearchFilters;
+  createdAt: Date;
+};
+
 /**
  * "match" comes from each import (MatchingService.notifyMatches) and
  * "approval" from account review. "feedback" has no producer yet, but the type
@@ -319,6 +337,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   tors!: Collection<TorDoc>;
   feedback!: Collection<FeedbackDoc>;
   savedTors!: Collection<SavedTorDoc>;
+  savedSearches!: Collection<SavedSearchDoc>;
   notifications!: Collection<NotificationDoc>;
   syncRuns!: Collection<SyncRunDoc>;
   auditLogEntries!: Collection<AuditLogEntryDoc>;
@@ -331,6 +350,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.tors = this.client.db().collection<TorDoc>("tors");
     this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
     this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
+    this.savedSearches = this.client.db().collection<SavedSearchDoc>("savedSearches");
     this.notifications = this.client.db().collection<NotificationDoc>("notifications");
     this.syncRuns = this.client.db().collection<SyncRunDoc>("syncRuns");
     this.auditLogEntries = this.client.db().collection<AuditLogEntryDoc>("auditLogEntries");
@@ -352,6 +372,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.savedTors.createIndex({ userId: 1, torId: 1 }, { unique: true });
     // findOwn reads one account's saves newest first; this serves it without an in-memory sort.
     await this.savedTors.createIndex({ userId: 1, createdAt: -1 });
+    await this.savedSearches.createIndex({ userId: 1, name: 1 }, { unique: true });
+    await this.savedSearches.createIndex({ userId: 1, createdAt: -1 });
     await this.notifications.createIndex({ userId: 1, createdAt: -1 });
     // The only query pattern the admin dashboard needs: newest runs first.
     await this.syncRuns.createIndex({ startedAt: -1 });
