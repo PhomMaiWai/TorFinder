@@ -17,7 +17,7 @@ export function isSortKey(value: unknown): value is SortKey {
 /** Fewer days left than this is too little to put a proposal together. */
 export const MIN_PREP_DAYS = 3;
 
-type SortFields = Pick<
+export type SortFields = Pick<
   TorRecord,
   "budget" | "deadline" | "daysLeft" | "stage" | "bidding" | "createdAt" | "referencePrice" | "awardedAmount"
 >;
@@ -30,13 +30,13 @@ export function parseBudget(budget: string): number | null {
 }
 
 /** When the window opened: the announcement that opened it, else when the record arrived. */
-function openedAt(tor: SortFields): number {
+export function openedAt(tor: SortFields): number {
   const time = Date.parse(biddingOf(tor).opensAt ?? tor.createdAt);
   return Number.isNaN(time) ? 0 : time;
 }
 
 /** The amount the card shows: the budget, else the reference price, else what it was awarded for. */
-function amountOf(tor: SortFields): number | null {
+export function amountOf(tor: SortFields): number | null {
   return parseBudget(tor.budget) ?? tor.referencePrice ?? tor.awardedAmount ?? null;
 }
 

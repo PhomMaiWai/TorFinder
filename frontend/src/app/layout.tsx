@@ -55,6 +55,7 @@ const CLIENT_NAMESPACES = [
   "LandingPreview",
   "Navbar",
   "NotificationsPage",
+  "Overview",
   "OwnerPage",
   "ProfilePage",
   "PublicPage",

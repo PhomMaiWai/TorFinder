@@ -22,6 +22,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import {
   type AmountKind,
   biddingOf,
+  BUDGET_RANGES,
   DEADLINE_RANGES,
   daysUntilClose,
   isClosingSoon,
@@ -118,15 +119,6 @@ function SortSelect({ value, onChange }: { value: SortKey; onChange: (key: SortK
     </label>
   );
 }
-
-const BUDGET_RANGES = [
-  { id: "under-500k", labelKey: "budgetRangeUnder500k", min: 0, max: 500_000 },
-  { id: "500k-1m", labelKey: "budgetRange500kTo1m", min: 500_000, max: 1_000_000 },
-  { id: "1m-3m", labelKey: "budgetRange1to3m", min: 1_000_000, max: 3_000_000 },
-  { id: "3m-5m", labelKey: "budgetRange3to5m", min: 3_000_000, max: 5_000_000 },
-  { id: "5m-10m", labelKey: "budgetRange5to10m", min: 5_000_000, max: 10_000_000 },
-  { id: "over-10m", labelKey: "budgetRangeOver10m", min: 10_000_000, max: Infinity },
-] as const;
 
 /** Bangkok time: an announcement made on 1 Jan local time is stored as 31 Dec UTC. */
 const YEAR = new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Bangkok" });
