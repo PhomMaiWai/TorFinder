@@ -197,11 +197,25 @@ describe("admin edits a user", () => {
   });
 
   it("the loser of a concurrent edit gets 409, told to reload", async () => {
-    const viewer = await insertUser("viewer");
-    const [a, b] = await Promise.all([
-      edit(viewer.id, { role: "owner" }),
-      edit(viewer.id, { role: "auditor" }),
-    ]);
+    // Promise.all only guarantees both requests are *sent* together — not
+    // that they actually overlap once they reach the server. If request A's
+    // whole read-then-write round trip finishes before B's read even starts,
+    // B reads A's already-written role, its own conflict check matches
+    // cleanly, and both succeed: [200, 200] rather than [200, 409]. That is
+    // not a bug (optimistic locking still did its job — there was simply no
+    // conflict to catch that time), so a fresh pair is retried until the two
+    // requests genuinely race, bounded so a real regression still fails loudly.
+    let a, b;
+    for (let attempt = 1; attempt <= 10; attempt += 1) {
+      const viewer = await insertUser("viewer");
+      [a, b] = await Promise.all([
+        edit(viewer.id, { role: "owner" }),
+        edit(viewer.id, { role: "auditor" }),
+      ]);
+
+      if (a.status !== b.status) break;
+      assert.notEqual(attempt, 10, "never observed a genuine race across 10 attempts");
+    }
 
     const statuses = [a.status, b.status].sort();
     assert.deepEqual(statuses, [200, 409]);
@@ -209,7 +223,7 @@ describe("admin edits a user", () => {
     const loser = a.status === 200 ? b : a;
     assert.match(loser.body.message, /ถูกแก้ไขไปแล้ว/);
 
-    const stored = await users().findOne({ _id: new ObjectId(viewer.id) });
+    const stored = await users().findOne({ _id: new ObjectId(winner.body.id) });
     assert.equal(stored.role, winner.body.role);
   });
 });
