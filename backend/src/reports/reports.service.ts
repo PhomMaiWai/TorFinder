@@ -63,7 +63,7 @@ export class ReportsService {
    * Resolving records who and when; reopening clears both. Setting the status
    * it already has changes nothing and logs nothing.
    */
-  async setStatus(id: string, status: ReportStatus, actor: string) {
+  async setStatus(id: string, status: ReportStatus, actor: string, fixed = false) {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบเรื่องที่แจ้ง");
     const _id = new ObjectId(id);
     const current = await this.db.torReports.findOne({ _id });
@@ -86,10 +86,23 @@ export class ReportsService {
         : current.message;
     await this.audit.record(
       actor,
-      status === "resolved" ? "ปิดเรื่องแจ้งปัญหา TOR" : "เปิดเรื่องแจ้งปัญหา TOR อีกครั้ง",
+      status === "open"
+        ? "เปิดเรื่องแจ้งปัญหา TOR อีกครั้ง"
+        : fixed
+          ? "แก้ไขประกาศตามเรื่องที่แจ้ง"
+          : "ปิดเรื่องแจ้งปัญหา TOR",
       `${tor?.title ?? current.torId.toString()}: ${excerpt}`,
     );
     return toView(updated);
+  }
+
+  /** One report with its TOR's title — what "Fix this TOR" shows above the edit form. */
+  async findOne(id: string) {
+    if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบเรื่องที่แจ้ง");
+    const doc = await this.db.torReports.findOne({ _id: new ObjectId(id) });
+    if (!doc) throw new NotFoundException("ไม่พบเรื่องที่แจ้ง");
+    const tor = await this.db.tors.findOne({ _id: doc.torId }, { projection: { title: 1 } });
+    return { ...toView(doc), torTitle: tor?.title ?? null };
   }
 
   /** One page of reports, newest first, each with the title of the announcement it is about. */

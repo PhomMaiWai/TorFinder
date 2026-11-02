@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ExternalLink, RotateCcw } from "lucide-react";
+import { Check, ExternalLink, Pencil, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
 
@@ -14,6 +14,8 @@ export type ReportListLabels = {
   reasons: Record<ReportReason, string>;
   guest: string;
   viewTor: string;
+  /** "Fix this TOR": the edit form, opened on this report (#227). */
+  fixTor: string;
   resolve: string;
   reopen: string;
   /** "Resolved by {who} on {date}" — a template, since a server page can't hand a function down. */
@@ -97,6 +99,15 @@ export function ReportList({ items, labels }: { items: TorReport[]; labels: Repo
                 >
                   <ExternalLink size={14} />
                   {labels.viewTor}
+                </Link>
+              )}
+              {item.torTitle && item.status === "open" && (
+                <Link
+                  href={`/admin/tor/${item.torId}/edit?report=${item.id}`}
+                  className="flex items-center gap-1.5 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-ink/90"
+                >
+                  <Pencil size={14} />
+                  {labels.fixTor}
                 </Link>
               )}
               {item.status === "open" ? (
