@@ -1,7 +1,9 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { setReportStatus } from "@/lib/admin-api";
 import { authHeaders } from "@/lib/session-headers";
 import { assertTorFormValid, parseTorFormData } from "@/lib/tor-form";
 
@@ -34,6 +36,15 @@ export async function updateTorEntry(id: string, formData: FormData) {
     if (!owner.ok) {
       throw new Error("กำหนดเจ้าของโครงการไม่สำเร็จ");
     }
+  }
+
+  // Opened from a report ("Fix this TOR"): saving the correction closes it, and
+  // the admin goes back to the reports still waiting.
+  const reportId = String(formData.get("reportId") ?? "");
+  if (reportId) {
+    await setReportStatus(reportId, "resolved", true);
+    revalidatePath("/admin/reports");
+    redirect("/admin/reports");
   }
 
   redirect(`/admin/tor/${id}`);

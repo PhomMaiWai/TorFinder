@@ -1,9 +1,11 @@
+import { Flag } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { TorCorrectionInfo } from "@/components/admin/tor-correction-info";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
-import { fetchUserDirectory } from "@/lib/admin-api";
+import { fetchReport, fetchUserDirectory } from "@/lib/admin-api";
 import { fetchTor } from "@/lib/tor-api";
 import {
   CLASSIFICATION_LABEL,
@@ -18,12 +20,22 @@ const inputCls =
 
 export default async function AdminEditTorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  /** `report`: opened through "Fix this TOR" on that report (#227). */
+  searchParams: Promise<{ report?: string }>;
 }) {
-  const { id } = await params;
-  const [tor, users] = await Promise.all([fetchTor(id), fetchUserDirectory()]);
+  const [{ id }, { report: reportId }] = await Promise.all([params, searchParams]);
+  const [tor, users, found, reasons] = await Promise.all([
+    fetchTor(id),
+    fetchUserDirectory(),
+    reportId ? fetchReport(reportId) : Promise.resolve(null),
+    getTranslations("ReportProblem"),
+  ]);
   if (!tor) notFound();
+  // Only an open report about this TOR is worth fixing from; anything else is a stale link.
+  const report = found && found.torId === id && found.status === "open" ? found : null;
   // Only an owner account has an owner dashboard to see the record on.
   const owners = users.filter((user) => user.role === "owner");
   // A linked account that is no longer an owner still shows, so a save doesn't silently unlink it.
@@ -41,11 +53,25 @@ export default async function AdminEditTorPage({
   return (
     <AdminPageShell title="แก้ไขรายการ TOR" description={tor.title}>
       <div className="max-w-2xl space-y-4">
+        {report && (
+          <section className="rounded-xl border border-warn/30 bg-warn-soft p-5" aria-label="เรื่องที่แจ้ง">
+            <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+              <Flag size={15} className="text-warn" />
+              แก้ไขตามเรื่องที่แจ้ง: {reasons(`reason_${report.reason}`)}
+            </p>
+            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink">{report.message}</p>
+            <p className="mt-2 text-xs text-ink-muted">
+              แจ้งโดย {report.reporter ? `${report.reporter.name} (${report.reporter.email})` : (report.contact ?? "ผู้ใช้ทั่วไป")}
+              {" · "}เมื่อบันทึกการแก้ไข เรื่องนี้จะถูกปิดและบันทึกใน Audit Log
+            </p>
+          </section>
+        )}
         <TorCorrectionInfo tor={tor} />
         <form
           action={updateWithId}
           className="space-y-5 rounded-xl border border-border bg-surface p-6"
         >
+          {report && <input type="hidden" name="reportId" value={report.id} />}
           <Field label="ประเภทงาน">
             <select
               name="classification"

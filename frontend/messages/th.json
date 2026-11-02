@@ -1133,6 +1133,7 @@
     "statusResolved": "ปิดเรื่องแล้ว",
     "guest": "ผู้ใช้ทั่วไป",
     "viewTor": "ดู TOR",
+    "fixTor": "แก้ไข TOR",
     "resolve": "ปิดเรื่อง",
     "reopen": "เปิดเรื่องอีกครั้ง",
     "resolvedBy": "ปิดเรื่องโดย {who} เมื่อ {date}",

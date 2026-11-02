@@ -59,6 +59,7 @@ export default async function AdminReportsPage({
             >,
             guest: t("guest"),
             viewTor: t("viewTor"),
+            fixTor: t("fixTor"),
             resolve: t("resolve"),
             reopen: t("reopen"),
             resolvedBy: t.raw("resolvedBy") as string,

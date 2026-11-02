@@ -161,11 +161,17 @@ export function fetchReports(status: ReportStatus | undefined, page: number): Pr
   return readAsAdmin<ReportsPage>(`/api/reports?${params}`, { items: [], total: 0, page, pageSize: 20 });
 }
 
-export async function setReportStatus(id: string, status: ReportStatus): Promise<void> {
+/** One report, for "Fix this TOR"; null when it doesn't exist or this account may not read it. */
+export async function fetchReport(id: string): Promise<TorReport | null> {
+  return readAsAdmin<TorReport | null>(`/api/reports/${encodeURIComponent(id)}`, null).catch(() => null);
+}
+
+/** `fixed`: resolved by correcting the TOR for it, which the audit log records apart from a plain close. */
+export async function setReportStatus(id: string, status: ReportStatus, fixed = false): Promise<void> {
   const res = await fetch(`${process.env.BACKEND_URL}/api/reports/${id}`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "content-type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(fixed ? { status, fixed } : { status }),
     cache: "no-store",
     signal: AbortSignal.timeout(8000),
   });

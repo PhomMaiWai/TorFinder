@@ -223,3 +223,53 @@ describe("PATCH /api/reports/:id — resolving and reopening (#163)", () => {
     assert.equal((await setStatus("not-an-id", "resolved")).status, 404);
   });
 });
+
+describe("Fix this TOR — fixing a record from a report (#227)", () => {
+  const ADMIN_EMAIL = "0123456789abcdef01234567@ci.test";
+  const auditFor = (action, title) =>
+    db().collection("auditLogEntries").find({ actor: ADMIN_EMAIL, action, detail: { $regex: `^${title}` } }).toArray();
+
+  it("reads one report, with its TOR's title, for admins only", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id, REPORT, ORG_TOKEN);
+
+    const res = await api(`/reports/${filed.body.id}`, { token: ADMIN_TOKEN });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.torId, tor.id);
+    assert.equal(res.body.torTitle, tor.title);
+    assert.equal(res.body.message, REPORT.message);
+    assert.equal(res.body.reporter.email, REPORTER_EMAIL);
+
+    assert.equal((await api(`/reports/${filed.body.id}`)).status, 403);
+    assert.equal((await api(`/reports/${filed.body.id}`, { token: ORG_TOKEN })).status, 403);
+    assert.equal((await api(`/reports/${new ObjectId()}`, { token: ADMIN_TOKEN })).status, 404);
+  });
+
+  it("logs a report resolved by fixing the TOR apart from a plain close", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id);
+    const res = await api(`/reports/${filed.body.id}`, {
+      method: "PATCH",
+      token: ADMIN_TOKEN,
+      body: { status: "resolved", fixed: true },
+    });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.status, "resolved");
+
+    const [entry, ...rest] = await auditFor("แก้ไขประกาศตามเรื่องที่แจ้ง", tor.title);
+    assert.equal(rest.length, 0);
+    assert.equal(entry.detail, `${tor.title}: ${REPORT.message}`);
+    assert.equal((await auditFor("ปิดเรื่องแจ้งปัญหา TOR", tor.title)).length, 0);
+  });
+
+  it("refuses a `fixed` that isn't true or false (400)", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id);
+    const res = await api(`/reports/${filed.body.id}`, {
+      method: "PATCH",
+      token: ADMIN_TOKEN,
+      body: { status: "resolved", fixed: "yes" },
+    });
+    assert.equal(res.status, 400);
+  });
+});
