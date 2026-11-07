@@ -1133,6 +1133,7 @@
     "statusResolved": "Resolved",
     "guest": "Guest",
     "viewTor": "View TOR",
+    "fixTor": "Fix this TOR",
     "resolve": "Resolve",
     "reopen": "Reopen",
     "resolvedBy": "Resolved by {who} on {date}",

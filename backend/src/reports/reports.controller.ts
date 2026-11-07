@@ -39,11 +39,18 @@ export class ReportsController {
     return this.reports.findAll(query);
   }
 
-  /** Resolve a report once it has been dealt with, or reopen it. */
+  /** One report, for the banner "Fix this TOR" shows above the TOR edit form. */
+  @Get("reports/:id")
+  @UseGuards(AdminGuard)
+  findOne(@Param("id") id: string) {
+    return this.reports.findOne(id);
+  }
+
+  /** Resolve a report once it has been dealt with — `fixed` when the TOR was corrected for it — or reopen it. */
   @Patch("reports/:id")
   @UseGuards(AdminGuard)
   setStatus(@Param("id") id: string, @Body() dto: ReviewReportDto, @Req() request: AuthenticatedRequest) {
-    return this.reports.setStatus(id, dto.status, request.session.email);
+    return this.reports.setStatus(id, dto.status, request.session.email, dto.fixed === true);
   }
 
   /**
