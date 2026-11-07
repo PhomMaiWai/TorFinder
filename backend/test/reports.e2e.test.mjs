@@ -273,3 +273,60 @@ describe("Fix this TOR — fixing a record from a report (#227)", () => {
     assert.equal(res.status, 400);
   });
 });
+
+describe("Report → fix → resolve, start to finish (#164, #228)", () => {
+  const ADMIN_EMAIL = "0123456789abcdef01234567@ci.test";
+  const auditFor = (action, title) =>
+    db().collection("auditLogEntries").find({ actor: ADMIN_EMAIL, action, detail: { $regex: `^${title}` } }).toArray();
+
+  it("correcting the TOR from a report locks the field, resolves the report, and logs both", async () => {
+    const tor = await createTor();
+    const filed = await report(tor.id, REPORT, ORG_TOKEN);
+
+    // What the edit page reads before it renders the "fix this TOR" banner.
+    const context = await api(`/reports/${filed.body.id}`, { token: ADMIN_TOKEN });
+    assert.equal(context.status, 200);
+    assert.equal(context.body.status, "open");
+    assert.equal(context.body.torTitle, tor.title);
+
+    // The correction itself — the same PATCH the edit form submits.
+    const before = (await api(`/tor/${tor.id}`)).body;
+    const corrected = await api(`/tor/${tor.id}`, {
+      method: "PATCH",
+      token: ADMIN_TOKEN,
+      body: {
+        title: before.title,
+        agency: before.agency,
+        budget: before.budget,
+        deadline: "31 ม.ค. 2576",
+        daysLeft: before.daysLeft,
+        tags: before.tags,
+        stage: before.stage,
+        summary: before.summary,
+        budgetStatus: before.budgetStatus ?? "ปกติ",
+        classification: before.classification ?? "software",
+      },
+    });
+    assert.equal(corrected.status, 200);
+    assert.deepEqual(corrected.body.lockedFields, ["deadline"]);
+
+    // The follow-up PATCH the server action makes once that save succeeds.
+    const resolved = await api(`/reports/${filed.body.id}`, {
+      method: "PATCH",
+      token: ADMIN_TOKEN,
+      body: { status: "resolved", fixed: true },
+    });
+    assert.equal(resolved.status, 200);
+    assert.equal(resolved.body.status, "resolved");
+    assert.equal((await stored(filed.body.id)).status, "resolved");
+
+    // Both actions logged, apart from each other and from a plain close.
+    assert.equal((await auditFor("แก้ไขประกาศตามเรื่องที่แจ้ง", tor.title)).length, 1);
+    assert.equal((await auditFor("แก้ไขข้อมูลประกาศ TOR", tor.title)).length, 1);
+    assert.equal((await auditFor("ปิดเรื่องแจ้งปัญหา TOR", tor.title)).length, 0);
+
+    // Off the open list the admin fixes reports from.
+    const open = await api("/reports?status=open&pageSize=100", { token: ADMIN_TOKEN });
+    assert.ok(!open.body.items.some((item) => item.id === filed.body.id));
+  });
+});
