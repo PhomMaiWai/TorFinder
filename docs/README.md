@@ -7,7 +7,11 @@ Management (01219346) course project, Kasetsart University.
 | --- | --- |
 | [project-plan.md](./project-plan.md) | Project plan: vision, scope, stakeholders, tech stack, and an overview of each iteration |
 | [specs/srs.md](./specs/srs.md) | The team's original Software Requirements Specification (SRS v1.0, Aug 21 2026) |
+| [requirements.md](./requirements.md) | The SRS condensed to a short, citable version — FR-01…FR-26, NFRs, stakeholders, interfaces |
 | [iterations/](./iterations/) | Each iteration's planned backlog and delivery status, from the team's GitHub Projects board |
+| [pipeline.md](./pipeline.md) | The import/AI pipeline, precisely: the five scheduled jobs, their config, dedup trust order, the AI queue's actual filter logic |
+| [pipeline-guide.md](./pipeline-guide.md) | The same pipeline in plain words — the mental model, running it locally, reading what happened, what's normal |
+| [deployment-checklist.md](./deployment-checklist.md) | What to verify before/during/after shipping — deployment itself is manual, not automated in this repo |
 | [security-asvs-l1.md](../backend/docs/security-asvs-l1.md) | Security self-audit against OWASP ASVS 5.0 Level 1 |
 | [sync-and-poll.md](../backend/docs/sync-and-poll.md) | e-GP data sync architecture |
 | [README.md](../README.md) | Setup/run instructions, environment variables, code layout |
