@@ -201,7 +201,7 @@ are in [docs/operations/pipeline.md](docs/operations/pipeline.md) and, in plaine
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google sign-in button; empty hides it. Baked in at build time |
 | `NEXT_PUBLIC_SUPPORT_EMAIL` | Address for "ask us to add a standard" on the profile page |
 | `FEATURED_TOR_IDS` | Comma-separated TOR ids to pin to the top of search, for demos |
-| `MONGODB_URI` | Only used by the leftover `/api/test-db` route |
+| `MONGODB_URI` | Not read by the app. The frontend e2e tests use it to reach the database (see [testing.md](docs/process/testing.md#running-the-frontend-tests)) |
 
 ---
 
