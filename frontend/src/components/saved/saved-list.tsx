@@ -73,7 +73,7 @@ function SavedList({
                     {tor.title}
                   </h3>
                 </Link>
-                <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13.5px] text-ink-muted">
+                <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-ink-muted">
                   <span className="flex items-center gap-1.5">
                     <Building2 size={15} className="text-ink-subtle" />
                     {tor.agency}
