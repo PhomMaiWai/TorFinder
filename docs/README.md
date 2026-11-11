@@ -11,6 +11,8 @@ Management (01219346) course project, Kasetsart University.
 | [iterations/](./iterations/) | Each iteration's planned backlog and delivery status, from the team's GitHub Projects board |
 | [pipeline.md](./pipeline.md) | The import/AI pipeline, precisely: the five scheduled jobs, their config, dedup trust order, the AI queue's actual filter logic |
 | [pipeline-guide.md](./pipeline-guide.md) | The same pipeline in plain words — the mental model, running it locally, reading what happened, what's normal |
+| [design/](./design/) | Design diagrams: use case, domain model, system architecture, ER, class, and sequence diagrams |
+| [api.md](./api.md) | Every backend route: guard, request body, response, errors, rate limits |
 | [deployment-checklist.md](./deployment-checklist.md) | What to verify before/during/after shipping — deployment itself is manual, not automated in this repo |
 | [security-asvs-l1.md](../backend/docs/security-asvs-l1.md) | Security self-audit against OWASP ASVS 5.0 Level 1 |
 | [sync-and-poll.md](../backend/docs/sync-and-poll.md) | e-GP data sync architecture |
