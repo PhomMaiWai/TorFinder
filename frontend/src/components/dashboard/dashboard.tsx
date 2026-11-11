@@ -19,9 +19,11 @@ import { useMemo, useState } from "react";
 import { DashboardInsights, KpiRow } from "@/components/dashboard/dashboard-insights";
 import { AppShell } from "@/components/layout/app-sidebar";
 import { BiddingBadge } from "@/components/public/bidding-badge";
+import { ProfileNudges } from "@/components/profile/profile-nudges";
 import { CountUp } from "@/components/ui/count-up";
 import { HIGH_MATCH } from "@/lib/dashboard-stats";
 import type { CompanySummary } from "@/lib/opportunities-api";
+import { profileProgress } from "@/lib/profile-progress";
 import { biddingOf, daysUntilClose, isClosingSoon, torAmount } from "@/lib/tor-ui";
 import { useSavedTors } from "@/lib/use-saved-tors";
 import type { EligibilityCheck, ScoredTor } from "@/types/tor";
@@ -228,14 +230,7 @@ function DeadlinePanel({ opportunities }: { opportunities: ScoredTor[] }) {
 
 function ProfilePanel({ company }: { company: CompanySummary | null }) {
   const t = useTranslations("Dashboard");
-  const items = [
-    { label: t("profileItemWorkTypes"), done: Boolean(company?.workTypes?.length) },
-    { label: t("profileItemPastContract"), done: Boolean(company?.largestPastContract) },
-    { label: t("profileItemCapital"), done: Boolean(company?.registeredCapital) },
-    { label: t("profileItemCertifications"), done: company?.certifications !== undefined },
-    { label: t("profileItemBudget"), done: Boolean(company?.preferredBudgetMin || company?.preferredBudgetMax) },
-  ];
-  const percent = Math.round((items.filter((item) => item.done).length / items.length) * 100);
+  const { items, percent } = profileProgress(company);
 
   return (
     <div className="glass animate-fade-up overflow-hidden rounded-2xl" style={{ animationDelay: "300ms" }}>
@@ -253,20 +248,9 @@ function ProfilePanel({ company }: { company: CompanySummary | null }) {
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-alt">
           <div className="animate-bar h-full origin-left rounded-full bg-gradient-to-r from-rose-400 to-accent" style={{ width: `${percent}%` }} />
         </div>
-        <ul className="mt-4 space-y-2">
-          {items.map(({ label, done }) => (
-            <li key={label} className="flex items-center gap-2 text-sm">
-              <span
-                className={`flex size-4 shrink-0 items-center justify-center rounded-full ${
-                  done ? "bg-accent text-white" : "border-2 border-border"
-                }`}
-              >
-                {done && <Check size={9} strokeWidth={3} />}
-              </span>
-              <span className={done ? "text-ink-muted" : "font-medium text-ink"}>{label}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-4">
+          <ProfileNudges items={items} showDone />
+        </div>
       </div>
     </div>
   );

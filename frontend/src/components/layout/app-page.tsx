@@ -113,14 +113,16 @@ export function SummaryGrid({ children }: { children: React.ReactNode }) {
 /* ── Section ─────────────────────────────────────── */
 
 type SectionProps = {
+  /** Anchor so other pages can link straight to this section. */
+  id?: string;
   title?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
 };
 
-export function Section({ title, action, children }: SectionProps) {
+export function Section({ id, title, action, children }: SectionProps) {
   return (
-    <section>
+    <section id={id} className={id ? "scroll-mt-6" : undefined}>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-ink">{title}</h2>
         {action}

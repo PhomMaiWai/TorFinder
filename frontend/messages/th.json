@@ -118,11 +118,6 @@
     "eligibleUnknown": "ยังเช็คไม่ครบ",
     "noProfileTitle": "ยังไม่มีข้อมูลบริษัท",
     "noProfileDescription": "กรอกประเภทงานและคุณสมบัติในโปรไฟล์ ระบบจะจับคู่ TOR ที่เปิดรับให้",
-    "profileItemWorkTypes": "ประเภทงาน",
-    "profileItemPastContract": "มูลค่าผลงาน",
-    "profileItemCapital": "ทุนจดทะเบียน",
-    "profileItemCertifications": "ใบรับรอง",
-    "profileItemBudget": "ขนาดงานที่สนใจ",
     "noMatchesYetTitle": "ยังไม่มี TOR ที่เปิดรับตอนนี้",
     "noMatchesYetDescription": "ระบบจะแสดงงานที่ตรงกับบริษัททันทีที่มีประกาศใหม่",
     "greeting": "สวัสดี {name}",
@@ -1144,5 +1139,23 @@
     "previous": "ก่อนหน้า",
     "next": "ถัดไป",
     "pageOf": "หน้า {page} · ทั้งหมด {total} เรื่อง"
+  },
+  "ProfileProgress": {
+    "allDone": "กรอกข้อมูลที่ใช้จับคู่ครบแล้ว",
+    "label_workTypes": "ประเภทงาน",
+    "label_pastContract": "มูลค่าผลงานสูงสุด",
+    "label_capital": "ทุนจดทะเบียน",
+    "label_certifications": "ใบรับรอง",
+    "label_budget": "ขนาดงานที่สนใจ",
+    "action_workTypes": "เลือกประเภทงานที่บริษัทรับทำ",
+    "benefit_workTypes": "เราจะหา TOR ประเภทนั้นให้ได้ — คิดเป็นครึ่งหนึ่งของคะแนนการจับคู่",
+    "action_pastContract": "ใส่มูลค่าผลงานสูงสุดที่เคยทำ",
+    "benefit_pastContract": "เราจะตรวจสอบเงื่อนไขด้านผลงานให้ได้",
+    "action_capital": "ใส่ทุนจดทะเบียน",
+    "benefit_capital": "เราจะตรวจสอบเงื่อนไขทุนจดทะเบียนขั้นต่ำให้ได้",
+    "action_certifications": "ระบุใบรับรองที่บริษัทมี",
+    "benefit_certifications": "เราจะตรวจสอบเงื่อนไข ISO, CMMI และการเป็นตัวแทนจำหน่ายให้ได้ — ตอบว่า \"ไม่มี\" ก็นับ",
+    "action_budget": "กำหนดขนาดงานที่สนใจ",
+    "benefit_budget": "เราจะจัดอันดับ TOR ตามงบประมาณที่เหมาะกับบริษัท"
   }
 }
