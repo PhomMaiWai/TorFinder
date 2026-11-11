@@ -543,6 +543,34 @@
     "budgetRange3to5m": "3,000,000 - 5,000,000 baht",
     "budgetRangeOver10m": "10,000,000 baht and up"
   },
+  "FindSimilar": {
+    "title": "Find TORs like work you have done",
+    "description": "Paste a past project or your company profile, and TORs from other agencies with the most similar work come first.",
+    "inputLabel": "Project description or company profile",
+    "placeholder": "e.g. We built an e-Learning system for the Education Office, with online lessons, quizzes and progress reports",
+    "submit": "Find similar TORs",
+    "searching": "Searching…",
+    "useProfile": "Use my company profile",
+    "profileLabel": "your company profile",
+    "findLikeThis": "Find similar TORs",
+    "rankedBy": "Ranked by similarity to: {label}",
+    "methodAi": "Ranked by AI (Vertex AI embeddings) · the filters still apply",
+    "methodKeyword": "Ranked by shared keywords · the filters still apply",
+    "clear": "Clear",
+    "similarityBadge": "{score}% similar",
+    "sharedTermsLabel": "Shared terms:",
+    "advancedFilters": "More filters",
+    "advancedFiltersActive": "(in use)",
+    "emptyTitle": "No similar TORs found",
+    "emptyDescription": "Describe the work in more detail, or loosen the filters.",
+    "error": {
+      "tooShort": "Describe the project in at least 10 characters.",
+      "profileEmpty": "Your company profile has no past experience yet. Add it on the profile page, or paste a description.",
+      "notFound": "That TOR could not be found.",
+      "rateLimited": "Too many searches. Please wait a moment.",
+      "failed": "The search failed. Please try again."
+    }
+  },
   "TorDetailPage": {
     "backToSearch": "Back to TOR search",
     "feedbackOpenUntil": "Open for comments until {date}",

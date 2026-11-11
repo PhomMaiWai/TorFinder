@@ -173,6 +173,7 @@ are in [docs/operations/pipeline.md](docs/operations/pipeline.md) and, in plaine
 | `VERTEX_PROJECT_ID` | empty | Empty turns AI extraction and proposal drafts off |
 | `VERTEX_LOCATION` | `asia-southeast1` | |
 | `VERTEX_MODEL` | `gemini-2.5-flash` | |
+| `VERTEX_EMBEDDING_MODEL` | `text-multilingual-embedding-002` | "Find similar" ranks by keywords without Vertex |
 | `EGP_POLL_MINUTES` | `360` | `0` turns the job off; same for the other `*_POLL_MINUTES` |
 | `MEA_POLL_MINUTES` | `360` | |
 | `DATAGOV_POLL_MINUTES` | `1440` | |

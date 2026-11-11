@@ -119,6 +119,7 @@ Rate limits (`@nestjs/throttler`, in memory, per IP):
 | Every route | 100 requests per 60 s | `THROTTLE_LIMIT`, `THROTTLE_TTL_MS` |
 | Sign-in, sign-up, password and email routes, public feedback, public reports | 5 per 60 s | `AUTH_THROTTLE_LIMIT`, `AUTH_THROTTLE_TTL_MS` |
 | `POST /ai/proposal-draft/:torId` | 5 per 60 s | fixed |
+| `POST /tor/similar` | 30 per 60 s | fixed |
 
 ## Endpoints
 
@@ -215,6 +216,32 @@ records and records marked `not-software`.
 - `stage`: `แผนการจัดซื้อจัดจ้าง`, `เปิดรับฟังความคิดเห็น`,
   `ประกาศราคากลาง`, `ประกาศ TOR` (the invitation), `ประกาศผู้ชนะ`.
 - `budgetStatus`: `สูงกว่าปกติ`, `ต่ำกว่าปกติ`, `ปกติ`.
+
+### Find similar TORs
+
+`backend/src/similar/`. Ranks the listed TORs by how alike they are to a
+pasted text (a past project, a company profile) or to one TOR (issue #255).
+
+| Method | Path | Guard | Body | Response |
+| --- | --- | --- | --- | --- |
+| POST | `/tor/similar` | none | `{ text }` (10-5,000 chars) **or** `{ torId }`, optional `limit` (1-100, default 50) | 200 `{ method, basedOn, results }`. 400 for both or neither, or text that is too short; 404 for an unknown `torId` |
+
+- `method` is `"ai"` when Vertex AI embeddings ranked the results and
+  `"keyword"` when shared words (TF-IDF over Thai word segments) did. It is
+  `"keyword"` whenever `VERTEX_PROJECT_ID` is unset, when the model call
+  fails, and on the first searches after a large import while the missing
+  embeddings are made in the background (more than 60 missing).
+- `basedOn` is `{ id, title }` of the TOR the search started from, or `null`.
+- Each result: `{ id, title, agency, stage, projectNumber?, similarity,
+  sharedTerms[] }`, best first. `similarity` is 0-100 and is for comparing
+  results of one search, not an absolute measure. `sharedTerms` are the
+  heaviest words the result shares with the query, whichever method ranked it.
+- With `torId`, the TOR itself and the other announcements of the same
+  project (`projectNumber`) are left out.
+- Embeddings use `VERTEX_EMBEDDING_MODEL` (default
+  `text-multilingual-embedding-002`) and are stored in the `torEmbeddings`
+  collection, keyed by TOR and model, with a hash of the text embedded so an
+  edited TOR is embedded again.
 
 ### TOR documents
 

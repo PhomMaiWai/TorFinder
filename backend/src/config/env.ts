@@ -76,6 +76,10 @@ export const env = {
     projectId: process.env.VERTEX_PROJECT_ID ?? "",
     location: process.env.VERTEX_LOCATION ?? "asia-southeast1",
     model: process.env.VERTEX_MODEL ?? "gemini-2.5-flash",
+    // Turns a TOR or a pasted project into numbers for "find similar". Has to
+    // read Thai, and takes many texts per request, so a whole backfill is a
+    // few dozen calls rather than one per announcement.
+    embeddingModel: process.env.VERTEX_EMBEDDING_MODEL ?? "text-multilingual-embedding-002",
     // Background reading of the documents the imports bring in. Off on startup
     // by default: every run costs money, and a machine that restarts often
     // would pay for it each time. Ignored entirely without a project id.
