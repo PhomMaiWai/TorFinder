@@ -269,7 +269,7 @@ when `VERTEX_PROJECT_ID` is not set.
 | Method | Path | Guard | Body / query | Response |
 | --- | --- | --- | --- | --- |
 | POST | `/tor/:torId/feedback` | none (5/min) | `{ text (10-5000), author? (≤200) }` | 201 the comment, status `รอตรวจสอบ`. 400 after the hearing deadline |
-| GET | `/tor/:torId/feedback` | none | `?status=` | Approved comments by default; another status if asked (see [Known issues](#known-issues)) |
+| GET | `/tor/:torId/feedback` | none; Admin for `?status=` other than `อนุมัติ` | `?status=` | Approved comments by default. Asking for `รอตรวจสอบ` or `ปฏิเสธ` without an admin session is 403 |
 | GET | `/feedback/counts` | none | — | `{ "<torId>": <approved count> }` |
 | GET | `/feedback` | Admin | `?status=` | Moderation queue across all TORs |
 | PATCH | `/feedback/:id` | Admin | `{ status }` | The comment; writes the audit log |
@@ -375,7 +375,6 @@ backend route of the same name. `frontend/src/proxy.ts` refuses every
 | `/api/tor/[id]/documents/...` | GET | `/tor/:id/documents/...` | ✓ |
 | `/api/tor/[id]/egp-documents/...` | GET | `/tor/:id/egp-documents/...` | ✓ |
 | `/api/tor/[id]/panel` | GET | `/matching/tor/:id/companies` + `/tor/:id/feedback` in one call | |
-| `/api/test-db` | GET | none; talks to MongoDB directly | |
 
 Everything else (sign-up, TOR create and edit, admin actions, feedback,
 reports) goes through Server Actions in `frontend/src/app/**/actions.ts`
@@ -386,19 +385,10 @@ or is fetched by Server Components.
 Found while writing this page. They are listed here so the page is honest
 about the current code, not because they are intended.
 
-1. **`GET /tor/:torId/feedback?status=รอตรวจสอบ` is public.** The status
-   filter exists for the moderation view, but the route has no guard, so
-   anyone can read comments that are still waiting for review or were
-   rejected. It should require `Admin` when `status` is anything other
-   than `อนุมัติ`.
-2. **`/api/test-db` (frontend) lists MongoDB collections** to any signed-in
-   user, using its own Mongo connection (database `torfinder`, not
-   `torr`). It looks like leftover setup code and can be deleted along
-   with the unused `mongodb` dependency in `frontend/package.json`.
-3. **`/api/tor/[id]/panel` looks unused.** No page calls it any more, and
+1. **`/api/tor/[id]/panel` looks unused.** No page calls it any more, and
    it asks the Admin-only `GET /matching/tor/:id/companies`, so for anyone
    but an admin the company list comes back empty. It can probably be
    deleted.
-4. **Rate limits are per process.** With more than one backend instance,
+2. **Rate limits are per process.** With more than one backend instance,
    each one counts separately (see
    [deployment-checklist.md](./deployment-checklist.md)).
