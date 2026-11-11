@@ -1,171 +1,171 @@
 # ASVS 5.0 Level 1
 
-ผลตรวจสอบโค้ดจริงเทียบกับ [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/) Level 1 ทั้ง 70 ข้อ — ตรวจแบบ source review (อ่านโค้ด ไม่ใช่ pentest) ครั้งล่าสุด: rev. 2 หลังแก้ 7.4.1 / 7.4.2 / 6.2.4
+Source-review results against all 70 [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/) Level 1 requirements — this is a code read-through, not a pentest. Latest: rev. 2, after fixing 7.4.1 / 7.4.2 / 6.2.4.
 
-> ไฟล์นี้เองนับเป็นส่วนหนึ่งของ ASVS 2.1.1 / 6.1.1 / 8.1.1 ("documented …") — หลายข้อที่เคย "บางส่วน" เพราะ control มีจริงในโค้ดแต่ไม่เคยมีเอกสารแยก
+> This file itself counts toward ASVS 2.1.1 / 6.1.1 / 8.1.1 ("documented …") — several items that used to be "Partial" had a real control in the code but no standalone writeup of it.
 
-## สรุป
+## Summary
 
-Applicable 52 จาก 70 ข้อ (อีก 18 ข้อ = ไม่เกี่ยวข้อง เพราะ feature นั้นไม่มีในแอป เช่น file upload, WebSocket, OAuth server)
+52 of 70 requirements apply (the other 18 are N/A because the app has no such feature — file upload, WebSocket, acting as an OAuth server, etc.)
 
-| สถานะ | จำนวน | หมายเหตุ |
+| Status | Count | Notes |
 | --- | --- | --- |
-| ผ่าน | 42 | control มีจริงและตรวจพบหลักฐานในโค้ด/เอกสาร |
-| บางส่วน | 6 | control มีจริง แต่ไม่มีเอกสารแยก หรือมี gap เล็กน้อย |
-| ไม่ผ่าน | 0 | — |
-| ไม่เกี่ยวข้อง | 18 | ไม่มี feature นั้นในแอป |
-| ยังไม่ตรวจ | 4 | อยู่นอกเหนือ source review (TLS cert, `npm audit` ปัจจุบัน) |
+| Pass | 42 | Control exists, with evidence found in code/docs |
+| Partial | 6 | Control exists but has no standalone writeup, or has a small gap |
+| Fail | 0 | — |
+| N/A | 18 | App has no such feature |
+| Not reviewed | 4 | Outside the scope of a source review (TLS cert, current `npm audit` results) |
 
-**ที่แก้ไปแล้ว (rev. 2):**
-- `7.4.1` / `7.4.2` — เพิ่ม `SessionRevocationService` + `POST /auth/logout` จริง, revoke ตอน logout/reset-password/suspend
-- `6.2.4` — เพิ่ม `isCommonPassword()` เช็คกับ wordlist ก่อน hash ทั้งตอน signup และ reset
-- `15.1.1` — นโยบายกรอบเวลา patch dependency เขียนไว้ท้ายไฟล์นี้แล้ว (ตัวไฟล์นี้เองคือเอกสารที่ข้อนี้ต้องการ)
+**Fixed since last pass (rev. 2):**
+- `7.4.1` / `7.4.2` — added `SessionRevocationService` + a real `POST /auth/logout`; revokes on logout/password-reset/suspend
+- `6.2.4` — added `isCommonPassword()`, checked against a wordlist before hashing, on both signup and reset
+- `15.1.1` — the dependency-patch SLA is now written at the bottom of this file (this file is the documentation this item asks for)
 
-**ที่ยังไม่แก้ (ไม่ใช่โค้ด เป็น process):**
-- wordlist ใน `common-passwords.ts` เป็นชุดเริ่มต้น ~120 คำ ควรเปลี่ยนเป็น SecLists top-10k ก่อน production
-- ยังไม่มี CI step รัน `npm audit`/Dependabot จริงตามนโยบายท้ายไฟล์ — นโยบายมีแล้ว แต่ยังไม่ enforce อัตโนมัติ
-
----
-
-## V1 — Encoding & Sanitization (8 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 1.2.1 | Output encoding ตาม context (HTML/HTTP/XML) | ผ่าน | React/JSX auto-escape ทุกจุด, ไม่มี `dangerouslySetInnerHTML` |
-| 1.2.2 | Encode URL แบบ dynamic, บล็อก `javascript:`/`data:` | ยังไม่ตรวจ | ไม่มี allowlist ชัดเจน แต่ URL ส่วนใหญ่สร้างจาก internal id |
-| 1.2.3 | Output encoding เมื่อสร้าง JS/JSON | ผ่าน | NestJS serialize เป็น JSON ให้อัตโนมัติ |
-| 1.2.4 | Parameterized query ป้องกัน SQL/NoSQL injection | ผ่าน | native `mongodb` driver + typed filter object ทุกจุด |
-| 1.2.5 | ป้องกัน OS command injection | ไม่เกี่ยวข้อง | ไม่มี `child_process`/`exec` ในโค้ดเลย |
-| 1.3.1 | Sanitize HTML จาก WYSIWYG editor | ไม่เกี่ยวข้อง | ไม่มี rich-text editor ในระบบ |
-| 1.3.2 | หลีกเลี่ยง `eval()`/dynamic code exec | ผ่าน | ไม่พบ `eval`/`new Function` ที่ไหนเลย |
-| 1.5.1 | ตั้งค่า XML parser แบบ restrictive (XXE) | ไม่เกี่ยวข้อง | ไม่มี XML parser library — client ของ egp/mea/datagov ใช้ JSON/HTML |
-
-## V2 — Validation & Business Logic (4 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 2.1.1 | มีเอกสารกำหนดกฎ input validation | บางส่วน | กฎอยู่ในโค้ด (class-validator DTOs) แต่ไม่มีเอกสารแยก |
-| 2.2.1 | Validate input ตาม business expectation | ผ่าน | class-validator DTO ทุก route เช่น `signup.dto.ts`, `login.dto.ts` |
-| 2.2.2 | บังคับ validation ที่ trusted service layer | ผ่าน | `ValidationPipe({ whitelist: true, transform: true })` global ใน `main.ts` |
-| 2.3.1 | Business logic flow ตามลำดับขั้นตอนที่ถูกต้อง | ผ่าน | signup → pending → review → approved บังคับที่ `issueSession()` ฝั่ง server |
-
-## V3 — Web Frontend Security (8 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 3.2.1 | ป้องกัน browser render content ผิด context | บางส่วน | ไม่มี raw-resource serving เลย (ไม่มี upload) ความเสี่ยงต่ำ แต่ไม่มี policy ชัดเจน |
-| 3.2.2 | Safe text-rendering function | ผ่าน | React JSX text rendering เป็นค่าเริ่มต้นทุกจุด |
-| 3.3.1 | Cookie มี `Secure` attribute | ผ่าน | `login/route.ts` — `secure: NODE_ENV === "production"` |
-| 3.4.1 | HSTS max-age ≥ 1 ปี | ผ่าน | `helmet()` v8.3.0 default = `max-age=31536000` |
-| 3.4.2 | CORS `Access-Control-Allow-Origin` กำหนดชัดเจน | ผ่าน | `main.ts` — `enableCors({ origin: env.frontendOrigin })` origin เดียว ไม่ใช่ wildcard |
-| 3.5.1 | ป้องกัน CSRF (non-preflight) | ผ่าน | session token ส่งผ่าน `Authorization: Bearer` จาก proxy same-origin ไม่ใช่ ambient cookie |
-| 3.5.2 | ป้องกัน CSRF (พึ่ง CORS preflight) | ผ่าน | กลไกเดียวกับ 3.5.1 |
-| 3.5.3 | ใช้ HTTP method ที่เหมาะสมกับ sensitive action | ผ่าน | route สำคัญใช้ POST/DELETE เสมอ ไม่ใช้ GET |
-
-## V4 — API and Web Service (2 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 4.1.1 | `Content-Type` ตรงกับเนื้อหาจริง | ผ่าน | NestJS/Express ตั้งให้อัตโนมัติ |
-| 4.4.1 | ใช้ WebSocket over TLS (WSS) | ไม่เกี่ยวข้อง | ไม่มี `WebSocketGateway`/socket.io ในระบบ |
-
-## V5 — File Handling (4 ข้อ)
-
-ไม่เกี่ยวข้องทั้ง 4 ข้อ (5.2.1, 5.2.2, 5.3.1, 5.3.2) — ระบบไม่มี feature อัปโหลดไฟล์เลย
-
-## V6 — Authentication (13 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 6.1.1 | เอกสารกำหนด rate limiting/anti-automation | บางส่วน | มี throttle จริง (ดู 6.3.1) แต่ไม่มีเอกสารแยก |
-| 6.2.1 | รหัสผ่านอย่างน้อย 8 ตัวอักษร | ผ่าน | `signup.dto.ts` — `@MinLength(8)` |
-| 6.2.2 | ผู้ใช้เปลี่ยนรหัสผ่านได้ | บางส่วน | มีแค่ forgot/reset ผ่านอีเมล ไม่มี "เปลี่ยนรหัสผ่านตอน login อยู่" |
-| 6.2.3 | เปลี่ยนรหัสผ่านต้องใส่รหัสเดิม+ใหม่ | ไม่เกี่ยวข้อง | ไม่มี feature เปลี่ยนรหัสผ่านตอน login อยู่ (ดู 6.2.2) |
-| 6.2.4 | เช็ครหัสผ่านกับ breached/common password list | ผ่าน (แก้แล้ว rev.2) | `common/password.ts → isCommonPassword()` เช็คก่อน hash ทั้ง signup และ reset |
-| 6.2.5 | ไม่บังคับ composition rule | ผ่าน | `signup.dto.ts` เช็คแค่ความยาว ไม่มี regex ตัวใหญ่/เล็ก/ตัวเลข |
-| 6.2.6 | ช่องรหัสผ่าน masked พร้อมปุ่มดู | ผ่าน | `components/ui/password-input.tsx` สลับ `type="password"`/`"text"` |
-| 6.2.7 | อนุญาต paste และ password manager | ผ่าน | ใช้ `<input>` ปกติ ไม่มี handler บล็อก paste |
-| 6.2.8 | ตรวจรหัสผ่านตามที่ส่งมาจริง ไม่ trim/แปลงตัวพิมพ์ | ผ่าน | `password.ts` — `scrypt()` รับ string ดิบ ไม่แปลงอะไร |
-| 6.3.1 | ป้องกัน credential stuffing/brute force | ผ่าน | `auth.controller.ts` — `@Throttle` ทุก auth route (5 req/60s) |
-| 6.3.2 | ไม่มี default account | ผ่าน | ไม่พบ hardcoded admin/default credential ใน signup, seed, restore script |
-| 6.4.1 | Initial password สุ่มและหมดอายุเร็ว | ไม่เกี่ยวข้อง | ไม่มี feature admin-issue temporary password |
-| 6.4.2 | ไม่มี password hint/secret question | ผ่าน | ไม่มี field คำถามลับใน user schema เลย |
-
-## V7 — Session Management (6 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 7.2.1 | Verify token ที่ trusted backend เท่านั้น | ผ่าน | `session.guard.ts` รัน server-side ทุก request |
-| 7.2.2 | สร้าง token แบบ dynamic ไม่ใช่ static secret | ผ่าน | `token.ts → createSessionToken()` สร้างใหม่ทุก login |
-| 7.2.3 | Reference token entropy ≥128 bits | ไม่เกี่ยวข้อง | ใช้ self-contained token (HMAC) ไม่ใช่ reference token — ดู V9 แทน |
-| 7.2.4 | ออก token ใหม่ทุกครั้งที่ (re-)authenticate | ผ่าน | `issueSession()` เรียกใหม่ทุก login/signup/google-auth |
-| 7.4.1 | Session ใช้ต่อไม่ได้หลัง terminate | ผ่าน (แก้แล้ว rev.2) | `POST /auth/logout` ใหม่ + `SessionRevocationService.revoke()` |
-| 7.4.2 | Session ทั้งหมดถูกตัดเมื่อบัญชีถูกระงับ | ผ่าน (แก้แล้ว rev.2) | `accounts.service.ts → setSuspended()` เรียก `revocation.revoke()` ทันที |
-
-## V8 — Authorization (4 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 8.1.1 | เอกสารกำหนดกฎ function-level/data-specific access | บางส่วน | enforce จริงผ่าน guard (`role.guard.ts`, `owner.guard.ts` ฯลฯ) แต่ไม่มีเอกสารแยก |
-| 8.2.1 | จำกัด function-level access ตามสิทธิ์ | ผ่าน | `@UseGuards(RoleGuard/OwnerGuard/OrgGuard/AdminGuard)` ทุก route |
-| 8.2.2 | จำกัด data-specific access (ป้องกัน IDOR/BOLA) | ผ่าน | `saved-tors.service.ts` ทุก query scope ด้วย `userId` จาก session เท่านั้น |
-| 8.3.1 | บังคับ authorization ที่ trusted service layer | ผ่าน | ทุก check เป็น NestJS guard ฝั่ง server ไม่พึ่ง client-side |
-
-## V9 — Self-contained Tokens (4 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 9.1.1 | ตรวจ signature/MAC ก่อนเชื่อ payload | ผ่าน | `token.ts` — `timingSafeEqual()` HMAC check ก่อน parse |
-| 9.1.2 | Allowlist algorithm, ห้าม `None` | ผ่าน | hardcode HMAC-SHA256 ในโค้ด ไม่อ่านจาก token — ไม่มีช่อง algorithm confusion |
-| 9.1.3 | Key material จากแหล่งที่เชื่อถือได้ | ผ่าน | `env.sessionSecret` — `required()` fail startup ถ้าไม่ตั้งใน production |
-| 9.2.1 | เช็ค validity time span (`exp`) | ผ่าน | เช็คทั้งฝั่ง backend และ frontend verifier |
-
-## V10 — OAuth and OIDC (5 ข้อ)
-
-ไม่เกี่ยวข้องทั้ง 5 ข้อ (10.4.1–10.4.5) — แอปเป็น OAuth/OIDC **client** เท่านั้น (verify Google ID token ผ่าน `google-auth-library`) ไม่ได้เป็น authorization server ที่ออก token เอง ข้อกำหนดกลุ่มนี้พูดถึงฝั่ง authorization server
-
-## V11 — Cryptography (3 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 11.3.1 | ไม่ใช้ block cipher mode ที่ไม่ปลอดภัย | ไม่เกี่ยวข้อง | ไม่มี symmetric encryption ในระบบ (token=HMAC, password=scrypt) |
-| 11.3.2 | ใช้ cipher/mode ที่ approved เท่านั้น | ไม่เกี่ยวข้อง | เหตุผลเดียวกับ 11.3.1 |
-| 11.4.1 | ใช้ hash function ที่ approved เท่านั้น ห้าม MD5 | ผ่าน | scrypt (password) + HMAC-SHA256 (token) ไม่พบ MD5/SHA-1 ที่ไหนเลย |
-
-## V12 — Secure Communication (3 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 12.1.1 | ใช้ TLS เวอร์ชันล่าสุดเท่านั้น | ยังไม่ตรวจ | TLS termination อยู่ที่ hosting/reverse proxy นอก repo นี้ |
-| 12.2.1 | ใช้ TLS กับ external-facing service เสมอ | บางส่วน | โค้ดเองไม่ได้ force HTTP→HTTPS redirect พึ่ง deployment layer ทั้งหมด |
-| 12.2.2 | ใช้ TLS cert ที่ publicly trusted | ยังไม่ตรวจ | เป็นเรื่อง hosting ไม่เห็นใน repo |
-
-## V13 — Configuration (1 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 13.4.1 | ไม่ expose source-control metadata (.git/.svn) | ผ่าน | `backend/Dockerfile` multi-stage, copy แค่ `dist/` เข้า image ไม่มี `ServeStaticModule` |
-
-## V14 — Data Protection (2 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 14.2.1 | ข้อมูล sensitive ไม่อยู่ใน URL | ผ่าน | session token ส่งผ่าน header/httpOnly cookie เท่านั้น; `?token=` มีแค่ลิงก์ verify/reset ที่เป็น one-time token ซึ่งเป็น pattern ที่ยอมรับได้ |
-| 14.3.1 | ลบข้อมูล authenticated ออกจาก client storage หลัง session จบ | ผ่าน | logout เคลียร์ cookie, token ไม่เคยเก็บใน localStorage/sessionStorage |
-
-## V15 — Secure Coding & Architecture (3 ข้อ)
-
-| # | ข้อกำหนด | สถานะ | หลักฐาน |
-| --- | --- | --- | --- |
-| 15.1.1 | เอกสารกำหนดกรอบเวลาแก้ dependency ที่มีช่องโหว่ | ผ่าน (แก้แล้ว rev.2) | นโยบายกรอบเวลาเขียนไว้ด้านล่าง — ไฟล์นี้เองคือเอกสารที่ข้อนี้ต้องการ; ยังไม่ได้ enforce เป็น CI step |
-| 15.2.1 | ไม่มี component ที่เลยกรอบเวลาแก้ | ยังไม่ตรวจ | ขึ้นกับผล `npm audit` ปัจจุบัน ตรวจจากอ่านโค้ดอย่างเดียวไม่ได้ |
-| 15.3.1 | API ส่งคืนเฉพาะ field ที่จำเป็น | ผ่าน | `accounts.service.ts` exclude `passwordHash`/`passwordSalt` ผ่าน projection เสมอ |
+**Still open (process, not code):**
+- The wordlist in `common-passwords.ts` is a ~120-word starter set; should move to the SecLists top-10k before production
+- There's still no CI step that actually runs `npm audit`/Dependabot per the policy at the bottom of this file — the policy exists, it just isn't enforced automatically yet
 
 ---
 
-## นโยบายกรอบเวลาแก้ dependency (ASVS 15.1.1)
+## V1 — Encoding & Sanitization (8 items)
 
-- **Critical/High CVE** (เช่นจาก `npm audit` หรือ Dependabot): แก้ภายใน **7 วัน**
-- **Medium**: แก้ภายใน **30 วัน**
-- **Low**: แก้ในรอบ sprint ถัดไปตามปกติ ไม่เกิน **90 วัน**
-- รัน `npm audit` (หรือเปิด Dependabot) เป็นส่วนหนึ่งของ CI — ดู `.github/workflows/auth.yml`
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 1.2.1 | Context-appropriate output encoding (HTML/HTTP/XML) | Pass | React/JSX auto-escapes everywhere; no `dangerouslySetInnerHTML` |
+| 1.2.2 | Encode dynamic URLs, block `javascript:`/`data:` | Not reviewed | No explicit allowlist, but most URLs are built from internal ids |
+| 1.2.3 | Output encoding when generating JS/JSON | Pass | NestJS serializes to JSON automatically |
+| 1.2.4 | Parameterized queries against SQL/NoSQL injection | Pass | Native `mongodb` driver + a typed filter object everywhere |
+| 1.2.5 | Protection against OS command injection | N/A | No `child_process`/`exec` anywhere in the code |
+| 1.3.1 | Sanitize HTML from a WYSIWYG editor | N/A | No rich-text editor in the system |
+| 1.3.2 | Avoid `eval()`/dynamic code execution | Pass | No `eval`/`new Function` found anywhere |
+| 1.5.1 | Restrictive XML parser config (XXE) | N/A | No XML parser library — the egp/mea/datagov clients use JSON/HTML |
+
+## V2 — Validation & Business Logic (4 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 2.1.1 | Documented input-validation rules | Partial | Rules live in code (class-validator DTOs) but have no standalone writeup |
+| 2.2.1 | Validate input against business expectations | Pass | A class-validator DTO on every route, e.g. `signup.dto.ts`, `login.dto.ts` |
+| 2.2.2 | Enforce validation at the trusted service layer | Pass | Global `ValidationPipe({ whitelist: true, transform: true })` in `main.ts` |
+| 2.3.1 | Business logic follows the correct step order | Pass | signup → pending → review → approved is enforced server-side in `issueSession()` |
+
+## V3 — Web Frontend Security (8 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 3.2.1 | Prevent the browser from rendering content in the wrong context | Partial | No raw-resource serving at all (no uploads), so risk is low, but there's no explicit policy |
+| 3.2.2 | Safe text-rendering function | Pass | React JSX text rendering is the default everywhere |
+| 3.3.1 | Cookie has the `Secure` attribute | Pass | `login/route.ts` — `secure: NODE_ENV === "production"` |
+| 3.4.1 | HSTS max-age ≥ 1 year | Pass | `helmet()` v8.3.0 default = `max-age=31536000` |
+| 3.4.2 | `Access-Control-Allow-Origin` set explicitly | Pass | `main.ts` — `enableCors({ origin: env.frontendOrigin })`, a single origin, not a wildcard |
+| 3.5.1 | CSRF protection (non-preflight) | Pass | Session token travels as `Authorization: Bearer` from a same-origin proxy, not an ambient cookie |
+| 3.5.2 | CSRF protection (relying on CORS preflight) | Pass | Same mechanism as 3.5.1 |
+| 3.5.3 | Use the right HTTP method for sensitive actions | Pass | Sensitive routes always use POST/DELETE, never GET |
+
+## V4 — API and Web Service (2 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 4.1.1 | `Content-Type` matches the actual content | Pass | Set automatically by NestJS/Express |
+| 4.4.1 | WebSocket over TLS (WSS) | N/A | No `WebSocketGateway`/socket.io in the system |
+
+## V5 — File Handling (4 items)
+
+All 4 items (5.2.1, 5.2.2, 5.3.1, 5.3.2) are N/A — the system has no file-upload feature at all.
+
+## V6 — Authentication (13 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 6.1.1 | Documented rate-limiting/anti-automation | Partial | Throttling genuinely exists (see 6.3.1) but has no standalone writeup |
+| 6.2.1 | Passwords at least 8 characters | Pass | `signup.dto.ts` — `@MinLength(8)` |
+| 6.2.2 | Users can change their password | Partial | Only forgot/reset via email exists; no "change password while signed in" flow |
+| 6.2.3 | Changing a password requires the old one + the new one | N/A | There's no "change password while signed in" feature (see 6.2.2) |
+| 6.2.4 | Check passwords against a breached/common-password list | Pass (fixed rev. 2) | `common/password.ts → isCommonPassword()` checks before hashing, on both signup and reset |
+| 6.2.5 | No forced composition rule | Pass | `signup.dto.ts` only checks length — no uppercase/lowercase/digit regex |
+| 6.2.6 | Password field is masked with a reveal button | Pass | `components/ui/password-input.tsx` toggles `type="password"`/`"text"` |
+| 6.2.7 | Allow paste and password managers | Pass | A plain `<input>`, no handler blocking paste |
+| 6.2.8 | Validate the password exactly as submitted — no trim/case conversion | Pass | `password.ts` — `scrypt()` takes the raw string, transforms nothing |
+| 6.3.1 | Protection against credential stuffing/brute force | Pass | `auth.controller.ts` — `@Throttle` on every auth route (5 req/60s) |
+| 6.3.2 | No default account | Pass | No hardcoded admin/default credential found in signup, seed, or restore scripts |
+| 6.4.1 | Initial passwords are random and expire quickly | N/A | No admin-issues-a-temporary-password feature exists |
+| 6.4.2 | No password hint/secret question | Pass | No secret-question field anywhere in the user schema |
+
+## V7 — Session Management (6 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 7.2.1 | Verify tokens only at a trusted backend | Pass | `session.guard.ts` runs server-side on every request |
+| 7.2.2 | Tokens generated dynamically, not a static secret | Pass | `token.ts → createSessionToken()` generates a fresh one on every login |
+| 7.2.3 | Reference-token entropy ≥128 bits | N/A | Uses a self-contained (HMAC) token, not a reference token — see V9 instead |
+| 7.2.4 | Issue a new token on every (re-)authentication | Pass | `issueSession()` is called fresh on every login/signup/google-auth |
+| 7.4.1 | A terminated session can no longer be used | Pass (fixed rev. 2) | New `POST /auth/logout` + `SessionRevocationService.revoke()` |
+| 7.4.2 | All sessions are cut when an account is suspended | Pass (fixed rev. 2) | `accounts.service.ts → setSuspended()` calls `revocation.revoke()` immediately |
+
+## V8 — Authorization (4 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 8.1.1 | Documented function-level/data-specific access rules | Partial | Genuinely enforced via guards (`role.guard.ts`, `owner.guard.ts`, etc.) but has no standalone writeup |
+| 8.2.1 | Restrict function-level access by role | Pass | `@UseGuards(RoleGuard/OwnerGuard/OrgGuard/AdminGuard)` on every route |
+| 8.2.2 | Restrict data-specific access (anti-IDOR/BOLA) | Pass | `saved-tors.service.ts` scopes every query to the `userId` from the session, nothing else |
+| 8.3.1 | Enforce authorization at the trusted service layer | Pass | Every check is a server-side NestJS guard; nothing relies on the client |
+
+## V9 — Self-contained Tokens (4 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 9.1.1 | Verify signature/MAC before trusting the payload | Pass | `token.ts` — `timingSafeEqual()` HMAC check before parsing |
+| 9.1.2 | Allowlist the algorithm, never `None` | Pass | HMAC-SHA256 is hardcoded in the code, never read from the token — no algorithm-confusion surface |
+| 9.1.3 | Key material from a trustworthy source | Pass | `env.sessionSecret` — `required()` fails startup if unset in production |
+| 9.2.1 | Check the validity time span (`exp`) | Pass | Checked by both the backend and the frontend verifier |
+
+## V10 — OAuth and OIDC (5 items)
+
+All 5 items (10.4.1–10.4.5) are N/A — the app is only an OAuth/OIDC **client** (it verifies Google ID tokens via `google-auth-library`), not an authorization server issuing its own tokens. This group of requirements addresses the authorization-server side.
+
+## V11 — Cryptography (3 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 11.3.1 | No insecure block-cipher modes | N/A | No symmetric encryption in the system (token=HMAC, password=scrypt) |
+| 11.3.2 | Only approved ciphers/modes | N/A | Same reasoning as 11.3.1 |
+| 11.4.1 | Only approved hash functions; no MD5 | Pass | scrypt (password) + HMAC-SHA256 (token); no MD5/SHA-1 found anywhere |
+
+## V12 — Secure Communication (3 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 12.1.1 | Only the latest TLS version | Not reviewed | TLS termination lives at the hosting/reverse-proxy layer, outside this repo |
+| 12.2.1 | Always use TLS for externally-facing services | Partial | The code itself doesn't force an HTTP→HTTPS redirect; this depends entirely on the deployment layer |
+| 12.2.2 | Use a publicly-trusted TLS cert | Not reviewed | A hosting concern, not visible in this repo |
+
+## V13 — Configuration (1 item)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 13.4.1 | Don't expose source-control metadata (.git/.svn) | Pass | `backend/Dockerfile` is multi-stage and copies only `dist/` into the image; no `ServeStaticModule` |
+
+## V14 — Data Protection (2 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 14.2.1 | No sensitive data in the URL | Pass | The session token only ever travels via header/httpOnly cookie; the only `?token=` usage is one-time verify/reset links, an accepted pattern |
+| 14.3.1 | Clear authenticated data from client storage after the session ends | Pass | Logout clears the cookie; the token is never kept in localStorage/sessionStorage |
+
+## V15 — Secure Coding & Architecture (3 items)
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 15.1.1 | Documented SLA for patching vulnerable dependencies | Pass (fixed rev. 2) | The SLA policy is written below — this file is the documentation this item asks for; not yet enforced as a CI step |
+| 15.2.1 | No component past its patch SLA | Not reviewed | Depends on current `npm audit` results; can't be confirmed from a code read alone |
+| 15.3.1 | API returns only the fields it needs to | Pass | `accounts.service.ts` always excludes `passwordHash`/`passwordSalt` via projection |
+
+---
+
+## Dependency-patch SLA (ASVS 15.1.1)
+
+- **Critical/High CVE** (from `npm audit` or Dependabot): fix within **7 days**
+- **Medium**: fix within **30 days**
+- **Low**: fix in the normal course of the next sprint, within **90 days** at most
+- Run `npm audit` (or enable Dependabot) as part of CI — see `.github/workflows/auth.yml`
