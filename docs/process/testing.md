@@ -7,7 +7,7 @@ Jest, Vitest or browser automation.
 | | Backend | Frontend |
 | --- | --- | --- |
 | Folder | `backend/test/` | `frontend/test/` |
-| Files | 38 | 9 |
+| Files | 39 | 9 |
 | Test cases | about 520 | about 77 |
 | Command | `npm run test:e2e` | `npm run test:e2e` |
 | Runs in CI | ✅ Yes | ❌ No (lint and build only) |
@@ -114,7 +114,7 @@ them (it needs the backend and `next start` running, like the steps above).
 | Importers | `tor-normalize-dedup`, `scope-filter`, `mea-client`, `mea.e2e`, `datagov.e2e`, `admin-alerts` | Normalising and de-duplicating records, the Bangkok scope rule, MEA page parsing, data.go.th import, sync failure alerts |
 | Matching | `matching-scoring`, `matching.e2e`, `match-alerts`, `match-alerts.e2e`, `bid-insight` | Score rules, ranking, which alerts are sent and when, bid suggestion |
 | AI | `extraction-confidence`, `proposal-draft`, `feedback-deadline` | Confidence assessment, proposal prompt, cleaning dates read by the model. No model is ever called |
-| Public input | `feedback-window.e2e`, `feedback-deadline.e2e`, `reports.e2e` | Comment window, feedback deadline, reporting problems |
+| Public input | `feedback-window.e2e`, `feedback-deadline.e2e`, `feedback-visibility.e2e`, `reports.e2e` | Comment window, feedback deadline, only admins see unreviewed comments, reporting problems |
 | Signed-in features | `saved-tors.e2e`, `saved-searches.e2e`, `notifications.e2e`, `notification-delivery`, `owner-dashboard.e2e` | Bookmarks, saved searches, notifications and channels (fetch is faked), owner dashboard |
 | Admin | `admin-dashboard.e2e`, `audit-hooks.e2e` | Dashboard data, audit entries for admin actions |
 
