@@ -2,7 +2,7 @@
 
 Who uses TorFinder and what each of them can do. Every use case below maps
 to a real route; the guard named in brackets is what the backend checks
-(see [api.md](../api.md) for the full list).
+(see [api.md](./api.md) for the full list).
 
 ## Actors
 
@@ -165,7 +165,7 @@ flowchart LR
 | UC27 | Extract TOR fields with AI | Scheduler | `ExtractionScheduler` | FR-08 |
 | UC28 | Send match alerts | Scheduler | `MatchingService.notifyMatches` (after every import and extraction) | FR-14 |
 
-FR numbers refer to [requirements.md](../requirements.md). They are the
+FR numbers refer to [requirements.md](../requirements/summary.md). They are the
 closest match, not an official mapping from the SRS.
 
 ## Things the diagram does not show

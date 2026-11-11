@@ -1,7 +1,7 @@
 # System architecture
 
 How the pieces of TorFinder run and talk to each other. Pipeline detail
-(schedules, dedup order, the AI queue) is in [pipeline.md](../pipeline.md);
+(schedules, dedup order, the AI queue) is in [pipeline.md](../operations/pipeline.md);
 this page is the big picture.
 
 ## Containers and external systems
@@ -79,7 +79,7 @@ a suspension makes older tokens stop working
 `ExtractionScheduler`) built on `SyncScheduler`. A run started from the admin
 button joins the scheduled run if one is already going. Rate limiting is
 in-memory, so the design assumes one backend instance (see
-[deployment-checklist.md](../deployment-checklist.md)).
+[deployment-checklist.md](../operations/deployment-checklist.md)).
 
 **AI is optional.** Without `VERTEX_PROJECT_ID` the extraction job and the
 proposal-draft route are switched off and everything else still works.
@@ -137,7 +137,7 @@ Every module also uses `DatabaseModule`; those arrows are left out.
 | Owner | `/owner` | |
 | Auditor | `/auditor` | |
 | Admin | `/admin/{tor,accounts,users,moderation,reports,audit,notifications,companies}` | `/admin/companies` still uses mock data |
-| Route handlers | `frontend/src/app/api/*` | Thin proxies for calls made from client components (see [api.md](../api.md#frontend-route-handlers)) |
+| Route handlers | `frontend/src/app/api/*` | Thin proxies for calls made from client components (see [api.md](./api.md#frontend-route-handlers)) |
 | Translations | `frontend/messages/{th,en}.json` | next-intl |
 
 ## Deployment
@@ -146,4 +146,4 @@ Every module also uses `DatabaseModule`; those arrows are left out.
 `backend` (port 4000) and `db` (`mongo:7`, port 27017, seeded from
 `docker/mongo-seed/` the first time the volume is empty). There is no
 production deployment in the repo yet; see
-[deployment-checklist.md](../deployment-checklist.md).
+[deployment-checklist.md](../operations/deployment-checklist.md).
