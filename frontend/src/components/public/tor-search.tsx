@@ -371,7 +371,7 @@ function PublicTorCard({
 
           <h3 className="text-lg font-bold text-ink sm:text-lg">{tor.title}</h3>
 
-          <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px] text-ink-muted">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-muted">
             <span className="flex items-center gap-1.5">
               <Building2 size={15} className="text-ink-subtle" />
               {tor.agency}
