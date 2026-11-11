@@ -31,7 +31,7 @@ through automated matching.
 
 ## 3. Stakeholders & Roles
 
-Per the team's SRS (see [specs/srs.md](./specs/srs.md), Section 3):
+Per the team's SRS (see [specs/srs.md](../requirements/srs.md), Section 3):
 
 | Stakeholder | Needs from the system |
 | --- | --- |
@@ -45,7 +45,7 @@ Per the team's SRS (see [specs/srs.md](./specs/srs.md), Section 3):
 The implemented app uses slightly different labels for the same roles:
 Administrator, Organization (= Software Company/Bidder), Project Owner,
 Auditor, and Public visitor. See per-endpoint permissions in
-[security-asvs-l1.md](../backend/docs/security-asvs-l1.md), section V8 —
+[security-asvs-l1.md](../security/asvs-l1.md), section V8 —
 Authorization.
 
 ## 4. Tech Stack
@@ -60,17 +60,17 @@ Authorization.
 | Deployment | Docker Compose |
 | CI/CD | GitHub Actions (`.github/workflows/auth.yml`) |
 
-Setup and environment-variable details live in [README.md](../README.md).
+Setup and environment-variable details live in [README.md](../../README.md).
 
 ## 5. Process
 
 The project was built in weekly iterations tracked on a GitHub Projects
 board, each epic tagged with the SRS functional requirement it implements
-(see [specs/srs.md](./specs/srs.md) Section 5 for FR-01…FR-26). See the
+(see [specs/srs.md](../requirements/srs.md) Section 5 for FR-01…FR-26). See the
 summary below and the per-iteration backlog in
 [docs/iterations/](./iterations/). Work merges into `main` through review
 and CI (lint, build, and an e2e test of the signup/login flow — see
-[auth.yml](../.github/workflows/auth.yml)).
+[auth.yml](../../.github/workflows/auth.yml)).
 
 Branching/commit conventions: one `feature/<name>` branch per issue, and
 Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`,

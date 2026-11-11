@@ -13,7 +13,7 @@ other file.
 | [ER diagram](./er-diagram.md) | MongoDB collections, fields, references and indexes |
 | [Class diagram](./class-diagram.md) | Backend guards, schedulers, importers and domain services |
 | [Sequence diagrams](./sequence-diagrams.md) | Sign-in, sign-up and approval, import and AI, matching, feedback moderation, error reports |
-| [API reference](../api.md) | Every backend route, its guard, body and response |
+| [API reference](./api.md) | Every backend route, its guard, body and response |
 
 ## Editing a diagram
 

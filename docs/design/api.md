@@ -333,7 +333,7 @@ All `Session`.
 ### Imports
 
 All `Admin`. Each sync is also run on a timer; a manual call joins a run
-that is already going. See [pipeline.md](./pipeline.md) for what each
+that is already going. See [pipeline.md](../operations/pipeline.md) for what each
 source does.
 
 | Method | Path | Body | Response |
@@ -391,4 +391,4 @@ about the current code, not because they are intended.
    deleted.
 2. **Rate limits are per process.** With more than one backend instance,
    each one counts separately (see
-   [deployment-checklist.md](./deployment-checklist.md)).
+   [deployment-checklist.md](../operations/deployment-checklist.md)).

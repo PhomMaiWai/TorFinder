@@ -9,8 +9,8 @@ August 21, 2026
 > "สตง./Auditor Office", and features like AI classification/matching). The
 > as-built system uses slightly different terminology in places (e.g. the
 > app calls the bidder role "Organization") — see
-> [project-plan.md](../project-plan.md) and
-> [docs/iterations/](../iterations/) for how delivery actually mapped onto
+> [project-plan.md](../project/project-plan.md) and
+> [docs/iterations/](../project/iterations/) for how delivery actually mapped onto
 > this spec, tracked against the team's GitHub Projects backlog.
 
 ## Revision History
@@ -587,7 +587,7 @@ applied across Automated Data Collection and TOR Search & Discovery.
 
 For how each FR was actually delivered sprint by sprint, see the team's
 GitHub Projects iteration backlog, summarized in
-[docs/iterations/](../iterations/).
+[docs/iterations/](../project/iterations/).
 
 ## 11. Open Issues & Assumptions
 

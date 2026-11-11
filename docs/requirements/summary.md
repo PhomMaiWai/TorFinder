@@ -1,7 +1,7 @@
 # Requirements
 
 A working reference for what TOR Finder is supposed to do, pulled from
-[the team's SRS](./specs/srs.md) (v1.0, Aug 21 2026) so it can be linked from
+[the team's SRS](./srs.md) (v1.0, Aug 21 2026) so it can be linked from
 code and checked against without opening the full document every time. If
 this file and the SRS ever disagree, treat the SRS as the source of truth and
 fix this file to match it.
@@ -38,7 +38,7 @@ Hard boundary: automated collection only covers BMA-affiliated agencies,
 and only announcements published **2022 or later** (FR-26). Anything older
 or from outside BMA is simply never ingested.
 
-Separately, [project-plan.md](./project-plan.md) records a few as-built
+Separately, [project-plan.md](../project/project-plan.md) records a few as-built
 boundaries the SRS doesn't mention: there's no file-upload feature anywhere
 in the app, the Google sign-in integration is OAuth-client-only (this app
 never acts as an identity provider for anyone else), and scraping is a
@@ -193,7 +193,7 @@ awarded without competitive bidding — is what FR-24's low-competition flag
 exists to catch. **RBAC** (role-based access control) is what keeps
 Admin/Owner/Org/Auditor/Public capabilities separate.
 
-Related reading: [specs/srs.md](./specs/srs.md) for the full document this
-one condenses, [project-plan.md](./project-plan.md) for the as-built role
-names and tech stack, and the root [README.md](../README.md) for environment
+Related reading: [specs/srs.md](./srs.md) for the full document this
+one condenses, [project-plan.md](../project/project-plan.md) for the as-built role
+names and tech stack, and the root [README.md](../../README.md) for environment
 variables and local setup — none of which the SRS itself covers.

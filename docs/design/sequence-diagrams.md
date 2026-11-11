@@ -126,7 +126,7 @@ sequenceDiagram
     participant DB as MongoDB
 
     S->>E: sync() (joins a run already in flight)
-    E->>EC: searchProjects per type and keyword
+    E->>EC: searchProjects per announcement type (keywords for award notices)
     EC->>P: GET /Projects/GetProjectFromFilter
     P-->>EC: projects
     E->>E: keep software work only (isSoftwareProject)
@@ -162,7 +162,7 @@ sequenceDiagram
 
 MEA, data.go.th and the national e-GP (gproc) follow the same path through
 `TorImportService.import`. The details for each source are in
-[pipeline.md](../pipeline.md).
+[pipeline.md](../operations/pipeline.md).
 
 ## 4. A company opens its matched TORs
 

@@ -121,7 +121,7 @@ logging that it happened.
 ## What's already known to be missing
 
 From the team's own ASVS Level 1 self-audit
-(`backend/docs/security-asvs-l1.md`) — explicitly flagged there as
+(`docs/security/asvs-l1.md`) — explicitly flagged there as
 pre-production work, not yet done:
 
 - [ ] **Password wordlist** — `common-passwords.ts` ships a ~120-word starter list; the audit recommends the SecLists top-10k before production
