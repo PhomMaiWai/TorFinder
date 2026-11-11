@@ -56,6 +56,7 @@ const CLIENT_NAMESPACES = [
   "CompanyProfileOptions",
   "Dashboard",
   "ErrorState",
+  "FindSimilar",
   // SiteFooter renders inside client trees too: the error boundary and /saved.
   "Footer",
   "LandingExplorer",
