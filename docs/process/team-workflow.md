@@ -14,32 +14,41 @@ November 11, 2026.
 
 ```mermaid
 flowchart LR
+    subgraph Roles
+        direction TB
+        PO["Product Owner<br/>(shared)"]
+        Dev["Dev Team<br/>(all three, full-stack)"]
+        SM["Scrum Master<br/>(shared)"]
+    end
+
     subgraph Inputs
         SRS["SRS v1.0<br/>FR-01 … FR-26"]
         Client["Client feedback<br/>(in-class review, Oct)"]
     end
 
-    Backlog[("Product backlog<br/>GitHub Projects<br/>epics + sub-issues<br/>tagged FR, MoSCoW")]
+    Backlog[("Product Backlog<br/>GitHub Projects<br/>epics + sub-issues<br/>tagged FR, MoSCoW")]
+    Planning["Sprint Planning Meeting<br/>Must first, ~30 points"]
+    SprintBacklog[("Sprint Backlog<br/>Iteration view")]
 
-    subgraph Sprint["One-week iteration"]
+    subgraph Sprint["Sprint: 1 week, Thu to Wed"]
         direction LR
-        Plan["Iteration planning<br/>pick Must items first<br/>~30 points"]
-        Board["Board: Todo → In progress → Done"]
-        Dev["Branch per issue<br/>feature/123-name"]
+        Board["Todo → In progress → Done"]
+        Dev2["Branch per issue<br/>feature/123-name"]
         PR["Pull request<br/>template + CI"]
         Merge["Merge to main"]
-        Sync["Stand-up<br/>(chat, as needed)"]
-        Plan --> Board --> Dev --> PR --> Merge
-        Sync -.-> Board
+        Standup["Daily Stand-up<br/>(team chat)"]
+        Board --> Dev2 --> PR --> Merge
+        Standup -.-> Board
     end
 
-    Review["Iteration review<br/>demo what is Done"]
-    Retro["Retrospective<br/>carry over unfinished,<br/>adjust next plan"]
+    Done["Finished Work<br/>increment on main<br/>docker compose up"]
+    Review["Sprint Review<br/>demo what is Done"]
+    Retro["Sprint Retrospective<br/>carry over unfinished,<br/>adjust next plan"]
 
     SRS --> Backlog
     Client --> Backlog
-    Backlog --> Plan
-    Merge --> Review --> Retro --> Backlog
+    Backlog --> Planning --> SprintBacklog --> Board
+    Merge --> Done --> Review --> Retro --> Backlog
 ```
 
 ## Roles
