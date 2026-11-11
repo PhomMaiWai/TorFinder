@@ -9,7 +9,7 @@ docs/
 ├── project/        what we are building and how the work went
 ├── requirements/   what the system must do
 ├── design/         how it is built: diagrams and API
-├── process/        how we work on the code
+├── process/        how we work: SDLC, team workflow, code, tests
 ├── operations/     running the import pipeline and deploying
 └── security/       security self-audit
 ```
@@ -28,6 +28,7 @@ docs/
 | --- | --- |
 | [srs.md](./requirements/srs.md) | The team's Software Requirements Specification (SRS v1.0, Aug 21 2026) |
 | [summary.md](./requirements/summary.md) | The SRS condensed: FR-01 to FR-26, NFRs, stakeholders, screens |
+| [kpi.md](./requirements/kpi.md) | Success measures with targets, how to measure them, and today's values |
 
 ## Design
 
@@ -45,6 +46,8 @@ docs/
 
 | Document | Covers |
 | --- | --- |
+| [sdlc.md](./process/sdlc.md) | The six SDLC stages and what we did in each, with evidence |
+| [team-workflow.md](./process/team-workflow.md) | How the team ran Scrum: cycle diagram, roles, cadence, Definition of Done |
 | [developer-guide.md](./process/developer-guide.md) | Branches, commits, pull requests, code style |
 | [testing.md](./process/testing.md) | How to run the tests, what they cover, what CI runs |
 
@@ -56,6 +59,7 @@ docs/
 | [pipeline-guide.md](./operations/pipeline-guide.md) | The same pipeline in plain words, and how to run it locally |
 | [sync-and-poll.md](./operations/sync-and-poll.md) | Older Thai notes on e-GP sync (pipeline.md says where they drifted) |
 | [deployment-checklist.md](./operations/deployment-checklist.md) | What to check before, during and after a deploy |
+| [maintenance.md](./operations/maintenance.md) | Keeping it running after release: monitoring, backups, updates, bug reports |
 
 ## Security
 
