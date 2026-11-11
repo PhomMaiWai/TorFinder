@@ -93,6 +93,7 @@ source's own `*.constants.ts`, not configurable via env.
 | `VERTEX_PROJECT_ID` | empty | Gates AI extraction entirely — empty means the job does nothing regardless of `AI_POLL_MINUTES` |
 | `VERTEX_LOCATION` | `asia-southeast1` | Vertex AI region |
 | `VERTEX_MODEL` | `gemini-2.5-flash` | Model used for extraction |
+| `VERTEX_EMBEDDING_MODEL` | `text-multilingual-embedding-002` | Model that embeds TORs for "find similar" |
 
 `gproc`'s manual trigger doesn't match the other three's shape: it's
 `POST /api/gproc/capture` with a body of specific `projectNumbers` to fetch,

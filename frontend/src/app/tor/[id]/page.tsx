@@ -5,6 +5,7 @@ import {
   FileText,
   MessageSquare,
   Scale,
+  Sparkles,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
@@ -70,9 +71,10 @@ export default async function TorDetailPage({
 }) {
   const [{ id }, { in: context }] = await Promise.all([params, searchParams]);
   const inApp = context === "app";
-  const [tor, t, session] = await Promise.all([
+  const [tor, t, ts, session] = await Promise.all([
     getTorById(id),
     getTranslations("TorDetailPage"),
+    getTranslations("FindSimilar"),
     cookies().then((jar) => verifySessionToken(jar.get(SESSION_COOKIE)?.value)),
   ]);
   if (!tor) notFound();
@@ -158,6 +160,16 @@ export default async function TorDetailPage({
               </a>
             )}
             <SaveTorButton torId={tor.id} saveLabel={t("saveButton")} savedLabel={t("savedButton")} />
+            {/* Showcase records aren't in the database the ranking reads. */}
+            {numericId === null && (
+              <Link
+                href={`${inApp ? "/search" : "/public"}?similar=${tor.id}`}
+                className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt lg:flex-none"
+              >
+                <Sparkles size={15} />
+                {ts("findLikeThis")}
+              </Link>
+            )}
           </div>
         </div>
 

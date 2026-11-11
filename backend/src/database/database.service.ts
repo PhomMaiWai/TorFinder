@@ -363,6 +363,20 @@ export type AuditLogEntryDoc = {
   createdAt: Date;
 };
 
+/**
+ * One TOR's embedding for "find similar". Kept out of `tors` on purpose: a
+ * vector is ~6 KB of numbers no listing reads, and every listing would carry
+ * it. `textHash` is of the text that was embedded, so an edited title or a new
+ * extraction makes the vector stale and it is embedded again.
+ */
+export type TorEmbeddingDoc = {
+  torId: ObjectId;
+  model: string;
+  textHash: string;
+  vector: number[];
+  updatedAt: Date;
+};
+
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
@@ -379,6 +393,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   auditLogEntries!: Collection<AuditLogEntryDoc>;
   authTokens!: Collection<AuthTokenDoc>;
   matchAlerts!: Collection<MatchAlertDoc>;
+  torEmbeddings!: Collection<TorEmbeddingDoc>;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -393,6 +408,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.auditLogEntries = this.client.db().collection<AuditLogEntryDoc>("auditLogEntries");
     this.authTokens = this.client.db().collection<AuthTokenDoc>("authTokens");
     this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
+    this.torEmbeddings = this.client.db().collection<TorEmbeddingDoc>("torEmbeddings");
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -426,6 +442,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.authTokens.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     // Doubles as the guard: two runs racing on one project can't both alert.
     await this.matchAlerts.createIndex({ userId: 1, projectKey: 1, phase: 1 }, { unique: true });
+    await this.torEmbeddings.createIndex({ torId: 1, model: 1 }, { unique: true });
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
     await this.seed();

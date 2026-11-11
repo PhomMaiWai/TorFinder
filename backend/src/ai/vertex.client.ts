@@ -9,6 +9,9 @@ export type GenerateContent = (
   request: GenerateContentParameters,
 ) => Promise<{ text?: string; usageMetadata?: unknown }>;
 
+/** Texts in, one vector per text out, in the same order. Injectable for the same reason. */
+export type EmbedTexts = (texts: string[]) => Promise<number[][]>;
+
 /** 429 and 5xx are the portal being busy; anything else is our own request. */
 function isRetryable(error: unknown): boolean {
   const status = (error as { status?: number; code?: number })?.status ?? (error as { code?: number })?.code;
@@ -27,6 +30,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export class VertexClient {
   private readonly logger = new Logger(VertexClient.name);
   private generate: GenerateContent | null = null;
+  private embedder: EmbedTexts | null = null;
 
   /** False until a project is configured, so the app boots fine without GCP. */
   get isConfigured(): boolean {
@@ -36,6 +40,37 @@ export class VertexClient {
   /** Tests (and a future local model) swap the transport without touching callers. */
   useTransport(generate: GenerateContent): void {
     this.generate = generate;
+  }
+
+  /** The embedding counterpart of useTransport. */
+  useEmbedTransport(embed: EmbedTexts): void {
+    this.embedder = embed;
+  }
+
+  /**
+   * One vector per text, for comparing texts with each other. Every vector is
+   * made for the same task (semantic similarity), so a stored TOR's vector can
+   * be compared with a pasted project's as well as with another TOR's.
+   */
+  async embed(texts: string[]): Promise<number[][]> {
+    if (texts.length === 0) return [];
+    const embed = this.embedTransport();
+
+    let lastError: unknown;
+    for (let attempt = 0; attempt < AI_REQUEST.maxRetries; attempt++) {
+      try {
+        const vectors = await embed(texts);
+        if (vectors.length !== texts.length || vectors.some((v) => v.length === 0)) {
+          throw new Error(`Vertex returned ${vectors.length} embeddings for ${texts.length} texts`);
+        }
+        return vectors;
+      } catch (error) {
+        lastError = error;
+        if (!isRetryable(error) || attempt === AI_REQUEST.maxRetries - 1) break;
+        await sleep(2 ** attempt * 1000);
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   }
 
   async extractJson<T>(
@@ -101,18 +136,45 @@ export class VertexClient {
   /** Built on first use: constructing the client reads credentials from disk. */
   private transport(): GenerateContent {
     if (this.generate) return this.generate;
-    if (!this.isConfigured) {
-      throw new ServiceUnavailableException("ยังไม่ได้ตั้งค่า Vertex AI");
-    }
-
-    const client = new GoogleGenAI({
-      vertexai: true,
-      project: env.ai.projectId,
-      location: env.ai.location,
-    });
+    const client = this.client();
     this.logger.log(`Vertex AI ready: ${env.ai.model} in ${env.ai.location}`);
 
     this.generate = (request) => client.models.generateContent(request);
     return this.generate;
+  }
+
+  private embedTransport(): EmbedTexts {
+    if (this.embedder) return this.embedder;
+    const client = this.client();
+    this.logger.log(`Vertex embeddings ready: ${env.ai.embeddingModel} in ${env.ai.location}`);
+
+    this.embedder = async (texts) => {
+      const response = await client.models.embedContent({
+        model: env.ai.embeddingModel,
+        contents: texts,
+        config: {
+          taskType: "SEMANTIC_SIMILARITY",
+          // A long TOR is cut by the model rather than refused.
+          autoTruncate: true,
+          abortSignal: AbortSignal.timeout(AI_REQUEST.timeoutMs),
+        },
+      });
+      return (response.embeddings ?? []).map((embedding) => embedding.values ?? []);
+    };
+    return this.embedder;
+  }
+
+  private sdk: GoogleGenAI | null = null;
+
+  private client(): GoogleGenAI {
+    if (!this.isConfigured) {
+      throw new ServiceUnavailableException("ยังไม่ได้ตั้งค่า Vertex AI");
+    }
+    this.sdk ??= new GoogleGenAI({
+      vertexai: true,
+      project: env.ai.projectId,
+      location: env.ai.location,
+    });
+    return this.sdk;
   }
 }

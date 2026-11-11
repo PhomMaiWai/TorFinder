@@ -5,6 +5,7 @@ import {
   Bookmark,
   Building2,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -12,12 +13,14 @@ import {
   MessageSquare,
   Search,
   SlidersHorizontal,
+  Sparkles,
   TrendingDown,
   TrendingUp,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import {
   type AmountKind,
@@ -41,6 +44,8 @@ import {
   type TorStatus,
   yearLabel,
 } from "@/lib/search-filters";
+import { findSimilarTors, type SimilarError, type SimilarHit, type SimilarInput } from "@/lib/similar-actions";
+import { rankBySimilarity } from "@/lib/similar-rank";
 import { DEFAULT_SORT, isSortKey, parseBudget, SORT_KEYS, type SortKey, sortTors } from "@/lib/tor-sort";
 import { useSavedTors } from "@/lib/use-saved-tors";
 import { useSession } from "@/lib/use-session";
@@ -50,6 +55,7 @@ import { BiddingBadge } from "./bidding-badge";
 import { SaveSearchForm } from "./save-search-form";
 
 import { AgencyFilter } from "./agency-filter";
+import { FindSimilarPanel } from "./find-similar-panel";
 import { FilterCheckbox } from "./filter-checkbox";
 import { FilterRadio } from "./filter-radio";
 
@@ -276,6 +282,8 @@ function PublicTorCard({
   onSubmitFeedback,
   isSaved,
   onToggleSave,
+  similarity,
+  onFindSimilar,
 }: {
   tor: TorRecord;
   detailHref: string;
@@ -286,8 +294,12 @@ function PublicTorCard({
   onSubmitFeedback: () => void;
   isSaved: boolean;
   onToggleSave: () => void;
+  /** Set while the list is ranked by "find similar". */
+  similarity?: SimilarHit;
+  onFindSimilar: () => void;
 }) {
   const t = useTranslations("PublicPage");
+  const ts = useTranslations("FindSimilar");
   const bidding = biddingOf(tor);
   const amount = torAmount(tor);
   const feedback = feedbackWindow(tor);
@@ -302,6 +314,12 @@ function PublicTorCard({
       <div className="flex flex-col gap-6 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-2">
+            {similarity && (
+              <span className="flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-2xs font-semibold text-accent">
+                <Sparkles size={12} />
+                {ts("similarityBadge", { score: similarity.similarity })}
+              </span>
+            )}
             <span
               className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
             >
@@ -375,6 +393,13 @@ function PublicTorCard({
 
           <p className="mt-3.5 line-clamp-2 text-sm leading-relaxed text-ink-muted">{tor.summary}</p>
 
+          {similarity && similarity.sharedTerms.length > 0 && (
+            <p className="mt-2 text-xs text-ink-muted">
+              <span className="font-medium text-ink">{ts("sharedTermsLabel")}</span>{" "}
+              {similarity.sharedTerms.join(" · ")}
+            </p>
+          )}
+
           <div className="mt-4 flex flex-wrap gap-2">
             {tor.tags.map((tag) => (
               <span
@@ -424,6 +449,14 @@ function PublicTorCard({
             >
               {t("viewDetails")}
             </Link>
+            <button
+              type="button"
+              onClick={onFindSimilar}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt"
+            >
+              <Sparkles size={14} />
+              {ts("findLikeThis")}
+            </button>
             {/* A few records carry no link at all, so only offer one that opens. */}
             {originalUrl && (
               <a
@@ -487,11 +520,14 @@ export function TorSearch({
   inApp = false,
   initialFilters = NO_FILTERS,
   pinnedIds = NO_PINS,
+  initialSimilarTo,
 }: {
   tors: TorRecord[];
   inApp?: boolean;
   initialFilters?: SearchFilters;
   pinnedIds?: string[];
+  /** A TOR id from `?similar=`: the page opens ranked by similarity to it. */
+  initialSimilarTo?: string;
 }) {
   const [search, setSearch] = useState(initialFilters.query);
   const [sortKey, setSortKey] = useState<SortKey>(initialFilters.sort);
@@ -501,7 +537,8 @@ export function TorSearch({
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>(initialFilters.agencies);
   const [selectedBudgets, setSelectedBudgets] = useState<string[]>(initialFilters.budgets);
   // Saving needs an account; a guest's list would have nowhere to live.
-  const signedIn = Boolean(useSession());
+  const session = useSession();
+  const signedIn = Boolean(session);
   const [feedbackOpenId, setFeedbackOpenId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [lastQueryKey, setLastQueryKey] = useState("");
@@ -510,6 +547,46 @@ export function TorSearch({
   const { savedIds, toggleSaved } = useSavedTors();
   const savedSet = useMemo(() => new Set(savedIds), [savedIds]);
   const t = useTranslations("PublicPage");
+  const ts = useTranslations("FindSimilar");
+
+  // "Find similar" leads; the filters are still there, folded away until
+  // wanted — the reader is a project manager, not someone tuning a query.
+  const [showAdvanced, setShowAdvanced] = useState(
+    initialFilters.statuses.length > 0 ||
+      initialFilters.deadline !== null ||
+      initialFilters.years.length > 0 ||
+      initialFilters.agencies.length > 0 ||
+      initialFilters.budgets.length > 0,
+  );
+  const [similar, setSimilar] = useState<{
+    method: "ai" | "keyword";
+    label: string;
+    hits: SimilarHit[];
+  } | null>(null);
+  const [similarError, setSimilarError] = useState<SimilarError | null>(null);
+  const [similarPending, startSimilar] = useTransition();
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  function runSimilar(input: SimilarInput, label: string) {
+    setSimilarError(null);
+    startSimilar(async () => {
+      const answer = await findSimilarTors(input);
+      if (!answer.ok) {
+        setSimilarError(answer.error);
+        return;
+      }
+      setSimilar({ method: answer.method, label: answer.basedOn?.title ?? label, hits: answer.hits });
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  // Opened from a TOR's "find similar" link: rank once, on arrival.
+  const openedWith = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialSimilarTo || openedWith.current === initialSimilarTo) return;
+    openedWith.current = initialSimilarTo;
+    runSimilar({ torId: initialSimilarTo }, "");
+  }, [initialSimilarTo]);
 
   // Filter options come from what was actually announced, not a fixed list.
   const agencies = useMemo(() => tors.map((t) => t.agency), [tors]);
@@ -563,6 +640,10 @@ export function TorSearch({
   }, [index, deferredSearch, selectedStatuses, selectedDeadline, selectedYears, selectedAgencies, selectedBudgets]);
 
   const sorted = useMemo(() => sortTors(filtered, sortKey, pinnedIds), [filtered, sortKey, pinnedIds]);
+  // While "find similar" is on, its ranking replaces the sort; the filters still apply.
+  const ranked = useMemo(() => (similar ? rankBySimilarity(filtered, similar.hits) : null), [filtered, similar]);
+  const results = useMemo(() => (ranked ? ranked.map(({ tor }) => tor) : sorted), [ranked, sorted]);
+  const hitById = useMemo(() => new Map(ranked?.map(({ tor, hit }) => [tor.id, hit])), [ranked]);
 
   function changeSort(key: SortKey) {
     setSortKey(key);
@@ -578,14 +659,16 @@ export function TorSearch({
     selectedAgencies,
     selectedBudgets,
     sortKey,
+    similar?.label ?? null,
+    similar?.hits.length ?? null,
   ]);
   if (queryKey !== lastQueryKey) {
     setLastQueryKey(queryKey);
     setPage(1);
   }
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const pageCount = Math.max(1, Math.ceil(results.length / PER_PAGE));
+  const visible = results.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   function handleSubmitFeedback() {
     if (!feedbackText.trim()) return;
@@ -613,7 +696,7 @@ export function TorSearch({
     <div className="flex flex-col items-start gap-8 lg:flex-row">
       <div className="flex w-full items-center justify-between lg:hidden">
         <span className="text-sm font-semibold text-ink">
-          {t("resultsCountMobile", { count: filtered.length })}
+          {t("resultsCountMobile", { count: results.length })}
         </span>
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -663,6 +746,23 @@ export function TorSearch({
             </div>
           </div>
 
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((open) => !open)}
+            aria-expanded={showAdvanced}
+            className="mb-5 flex w-full items-center justify-between rounded-lg bg-surface-alt px-3 py-2 text-sm font-semibold text-ink hover:bg-border"
+          >
+            <span>
+              {ts("advancedFilters")}
+              {hasActiveFilters && !showAdvanced && (
+                <span className="ml-1.5 text-accent">{ts("advancedFiltersActive")}</span>
+              )}
+            </span>
+            <ChevronDown size={16} className={`transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
+          </button>
+
+          {showAdvanced && (
+          <>
           <div className="mb-7 h-px w-full bg-surface-alt" />
 
           <StatusFilter
@@ -715,6 +815,8 @@ export function TorSearch({
             selected={selectedAgencies}
             onChange={setSelectedAgencies}
           />
+          </>
+          )}
 
           {signedIn && (hasActiveFilters || search.trim() !== "") && (
             <>
@@ -737,14 +839,44 @@ export function TorSearch({
       </aside>
 
       <div className="min-w-0 flex-1">
+        <FindSimilarPanel
+          pending={similarPending}
+          error={similarError}
+          canUseProfile={session?.role === "org"}
+          onSearch={runSimilar}
+        />
+
+        <div ref={resultsRef} className="scroll-mt-20" />
+        {similar && (
+          <div className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-accent/20 bg-accent-soft px-4 py-3">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                <Sparkles size={15} className="shrink-0 text-accent" />
+                <span className="truncate">{ts("rankedBy", { label: similar.label })}</span>
+              </p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                {similar.method === "ai" ? ts("methodAi") : ts("methodKeyword")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSimilar(null)}
+              className="flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface hover:text-ink"
+            >
+              <X size={14} />
+              {ts("clear")}
+            </button>
+          </div>
+        )}
+
         <div className="mb-5 flex items-center justify-end gap-4 lg:justify-between">
           <h2 className="hidden text-base font-semibold text-ink lg:block">
             {t.rich("resultsCount", {
-              count: filtered.length,
+              count: results.length,
               strong: (chunks) => <span className="text-ink">{chunks}</span>,
             })}
           </h2>
-          {tors.length > 0 && <SortSelect value={sortKey} onChange={changeSort} />}
+          {tors.length > 0 && !similar && <SortSelect value={sortKey} onChange={changeSort} />}
         </div>
 
         {tors.length === 0 ? (
@@ -755,11 +887,15 @@ export function TorSearch({
               {t("noRecordsDescription")}
             </p>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : results.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border py-24 text-center">
             <Search size={32} className="mx-auto mb-4 text-ink-subtle" />
-            <h3 className="text-base font-semibold text-ink">{t("emptyStateTitle")}</h3>
-            <p className="mt-1 text-base text-ink-muted">{t("emptyStateDescription")}</p>
+            <h3 className="text-base font-semibold text-ink">
+              {similar ? ts("emptyTitle") : t("emptyStateTitle")}
+            </h3>
+            <p className="mt-1 text-base text-ink-muted">
+              {similar ? ts("emptyDescription") : t("emptyStateDescription")}
+            </p>
             {hasActiveFilters && (
               <button
                 onClick={clearAllFilters}
@@ -790,6 +926,8 @@ export function TorSearch({
                 onSubmitFeedback={handleSubmitFeedback}
                 isSaved={savedSet.has(tor.id)}
                 onToggleSave={() => toggleSaved(tor.id)}
+                similarity={hitById.get(tor.id)}
+                onFindSimilar={() => runSimilar({ torId: tor.id }, tor.title)}
               />
             ))}
 

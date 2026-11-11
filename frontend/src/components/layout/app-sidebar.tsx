@@ -17,6 +17,7 @@ import {
   Plus,
   Search,
   SearchCheck,
+  Trophy,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -56,6 +57,7 @@ function getOrgNav(t: (key: string) => string): { section: string | null; links:
         // The profile before the matches: every match is computed from it.
         { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
         { label: t("navMatches"), href: "/matches", icon: LayoutDashboard },
+        { label: t("navInsights"), href: "/insights", icon: Trophy },
         { label: t("navSearchTor"), href: "/search", icon: Search },
         { label: t("navSavedList"), href: "/saved?scope=org", icon: Bookmark },
         {
@@ -105,6 +107,7 @@ function getOwnerNav(t: (key: string) => string): { section: string | null; link
       links: [
         { label: t("navMyProjects"), href: "/owner", icon: FolderKanban },
         { label: t("navOverview"), href: "/dashboard", icon: Activity },
+        { label: t("navInsights"), href: "/insights", icon: Trophy },
         { label: t("navSearchTor"), href: "/search", icon: Search },
       ],
     },

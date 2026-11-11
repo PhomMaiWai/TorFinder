@@ -35,6 +35,7 @@ export default async function PublicPage({
             tors={tors}
             initialFilters={filtersFromParams(params)}
             pinnedIds={FEATURED_IDS}
+            initialSimilarTo={typeof params.similar === "string" ? params.similar : undefined}
           />
         </div>
       </main>

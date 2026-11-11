@@ -31,6 +31,7 @@ export default async function SearchPage({
           inApp
           initialFilters={filtersFromParams(params)}
           pinnedIds={FEATURED_IDS}
+          initialSimilarTo={typeof params.similar === "string" ? params.similar : undefined}
         />
       </PageBody>
     </AppShell>
