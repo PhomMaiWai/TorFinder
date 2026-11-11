@@ -7,8 +7,10 @@ import { type SubmitEvent, useEffect, useState } from "react";
 import { PageBody, PageHeader, Section } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
 import { COMPANY_SIZE_OPTIONS, type CompanySize } from "@/data/company-profile";
+import { ProfileNudges } from "@/components/profile/profile-nudges";
 import { StandardsPicker } from "@/components/profile/standards-picker";
 import { WORK_TYPE_GROUPS, type Certification, type WorkType } from "@/types/tor";
+import { profileProgress } from "@/lib/profile-progress";
 import { formatTaxId, hasValidTaxIdChecksum, isValidTaxId } from "@/lib/thai-validation";
 
 const readOnlyInputCls =
@@ -149,19 +151,15 @@ export default function ProfilePage() {
     load();
   }, []);
 
-  // Weighted toward what matching reads: without these the dashboard can't
-  // say whether the company qualifies.
-  const completeness = [
-    contactName.trim(),
-    phone.trim(),
-    address.trim(),
-    workTypes.length > 0,
-    largestPastContract,
-    registeredCapital,
-    certifications !== undefined,
-    budgetMin || budgetMax,
-  ];
-  const percent = Math.round((completeness.filter(Boolean).length / completeness.length) * 100);
+  // Counted from what's typed, so a nudge clears as soon as the field is filled.
+  const { items: progressItems, percent } = profileProgress({
+    workTypes,
+    largestPastContract: parseBaht(largestPastContract),
+    registeredCapital: parseBaht(registeredCapital),
+    certifications,
+    preferredBudgetMin: parseBaht(budgetMin),
+    preferredBudgetMax: parseBaht(budgetMax),
+  });
 
   const hasInvalidTaxId = !taxIdLocked && taxId.trim() !== "" && !isValidTaxId(taxId);
 
@@ -349,7 +347,7 @@ export default function ProfilePage() {
             </div>
           </Section>
 
-          <Section title={t("workTypesSectionTitle")}>
+          <Section id="work-types" title={t("workTypesSectionTitle")}>
             <div className="rounded-xl border border-border bg-surface p-5">
               <p className="mb-4 text-sm text-ink-muted">{t("workTypesDescription")}</p>
               <div className="space-y-4">
@@ -375,7 +373,7 @@ export default function ProfilePage() {
             </div>
           </Section>
 
-          <Section title={t("qualificationsSectionTitle")}>
+          <Section id="qualifications" title={t("qualificationsSectionTitle")}>
             <div className="space-y-4 rounded-xl border border-border bg-surface p-5">
               <p className="text-sm text-ink-muted">{t("qualificationsDescription")}</p>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -424,11 +422,11 @@ export default function ProfilePage() {
             </div>
           </Section>
 
-          <Section title={t("standardsSectionTitle")}>
+          <Section id="standards" title={t("standardsSectionTitle")}>
             <StandardsPicker value={certifications} onChange={setCertifications} />
           </Section>
 
-          <Section title={t("budgetRangeSectionTitle")}>
+          <Section id="budget-range" title={t("budgetRangeSectionTitle")}>
             <div className="rounded-xl border border-border bg-surface p-5">
               <p className="mb-3 text-sm text-ink-muted">{t("budgetRangeDescription")}</p>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -536,6 +534,12 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
+
+            {!loading && (
+              <div className="mt-4">
+                <ProfileNudges items={progressItems} />
+              </div>
+            )}
           </div>
 
           <button
