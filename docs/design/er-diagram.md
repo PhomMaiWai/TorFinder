@@ -136,6 +136,14 @@ erDiagram
         ObjectId torId FK
         date createdAt
     }
+    torEmbeddings {
+        ObjectId _id PK
+        ObjectId torId FK
+        string model
+        string textHash
+        array vector
+        date updatedAt
+    }
     savedSearches {
         ObjectId _id PK
         ObjectId userId FK
@@ -199,6 +207,7 @@ erDiagram
     users |o--o{ torReports : files
     users ||--o{ savedTors : bookmarks
     tors ||--o{ savedTors : "bookmarked as"
+    tors ||--o{ torEmbeddings : "embedded as"
     users ||--o{ savedSearches : keeps
     users ||--o{ notifications : receives
     tors |o--o{ notifications : about
@@ -224,6 +233,7 @@ admin audit page merges both collections into one feed.
 | `feedback` | `{ torId: 1, createdAt: -1 }`, `{ status: 1, createdAt: -1 }` | Comments per TOR; moderation queue |
 | `torReports` | `{ status: 1, createdAt: -1 }`, `{ torId: 1, createdAt: -1 }` | Admin list; reports per TOR |
 | `savedTors` | `{ userId: 1, torId: 1 }` unique, `{ userId: 1, createdAt: -1 }` | No double bookmark; own list |
+| `torEmbeddings` | `{ torId: 1, model: 1 }` unique | One vector per TOR per embedding model, for "find similar" |
 | `savedSearches` | `{ userId: 1, name: 1 }` unique, `{ userId: 1, createdAt: -1 }` | Names are unique per user |
 | `notifications` | `{ userId: 1, createdAt: -1 }` | Own inbox |
 | `syncRuns` | `{ startedAt: -1 }` | Latest runs for the pipeline card |

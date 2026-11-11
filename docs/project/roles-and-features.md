@@ -28,8 +28,12 @@ Demo accounts for every role are in the [root README](../../README.md#demo-accou
 
 ### Public visitor (everyone)
 
+- Find similar TORs: paste a past project (or pick a TOR with its "find
+  similar" button) and get TORs from other agencies ranked by how alike the
+  work is, with the words they share (`/search`, `/public`, issue #255).
 - Search TORs by keyword and filter by stage, agency, year, budget range and
-  deadline; sort the results (`/search`, `/public`).
+  deadline; sort the results (`/search`, `/public`). The filters sit under
+  "More filters", folded away by default.
 - Open a TOR (`/tor/[id]`): the details, a timeline of its stages, the AI
   summary of the TOR document, and the original documents, viewable in the
   page or downloadable.
@@ -58,6 +62,8 @@ Everything a viewer can do, plus:
   capital, largest past contract, preferred budget range (`/profile`).
 - See TORs ranked by how well they fit the company, with the reasons, the
   gaps and whether the company meets each stated requirement (`/matches`).
+- Find TORs similar to the company profile's past experience with one
+  button on the search page.
 - Get an alert when a new TOR scores above the company's own threshold
   (40-95), in the app and by email, LINE or Slack; send a test message to
   check the channels (`/notifications`).
@@ -121,7 +127,7 @@ FR numbers are from [summary.md](../requirements/summary.md).
 | FR-10 | Filter by budget, deadline, tech stack | 🟡 Partial | Budget and deadline yes; no tech-stack filter |
 | FR-11 | Full detail and link to the original document | ✅ Done | Documents open in the page |
 | FR-12 | Company matching profile | ✅ Done | |
-| FR-13 | Score each TOR against the profile | ✅ Done | |
+| FR-13 | Score each TOR against the profile | ✅ Done | Plus "find similar" from a pasted project or profile (#255): Vertex AI embeddings, keyword ranking without them |
 | FR-14 | Notify above a set score | ✅ Done | In-app, email, LINE, Slack |
 | FR-15 | Bookmark a TOR | ✅ Done | |
 | FR-16 | Save and reuse a search | ✅ Done | Up to 50 per account |

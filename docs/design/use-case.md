@@ -51,6 +51,7 @@ flowchart LR
 
     subgraph TorFinder["TorFinder"]
         UC1(["UC1 Search and filter TORs"])
+        UC1b(["UC1b Find similar TORs"])
         UC2(["UC2 View TOR detail, timeline and documents"])
         UC3(["UC3 See budget check and bid insight"])
         UC4(["UC4 Comment during the hearing period"])
@@ -67,7 +68,7 @@ flowchart LR
         UC14(["UC14 Draft a proposal with AI"])
     end
 
-    Public --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC7b
+    Public --- UC1 & UC1b & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC7b
     Viewer --- UC8 & UC9
     Org --- UC8 & UC9 & UC10 & UC11 & UC12 & UC13 & UC14
     UC13 -. include .-> UC12
@@ -136,6 +137,7 @@ flowchart LR
 | # | Use case | Actor | Route(s) | FR |
 | --- | --- | --- | --- | --- |
 | UC1 | Search and filter TORs | Anyone | `GET /api/tor` | FR-09, FR-10 |
+| UC1b | Find TORs similar to a past project, the company profile or a TOR | Anyone | `POST /api/tor/similar` | FR-09, FR-13 |
 | UC2 | View TOR detail, timeline and documents | Anyone | `GET /api/tor/:id`, `/documents/...`, `/egp-documents/...` | FR-11, FR-17 |
 | UC3 | See budget check and bid insight | Anyone | `GET /api/matching/tor/:id/budget`, `/bid-insight` | FR-24 |
 | UC4 | Comment during the hearing period | Anyone | `POST /api/tor/:torId/feedback` | FR-18, FR-19 |
