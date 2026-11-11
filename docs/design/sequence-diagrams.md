@@ -126,7 +126,7 @@ sequenceDiagram
     participant DB as MongoDB
 
     S->>E: sync() (joins a run already in flight)
-    E->>EC: searchProjects per type and keyword
+    E->>EC: searchProjects per announcement type (keywords for award notices)
     EC->>P: GET /Projects/GetProjectFromFilter
     P-->>EC: projects
     E->>E: keep software work only (isSoftwareProject)

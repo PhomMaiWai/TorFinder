@@ -1,11 +1,17 @@
 # TorFinder
 
-A platform that collects Thai government software procurement announcements (TOR),
-lets administrators curate them, and helps registered software companies find the
-opportunities that match their work.
+A platform that collects Thai government software procurement announcements (TOR)
+in Bangkok, lets administrators curate them, and helps registered software companies
+find the opportunities that match their work.
 
-Announcements are imported from the **official e-GP RSS service** published by the
-Comptroller General's Department — no scraping, no API key required.
+Announcements are imported from the agencies' own **public JSON APIs** — Bangkok's
+e-GP, the national e-GP (กรมบัญชีกลาง) and data.go.th — with no API keys. The
+Metropolitan Electricity Authority publishes no API, so its procurement site's listing
+and detail pages are read directly. Gemini on Vertex AI reads each
+TOR's PDF to pull out scope, qualifications, price and deadlines.
+
+Full documentation, including design diagrams and the API reference, is in
+[docs/](docs/README.md).
 
 ## Tech Stack
 
@@ -14,7 +20,9 @@ Comptroller General's Department — no scraping, no API key required.
 | Frontend | Next.js 16 (App Router), React 19, Tailwind 4, next-intl (TH/EN) |
 | Backend  | NestJS 11, MongoDB driver                                        |
 | Database | MongoDB 7                                                        |
-| Auth     | HMAC-signed session token in an httpOnly cookie                  |
+| Auth     | HMAC-signed session token in an httpOnly cookie, Google sign-in  |
+| AI       | Gemini on Google Vertex AI (optional)                            |
+| Notify   | In-app, email (Resend), LINE, Slack                              |
 
 The repository holds two services — `frontend/` and `backend/` — each with its own
 `package.json`.
@@ -26,12 +34,13 @@ The repository holds two services — `frontend/` and `backend/` — each with i
 Everything runs with one command; you don't need Node or MongoDB installed.
 
 ```bash
-git clone <repo-url>
-cd torr
+git clone https://github.com/PhomMaiWai/TorFinder.git
+cd TorFinder
 docker compose up -d --build
 ```
 
-That's it. The database is created and filled with a snapshot of real TOR records (`docker/mongo-seed/`), demo accounts are seeded, and both services start:
+That's it. The database is created and filled with a snapshot of real TOR records
+(`docker/mongo-seed/`), demo accounts are seeded, and both services start:
 
 |              | URL                          |
 | ------------ | ---------------------------- |
@@ -47,7 +56,8 @@ docker compose down              # stop (keeps the database)
 docker compose down -v           # stop and wipe the database, so the next start re-seeds
 ```
 
-Already ran it before the snapshot existed? The snapshot only loads into an empty database, so wipe it once: `docker compose down -v && docker compose up -d`.
+Already ran it before the snapshot existed? The snapshot only loads into an empty
+database, so wipe it once: `docker compose down -v && docker compose up -d`.
 
 ---
 
@@ -69,7 +79,7 @@ npm run dev              # http://localhost:4000
 ```bash
 cd frontend
 npm install
-printf 'BACKEND_URL=http://localhost:4000\nSESSION_SECRET=dev-only-insecure-secret-change-me\n' > .env.local
+cp .env.example .env.local
 npm run dev              # http://localhost:3000
 ```
 
@@ -77,41 +87,46 @@ npm run dev              # http://localhost:3000
 > session cookies locally instead of calling the backend on every navigation, so a
 > mismatch logs everyone out.
 
+Without Docker the database starts empty apart from the demo accounts. Press the
+import buttons on `/admin/tor`, or wait for the scheduled imports, to fill it.
+
 ---
 
 ## Demo accounts
 
-Seeded automatically the first time the database starts empty.
+Seeded automatically the first time the `users` collection is empty.
 
-| Role                            | Email                       | Password     |
-| ------------------------------- | --------------------------- | ------------ |
-| Administrator                   | `admin@bma.go.th`           | `Admin1234!` |
-| Project owner                   | `owner@bma.go.th`           | `Owner1234!` |
-| Auditor                         | `auditor@bma.go.th`         | `Auditor1234!` |
-| Organization (approved)         | `contact@arundigital.co.th` | `Org12345!`  |
-| Organization (pending approval) | `contact@techworks.co.th`   | `Tech12345!` |
-| Organization (pending approval) | `hello@datacraft.co.th`     | `Data12345!` |
+| Role                            | Email                       | Password       | Signs in at           | Lands on   |
+| ------------------------------- | --------------------------- | -------------- | --------------------- | ---------- |
+| Administrator                   | `admin@bma.go.th`           | `Admin1234!`   | `/login/admin`        | `/admin`   |
+| Project owner                   | `owner@bma.go.th`           | `Owner1234!`   | `/login/admin`        | `/owner`   |
+| Auditor                         | `auditor@bma.go.th`         | `Auditor1234!` | `/login/admin`        | `/auditor` |
+| Organization (approved)         | `contact@arundigital.co.th` | `Org12345!`    | `/login/organization` | `/dashboard` |
+| Organization (pending approval) | `contact@techworks.co.th`   | `Tech12345!`   | `/login/organization` | —          |
+| Organization (pending approval) | `hello@datacraft.co.th`     | `Data12345!`   | `/login/organization` | —          |
 
-Sign in at `/login/admin` or `/login/organization`.
-
-The project owner and auditor accounts exist so the screens for those roles can be built and tried; until those screens land they sign in through the same forms and have no area of their own.
+A member of the public can also sign in with Google at `/login/public` to keep
+bookmarks and saved searches.
 
 The two pending accounts exist so the approval queue at `/admin/accounts` isn't empty —
 try approving one, then sign in as it. A pending account **cannot** sign in until an
 administrator approves it.
 
-Seeding also inserts **5 TOR records** so the listing pages have content.
+What each role can do is described in
+[docs/project/roles-and-features.md](docs/project/roles-and-features.md).
 
 > These credentials are for local development only. Set `SEED_DEMO_DATA=false` to start
-> from an empty database.
+> without them.
 
 ---
 
 ## Seeding rules
 
-Seeding runs on backend startup and is **idempotent** — each collection is filled only
-when it is empty, so restarting never duplicates anything and records you create by hand
-are never touched.
+Seeding runs on backend startup and is **idempotent**: demo accounts are inserted only
+when the `users` collection is empty, so restarting never duplicates anything and
+accounts you create by hand are never touched. TOR records are never seeded by the
+backend; in Docker they come from the snapshot in `docker/mongo-seed/`, otherwise from
+the importers.
 
 To get a clean slate:
 
@@ -119,90 +134,74 @@ To get a clean slate:
 docker compose down -v && docker compose up -d
 ```
 
-Demo content lives in `backend/src/database/seed-data.ts`.
+Demo accounts live in `backend/src/database/seed-data.ts`.
 
 ---
 
-## Importing real announcements from e-GP
+## Where the data comes from
 
-Sign in as the administrator, open **/admin/tor**, and press **"ดึงประกาศจาก e-GP"**.
+| Source | What it gives | Runs every | Manual trigger (admin) |
+| --- | --- | --- | --- |
+| Bangkok e-GP (`egp2.bangkok.go.th`) | Drafts for hearing, invitations, award notices from BMA | 6 h | Import button on `/admin/tor` |
+| National e-GP (`process5.gprocurement.go.th`) | Current procurement step and tender documents for open projects | 3 h | Capture by project number on `/admin/tor` |
+| MEA (`procurement.mea.or.th`) | MEA procurement announcements | 6 h | Button on `/admin/tor` |
+| data.go.th | Monthly government contract data | daily | Button on `/admin/tor` |
+| Vertex AI (Gemini) | Fields read from each TOR's PDF | 1 h | `POST /api/ai/extract` (no button yet) |
 
-Announcements come from the **Bangkok e-GP public API** (`egp2.bangkok.go.th`) — the same
-portal the city publishes procurement on. No API key, no scraping, no HTML parsing.
-
-| Endpoint | Used for |
-|---|---|
-| `/Projects/GetProjectFromFilter` | Paged project search per announcement type |
-| `/ProjectAnnouncements/GetAnnouncementDetailInProject` | Publication date of each announcement |
-| `/MasterAnnounceTypes` | The announcement-type ids the search accepts |
-
-Three announcement types are imported and mapped onto the TOR stages:
-
-| e-GP type | Stage in the app |
-|---|---|
-| ร่างขอบเขตของงาน (TOR) | เปิดรับฟังความคิดเห็น |
-| ประกาศเชิญชวน | ประกาศ TOR |
-| ประกาศรายชื่อผู้ชนะการเสนอราคา | ประกาศผู้ชนะ |
-
-Each record keeps the project's real agency, budget and publication date, and links back to
-its page on the portal.
-
-Notes:
-
-- **Re-running is safe.** Records are keyed on project number + announcement type, so a
-  second sync updates rows instead of duplicating them.
-- **Only software work is imported.** The portal lists every kind of procurement — cleaning
-  contracts, medical supplies, dog cages. `EGP_KEYWORDS` filters at the source, so the
-  database holds TORs this product is actually about. Clearing it imports everything.
-- **Depth is bounded** by `EGP_PAGE_SIZE x EGP_MAX_PAGES` per keyword and type.
-- **Per-project detail is enriched once, not every sync.** The document link and
-  procurement method/type/category cost two extra requests per project, so they're
-  fetched only for records that don't have them yet (`enrichedAt` unset) — a repeat sync
-  makes almost no detail requests.
-- **A slow portal can't stall the sync.** Enrichment gets a short per-request timeout, no
-  retry, and a hard wall-clock budget (`EGP_ENRICH_TIMEOUT_MS`, `EGP_ENRICH_BUDGET_MS`).
-  Once the budget runs out, remaining projects are imported without the extra detail and
-  picked up automatically on the next sync — the run always finishes in bounded time
-  regardless of how degraded the upstream API is.
-- **Requests are pooled**, not burst: `EGP_CONCURRENCY` caps requests in flight, with
-  exponential backoff on 429/5xx and no retry on other 4xx.
-- **Runs never overlap.** The scheduled poll and the admin button share one in-flight sync.
-- Imported records are tagged as e-GP and stay out of the public search, which shows the
-  showcase records plus whatever administrators entered by hand.
-- The "ดูต้นฉบับ" link on a TOR's detail page points at the actual announcement PDF when
-  e-GP has one on file, falling back to the project's listing page otherwise — never a
-  generic homepage.
+Every importer keeps only software and IT work in Bangkok, published from 2022 on,
+merges the same project across sources (manual > Bangkok e-GP > MEA > data.go.th),
+and leaves fields an admin has corrected alone. Re-running is always safe. The details
+are in [docs/operations/pipeline.md](docs/operations/pipeline.md) and, in plainer words,
+[docs/operations/pipeline-guide.md](docs/operations/pipeline-guide.md).
 
 ---
 
 ## Environment variables
 
-**backend/.env** (see `backend/.env.example`)
+**backend/.env** (see `backend/.env.example`; every default is in
+`backend/src/config/env.ts`)
 
-| Variable          | Default                          | Notes                                           |
-| ----------------- | -------------------------------- | ----------------------------------------------- |
-| `MONGODB_URI`     | `mongodb://localhost:27017/torr` | Required in production                          |
-| `SESSION_SECRET`  | dev fallback                     | Required in production; must match the frontend |
-| `SEED_DEMO_DATA`  | `true` outside production        | Set `false` for an empty database               |
-| `PORT`            | `4000`                           |                                                 |
-| `FRONTEND_ORIGIN` | `http://localhost:3000`          | CORS allow-list                                 |
-| `EGP_API_BASE` | `https://egp2.bangkok.go.th/appapi/api` | Bangkok e-GP API |
-| `EGP_LISTING_BASE` | `https://egp2.bangkok.go.th/project-detail` | Public project page |
-| `EGP_PAGE_SIZE` | `50` | Projects per request |
-| `EGP_MAX_PAGES` | `2` | Pages per announcement type |
-| `EGP_CONCURRENCY` | `5` | Requests in flight |
-| `EGP_KEYWORDS` | software/IT terms | Source-side filter; empty imports everything |
-| `EGP_ENRICH_TIMEOUT_MS` | `8000` | Per-request timeout for document/detail lookups |
-| `EGP_ENRICH_BUDGET_MS` | `45000` | Wall-clock cap on the enrichment phase per sync |
-| `EGP_POLL_MINUTES` | `360` | Background refresh; `0` disables |
-| `EGP_POLL_ON_STARTUP` | `true` | Fill a fresh database on boot |
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `MONGODB_URI` | `mongodb://localhost:27017/torfinder` | Required in production |
+| `SESSION_SECRET` | dev fallback | Required in production; must match the frontend |
+| `PORT` | `4000` | |
+| `FRONTEND_ORIGIN` | `http://localhost:3000` | CORS allow-list and links in notifications |
+| `SEED_DEMO_DATA` | `true` outside production | `false` skips the demo accounts |
+| `TOR_LISTED_SINCE` | `2022-01-01` | Records older than this are not imported or listed |
+| `GOOGLE_CLIENT_ID` | empty | Google sign-in; must match the frontend's |
+| `VERTEX_PROJECT_ID` | empty | Empty turns AI extraction and proposal drafts off |
+| `VERTEX_LOCATION` | `asia-southeast1` | |
+| `VERTEX_MODEL` | `gemini-2.5-flash` | |
+| `EGP_POLL_MINUTES` | `360` | `0` turns the job off; same for the other `*_POLL_MINUTES` |
+| `MEA_POLL_MINUTES` | `360` | |
+| `DATAGOV_POLL_MINUTES` | `1440` | |
+| `GPROC_POLL_MINUTES` | `180` | |
+| `AI_POLL_MINUTES` | `60` | |
+| `EGP_POLL_ON_STARTUP`, `MEA_POLL_ON_STARTUP`, `DATAGOV_POLL_ON_STARTUP`, `GPROC_POLL_ON_STARTUP` | `true` | Run once when the backend starts |
+| `AI_POLL_ON_STARTUP` | `false` | Off by default so restarts don't spend model calls |
+| `EGP_LOOKBACK_DAYS` | `120` | How far back drafts and invitations are read |
+| `EGP_MAX_PAGES` | `40` | Pages per announcement type |
+| `EGP_CONCURRENCY` | `5` | Requests in flight to e-GP |
+| `EGP_ENRICH_BUDGET_MS` | `45000` | Time cap on fetching per-project detail in one sync |
+| `RESEND_API_KEY` | empty | Empty turns email off (links are logged instead) |
+| `NOTIFY_EMAIL_FROM` | `TOR Finder <noreply@torfinder.app>` | |
+| `LINE_CHANNEL_ACCESS_TOKEN` | empty | Empty turns LINE off |
+| `NOTIFY_MATCH_THRESHOLD` | `70` | Default score for match alerts; each company can set its own |
+| `NOTIFY_MAX_MATCHES_PER_RUN` | `5` | Most match alerts one company gets per import |
+| `THROTTLE_LIMIT` / `THROTTLE_TTL_MS` | `100` / `60000` | Requests per window, every route |
+| `AUTH_THROTTLE_LIMIT` / `AUTH_THROTTLE_TTL_MS` | `5` / `60000` | Sign-in, sign-up, comments, reports |
 
-**frontend/.env.local**
+**frontend/.env.local** (see `frontend/.env.example`)
 
-| Variable         | Notes                                                     |
-| ---------------- | --------------------------------------------------------- |
-| `BACKEND_URL`    | Where the API lives (`http://backend:4000` inside Docker) |
-| `SESSION_SECRET` | Must match the backend                                    |
+| Variable | Notes |
+| --- | --- |
+| `BACKEND_URL` | Where the API lives (`http://backend:4000` inside Docker). Server-only |
+| `SESSION_SECRET` | Must match the backend |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google sign-in button; empty hides it. Baked in at build time |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | Address for "ask us to add a standard" on the profile page |
+| `FEATURED_TOR_IDS` | Comma-separated TOR ids to pin to the top of search, for demos |
+| `MONGODB_URI` | Only used by the leftover `/api/test-db` route |
 
 ---
 
@@ -210,25 +209,52 @@ Notes:
 
 ```
 backend/src/
-├── accounts/     # Admin review of organization sign-ups (admin-guarded)
-├── auth/         # Sign-up, sign-in, session tokens
-├── common/       # Password hashing, session token, admin guard, TH validators
-├── config/       # Environment parsing
-├── database/     # Mongo connection, indexes, seed data
-├── egp/          # e-GP RSS import
-└── tor/          # TOR CRUD
+├── accounts/        # Company approval, user directory, roles, suspend, own profile
+├── ai/              # Vertex AI client, TOR extraction job, proposal drafts
+├── audit/           # Audit log of admin actions and sync runs
+├── auth/            # Sign-up, sign-in, Google, password reset, email verification
+├── common/          # Guards, session token, password hashing, software filter, scheduler base
+├── config/          # Environment parsing
+├── database/        # Mongo connection, indexes, demo accounts
+├── datagov/         # data.go.th importer
+├── egp/             # Bangkok e-GP importer and pipeline metrics
+├── feedback/        # Public comments and moderation
+├── gproc/           # National e-GP capture and documents
+├── matching/        # Match scoring, budget check, bid insight, match alerts
+├── mea/             # MEA importer
+├── notifications/   # In-app notifications, email/LINE/Slack delivery, admin alerts
+├── owner/           # Project owner's own TORs
+├── reports/         # "Report a problem" and the admin review list
+├── saved-searches/  # Saved searches
+├── saved-tors/      # Bookmarks
+├── scripts/         # One-off maintenance (scope-cleanup)
+└── tor/             # TOR CRUD, import/dedup, documents, stages
 
 frontend/src/
-├── app/          # Routes (App Router)
-│   ├── admin/    # Admin area: TOR management, account approval
-│   ├── api/      # Session cookie endpoints
-│   ├── login/    # Sign-in
-│   ├── public/   # TOR search
-│   └── signup/   # Organization registration
-├── components/   # UI, grouped by area
-├── data/         # Showcase records used by the public pages
-├── lib/          # API clients, validators, hooks
-└── messages/     # TH / EN translations
+├── app/             # Routes (App Router)
+│   ├── admin/       # Admin: TORs, accounts, users, moderation, reports, audit, notifications
+│   ├── api/         # Route handlers: session cookie and proxies to the backend
+│   ├── auditor/     # Flagged TORs for the Auditor Office
+│   ├── dashboard/   # Overview
+│   ├── login/       # Sign-in for admin/staff, organizations, public (Google)
+│   ├── matches/     # A company's matched TORs
+│   ├── notifications/
+│   ├── owner/       # A project owner's own TORs
+│   ├── profile/     # Company profile
+│   ├── public/      # Public TOR listing
+│   ├── saved/       # Bookmarks and saved searches
+│   ├── search/      # TOR search
+│   ├── signup/      # Organization registration
+│   └── tor/         # TOR detail page
+├── components/      # UI, grouped by area
+├── data/            # Showcase records used by the public pages
+├── i18n/            # next-intl setup
+├── lib/             # API clients, validators, hooks
+├── types/
+└── proxy.ts         # Page and /api access by role (Next.js middleware)
+
+frontend/messages/   # TH / EN translations
+docs/                # Project documentation
 ```
 
 ## Scripts
@@ -236,17 +262,17 @@ frontend/src/
 Run inside `frontend/` or `backend/`:
 
 ```bash
-npm run dev     # development server
-npm run build   # production build
-npm run lint    # ESLint
+npm run dev        # development server
+npm run build      # production build
+npm run lint       # ESLint
+npm run test:e2e   # tests; see docs/process/testing.md for what they need running
 ```
 
-## Branching & commits
+## Contributing
 
-- `main` — always deployable
-- `feature/<name>` — one branch per issue
-- Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
-  (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`)
+Branches, commit messages and pull requests are described in
+[docs/process/developer-guide.md](docs/process/developer-guide.md), and testing in
+[docs/process/testing.md](docs/process/testing.md).
 
 ## Course context
 
@@ -255,5 +281,6 @@ Kasetsart University.
 
 ## Documentation
 
-- [docs/](docs/) — project plan, SRS, and a retrospective write-up of each iteration
+- [docs/](docs/README.md) — project plan, requirements, design diagrams, API reference,
+  process, operations and security
 - [LICENSE](LICENSE) — MIT
