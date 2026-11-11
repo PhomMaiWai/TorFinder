@@ -2,6 +2,7 @@ import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 
 import { mapWithLimit } from "../common/concurrency";
 import { SOFTWARE_SEARCH_KEYWORDS, isSoftwareProject } from "../common/software-filter";
+import { TorContract } from "../database/database.service";
 import { ImportRecord, SyncResult, TorImportService } from "../tor/tor-import.service";
 import { datagovInScope, namesBangkok } from "../tor/thai-locality";
 import {
@@ -220,8 +221,28 @@ export class DataGovService {
         // exactly what the import decided with, not on the title alone.
         goodsCategory: row.typ_name ? cleanText(row.typ_name) : undefined,
         location,
+        // The winner and the price it signed for, as fields rather than only
+        // as words in the summary, so the market insights and the bid
+        // suggestion can count them like e-GP's own contracts.
+        contracts: this.contractsOf(row),
       },
     };
+  }
+
+  private contractsOf(row: CgdContractRow): TorContract[] | undefined {
+    const vendor = row.corp_name ? cleanText(row.corp_name) : "";
+    if (!vendor) return undefined;
+    return [
+      {
+        vendor,
+        number: null,
+        signedAt: parseDate(row.contrct_date),
+        amount: row.contrct_price && row.contrct_price > 0 ? row.contrct_price : null,
+        startsAt: null,
+        endsAt: null,
+        durationDays: null,
+      },
+    ];
   }
 
   private buildSummary(row: CgdContractRow, agency: string): string {

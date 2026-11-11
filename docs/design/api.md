@@ -249,6 +249,16 @@ from fixed rules (`matching.scoring.ts`), not from AI.
 `largestPastContract`, `registeredCapital`, `certifications[]`,
 `preferredBudgetMin`, `preferredBudgetMax`.
 
+### Insights
+
+`backend/src/insights/insights.controller.ts`. Aggregates published awards
+only (`market-insights.ts`); no source publishes the losing bids, so prices
+are compared with the reference price, or the budget where none was published.
+
+| Method | Path | Guard | Body | Response |
+| --- | --- | --- | --- | --- |
+| GET | `/insights/market?year=` | none | — | `{ year, years[], summary, topWinners[], agencies[], discountBands[] }`. `year` is optional, Christian era (400 otherwise). Each agency row has `projects`, `topWinners[{ vendor, wins, share }]`, `distinctWinners`, `medianDiscount`, `competition` (`low` / `medium` / `high` winner spread, null under 3 named winners) and `priceCompetition` (`blue` / `moderate` / `red`, null under 3 priced awards) |
+
 ### AI
 
 `backend/src/ai/ai.controller.ts`. Routes that call the model return 503

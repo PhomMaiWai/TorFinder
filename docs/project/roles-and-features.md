@@ -35,6 +35,9 @@ Demo accounts for every role are in the [root README](../../README.md#demo-accou
   page or downloadable.
 - See whether the budget is unusual compared with similar TORs, and a
   suggested bid range from past awards.
+- See market insights (`/insights`): which companies win most, how far
+  under the reference price they won, the top winners at each agency and how
+  contested each agency is, filterable by year.
 - Comment on a draft TOR while the hearing period is open.
 - Report a problem with a TOR (wrong info, not software, broken link,
   duplicate, other).
@@ -140,6 +143,9 @@ FR numbers are from [summary.md](../requirements/summary.md).
 
 - AI proposal draft for companies.
 - Bid insight from past awards (typical discount, competition).
+- Market insights page from past awards (#256): top winners, awarded vs
+  reference price, winner spread per agency. Winners are named by e-GP and
+  data.go.th only; MEA publishes the price without the winner.
 - National e-GP documents shown file by file inside the page.
 - Thai/English and light/dark theme.
 

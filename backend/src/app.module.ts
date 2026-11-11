@@ -15,6 +15,7 @@ import { GprocModule } from "./gproc/gproc.module";
 import { MeaModule } from "./mea/mea.module";
 import { MatchingModule } from "./matching/matching.module";
 import { HealthController } from "./health.controller";
+import { InsightsModule } from "./insights/insights.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { OwnerModule } from "./owner/owner.module";
 import { ReportsModule } from "./reports/reports.module";
@@ -44,6 +45,7 @@ import { TorModule } from "./tor/tor.module";
     SavedSearchesModule,
     SavedTorsModule,
     NotificationsModule,
+    InsightsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
