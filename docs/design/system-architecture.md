@@ -104,6 +104,7 @@ flowchart TB
     Gproc["GprocModule<br/>+ EgpDocumentsController"]
     Feedback["FeedbackModule"]
     Reports["ReportsModule"]
+    Insights["InsightsModule"]
     Owner["OwnerModule"]
     SavedTors["SavedTorsModule"]
     SavedSearches["SavedSearchesModule"]
