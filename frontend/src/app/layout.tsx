@@ -62,6 +62,7 @@ const CLIENT_NAMESPACES = [
   "LandingHeroFlow",
   "GoogleCompleteSignupForm",
   "LandingPreview",
+  "MarketInsights",
   "Navbar",
   "NotificationsPage",
   "Overview",

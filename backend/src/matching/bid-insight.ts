@@ -65,18 +65,18 @@ export type BidInsight = {
 };
 
 /** Winners this close to the base faced little price pressure. */
-const BLUE_OCEAN_DISCOUNT = 0.05;
+export const BLUE_OCEAN_DISCOUNT = 0.05;
 /** Winners this far under it were fighting on price. */
-const RED_OCEAN_DISCOUNT = 0.15;
+export const RED_OCEAN_DISCOUNT = 0.15;
 /**
  * A winning bid outside this band of its base is a data error — a contract for
  * one lot of a larger project, or a figure in the wrong unit — not a price.
  */
-const SANE_RATIO = { min: 0.3, max: 1.05 };
+export const SANE_RATIO = { min: 0.3, max: 1.05 };
 /** Prices are quoted to the nearest thousand baht, as bids are. */
 const ROUND_TO = 1_000;
 
-function baseOf(tor: BidPeer): { value: number; kind: "reference" | "budget" } | null {
+export function baseOf(tor: BidPeer): { value: number; kind: "reference" | "budget" } | null {
   const reference = tor.referencePrice ?? tor.extraction?.referencePrice ?? null;
   if (reference && reference > 0) return { value: reference, kind: "reference" };
   if (tor.budgetAmount && tor.budgetAmount > 0) return { value: tor.budgetAmount, kind: "budget" };
@@ -84,7 +84,7 @@ function baseOf(tor: BidPeer): { value: number; kind: "reference" | "budget" } |
 }
 
 /** What the work was awarded for: the published figure, else the signed contracts. */
-function awardedOf(tor: BidPeer): number | null {
+export function awardedOf(tor: BidPeer): number | null {
   if (tor.awardedAmount && tor.awardedAmount > 0) return tor.awardedAmount;
   const signed = (tor.contracts ?? []).reduce((sum, contract) => sum + (contract.amount ?? 0), 0);
   return signed > 0 ? signed : null;
@@ -99,7 +99,7 @@ function chanceAt(sortedRatios: number[], ratio: number): number {
   return sortedRatios.filter((won) => won >= ratio).length / sortedRatios.length;
 }
 
-function competitionOf(discount: number): Competition {
+export function competitionOf(discount: number): Competition {
   if (discount < BLUE_OCEAN_DISCOUNT) return "blue";
   if (discount > RED_OCEAN_DISCOUNT) return "red";
   return "moderate";
