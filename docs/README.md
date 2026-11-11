@@ -6,6 +6,7 @@ running instructions are in the [root README](../README.md).
 
 ```
 docs/
+├── architecture.md start here: the code map and the rules
 ├── project/        what we are building and how the work went
 ├── requirements/   what the system must do
 ├── design/         how it is built: diagrams and API
@@ -13,6 +14,10 @@ docs/
 ├── operations/     running the import pipeline and deploying
 └── security/       security self-audit
 ```
+
+Start with [architecture.md](./architecture.md): what the system is made of,
+where each kind of code lives, how a TOR moves through it, and the rules a
+change must keep.
 
 ## Project
 
