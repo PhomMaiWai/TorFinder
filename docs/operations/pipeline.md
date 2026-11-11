@@ -4,7 +4,7 @@ The precise version: every scheduled job, its config, and its exact
 behavior, cited against the source. For a plainer walkthrough of why this
 exists and how to work with it day to day, see
 [pipeline-guide.md](./pipeline-guide.md). This file corrects a few details
-in the older `backend/docs/sync-and-poll.md` that drifted as the code grew —
+in the older `docs/operations/sync-and-poll.md` that drifted as the code grew —
 most notably, a fourth import source (`gproc`) was added after that doc was
 written, and the AI queue's actual ordering doesn't match what it describes.
 Where the two disagree, trust this file and the code it cites, not the older

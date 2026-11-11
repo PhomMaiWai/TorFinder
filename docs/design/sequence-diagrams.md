@@ -162,7 +162,7 @@ sequenceDiagram
 
 MEA, data.go.th and the national e-GP (gproc) follow the same path through
 `TorImportService.import`. The details for each source are in
-[pipeline.md](../pipeline.md).
+[pipeline.md](../operations/pipeline.md).
 
 ## 4. A company opens its matched TORs
 
