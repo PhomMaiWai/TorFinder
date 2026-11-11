@@ -44,7 +44,7 @@ flowchart TB
     end
 
     subgraph Services["Outside services (optional)"]
-        Vertex["Vertex AI Gemini<br/>PDF extraction, proposal drafts"]
+        Vertex["Vertex AI<br/>PDF extraction, proposal drafts,<br/>embeddings for find similar"]
         Google["Google Identity"]
         Resend["Resend email"]
         Line["LINE"]
@@ -91,6 +91,7 @@ unit-tested from `dist/` without a database.
 | `egp/`, `gproc/`, `mea/`, `datagov/` | One importer per source: client, service, scheduler | Each decides what it wants (`isWanted`) and hands records to `TorImportService` |
 | `ai/` | Vertex client, PDF extraction queue, proposal drafts | `extraction-confidence.ts`, `tor-extraction.ts` |
 | `matching/` | Company ranking, match alerts, budget and bid insight | `matching.scoring.ts`, `match-alerts.ts`, `bid-insight.ts` |
+| `similar/` | Find similar TORs from pasted text or one TOR: Vertex embeddings cached in `torEmbeddings`, TF-IDF keyword ranking when Vertex is off or fails | `similar-text.ts` |
 | `insights/` | Market insights across all awards (who wins, discounts, competition per agency) | `market-insights.ts` |
 | `feedback/` | Public comments and their moderation | |
 | `reports/` | "Report a problem" and the admin queue | |
@@ -202,7 +203,7 @@ flowchart LR
 | One project is listed once | The same TOR appears on several portals | Dedup index and `sourceRank` |
 | Every TOR links to its source | Users must be able to check the original | `sourceUrl` on every imported record |
 | Documents are relayed, never stored or fetched by caller-supplied URL | No copyright or storage burden; no server-side request forgery | `TorDocumentService`, `TorArchiveService` |
-| The system works with AI switched off | Vertex costs money and may be unavailable | Empty `VERTEX_PROJECT_ID` disables extraction and drafts; matching and filtering never call the model |
+| The system works with AI switched off | Vertex costs money and may be unavailable | Empty `VERTEX_PROJECT_ID` disables extraction and drafts, and find similar falls back to keywords; matching and filtering never call the model |
 | Every AI value carries its confidence, model and version | Low-confidence values must show as unverified | `extraction.confidence`, `model`, `version`, `documentUrl` |
 | Public comments are shown only after moderation | Unreviewed text under a government notice is a liability | Default status filter in `FeedbackService`. Known gap: `?status=` on the per-TOR route is not guarded yet ([api.md](./design/api.md#known-issues)) |
 | Every admin action is in the audit log | Accountability (FR-25) | `AuditService.record` in each admin path |
@@ -217,7 +218,7 @@ flowchart LR
 | Backend | NestJS 11, `@nestjs/throttler`, `class-validator`, Helmet |
 | Database | MongoDB 7 through the official `mongodb` driver (no ORM) |
 | Auth | HMAC-signed session token in an httpOnly cookie; Google ID tokens via `google-auth-library` |
-| AI | Vertex AI Gemini, optional |
+| AI | Vertex AI (Gemini for extraction and drafts, text embeddings for find similar), optional |
 | Notifications | Resend (email), LINE Messaging API, Slack webhooks, all optional |
 | Tests | Node's built-in test runner and `fetch`, against a real backend and MongoDB |
 | Runtime | Node.js 22, Docker Compose |

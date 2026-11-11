@@ -105,6 +105,7 @@ flowchart TB
     Feedback["FeedbackModule"]
     Reports["ReportsModule"]
     Insights["InsightsModule"]
+    Similar["SimilarModule"]
     Owner["OwnerModule"]
     SavedTors["SavedTorsModule"]
     SavedSearches["SavedSearchesModule"]
@@ -123,6 +124,7 @@ flowchart TB
     Owner --> Matching & Feedback
     Feedback --> Audit
     Reports --> Audit
+    Similar --> Ai
 ```
 
 Every module also uses `DatabaseModule`; those arrows are left out.
