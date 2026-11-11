@@ -20,6 +20,7 @@ import { OwnerModule } from "./owner/owner.module";
 import { ReportsModule } from "./reports/reports.module";
 import { SavedSearchesModule } from "./saved-searches/saved-searches.module";
 import { SavedTorsModule } from "./saved-tors/saved-tors.module";
+import { SimilarModule } from "./similar/similar.module";
 import { TorModule } from "./tor/tor.module";
 
 @Module({
@@ -32,6 +33,7 @@ import { TorModule } from "./tor/tor.module";
     AuditModule,
     AccountsModule,
     TorModule,
+    SimilarModule,
     AiModule,
     EgpModule,
     DataGovModule,
