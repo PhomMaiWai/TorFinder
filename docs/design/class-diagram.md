@@ -5,67 +5,6 @@ other. NestJS creates these classes and injects their constructor
 arguments, so an arrow here is a constructor dependency. Only the methods
 the rest of the system calls are listed; private helpers are left out.
 
-## Request handling: guards
-
-Every protected route uses one guard. `SessionGuard` admits any signed-in
-account. `RoleGuard` admits exactly one role, so an admin is not an owner
-or an auditor.
-
-```mermaid
-classDiagram
-    class CanActivate {
-        <<interface>>
-        canActivate(context) bool
-    }
-    class SessionGuard {
-        -revocation SessionRevocationService
-        +canActivate(context) bool
-    }
-    class RoleGuard {
-        <<abstract>>
-        #roles Role[]
-        #refusal string
-        -revocation SessionRevocationService
-        +canActivate(context) bool
-    }
-    class AdminGuard {
-        roles = admin
-    }
-    class OrgGuard {
-        roles = org
-    }
-    class OwnerGuard {
-        roles = owner
-    }
-    class AuditorGuard {
-        roles = auditor
-    }
-    class SessionRevocationService {
-        +isValid(userId, iatSeconds) bool
-        +revoke(userId) void
-    }
-    class SessionPayload {
-        <<type>>
-        sub string
-        email string
-        name string
-        role Role
-        iat number
-        exp number
-    }
-
-    CanActivate <|.. SessionGuard
-    CanActivate <|.. RoleGuard
-    RoleGuard <|-- AdminGuard
-    RoleGuard <|-- OrgGuard
-    RoleGuard <|-- OwnerGuard
-    RoleGuard <|-- AuditorGuard
-    SessionGuard --> SessionRevocationService
-    RoleGuard --> SessionRevocationService
-    SessionGuard ..> SessionPayload : verifySessionToken()
-    RoleGuard ..> SessionPayload : verifySessionToken()
-```
-
 ## Import pipeline: schedulers, sources and AI
 
 ```mermaid
