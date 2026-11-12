@@ -34,7 +34,7 @@ deploy (#235).
 | K14 | Functional requirements delivered | 26 of 26 | 25 full, 1 partial | 🟡 Nearly |
 | K15 | Backend tests passing in CI | 100% on every PR | About 520 tests, green on the last `main` run (PR #306) | ✅ Met |
 | K16 | Frontend tests run in CI | Yes | No | ❌ Not met |
-| K17 | Pull requests with a recorded review | 100% | 9 of 97 | ❌ Below target |
+| K17 | Pull requests with a recorded review | 100% | 92% of 97 | ❌ Below target |
 | K18 | UAT tasks completed by test users | 90% (team target) | UAT not run yet | ⏳ After #232 |
 
 ## Data coverage and quality
