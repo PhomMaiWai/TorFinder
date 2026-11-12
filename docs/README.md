@@ -52,7 +52,7 @@ change must keep.
 | Document | Covers |
 | --- | --- |
 | [sdlc.md](./process/sdlc.md) | The six SDLC stages and what we did in each, with evidence |
-| [team-workflow.md](./process/team-workflow.md) | How the team ran Scrum: cycle diagram, roles, cadence, Definition of Done |
+| [team-workflow.md](./process/team-workflow.md) | How the team ran Scrum: Team Delivery Cycle diagram, roles, cadence, Definition of Done |
 | [developer-guide.md](./process/developer-guide.md) | Branches, commits, pull requests, code style |
 | [testing.md](./process/testing.md) | How to run the tests, what they cover, what CI runs |
 

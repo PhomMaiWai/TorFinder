@@ -12,6 +12,21 @@ November 11, 2026.
 
 ## The cycle
 
+![Team Delivery Cycle: requirements and client feedback feed one product backlog; each one-week iteration runs plan, track, build, verify and ship, then ends with an iteration review and a retrospective that feed the next plan](./images/team-delivery-cycle.png)
+
+The team's main workflow diagram. Requirements (SRS v1.0, FR-01 to FR-26)
+and client feedback enter one shared product backlog. Each one-week
+iteration goes **01 Plan** (iteration planning, Must items first, about 30
+points) → **02 Track** (board: Todo, In Progress, Done) → **03 Build**
+(one branch per issue) → **04 Verify** (pull request with template and CI)
+→ **05 Ship** (merge to `main`), with stand-ups in chat as needed. It ends
+with **06 Review** (demo what is Done, collect feedback) and **07 Learn**
+(retrospective: carry over unfinished work, adjust the next plan), and the
+cycle repeats weekly.
+
+<details>
+<summary>Same cycle as a Mermaid diagram (text version)</summary>
+
 ```mermaid
 flowchart LR
     subgraph Inputs
@@ -41,6 +56,8 @@ flowchart LR
     Backlog --> Plan
     Merge --> Review --> Retro --> Backlog
 ```
+
+</details>
 
 ## Roles
 
