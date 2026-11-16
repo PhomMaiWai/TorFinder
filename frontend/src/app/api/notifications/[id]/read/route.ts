@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { SESSION_COOKIE } from "@/lib/auth";
+import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
@@ -22,5 +23,5 @@ export async function PATCH(_request: Request, { params }: { params: Promise<{ i
   if (res.status === 204) return new NextResponse(null, { status: 204 });
 
   const data = await res.json().catch(() => null);
-  return NextResponse.json(data, { status: res.status });
+  return jsonResponse(data, { status: res.status });
 }

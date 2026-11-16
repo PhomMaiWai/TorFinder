@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { jsonResponse } from "@/lib/json-response";
 import { homeFor } from "@/lib/roles";
 
 /** Pages only a signed-in account may see. */
@@ -64,7 +65,7 @@ export async function proxy(request: NextRequest) {
     const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
     return session
       ? NextResponse.next()
-      : NextResponse.json({ error: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
+      : jsonResponse({ error: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
   }
 
   // The landing page is the first impression for guests; once signed in, the

@@ -39,6 +39,8 @@ const BACKEND_URL = process.env.E2E_BACKEND_URL ?? "http://localhost:4000";
 const BACKEND_API = `${BACKEND_URL}/api`;
 const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://torr:torr@localhost:27017/torr?authSource=admin";
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-insecure-secret-change-me";
+/** `next start` runs in production, where the session cookie carries the __Host- prefix (src/lib/auth.ts); set E2E_SESSION_COOKIE=torr_session against `next dev`. */
+const SESSION_COOKIE = process.env.E2E_SESSION_COOKIE ?? "__Host-torr_session";
 
 function makeToken(role, email) {
   const payload = {
@@ -71,7 +73,7 @@ async function backendApi(path, { method = "GET", body, token = ADMIN_TOKEN } = 
 /** Renders a page as the seeded admin would see it, in English for stable assertions. */
 async function renderPage(path) {
   const res = await fetch(`${FRONTEND_URL}${path}`, {
-    headers: { cookie: `torr_session=${ADMIN_TOKEN}; NEXT_LOCALE=en` },
+    headers: { cookie: `${SESSION_COOKIE}=${ADMIN_TOKEN}; NEXT_LOCALE=en` },
     redirect: "manual",
   });
   assert.equal(res.status, 200, `${path} should render for an admin session, got ${res.status}`);
@@ -140,7 +142,7 @@ describe("admin dashboard — empty state (requires a fresh, untouched database)
       backendApi("/egp/metrics"),
     ]);
     const clean =
-      directory.body?.length === 0 && audit.body?.length === 0 && metrics.body?.status === "idle";
+      directory.body?.length === 0 && audit.body?.total === 0 && metrics.body?.status === "idle";
     assert.ok(
       clean,
       "this suite needs a database nothing has touched yet — point E2E_BACKEND_URL/MONGODB_URI at a " +

@@ -7,6 +7,7 @@ import { type SubmitEvent, useEffect, useState } from "react";
 import { PageBody, PageHeader, Section } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
 import { COMPANY_SIZE_OPTIONS, type CompanySize } from "@/data/company-profile";
+import { ChangePasswordSection } from "@/components/profile/change-password";
 import { ProfileNudges } from "@/components/profile/profile-nudges";
 import { StandardsPicker } from "@/components/profile/standards-picker";
 import { WORK_TYPE_GROUPS, type Certification, type WorkType } from "@/types/tor";
@@ -557,6 +558,10 @@ export default function ProfilePage() {
           )}
         </aside>
         </form>
+        {/* Its own form: a password change must never ride along with a profile save. */}
+        <div className="mt-8 lg:max-w-[calc(100%-332px)]">
+          <ChangePasswordSection />
+        </div>
       </PageBody>
     </AppShell>
   );

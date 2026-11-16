@@ -16,10 +16,12 @@ import { env } from "../config/env";
 import { DatabaseService, UserDoc } from "../database/database.service";
 import { AccountLinksService } from "./account-links.service";
 import { EmailOnlyDto, ResetPasswordDto, VerifyEmailDto } from "./dto/account-links.dto";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
 import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
+import { LoginAttempts } from "./login-attempts";
 
 const DUPLICATE_KEY = 11000;
 
@@ -36,6 +38,7 @@ const googleClient = new OAuth2Client(env.googleClientId);
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly loginAttempts = new LoginAttempts();
 
   constructor(
     private readonly db: DatabaseService,
@@ -80,7 +83,9 @@ export class AuthService {
   }
 
   async login({ email, password }: LoginDto) {
-    const user = await this.db.users.findOne({ email: email.trim().toLowerCase() });
+    const address = email.trim().toLowerCase();
+    this.loginAttempts.assertAllowed(address);
+    const user = await this.db.users.findOne({ email: address });
 
     // No passwordHash means the account was created via Google and never set
     // one — verifyPassword can't run against nothing, so it's a mismatch too.
@@ -90,8 +95,10 @@ export class AuthService {
       !user.passwordSalt ||
       !(await verifyPassword(password, user.passwordSalt, user.passwordHash))
     ) {
+      this.loginAttempts.recordFailure(address);
       throw new UnauthorizedException("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     }
+    this.loginAttempts.recordSuccess(address);
     // After the password, so only the account's owner learns its address is unconfirmed.
     if (user.emailVerified === false) {
       throw new ForbiddenException({
@@ -135,6 +142,42 @@ export class AuthService {
     // before now — including one an attacker who triggered this might hold —
     // stops working (ASVS 7.4.3).
     await this.revocation.revoke(userId.toString());
+    return { ok: true as const };
+  }
+
+  /**
+   * A signed-in user replaces their password, proving they still know the
+   * current one (ASVS 6.2.2 / 6.2.3) — a stolen session alone can't lock the
+   * owner out. Wrong guesses count toward the same per-address limit as login.
+   * Every session ends afterwards, this one included, so a token someone else
+   * may hold stops working and the caller signs in again with the new password.
+   */
+  async changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordDto) {
+    const user = ObjectId.isValid(userId) ? await this.db.users.findOne({ _id: new ObjectId(userId) }) : null;
+    if (!user) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
+    if (!user.passwordHash || !user.passwordSalt) {
+      // A Google-only account has no current password to prove; the emailed reset link sets a first one.
+      throw new BadRequestException("บัญชีนี้ยังไม่มีรหัสผ่าน กรุณาใช้ \"ลืมรหัสผ่าน\" เพื่อตั้งรหัสผ่าน");
+    }
+
+    this.loginAttempts.assertAllowed(user.email);
+    if (!(await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash))) {
+      this.loginAttempts.recordFailure(user.email);
+      // 400 rather than 401: the session is fine, only the typed password is wrong.
+      throw new BadRequestException("รหัสผ่านปัจจุบันไม่ถูกต้อง");
+    }
+    this.loginAttempts.recordSuccess(user.email);
+
+    if (newPassword === currentPassword) {
+      throw new BadRequestException("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านปัจจุบัน");
+    }
+    if (isCommonPassword(newPassword)) {
+      throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
+    }
+
+    const { hash, salt } = await hashPassword(newPassword);
+    await this.db.users.updateOne({ _id: user._id }, { $set: { passwordHash: hash, passwordSalt: salt } });
+    await this.revocation.revoke(userId);
     return { ok: true as const };
   }
 

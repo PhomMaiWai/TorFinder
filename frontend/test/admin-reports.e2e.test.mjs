@@ -35,6 +35,8 @@ const BACKEND_URL = process.env.E2E_BACKEND_URL ?? "http://localhost:4000";
 const BACKEND_API = `${BACKEND_URL}/api`;
 const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://torr:torr@localhost:27017/torr?authSource=admin";
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-insecure-secret-change-me";
+/** `next start` runs in production, where the session cookie carries the __Host- prefix (src/lib/auth.ts); set E2E_SESSION_COOKIE=torr_session against `next dev`. */
+const SESSION_COOKIE = process.env.E2E_SESSION_COOKIE ?? "__Host-torr_session";
 const mongo = new MongoClient(MONGODB_URI);
 
 const ADMIN_EMAIL = `admin+reports-${Date.now()}@ci.test`;
@@ -66,7 +68,7 @@ async function backendApi(path, { method = "GET", body, token = ADMIN_TOKEN } = 
 /** Fetches a path with an optional session cookie, never following redirects. */
 async function fetchPage(path, token) {
   const res = await fetch(`${FRONTEND_URL}${path}`, {
-    headers: token ? { cookie: `torr_session=${token}; NEXT_LOCALE=en` } : { cookie: "NEXT_LOCALE=en" },
+    headers: token ? { cookie: `${SESSION_COOKIE}=${token}; NEXT_LOCALE=en` } : { cookie: "NEXT_LOCALE=en" },
     redirect: "manual",
   });
   return { status: res.status, location: res.headers.get("location"), text: () => res.text() };

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { clientIpHeaders } from "@/lib/client-ip";
 import { isReportReason } from "@/lib/report-reasons";
 import { authHeaders } from "@/lib/session-headers";
 
@@ -26,7 +27,7 @@ export async function submitFeedback(
 
   const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${torId}/feedback`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
     body: JSON.stringify({ text, author: author || undefined }),
     cache: "no-store",
   });
@@ -65,7 +66,7 @@ export async function submitReport(
 
   const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${torId}/reports`, {
     method: "POST",
-    headers: { ...(await authHeaders()), "Content-Type": "application/json" },
+    headers: { ...(await authHeaders()), ...(await clientIpHeaders()), "Content-Type": "application/json" },
     body: JSON.stringify({ reason, message, contact: contact || undefined }),
     cache: "no-store",
   });

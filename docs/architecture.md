@@ -113,9 +113,6 @@ unit-tested from `dist/` without a database.
 | `i18n/`, `../messages/` | next-intl set-up and the Thai and English strings | Every visible string has a key in both files |
 | `data/` | Static and demo data | `admin.ts` still backs the mock `/admin/companies` page |
 
-Leftovers that are not part of the design: `app/api/test-db` and
-`lib/mongodb.ts` (a direct database connection from the frontend, see the
-known issues in [api.md](./design/api.md#known-issues)).
 
 ## 4. The life of one TOR
 

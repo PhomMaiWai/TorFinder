@@ -1,5 +1,6 @@
 "use server";
 
+import { clientIpHeaders } from "@/lib/client-ip";
 import { authHeaders } from "@/lib/session-headers";
 
 /** One ranked TOR; the card itself comes from the list the search page already holds. */
@@ -78,7 +79,7 @@ export async function findSimilarTors(input: SimilarInput): Promise<SimilarAnswe
   try {
     res = await fetch(`${process.env.BACKEND_URL}/api/tor/similar`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
       body: JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(TIMEOUT_MS),

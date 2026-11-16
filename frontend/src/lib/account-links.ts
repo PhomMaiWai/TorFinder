@@ -1,5 +1,7 @@
 "use server";
 
+import { clientIpHeaders } from "@/lib/client-ip";
+
 /**
  * The emailed-link flows — password reset and email verification — called
  * from the pages that need them. Server actions rather than API routes: none
@@ -16,7 +18,7 @@ async function post(path: string, body: Record<string, string>): Promise<LinkRes
   try {
     res = await fetch(`${process.env.BACKEND_URL}/api/auth/${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
       body: JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),

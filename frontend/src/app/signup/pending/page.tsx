@@ -1,81 +1,21 @@
-"use client";
-
-import { ArrowLeft, Clock, Mail } from "lucide-react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 
-import { ResendVerification } from "@/components/auth/resend-verification";
+import { SIGNUP_EMAIL_COOKIE } from "@/lib/signup-email";
 
-function PendingCard() {
-  const t = useTranslations("SignupPendingPage");
-  const tc = useTranslations("Common");
-  const params = useSearchParams();
-  const name = params.get("name") ?? t("defaultCompanyName");
-  const email = params.get("email");
+import { PendingCard } from "./pending-card";
 
-  return (
-    <div className="w-full max-w-md text-center">
-      <Link href="/" className="mb-10 flex items-center justify-center gap-2.5">
-        <span className="flex size-11 items-center justify-center rounded-lg bg-accent text-base font-bold text-white">
-          T
-        </span>
-        <span className="text-xl font-bold tracking-tight text-ink">TorFinder</span>
-      </Link>
+/**
+ * Reads the address the sign-up just used from its short-lived cookie, so it
+ * never travels in the URL, browser history or access logs (ASVS 14.2.1).
+ */
+export default async function SignupPendingPage() {
+  const email = (await cookies()).get(SIGNUP_EMAIL_COOKIE)?.value ?? null;
 
-      <div className="rounded-2xl border border-border bg-surface p-10">
-        <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-warn-soft">
-          <Clock size={26} className="text-warn" />
-        </span>
-        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
-        <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-          {t.rich("pendingMessage", {
-            name,
-            bold: (chunks) => <span className="font-medium text-ink">{chunks}</span>,
-          })}
-        </p>
-
-        {email && (
-          <div className="mt-6 border-t border-border pt-6 text-left">
-            <p className="mb-4 flex items-start gap-2.5 text-sm leading-relaxed text-ink-muted">
-              <Mail size={18} className="mt-0.5 shrink-0 text-accent" />
-              <span>
-                {t.rich("verifyNote", {
-                  email,
-                  bold: (chunks) => <span className="font-medium text-ink">{chunks}</span>,
-                })}
-              </span>
-            </p>
-            <ResendVerification email={email} />
-          </div>
-        )}
-      </div>
-
-      <div className="mt-6 flex flex-col items-center gap-3">
-        <Link
-          href="/login"
-          className="text-sm font-medium text-accent hover:text-accent-dark"
-        >
-          {t("backToLogin")}
-        </Link>
-        <Link
-          href="/"
-          className="flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
-        >
-          <ArrowLeft size={15} />
-          {tc("backToHome")}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-export default function SignupPendingPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface-alt px-6 py-12">
       <Suspense>
-        <PendingCard />
+        <PendingCard email={email} />
       </Suspense>
     </main>
   );

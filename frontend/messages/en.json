@@ -435,7 +435,18 @@
     "matchAlertsDescription": "From the moment a project appears at the plan or draft stage, so there's time to prepare — and again when bids open.",
     "matchThresholdLabel": "Minimum match score",
     "matchThresholdDescription": "Higher means fewer, closer matches. The default is 70%.",
-    "matchThresholdOption": "{value}% or more"
+    "matchThresholdOption": "{value}% or more",
+    "changePasswordSectionTitle": "Change password",
+    "changePasswordDescription": "Enter your current password, then the new one. You will be signed out on every device and sign in again with the new password.",
+    "currentPasswordLabel": "Current password",
+    "newPasswordLabel": "New password (at least 8 characters)",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "changePasswordButton": "Change password",
+    "newPasswordTooShort": "The new password must be at least 8 characters.",
+    "passwordMismatch": "The new passwords don't match.",
+    "changePasswordFailed": "Couldn't change the password. Please try again.",
+    "passwordChangedConfirmation": "Password changed. You've been signed out everywhere — sign in with your new password.",
+    "signInAgainButton": "Sign in again"
   },
   "NotificationsPage": {
     "pageTitle": "Notifications",

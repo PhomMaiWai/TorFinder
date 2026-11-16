@@ -24,10 +24,14 @@ export class FeedbackController {
     return this.feedback.create(torId, dto);
   }
 
-  /** Approved comments on one announcement; moderators pass a status. */
+  /**
+   * Approved comments on one announcement — public, so it never takes a status:
+   * pending and rejected comments are moderation data, read only through the
+   * admin-guarded `GET /feedback` below (ASVS 8.2.1).
+   */
   @Get("tor/:torId/feedback")
-  forTor(@Param("torId") torId: string, @Query() query: FeedbackQueryDto) {
-    return this.feedback.findForTor(torId, query.status);
+  forTor(@Param("torId") torId: string) {
+    return this.feedback.findForTor(torId);
   }
 
   /** Approved comment counts per announcement, for listings. */

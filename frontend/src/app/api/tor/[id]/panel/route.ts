@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-
+import { jsonResponse } from "@/lib/json-response";
 import { fetchFeedback, fetchMatchedCompanies } from "@/lib/tor-api";
 
 /**
@@ -10,5 +9,5 @@ import { fetchFeedback, fetchMatchedCompanies } from "@/lib/tor-api";
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [companies, feedback] = await Promise.all([fetchMatchedCompanies(id), fetchFeedback(id)]);
-  return NextResponse.json({ companies, feedback });
+  return jsonResponse({ companies, feedback });
 }

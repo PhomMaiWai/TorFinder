@@ -33,6 +33,8 @@ const FRONTEND_URL = process.env.E2E_FRONTEND_URL ?? "http://localhost:3000";
 const MONGODB_URI =
   process.env.MONGODB_URI ?? "mongodb://torr:torr@localhost:27017/torr?authSource=admin";
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-insecure-secret-change-me";
+/** `next start` runs in production, where the session cookie carries the __Host- prefix (src/lib/auth.ts); set E2E_SESSION_COOKIE=torr_session against `next dev`. */
+const SESSION_COOKIE = process.env.E2E_SESSION_COOKIE ?? "__Host-torr_session";
 const mongo = new MongoClient(MONGODB_URI);
 
 function makeToken(role, sub) {
@@ -51,7 +53,7 @@ const BOB_TOKEN = makeToken("org", BOB.toString());
 /** Calls this app's own /api/saved-searches* route handlers via a session cookie, like a browser would. */
 async function api(path, { method = "GET", body, token } = {}) {
   const headers = {};
-  if (token) headers.cookie = `torr_session=${token}`;
+  if (token) headers.cookie = `${SESSION_COOKIE}=${token}`;
   if (body !== undefined) headers["content-type"] = "application/json";
   const res = await fetch(`${FRONTEND_URL}/api${path}`, {
     method,

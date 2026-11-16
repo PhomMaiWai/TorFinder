@@ -19,6 +19,27 @@ function required(name: string, devFallback: string): string {
   return devFallback;
 }
 
+/** The placeholder every .env.example ships with — public, so never a real key. */
+const DEV_SESSION_SECRET = "dev-only-insecure-secret-change-me";
+/** 32 characters ≈ the 256-bit HMAC key `openssl rand -base64 32` produces. */
+const MIN_SESSION_SECRET_LENGTH = 32;
+
+/**
+ * The key every session token is signed with. Anyone who knows it can mint an
+ * admin token, so production refuses the published placeholder and anything
+ * short enough to guess — `required()` alone can't catch a placeholder that a
+ * compose file or copied .env passed in (ASVS 9.1.3).
+ */
+function sessionSecret(): string {
+  const value = required("SESSION_SECRET", DEV_SESSION_SECRET);
+  if (isProduction && (value === DEV_SESSION_SECRET || value.length < MIN_SESSION_SECRET_LENGTH)) {
+    throw new Error(
+      `SESSION_SECRET must be a private random value of at least ${MIN_SESSION_SECRET_LENGTH} characters in production — generate one with: openssl rand -base64 32`,
+    );
+  }
+  return value;
+}
+
 function optionalNumber(name: string, fallback: number): number {
   const value = process.env[name];
   if (!value) return fallback;
@@ -36,13 +57,19 @@ export const env = {
   // too old to be anyone's opportunity or a useful price reference.
   torListedSince: new Date(process.env.TOR_LISTED_SINCE ?? "2022-01-01"),
   mongodbUri: required("MONGODB_URI", "mongodb://localhost:27017/torfinder"),
-  sessionSecret: required("SESSION_SECRET", "dev-only-insecure-secret-change-me"),
+  sessionSecret: sessionSecret(),
   // Google Identity Services ID tokens are verified against this audience.
   // Empty in dev disables Google sign-in rather than throwing on every request.
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   // Demo data is for local and staging; production starts from a clean database.
   seedDemoData: (process.env.SEED_DEMO_DATA ?? String(!isProduction)) === "true",
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
+  /**
+   * Which hops may name the client in X-Forwarded-For (Express `trust proxy`).
+   * The default trusts loopback and private addresses — the frontend on the
+   * same machine or Docker network — and never a public address.
+   */
+  trustProxy: process.env.TRUST_PROXY ?? "loopback, uniquelocal",
   throttle: {
     // General API abuse guard (generous — the login route below is stricter).
     ttlMs: optionalNumber("THROTTLE_TTL_MS", 60_000),
@@ -50,6 +77,11 @@ export const env = {
     // Login is brute-forceable, so it gets its own tighter budget.
     authTtlMs: optionalNumber("AUTH_THROTTLE_TTL_MS", 60_000),
     authLimit: optionalNumber("AUTH_THROTTLE_LIMIT", 5),
+    // Failed logins per email address, whatever IP they come from — what still
+    // stops guessing one account's password when the attacker rotates or
+    // spoofs addresses (ASVS 6.3.1).
+    loginFailureLimit: optionalNumber("LOGIN_FAILURE_LIMIT", 10),
+    loginFailureWindowMs: optionalNumber("LOGIN_FAILURE_WINDOW_MS", 15 * 60_000),
   },
   /**
    * Where notifications go besides the in-app list. Each channel switches

@@ -1,6 +1,7 @@
 // End-to-end coverage for the search order (src/lib/tor-sort.ts): the default
-// puts a TOR with time to prepare first and one closing tomorrow below it, and
-// each `?sort=` renders the order it names.
+// is closing soonest first among the open TORs (a02963c), `?sort=prepare` puts
+// a TOR with time to prepare above one closing tomorrow, every order keeps the
+// open TORs above the rest, and each `?sort=` renders the order it names.
 //
 // Same approach as tor-timeline.e2e.test.mjs: records go straight into the
 // `tors` collection, and the server-rendered /public page is read for the order
@@ -95,20 +96,24 @@ after(async () => {
 });
 
 describe("search order", () => {
-  it("by default, open with time to prepare first (newest opened first), closing tomorrow after, then unknown, then closed", async () => {
-    assert.deepEqual(await order(), ["twenty-days-new", "ten-days", "closing-tomorrow", "unknown", "awarded"]);
+  it("by default, the open TORs closing soonest first, then unknown, then closed", async () => {
+    assert.deepEqual(await order(), ["closing-tomorrow", "ten-days", "twenty-days-new", "unknown", "awarded"]);
   });
 
-  it("?sort=closing restores soonest-closing first", async () => {
-    assert.deepEqual(await order("?sort=closing"), ["closing-tomorrow", "ten-days", "twenty-days-new", "unknown", "awarded"]);
+  it("?sort=closing is the default order", async () => {
+    assert.deepEqual(await order("?sort=closing"), await order());
+  });
+
+  it("?sort=prepare puts time to prepare first (newest opened first), closing tomorrow after, then unknown, then closed", async () => {
+    assert.deepEqual(await order("?sort=prepare"), ["twenty-days-new", "ten-days", "closing-tomorrow", "unknown", "awarded"]);
   });
 
   it("?sort=newest lists open TORs by when they opened", async () => {
     assert.deepEqual(await order("?sort=newest"), ["twenty-days-new", "closing-tomorrow", "ten-days", "unknown", "awarded"]);
   });
 
-  it("?sort=budget lists the largest amount first", async () => {
-    assert.deepEqual(await order("?sort=budget"), ["awarded", "ten-days", "unknown", "closing-tomorrow", "twenty-days-new"]);
+  it("?sort=budget lists the largest amount first, open TORs still above the rest", async () => {
+    assert.deepEqual(await order("?sort=budget"), ["ten-days", "closing-tomorrow", "twenty-days-new", "awarded", "unknown"]);
   });
 
   it("an unknown ?sort= falls back to the default", async () => {

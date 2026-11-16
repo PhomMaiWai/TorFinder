@@ -1,171 +1,236 @@
 # ASVS 5.0 Level 1
 
-Source-review results against all 70 [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/) Level 1 requirements — this is a code read-through, not a pentest. Latest: rev. 2, after fixing 7.4.1 / 7.4.2 / 6.2.4.
+Source-review results against all 70 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 1 requirements. This is a code read-through backed by local tests, not a pentest. TLS and certificates depend on hosting and are not covered.
 
-> This file itself counts toward ASVS 2.1.1 / 6.1.1 / 8.1.1 ("documented …") — several items that used to be "Partial" had a real control in the code but no standalone writeup of it.
+**Rev. 3 (2026-11-16): 0 Fail, 0 Partial.** 55 Pass, 13 N/A, 2 not reviewed.
+
+Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 failing and 10 partial items. All 17 are fixed on branch `fix/asvs-l1-critical-high`. The tables below describe the code on that branch.
 
 ## Summary
 
-52 of 70 requirements apply (the other 18 are N/A because the app has no such feature — file upload, WebSocket, acting as an OAuth server, etc.)
-
-| Status | Count | Notes |
+| Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 42 | Control exists, with evidence found in code/docs |
-| Partial | 6 | Control exists but has no standalone writeup, or has a small gap |
+| Pass | 55 | Control exists, with evidence in code or this file |
+| Partial | 0 | — |
 | Fail | 0 | — |
-| N/A | 18 | App has no such feature |
-| Not reviewed | 4 | Outside the scope of a source review (TLS cert, current `npm audit` results) |
+| N/A | 13 | The app has no such feature |
+| Not reviewed | 2 | TLS version and certificate, set by hosting |
 
-**Fixed since last pass (rev. 2):**
-- `7.4.1` / `7.4.2` — added `SessionRevocationService` + a real `POST /auth/logout`; revokes on logout/password-reset/suspend
-- `6.2.4` — added `isCommonPassword()`, checked against a wordlist before hashing, on both signup and reset
-- `15.1.1` — the dependency-patch SLA is now written at the bottom of this file (this file is the documentation this item asks for)
+### Changes since rev. 2
 
-**Still open (process, not code):**
-- The wordlist in `common-passwords.ts` is a ~120-word starter set; should move to the SecLists top-10k before production
-- There's still no CI step that actually runs `npm audit`/Dependabot per the policy at the bottom of this file — the policy exists, it just isn't enforced automatically yet
+| ASVS | Rev. 2 | Re-review of `0c9802e` | Rev. 3 | What changed |
+| --- | --- | --- | --- | --- |
+| 9.1.3 | Pass | Partial | Pass | docker-compose fell back to the public dev `SESSION_SECRET`, so anyone could forge an admin token. Production now refuses a missing, published or short (< 32 chars) secret, in both `backend/src/config/env.ts` and `frontend/src/lib/auth.ts`; compose has no fallback |
+| 6.3.2 | Pass | Fail | Pass | The production image seeded `admin@bma.go.th` / `Admin1234!` by default. Compose now seeds only when `.env` sets `SEED_DEMO_DATA=true`, and the backend warns if it ever seeds in production |
+| 8.2.1 | Pass | Fail | Pass | `GET /tor/:torId/feedback?status=…` was public and returned pending and rejected comments; it is now approved-only. `/api/test-db` (any signed-in user could list collections) is deleted |
+| 15.2.1 | Not reviewed | Fail | Pass | Backend had 1 critical and 4 high advisories in production dependencies; `npm audit fix` applied. CI now fails on high/critical; Dependabot added |
+| 6.3.1 | Pass | Partial | Pass | Every login reached the backend from the Next.js server's IP, so 5 bad logins by anyone locked everyone out. The client IP is now forwarded and trusted only from loopback/private hops, and failed logins are capped per email |
+| 6.2.8 | Pass | Fail | Pass | The signup action trimmed the password, so a password with a leading or trailing space never worked at login |
+| 3.3.1 | Pass | Fail | Pass | The cookie is now `__Host-torr_session` and always `Secure` in production |
+| 3.4.1 | Pass | Fail | Pass | HSTS came only from the backend, which browsers never reach. `frontend/next.config.ts` now sends it on every response |
+| 6.2.4 | Pass | Fail | Pass | The common-password list had 116 entries; it now holds the 10,000 most common that the policy would otherwise accept |
+| 6.2.2, 6.2.3 | Partial, N/A | Partial, N/A | Pass | New change-password form on `/profile`; it requires the current password |
+| 15.3.1 | Pass | Partial | Pass | `/api/test-db` returned collection metadata and raw errors; deleted |
+| 2.1.1, 6.1.1, 8.1.1 | Partial | Partial | Pass | Validation rules, rate limits and access rules are now written down in this file |
+| 4.1.1 | Pass | Partial | Pass | Next.js JSON had no charset; every route handler and the proxy now use `jsonResponse()` (`application/json; charset=utf-8`) |
+| 14.2.1 | Pass | Partial | Pass | Signup put the email in `/signup/pending?email=…`; it now travels in a 30-minute httpOnly cookie read by the server |
+| 12.2.1 | Partial | Partial | Pass | Compose published plain HTTP on 3000/4000 and MongoDB on 27017 to the network; every port is now bound to `127.0.0.1`, so outside traffic must come through an HTTPS proxy. MongoDB credentials come from `.env` |
+| 1.2.2 | Not reviewed | Pass | Pass | Checked: ids are URL-encoded; React 19 blocks `javascript:` hrefs |
+| 3.2.1 | Partial | Pass | Pass | Relayed files: PDF/JPEG/PNG allowlist, magic-byte check, `nosniff` |
+| 5.2.1, 5.2.2, 5.3.2 | N/A | Pass | Pass | The app does download and unzip portal files; size caps and type checks exist |
+| 6.4.1 | N/A | Pass | Pass | Email-verify links are activation codes and meet the rule |
+
+### Still open
+
+No requirement is open in code. Two things are left to whoever runs the server:
+
+- Put an HTTPS reverse proxy in front of `127.0.0.1:3000` (12.1.1, 12.2.2: TLS version and certificate), and set `MONGO_ROOT_USERNAME` / `MONGO_ROOT_PASSWORD` in `.env` before the database volume is first created.
+- Rotate `SESSION_SECRET` on any server that was ever started from compose with the old default.
+
+---
+
+## V1 — Encoding and Sanitization
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 1.2.1 | Output encoding fits the context | Pass | React/JSX escapes all output; no `dangerouslySetInnerHTML` |
+| 1.2.2 | Untrusted data in URLs is encoded; safe protocols only | Pass | Route handlers `encodeURIComponent` ids; React 19.2 blocks `javascript:` hrefs |
+| 1.2.3 | Encoding when building JS/JSON | Pass | `JSON.stringify` / Nest serialization only |
+| 1.2.4 | Database queries protected from injection | Pass | Typed Mongo filters; `ValidationPipe({ whitelist: true })` strips unknown fields; `common/regex.ts` escapes text before `$regex` |
+| 1.2.5 | No OS command injection | N/A | No `child_process` / `exec` |
+| 1.3.1 | WYSIWYG HTML is sanitized | N/A | No rich-text editor |
+| 1.3.2 | No `eval()` or dynamic code | Pass | None found |
+| 1.5.1 | XML parsers block XXE | N/A | No XML parser |
+
+## V2 — Validation and Business Logic
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 2.1.1 | Validation rules are documented | Pass | [Input validation rules](#input-validation-rules-asvs-211) below |
+| 2.2.1 | Input checked against business rules | Pass | A class-validator DTO on every body and query (28 DTO classes) |
+| 2.2.2 | Validation runs on the trusted server | Pass | Global `ValidationPipe` in `backend/src/main.ts` |
+| 2.3.1 | Business steps run in order | Pass | Signup → verify email → admin approval, enforced in `auth.service.ts` `issueSession()` |
+
+## V3 — Web Frontend Security
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 3.2.1 | Responses can't render in the wrong context | Pass | Relayed documents limited to PDF/JPEG/PNG (`tor/tor-documents.ts`) with magic-byte checks (`common/archive-files.ts`); `nosniff` on every frontend response |
+| 3.2.2 | Text rendered with safe functions | Pass | JSX text rendering only |
+| 3.3.1 | Cookies `Secure` with `__Host-`/`__Secure-` prefix | Pass | `__Host-torr_session`, `Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/` in production (`frontend/src/lib/auth.ts`, `sessionCookieOptions()`). Dev keeps `torr_session` without `Secure` for plain-HTTP localhost |
+| 3.4.1 | HSTS on all responses, max-age ≥ 1 year | Pass | `Strict-Transport-Security: max-age=31536000; includeSubDomains` from `frontend/next.config.ts`; backend via `helmet()` |
+| 3.4.2 | CORS origin fixed or allowlisted | Pass | `enableCors({ origin: env.frontendOrigin })` |
+| 3.5.1 | Cross-site requests to sensitive actions blocked | Pass | Session cookie is `SameSite=Lax`; Next.js server actions check `Origin` |
+| 3.5.2 | No sensitive call skips CORS preflight | Pass | Backend accepts only `Authorization: Bearer`, never cookies |
+| 3.5.3 | Sensitive actions don't use GET | Pass | Every write is POST/PUT/PATCH/DELETE |
+
+## V4 — API and Web Service
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 4.1.1 | `Content-Type` matches the body, with charset | Pass | Nest sends `charset=utf-8`; the frontend's route handlers and proxy use `jsonResponse()` (`frontend/src/lib/json-response.ts`); relayed files keep their checked PDF/JPEG/PNG type |
+| 4.4.1 | WebSockets use WSS | N/A | No WebSockets |
+
+## V5 — File Handling
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 5.2.1 | Only file sizes it can process | Pass | 40 MB caps in `tor-document.service.ts`, `tor-archive.service.ts`, `archive-files.ts`; `inflateRawSync` with `maxOutputLength` (`common/zip.ts`) |
+| 5.2.2 | Extension and content match the expected type | Pass | Extension and magic bytes both checked (`common/archive-files.ts`) |
+| 5.3.1 | Untrusted files in public folders not executed | N/A | Nothing is written to disk |
+| 5.3.2 | File paths don't use user-supplied names | Pass | Zip entry names reduced to a base name, used only in `Content-Disposition` |
+
+## V6 — Authentication
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 6.1.1 | Anti-automation controls documented | Pass | [Rate limits](#rate-limits-and-anti-automation-asvs-611) below |
+| 6.2.1 | Passwords ≥ 8 characters | Pass | `@MinLength(8)` on signup, reset and change |
+| 6.2.2 | Users can change their password | Pass | Change-password form on `/profile` → `POST /auth/password` |
+| 6.2.3 | Change needs current and new password | Pass | `ChangePasswordDto`; wrong current password → 400 and counts toward the per-email limit; all sessions end on success |
+| 6.2.4 | Checked against ≥ 3,000 common passwords | Pass | `common/common-passwords.ts`: the 10,000 most common 8–128 character passwords (SecLists NCSC list); checked on signup, reset and change |
+| 6.2.5 | No composition rules | Pass | Length only |
+| 6.2.6 | Password fields masked | Pass | `components/ui/password-input.tsx` (`type="password"` with a show toggle) |
+| 6.2.7 | Paste and password managers work | Pass | No paste blocking; `autocomplete` set on change-password fields |
+| 6.2.8 | Password verified exactly as typed | Pass | Signup no longer trims the password; scrypt hashes the raw string |
+| 6.3.1 | Brute force and credential stuffing limited | Pass | Per-IP throttle with the real client IP, plus 10 failures per email per 15 min (`auth/login-attempts.ts`) |
+| 6.3.2 | No default accounts | Pass | Demo accounts are opt-in (`SEED_DEMO_DATA`), off by default in compose, warned about in production |
+| 6.4.1 | Activation codes random, short-lived, single-use | Pass | 32 random bytes, SHA-256 stored, 1 h / 24 h expiry, deleted on use (`auth/account-links.service.ts`) |
+| 6.4.2 | No password hints or secret questions | Pass | None in the schema |
+
+## V7 — Session Management
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 7.2.1 | Tokens verified by a trusted backend | Pass | `session.guard.ts` / `role.guard.ts` check signature, expiry and revocation |
+| 7.2.2 | Tokens generated per session | Pass | `createSessionToken()` in `common/token.ts` |
+| 7.2.3 | Reference tokens ≥ 128 bits | N/A | Self-contained HMAC tokens |
+| 7.2.4 | New token on every sign-in | Pass | `issueSession()` on every login and Google sign-in |
+| 7.4.1 | Logout makes the session unusable | Pass | `POST /auth/logout` sets `sessionMinIssuedAt` (`common/session-revocation.service.ts`) |
+| 7.4.2 | Disabling an account ends its sessions | Pass | Suspend, role change, password reset and password change all call `revoke()` |
+
+## V8 — Authorization
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 8.1.1 | Access rules documented | Pass | [Access rules](#access-rules-asvs-811) below |
+| 8.2.1 | Functions limited to roles that need them | Pass | Guards on every non-public route; public feedback route is approved-only; `/api/test-db` deleted |
+| 8.2.2 | Data limited to its owner (no IDOR) | Pass | Saved TORs, saved searches and notifications filter on the session's `userId` |
+| 8.3.1 | Authorization on the trusted server | Pass | Nest guards; the frontend `proxy.ts` only gates page navigation |
+
+## V9 — Self-contained Tokens
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 9.1.1 | Signature checked before payload is trusted | Pass | `timingSafeEqual` HMAC check in `common/token.ts` |
+| 9.1.2 | Only allowlisted algorithms | Pass | HMAC-SHA256 hard-coded; no `alg` field |
+| 9.1.3 | Key material from a trusted source | Pass | Production refuses a missing, published or short `SESSION_SECRET`; compose has no fallback |
+| 9.2.1 | Token used only within its validity time | Pass | `exp` checked by backend and frontend |
+
+## V10 — OAuth and OIDC
+
+All 5 items (10.4.1–10.4.5) are N/A: they apply to an authorization server. TorFinder only verifies Google ID tokens as a client, checking `audience` and `email_verified` (`auth.service.ts` `verifyGoogleCredential()`).
+
+## V11 — Cryptography
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 11.3.1 | No insecure block modes | N/A | No encryption |
+| 11.3.2 | Only approved ciphers | N/A | No encryption |
+| 11.4.1 | Only approved hash functions | Pass | scrypt, HMAC-SHA256, SHA-256. `similar/similar.service.ts` uses SHA-1 only as a cache key, not for security |
+
+## V12 — Secure Communication
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 12.1.1 | Only TLS 1.2 / 1.3 | Not reviewed | Set by hosting |
+| 12.2.1 | TLS for all external traffic | Pass | Compose binds every port to `127.0.0.1`, so nothing is served to the network over plain HTTP; outside traffic goes through the host's HTTPS proxy (`docs/operations/deployment-checklist.md`), and HSTS stops browsers falling back to HTTP |
+| 12.2.2 | Publicly trusted certificates | Not reviewed | Set by hosting |
+
+## V13 — Configuration
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 13.4.1 | No `.git` in the deployed app | Pass | `frontend/.dockerignore` excludes `.git`; backend build context holds none |
+
+## V14 — Data Protection
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 14.2.1 | No sensitive data in URLs | Pass | Session tokens never in URLs. The signup email travels in a 30-minute httpOnly cookie (`frontend/src/lib/signup-email.ts`). One-time `?token=` reset/verify links are accepted, and `Referrer-Policy` keeps them from leaking |
+| 14.3.1 | Client data cleared after logout | Pass | Logout and password change clear the httpOnly cookie; no token in `localStorage` |
+
+## V15 — Secure Coding and Architecture
+
+| ID | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 15.1.1 | Patch time frames documented | Pass | [Dependency-patch SLA](#dependency-patch-sla-asvs-1511) below |
+| 15.2.1 | No component past those time frames | Pass | `npm audit --omit=dev`: 0 in backend and frontend (2026-11-16). CI fails on high/critical; Dependabot weekly |
+| 15.3.1 | APIs return only needed fields | Pass | Password hashes projected out (`accounts.service.ts`); `/api/test-db` deleted |
 
 ---
 
-## V1 — Encoding & Sanitization (8 items)
+## Input validation rules (ASVS 2.1.1)
 
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 1.2.1 | Context-appropriate output encoding (HTML/HTTP/XML) | Pass | React/JSX auto-escapes everywhere; no `dangerouslySetInnerHTML` |
-| 1.2.2 | Encode dynamic URLs, block `javascript:`/`data:` | Not reviewed | No explicit allowlist, but most URLs are built from internal ids |
-| 1.2.3 | Output encoding when generating JS/JSON | Pass | NestJS serializes to JSON automatically |
-| 1.2.4 | Parameterized queries against SQL/NoSQL injection | Pass | Native `mongodb` driver + a typed filter object everywhere |
-| 1.2.5 | Protection against OS command injection | N/A | No `child_process`/`exec` anywhere in the code |
-| 1.3.1 | Sanitize HTML from a WYSIWYG editor | N/A | No rich-text editor in the system |
-| 1.3.2 | Avoid `eval()`/dynamic code execution | Pass | No `eval`/`new Function` found anywhere |
-| 1.5.1 | Restrictive XML parser config (XXE) | N/A | No XML parser library — the egp/mea/datagov clients use JSON/HTML |
+- **Where**: every backend route that takes a body or query has a class-validator DTO. The global `ValidationPipe({ whitelist: true, transform: true })` drops unknown fields and rejects bad ones with 400 before any handler runs. Frontend checks are for usability only.
+- **Email**: `@IsEmail`, stored trimmed and lower-cased.
+- **Password**: 8–128 characters, no composition rules, not in the common-password list, never trimmed or case-changed.
+- **Thai tax ID**: 13 digits (`@IsThaiTaxId`). The mod-11 check digit is a warning on the form, not a rejection.
+- **Thai phone**: `@IsThaiPhone`.
+- **Free text**: each field has a `@MaxLength` (e.g. company name 200, address 500, feedback 10–5,000).
+- **Ids**: Mongo ids are checked with `ObjectId.isValid` before use; unknown ids answer 404.
+- **Enumerations** (roles, statuses, report reasons, feedback status): `@IsIn` against the constants in each module.
 
-## V2 — Validation & Business Logic (4 items)
+## Rate limits and anti-automation (ASVS 6.1.1)
 
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 2.1.1 | Documented input-validation rules | Partial | Rules live in code (class-validator DTOs) but have no standalone writeup |
-| 2.2.1 | Validate input against business expectations | Pass | A class-validator DTO on every route, e.g. `signup.dto.ts`, `login.dto.ts` |
-| 2.2.2 | Enforce validation at the trusted service layer | Pass | Global `ValidationPipe({ whitelist: true, transform: true })` in `main.ts` |
-| 2.3.1 | Business logic follows the correct step order | Pass | signup → pending → review → approved is enforced server-side in `issueSession()` |
+| Control | Limit | Where |
+| --- | --- | --- |
+| Every route | 100 requests / 60 s per client IP (`THROTTLE_LIMIT`) | `app.module.ts` `ThrottlerGuard` |
+| Signup, login, Google sign-in, password forgot/reset/change, email verify/resend, feedback, reports | 5 / 60 s per client IP (`AUTH_THROTTLE_LIMIT`) | `@Throttle` on each route |
+| Find similar | 30 / 60 s per client IP | `similar.controller.ts` |
+| AI proposal draft | 5 / 60 s per client IP | `ai.controller.ts` |
+| Failed logins and wrong current passwords | 10 per email address, lock lifts after 15 quiet minutes (`LOGIN_FAILURE_LIMIT`) | `auth/login-attempts.ts` |
 
-## V3 — Web Frontend Security (8 items)
+The client IP is the right-most `X-Forwarded-For` entry the frontend forwards (`frontend/src/lib/client-ip.ts`). The backend believes it only from loopback and private addresses (`TRUST_PROXY`, default `loopback, uniquelocal`). If browsers reach Next.js directly with no proxy in front, a client can still spoof its IP; the per-email limit is the backstop. All counters are per process.
 
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 3.2.1 | Prevent the browser from rendering content in the wrong context | Partial | No raw-resource serving at all (no uploads), so risk is low, but there's no explicit policy |
-| 3.2.2 | Safe text-rendering function | Pass | React JSX text rendering is the default everywhere |
-| 3.3.1 | Cookie has the `Secure` attribute | Pass | `login/route.ts` — `secure: NODE_ENV === "production"` |
-| 3.4.1 | HSTS max-age ≥ 1 year | Pass | `helmet()` v8.3.0 default = `max-age=31536000` |
-| 3.4.2 | `Access-Control-Allow-Origin` set explicitly | Pass | `main.ts` — `enableCors({ origin: env.frontendOrigin })`, a single origin, not a wildcard |
-| 3.5.1 | CSRF protection (non-preflight) | Pass | Session token travels as `Authorization: Bearer` from a same-origin proxy, not an ambient cookie |
-| 3.5.2 | CSRF protection (relying on CORS preflight) | Pass | Same mechanism as 3.5.1 |
-| 3.5.3 | Use the right HTTP method for sensitive actions | Pass | Sensitive routes always use POST/DELETE, never GET |
+## Access rules (ASVS 8.1.1)
 
-## V4 — API and Web Service (2 items)
+Roles: `viewer` (public Google sign-in), `org` (company), `admin`, `owner` (project owner), `auditor`. A guard admits exactly the roles it names; an admin is not implicitly an owner or auditor. Every guarded route also checks token revocation.
 
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 4.1.1 | `Content-Type` matches the actual content | Pass | Set automatically by NestJS/Express |
-| 4.4.1 | WebSocket over TLS (WSS) | N/A | No `WebSocketGateway`/socket.io in the system |
+| Access | Routes |
+| --- | --- |
+| Public | `POST /auth/*` except logout and password change; `GET /tor`, `GET /tor/:id` and its documents; `GET /tor/:torId/feedback` (approved only); `GET /feedback/counts`; `POST /tor/:torId/feedback`; `POST /tor/:torId/reports`; `POST /tor/similar`; `GET /insights/market`; `GET /matching/tor/:id/budget`, `/bid-insight`; `POST /matching/tor/:id/score`; `GET /ai/status`; `GET /health` |
+| Any signed-in account (own data only) | `POST /auth/logout`, `POST /auth/password`, `GET/PATCH /accounts/me`, `GET /matching/opportunities`, `/notifications/*`, `/saved-searches/*`, `/saved-tors/*` |
+| `org` | `POST /ai/proposal-draft/:torId` |
+| `owner` | `GET /owner/tors` |
+| `auditor` | `GET /tor/flagged` |
+| `admin` | `/accounts` (list, directory, edit, suspend, reactivate), `GET /audit`, `POST /tor`, `PATCH/DELETE /tor/:id`, `PUT /tor/:id/owner`, `POST /tor/:id/restore`, `GET /tor/deleted`, `/tor/not-software`, `GET /feedback`, `PATCH /feedback/:id`, `GET/PATCH /reports*`, `GET /matching/tor/:id/companies`, `POST /matching/budget/refresh`, `POST /ai/extract*`, `/egp/*`, `/mea/sync`, `/datagov/sync`, `/gproc/*` |
 
-## V5 — File Handling (4 items)
-
-All 4 items (5.2.1, 5.2.2, 5.3.1, 5.3.2) are N/A — the system has no file-upload feature at all.
-
-## V6 — Authentication (13 items)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 6.1.1 | Documented rate-limiting/anti-automation | Partial | Throttling genuinely exists (see 6.3.1) but has no standalone writeup |
-| 6.2.1 | Passwords at least 8 characters | Pass | `signup.dto.ts` — `@MinLength(8)` |
-| 6.2.2 | Users can change their password | Partial | Only forgot/reset via email exists; no "change password while signed in" flow |
-| 6.2.3 | Changing a password requires the old one + the new one | N/A | There's no "change password while signed in" feature (see 6.2.2) |
-| 6.2.4 | Check passwords against a breached/common-password list | Pass (fixed rev. 2) | `common/password.ts → isCommonPassword()` checks before hashing, on both signup and reset |
-| 6.2.5 | No forced composition rule | Pass | `signup.dto.ts` only checks length — no uppercase/lowercase/digit regex |
-| 6.2.6 | Password field is masked with a reveal button | Pass | `components/ui/password-input.tsx` toggles `type="password"`/`"text"` |
-| 6.2.7 | Allow paste and password managers | Pass | A plain `<input>`, no handler blocking paste |
-| 6.2.8 | Validate the password exactly as submitted — no trim/case conversion | Pass | `password.ts` — `scrypt()` takes the raw string, transforms nothing |
-| 6.3.1 | Protection against credential stuffing/brute force | Pass | `auth.controller.ts` — `@Throttle` on every auth route (5 req/60s) |
-| 6.3.2 | No default account | Pass | No hardcoded admin/default credential found in signup, seed, or restore scripts |
-| 6.4.1 | Initial passwords are random and expire quickly | N/A | No admin-issues-a-temporary-password feature exists |
-| 6.4.2 | No password hint/secret question | Pass | No secret-question field anywhere in the user schema |
-
-## V7 — Session Management (6 items)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 7.2.1 | Verify tokens only at a trusted backend | Pass | `session.guard.ts` runs server-side on every request |
-| 7.2.2 | Tokens generated dynamically, not a static secret | Pass | `token.ts → createSessionToken()` generates a fresh one on every login |
-| 7.2.3 | Reference-token entropy ≥128 bits | N/A | Uses a self-contained (HMAC) token, not a reference token — see V9 instead |
-| 7.2.4 | Issue a new token on every (re-)authentication | Pass | `issueSession()` is called fresh on every login/signup/google-auth |
-| 7.4.1 | A terminated session can no longer be used | Pass (fixed rev. 2) | New `POST /auth/logout` + `SessionRevocationService.revoke()` |
-| 7.4.2 | All sessions are cut when an account is suspended | Pass (fixed rev. 2) | `accounts.service.ts → setSuspended()` calls `revocation.revoke()` immediately |
-
-## V8 — Authorization (4 items)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 8.1.1 | Documented function-level/data-specific access rules | Partial | Genuinely enforced via guards (`role.guard.ts`, `owner.guard.ts`, etc.) but has no standalone writeup |
-| 8.2.1 | Restrict function-level access by role | Pass | `@UseGuards(RoleGuard/OwnerGuard/OrgGuard/AdminGuard)` on every route |
-| 8.2.2 | Restrict data-specific access (anti-IDOR/BOLA) | Pass | `saved-tors.service.ts` scopes every query to the `userId` from the session, nothing else |
-| 8.3.1 | Enforce authorization at the trusted service layer | Pass | Every check is a server-side NestJS guard; nothing relies on the client |
-
-## V9 — Self-contained Tokens (4 items)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 9.1.1 | Verify signature/MAC before trusting the payload | Pass | `token.ts` — `timingSafeEqual()` HMAC check before parsing |
-| 9.1.2 | Allowlist the algorithm, never `None` | Pass | HMAC-SHA256 is hardcoded in the code, never read from the token — no algorithm-confusion surface |
-| 9.1.3 | Key material from a trustworthy source | Pass | `env.sessionSecret` — `required()` fails startup if unset in production |
-| 9.2.1 | Check the validity time span (`exp`) | Pass | Checked by both the backend and the frontend verifier |
-
-## V10 — OAuth and OIDC (5 items)
-
-All 5 items (10.4.1–10.4.5) are N/A — the app is only an OAuth/OIDC **client** (it verifies Google ID tokens via `google-auth-library`), not an authorization server issuing its own tokens. This group of requirements addresses the authorization-server side.
-
-## V11 — Cryptography (3 items)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 11.3.1 | No insecure block-cipher modes | N/A | No symmetric encryption in the system (token=HMAC, password=scrypt) |
-| 11.3.2 | Only approved ciphers/modes | N/A | Same reasoning as 11.3.1 |
-| 11.4.1 | Only approved hash functions; no MD5 | Pass | scrypt (password) + HMAC-SHA256 (token); no MD5/SHA-1 found anywhere |
-
-## V12 — Secure Communication (3 items)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 12.1.1 | Only the latest TLS version | Not reviewed | TLS termination lives at the hosting/reverse-proxy layer, outside this repo |
-| 12.2.1 | Always use TLS for externally-facing services | Partial | The code itself doesn't force an HTTP→HTTPS redirect; this depends entirely on the deployment layer |
-| 12.2.2 | Use a publicly-trusted TLS cert | Not reviewed | A hosting concern, not visible in this repo |
-
-## V13 — Configuration (1 item)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 13.4.1 | Don't expose source-control metadata (.git/.svn) | Pass | `backend/Dockerfile` is multi-stage and copies only `dist/` into the image; no `ServeStaticModule` |
-
-## V14 — Data Protection (2 items)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 14.2.1 | No sensitive data in the URL | Pass | The session token only ever travels via header/httpOnly cookie; the only `?token=` usage is one-time verify/reset links, an accepted pattern |
-| 14.3.1 | Clear authenticated data from client storage after the session ends | Pass | Logout clears the cookie; the token is never kept in localStorage/sessionStorage |
-
-## V15 — Secure Coding & Architecture (3 items)
-
-| # | Requirement | Status | Evidence |
-| --- | --- | --- | --- |
-| 15.1.1 | Documented SLA for patching vulnerable dependencies | Pass (fixed rev. 2) | The SLA policy is written below — this file is the documentation this item asks for; not yet enforced as a CI step |
-| 15.2.1 | No component past its patch SLA | Not reviewed | Depends on current `npm audit` results; can't be confirmed from a code read alone |
-| 15.3.1 | API returns only the fields it needs to | Pass | `accounts.service.ts` always excludes `passwordHash`/`passwordSalt` via projection |
-
----
+Data-level rule: a route that serves a caller's own data takes the user id from the session token, never from the request.
 
 ## Dependency-patch SLA (ASVS 15.1.1)
 
-- **Critical/High CVE** (from `npm audit` or Dependabot): fix within **7 days**
-- **Medium**: fix within **30 days**
-- **Low**: fix in the normal course of the next sprint, within **90 days** at most
-- Run `npm audit` (or enable Dependabot) as part of CI — see `.github/workflows/auth.yml`
+- **Critical/High** (from `npm audit` or Dependabot): fix within **7 days**. CI fails the build on these for production dependencies.
+- **Medium**: fix within **30 days**.
+- **Low**: fix within **90 days**, normally in the next sprint.
+- Dependabot (`.github/dependabot.yml`) opens update PRs weekly for both apps.

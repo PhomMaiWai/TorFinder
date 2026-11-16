@@ -10,19 +10,46 @@ export type SessionPayload = {
   exp: number;
 };
 
-export const SESSION_COOKIE = "torr_session";
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+/**
+ * `__Host-` makes the browser accept the cookie only when it is Secure, sent
+ * from this exact host and scoped to `/` — so neither a sibling subdomain nor a
+ * plain-HTTP response can plant or overwrite a session (ASVS 3.3.1). Dev keeps
+ * the plain name, because some browsers refuse Secure cookies on
+ * http://localhost.
+ */
+export const SESSION_COOKIE = IS_PRODUCTION ? "__Host-torr_session" : "torr_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+/** The one set of attributes every response that sets or clears the session uses. */
+export function sessionCookieOptions(maxAge: number = SESSION_MAX_AGE) {
+  return {
+    httpOnly: true,
+    secure: IS_PRODUCTION,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge,
+  };
+}
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
+/** The placeholder every .env.example ships with — public, so never a real key. */
+const DEV_SESSION_SECRET = "dev-only-insecure-secret-change-me";
+const MIN_SESSION_SECRET_LENGTH = 32;
+
+/** Same rule as the backend's env.ts: production refuses a missing, published or short secret (ASVS 9.1.3). */
 function readSessionSecret() {
   const value = process.env.SESSION_SECRET;
-  if (value) return value;
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Missing required environment variable: SESSION_SECRET");
+  if (process.env.NODE_ENV !== "production") return value || DEV_SESSION_SECRET;
+  if (!value || value === DEV_SESSION_SECRET || value.length < MIN_SESSION_SECRET_LENGTH) {
+    throw new Error(
+      `SESSION_SECRET must be a private random value of at least ${MIN_SESSION_SECRET_LENGTH} characters in production — generate one with: openssl rand -base64 32`,
+    );
   }
-  return "dev-only-insecure-secret-change-me";
+  return value;
 }
 
 function toBase64Url(bytes: Uint8Array) {

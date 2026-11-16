@@ -496,5 +496,11 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     await this.users.insertMany(docs);
     this.logger.log(`Seeded ${docs.length} demo users`);
+    if (env.isProduction) {
+      // Their passwords are in the README, so anyone can sign in as admin here.
+      this.logger.warn(
+        "SEED_DEMO_DATA=true in production: demo accounts with published passwords now exist — only acceptable on a private local machine (ASVS 6.3.2)",
+      );
+    }
   }
 }
