@@ -11,7 +11,7 @@
     "scope-cleanup": "node dist/scripts/scope-cleanup.js"
   },
   "dependencies": {
-    "@google/genai": "^2.21.0",
+    "@google/genai": "^3.3.0",
     "@nestjs/common": "^11.1.6",
     "@nestjs/core": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
