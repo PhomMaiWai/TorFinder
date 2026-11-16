@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
+import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { clientIpHeaders } from "@/lib/client-ip";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
@@ -35,12 +35,6 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ user: data.user });
-  response.cookies.set(SESSION_COOKIE, data.token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  });
+  response.cookies.set(SESSION_COOKIE, data.token, sessionCookieOptions());
   return response;
 }

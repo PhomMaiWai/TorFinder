@@ -138,6 +138,6 @@ And not from the audit, just from reading the code:
 - [ ] `curl -sf <backend>/health` returns `{"ok":true}`
 - [ ] Sign in as the real admin account through a real browser against the deployed frontend — not curl, since the bug this is catching (see above) is specifically about the browser's stored cookie surviving a page load
 - [ ] Reload that page. Still signed in confirms `SESSION_SECRET` actually matches between the two services; bounced back to login means it doesn't
-- [ ] Open devtools, inspect the `torr_session` cookie, confirm `Secure` is set — confirms `NODE_ENV=production` actually took effect on the frontend, not just that you set it in a config file somewhere
+- [ ] Open devtools, inspect the session cookie, confirm it is named `__Host-torr_session` and `Secure` is set — confirms `NODE_ENV=production` actually took effect on the frontend, not just that you set it in a config file somewhere
 - [ ] Fire the report-a-problem endpoint 6 times in under a minute from one IP and confirm the 6th comes back `429` — confirms the real `AUTH_THROTTLE_LIMIT` (not CI's `300`) made it into this environment
 - [ ] Check `SEED_DEMO_DATA` didn't quietly seed `admin@bma.go.th` into this database — query the `users` collection for that email, expect nothing (or expect it, if this deployment genuinely wants the demo accounts, but then that should be a deliberate choice, not a default nobody looked at)

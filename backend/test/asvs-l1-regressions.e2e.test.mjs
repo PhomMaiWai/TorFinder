@@ -102,6 +102,62 @@ describe("ASVS 8.2.1 — GET /api/tor/:torId/feedback is approved-only", () => {
   });
 });
 
+describe("ASVS 6.2.2 / 6.2.3 — POST /api/auth/password", () => {
+  const email = `change-password-${Date.now()}@example.com`;
+  const firstPassword = "first-Passphrase-42";
+  const nextPassword = "second-Passphrase-42";
+  const ip = "192.0.2.30";
+  const loginAs = (password) => api("/auth/login", { method: "POST", ip, body: { email, password } });
+
+  after(() => db().collection("users").deleteMany({ email }));
+
+  it("needs the current password, refuses a common one, then ends every session", async () => {
+    const signup = await api("/auth/signup", {
+      method: "POST",
+      ip,
+      body: {
+        email,
+        password: firstPassword,
+        companyName: "บริษัท ทดสอบเปลี่ยนรหัสผ่าน จำกัด",
+        taxId: "0105563001236",
+        contactName: "CI",
+        phone: "0812345678",
+        address: "กรุงเทพฯ",
+        specialty: "software",
+        size: "small",
+      },
+    });
+    assert.equal(signup.status, 201, `signup failed: ${JSON.stringify(signup.body)}`);
+    await db().collection("users").updateOne({ email }, { $set: { status: "approved", emailVerified: true } });
+
+    const first = await loginAs(firstPassword);
+    assert.equal(first.status, 200);
+    const token = first.body.token;
+    const change = (body) => api("/auth/password", { method: "POST", ip, token, body });
+
+    assert.equal((await api("/auth/password", { method: "POST", ip, body: {} })).status, 401, "needs a session");
+    assert.equal(
+      (await change({ currentPassword: "not-my-password", newPassword: nextPassword })).status,
+      400,
+      "needs the right current password",
+    );
+    assert.equal(
+      (await change({ currentPassword: firstPassword, newPassword: "password1" })).status,
+      400,
+      "refuses a common password",
+    );
+    assert.equal((await change({ currentPassword: firstPassword, newPassword: nextPassword })).status, 200);
+
+    assert.equal((await api("/accounts/me", { token })).status, 401, "the old session is revoked");
+    // Revocation is per second (token iat): sign in again in a later second, as a person would.
+    await new Promise((resolve) => setTimeout(resolve, 1_100));
+    assert.equal((await loginAs(firstPassword)).status, 401, "the old password no longer works");
+    const next = await loginAs(nextPassword);
+    assert.equal(next.status, 200);
+    assert.equal((await api("/accounts/me", { token: next.body.token })).status, 200);
+  });
+});
+
 describe("ASVS 6.3.1 — failed logins are limited per email address", () => {
   const login = (email, ip) =>
     api("/auth/login", { method: "POST", ip, body: { email, password: "definitely-wrong-password" } });

@@ -5,6 +5,7 @@ import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
 import { env } from "../config/env";
 import { AuthService } from "./auth.service";
 import { EmailOnlyDto, ResetPasswordDto, VerifyEmailDto } from "./dto/account-links.dto";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
 import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
 import { LoginDto } from "./dto/login.dto";
@@ -34,6 +35,15 @@ export class AuthController {
   async logout(@Req() request: AuthenticatedRequest) {
     await this.authService.logout(request.session.sub);
     return { ok: true as const };
+  }
+
+  /** A signed-in user changes their own password (ASVS 6.2.2 / 6.2.3); every session ends, this one included. */
+  @Post("password")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SessionGuard)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  changePassword(@Req() request: AuthenticatedRequest, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(request.session.sub, dto);
   }
 
   @Post("google")

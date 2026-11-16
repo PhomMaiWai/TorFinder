@@ -435,7 +435,18 @@
     "matchAlertsDescription": "แจ้งตั้งแต่โครงการเริ่มปรากฏในขั้นแผนหรือร่าง TOR เพื่อให้มีเวลาเตรียมตัว และแจ้งอีกครั้งเมื่อเปิดรับข้อเสนอ",
     "matchThresholdLabel": "คะแนนขั้นต่ำที่จะแจ้งเตือน",
     "matchThresholdDescription": "ยิ่งตั้งสูง ยิ่งได้รับแจ้งน้อยลงแต่ตรงขึ้น ค่าเริ่มต้นคือ 70%",
-    "matchThresholdOption": "{value}% ขึ้นไป"
+    "matchThresholdOption": "{value}% ขึ้นไป",
+    "changePasswordSectionTitle": "เปลี่ยนรหัสผ่าน",
+    "changePasswordDescription": "กรอกรหัสผ่านปัจจุบันและรหัสผ่านใหม่ ระบบจะออกจากระบบทุกอุปกรณ์ แล้วให้เข้าสู่ระบบใหม่ด้วยรหัสผ่านใหม่",
+    "currentPasswordLabel": "รหัสผ่านปัจจุบัน",
+    "newPasswordLabel": "รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)",
+    "confirmNewPasswordLabel": "ยืนยันรหัสผ่านใหม่",
+    "changePasswordButton": "เปลี่ยนรหัสผ่าน",
+    "newPasswordTooShort": "รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร",
+    "passwordMismatch": "รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน",
+    "changePasswordFailed": "เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่",
+    "passwordChangedConfirmation": "เปลี่ยนรหัสผ่านแล้ว ระบบได้ออกจากระบบทุกอุปกรณ์ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่",
+    "signInAgainButton": "เข้าสู่ระบบอีกครั้ง"
   },
   "NotificationsPage": {
     "pageTitle": "การแจ้งเตือน",
