@@ -16,13 +16,20 @@ export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
+/** The placeholder every .env.example ships with — public, so never a real key. */
+const DEV_SESSION_SECRET = "dev-only-insecure-secret-change-me";
+const MIN_SESSION_SECRET_LENGTH = 32;
+
+/** Same rule as the backend's env.ts: production refuses a missing, published or short secret (ASVS 9.1.3). */
 function readSessionSecret() {
   const value = process.env.SESSION_SECRET;
-  if (value) return value;
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Missing required environment variable: SESSION_SECRET");
+  if (process.env.NODE_ENV !== "production") return value || DEV_SESSION_SECRET;
+  if (!value || value === DEV_SESSION_SECRET || value.length < MIN_SESSION_SECRET_LENGTH) {
+    throw new Error(
+      `SESSION_SECRET must be a private random value of at least ${MIN_SESSION_SECRET_LENGTH} characters in production — generate one with: openssl rand -base64 32`,
+    );
   }
-  return "dev-only-insecure-secret-change-me";
+  return value;
 }
 
 function toBase64Url(bytes: Uint8Array) {

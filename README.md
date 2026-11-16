@@ -36,11 +36,15 @@ Everything runs with one command; you don't need Node or MongoDB installed.
 ```bash
 git clone https://github.com/PhomMaiWai/TorFinder.git
 cd TorFinder
+cp .env.example .env
+# put a fresh secret in .env:  SESSION_SECRET=<output of: openssl rand -base64 32>
+# for the demo accounts below, also set SEED_DEMO_DATA=true (your own machine only)
 docker compose up -d --build
 ```
 
-That's it. The database is created and filled with a snapshot of real TOR records
-(`docker/mongo-seed/`), demo accounts are seeded, and both services start:
+The services refuse to start without a private `SESSION_SECRET` of 32+ characters.
+The database is created and filled with a snapshot of real TOR records
+(`docker/mongo-seed/`), demo accounts are seeded if you opted in, and both services start:
 
 |              | URL                          |
 | ------------ | ---------------------------- |
@@ -115,8 +119,9 @@ administrator approves it.
 What each role can do is described in
 [docs/project/roles-and-features.md](docs/project/roles-and-features.md).
 
-> These credentials are for local development only. Set `SEED_DEMO_DATA=false` to start
-> without them.
+> These credentials are public, so they are for your own machine only. `npm run dev`
+> seeds them by default; Docker seeds them only when `.env` sets `SEED_DEMO_DATA=true`.
+> Never enable them on a server anyone else can reach.
 
 ---
 
@@ -164,10 +169,12 @@ are in [docs/operations/pipeline.md](docs/operations/pipeline.md) and, in plaine
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `MONGODB_URI` | `mongodb://localhost:27017/torfinder` | Required in production |
-| `SESSION_SECRET` | dev fallback | Required in production; must match the frontend |
+| `SESSION_SECRET` | dev fallback | Production requires a private value of 32+ characters (the dev placeholder is refused); must match the frontend |
 | `PORT` | `4000` | |
 | `FRONTEND_ORIGIN` | `http://localhost:3000` | CORS allow-list and links in notifications |
 | `SEED_DEMO_DATA` | `true` outside production | `false` skips the demo accounts |
+| `LOGIN_FAILURE_LIMIT` | `10` | Failed logins per email before a 15-minute lock |
+| `TRUST_PROXY` | `loopback, uniquelocal` | Hops trusted for `X-Forwarded-For` (the frontend) |
 | `TOR_LISTED_SINCE` | `2022-01-01` | Records older than this are not imported or listed |
 | `GOOGLE_CLIENT_ID` | empty | Google sign-in; must match the frontend's |
 | `VERTEX_PROJECT_ID` | empty | Empty turns AI extraction and proposal drafts off |

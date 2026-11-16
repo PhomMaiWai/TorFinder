@@ -9,7 +9,9 @@ services:
       - "3000:3000"
     environment:
       - BACKEND_URL=http://backend:4000
-      - SESSION_SECRET=${SESSION_SECRET:-dev-only-insecure-secret-change-me}
+      # No fallback on purpose: the image runs with NODE_ENV=production and
+      # refuses a missing or published secret. Set it in .env (see .env.example).
+      - SESSION_SECRET=${SESSION_SECRET:-}
     depends_on:
       - backend
 
@@ -19,12 +21,12 @@ services:
       - "4000:4000"
     environment:
       - MONGODB_URI=mongodb://torr:torr@db:27017/torr?authSource=admin
-      - SESSION_SECRET=${SESSION_SECRET:-dev-only-insecure-secret-change-me}
+      - SESSION_SECRET=${SESSION_SECRET:-}
       - FRONTEND_ORIGIN=http://localhost:3000
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      # The image runs with NODE_ENV=production, so demo data is opted into here.
-      # Set SEED_DEMO_DATA=false to start from an empty database.
-      - SEED_DEMO_DATA=${SEED_DEMO_DATA:-true}
+      # Off unless .env opts in: the demo accounts' passwords are published in
+      # the README, so they must never appear on a reachable server (ASVS 6.3.2).
+      - SEED_DEMO_DATA=${SEED_DEMO_DATA:-false}
     depends_on:
       db:
         condition: service_healthy

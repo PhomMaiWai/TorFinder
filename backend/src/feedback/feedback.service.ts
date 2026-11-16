@@ -53,9 +53,10 @@ export class FeedbackService {
    * Comments on one announcement. Public callers get the approved ones; the
    * moderation views ask for a specific status, including the queue itself.
    */
-  async findForTor(torId: string, status?: FeedbackStatus) {
+  /** The approved comments only: this backs a public route. */
+  async findForTor(torId: string) {
     const tor = await this.findTorId(torId);
-    return this.list({ torId: tor, status: status ?? "อนุมัติ" });
+    return this.list({ torId: tor, status: "อนุมัติ" });
   }
 
   /** The moderation queue across every announcement, oldest first — first in, first judged. */

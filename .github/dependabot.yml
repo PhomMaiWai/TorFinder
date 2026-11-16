@@ -1,0 +1,18 @@
+# Weekly dependency PRs, so vulnerable packages are noticed within the patch
+# SLA in docs/security/asvs-l1.md (ASVS 15.1.1 / 15.2.1).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

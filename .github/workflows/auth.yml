@@ -77,6 +77,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # ASVS 15.2.1: a high or critical advisory in a shipped package fails the
+      # build, enforcing the patch SLA in docs/security/asvs-l1.md.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Lint
         run: npm run lint
 
@@ -132,6 +137,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Lint
         run: npm run lint

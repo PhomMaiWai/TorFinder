@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
+import { clientIpHeaders } from "@/lib/client-ip";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
   try {
     backendRes = await fetch(`${BACKEND_URL}/api/auth/google/complete`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
       body: JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(8000),

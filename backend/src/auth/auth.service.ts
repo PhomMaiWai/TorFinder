@@ -20,6 +20,7 @@ import { GoogleAuthDto } from "./dto/google-auth.dto";
 import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
+import { LoginAttempts } from "./login-attempts";
 
 const DUPLICATE_KEY = 11000;
 
@@ -36,6 +37,7 @@ const googleClient = new OAuth2Client(env.googleClientId);
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly loginAttempts = new LoginAttempts();
 
   constructor(
     private readonly db: DatabaseService,
@@ -80,7 +82,9 @@ export class AuthService {
   }
 
   async login({ email, password }: LoginDto) {
-    const user = await this.db.users.findOne({ email: email.trim().toLowerCase() });
+    const address = email.trim().toLowerCase();
+    this.loginAttempts.assertAllowed(address);
+    const user = await this.db.users.findOne({ email: address });
 
     // No passwordHash means the account was created via Google and never set
     // one — verifyPassword can't run against nothing, so it's a mismatch too.
@@ -90,8 +94,10 @@ export class AuthService {
       !user.passwordSalt ||
       !(await verifyPassword(password, user.passwordSalt, user.passwordHash))
     ) {
+      this.loginAttempts.recordFailure(address);
       throw new UnauthorizedException("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     }
+    this.loginAttempts.recordSuccess(address);
     // After the password, so only the account's owner learns its address is unconfirmed.
     if (user.emailVerified === false) {
       throw new ForbiddenException({
