@@ -1,5 +1,10 @@
 # Weekly dependency PRs, so vulnerable packages are noticed within the patch
 # SLA in docs/security/asvs-l1.md (ASVS 15.1.1 / 15.2.1).
+#
+# Minor and patch updates arrive as one grouped PR per app instead of one PR
+# per package. Major versions are held back: they need a planned upgrade (e.g.
+# every @nestjs/* package together), not a drive-by bump. Revisit the
+# `ignore` blocks after the 2026-11-23 presentation.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -7,12 +12,27 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      backend-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      frontend-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]
