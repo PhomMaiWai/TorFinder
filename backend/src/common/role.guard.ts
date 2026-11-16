@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Optional
 
 import { Role } from "./roles";
 import { SessionRevocationService } from "./session-revocation.service";
-import { AuthenticatedRequest } from "./session.guard";
+import { AuthenticatedRequest, logDenied } from "./session.guard";
 import { verifySessionToken } from "./token";
 
 /**
@@ -49,6 +49,7 @@ export abstract class RoleGuard implements CanActivate {
     const session = scheme === "Bearer" ? verifySessionToken(token) : null;
 
     if (!session || !this.roles.includes(session.role)) {
+      logDenied(request, !session ? (token ? "invalid_token" : "no_token") : "wrong_role", session?.sub, session?.role);
       throw new ForbiddenException(this.refusal);
     }
 
@@ -63,7 +64,10 @@ export abstract class RoleGuard implements CanActivate {
     // Role-guarded routes don't go through SessionGuard at all, so this has
     // to be enforced here independently, not inherited from it.
     return this.revocation.isValid(session.sub, session.iat).then((valid) => {
-      if (!valid) throw new ForbiddenException(this.refusal);
+      if (!valid) {
+        logDenied(request, "revoked_token", session.sub, session.role);
+        throw new ForbiddenException(this.refusal);
+      }
       request.session = session;
       return true;
     });

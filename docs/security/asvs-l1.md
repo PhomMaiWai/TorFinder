@@ -228,6 +228,10 @@ Roles: `viewer` (public Google sign-in), `org` (company), `admin`, `owner` (proj
 
 Data-level rule: a route that serves a caller's own data takes the user id from the session token, never from the request.
 
+## Logging and error handling (Level 2)
+
+Security events, error handling and the git-history secret scan are described in [logging-and-errors.md](./logging-and-errors.md).
+
 ## Dependency-patch SLA (ASVS 15.1.1)
 
 - **Critical/High** (from `npm audit` or Dependabot): fix within **7 days**. CI fails the build on these for production dependencies.

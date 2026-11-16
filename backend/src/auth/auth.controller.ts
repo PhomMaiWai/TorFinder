@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, HttpCode, HttpStatus, Ip, Post, Req, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 
 import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
@@ -17,23 +17,23 @@ export class AuthController {
 
   @Post("signup")
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  signup(@Body() dto: SignupDto) {
-    return this.authService.signup(dto);
+  signup(@Body() dto: SignupDto, @Ip() ip: string) {
+    return this.authService.signup(dto, ip);
   }
 
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  login(@Body() dto: LoginDto, @Ip() ip: string) {
+    return this.authService.login(dto, ip);
   }
 
   /** Revokes the caller's session token so it can't be replayed after logout (ASVS 7.4.1). */
   @Post("logout")
   @HttpCode(HttpStatus.OK)
   @UseGuards(SessionGuard)
-  async logout(@Req() request: AuthenticatedRequest) {
-    await this.authService.logout(request.session.sub);
+  async logout(@Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    await this.authService.logout(request.session.sub, ip);
     return { ok: true as const };
   }
 
@@ -42,36 +42,36 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(SessionGuard)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  changePassword(@Req() request: AuthenticatedRequest, @Body() dto: ChangePasswordDto) {
-    return this.authService.changePassword(request.session.sub, dto);
+  changePassword(@Req() request: AuthenticatedRequest, @Body() dto: ChangePasswordDto, @Ip() ip: string) {
+    return this.authService.changePassword(request.session.sub, dto, ip);
   }
 
   @Post("google")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  googleAuth(@Body() dto: GoogleAuthDto) {
-    return this.authService.googleAuth(dto);
+  googleAuth(@Body() dto: GoogleAuthDto, @Ip() ip: string) {
+    return this.authService.googleAuth(dto, ip);
   }
 
   @Post("password/forgot")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  forgotPassword(@Body() dto: EmailOnlyDto) {
-    return this.authService.forgotPassword(dto);
+  forgotPassword(@Body() dto: EmailOnlyDto, @Ip() ip: string) {
+    return this.authService.forgotPassword(dto, ip);
   }
 
   @Post("password/reset")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
+  resetPassword(@Body() dto: ResetPasswordDto, @Ip() ip: string) {
+    return this.authService.resetPassword(dto, ip);
   }
 
   @Post("email/verify")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.authService.verifyEmail(dto);
+  verifyEmail(@Body() dto: VerifyEmailDto, @Ip() ip: string) {
+    return this.authService.verifyEmail(dto, ip);
   }
 
   @Post("email/resend")
@@ -84,7 +84,7 @@ export class AuthController {
   @Post("google/complete")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  googleCompleteSignup(@Body() dto: GoogleCompleteSignupDto) {
-    return this.authService.googleCompleteSignup(dto);
+  googleCompleteSignup(@Body() dto: GoogleCompleteSignupDto, @Ip() ip: string) {
+    return this.authService.googleCompleteSignup(dto, ip);
   }
 }
