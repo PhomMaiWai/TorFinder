@@ -10,6 +10,7 @@ import { OAuth2Client } from "google-auth-library";
 import { MongoServerError, ObjectId, WithId } from "mongodb";
 
 import { hashPassword, isCommonPassword, verifyPassword } from "../common/password";
+import { logSecurityEvent, SecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { createSessionToken } from "../common/token";
 import { env } from "../config/env";
@@ -46,7 +47,7 @@ export class AuthService {
     private readonly revocation: SessionRevocationService,
   ) {}
 
-  async signup({ email, password, ...company }: SignupDto) {
+  async signup({ email, password, ...company }: SignupDto, ip?: string) {
     // ASVS 6.2.4: reject passwords that would fall to a first-pass dictionary
     // attack, before they're ever hashed.
     if (isCommonPassword(password)) {
@@ -78,13 +79,14 @@ export class AuthService {
       throw error;
     }
 
+    logSecurityEvent("auth.signup", { outcome: "success", userId: userId.toString(), email: address, ip });
     await this.links.send({ _id: userId, email: address }, "email-verify");
     return { status: "pending" as const, companyName: company.companyName };
   }
 
-  async login({ email, password }: LoginDto) {
+  async login({ email, password }: LoginDto, ip?: string) {
     const address = email.trim().toLowerCase();
-    this.loginAttempts.assertAllowed(address);
+    this.assertNotLocked(address, ip);
     const user = await this.db.users.findOne({ email: address });
 
     // No passwordHash means the account was created via Google and never set
@@ -96,11 +98,24 @@ export class AuthService {
       !(await verifyPassword(password, user.passwordSalt, user.passwordHash))
     ) {
       this.loginAttempts.recordFailure(address);
+      logSecurityEvent("auth.login", {
+        outcome: "failure",
+        email: address,
+        ip,
+        reason: user ? "bad_credentials" : "unknown_account",
+      });
       throw new UnauthorizedException("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     }
     this.loginAttempts.recordSuccess(address);
     // After the password, so only the account's owner learns its address is unconfirmed.
     if (user.emailVerified === false) {
+      logSecurityEvent("auth.login", {
+        outcome: "failure",
+        userId: user._id.toString(),
+        email: address,
+        ip,
+        reason: "email_unverified",
+      });
       throw new ForbiddenException({
         statusCode: 403,
         message: "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ โดยกดลิงก์ที่ส่งไปทางอีเมล",
@@ -108,7 +123,7 @@ export class AuthService {
       });
     }
 
-    return this.issueSession(user);
+    return this.issueSession(user, "auth.login", ip);
   }
 
   /**
@@ -116,19 +131,28 @@ export class AuthService {
    * same either way, so the form can't be used to find out who has one.
    * Works for a Google-only account too: the link proves the same inbox.
    */
-  async forgotPassword({ email }: EmailOnlyDto) {
-    const user = await this.db.users.findOne(
-      { email: email.trim().toLowerCase() },
-      { projection: { email: 1, suspended: 1 } },
-    );
+  async forgotPassword({ email }: EmailOnlyDto, ip?: string) {
+    const address = email.trim().toLowerCase();
+    const user = await this.db.users.findOne({ email: address }, { projection: { email: 1, suspended: 1 } });
+    // Logged whether or not the address has an account; the response stays the same either way.
+    logSecurityEvent("auth.password.reset.request", {
+      outcome: "success",
+      userId: user?._id.toString(),
+      email: address,
+      ip,
+      reason: user ? (user.suspended ? "suspended_no_mail" : undefined) : "unknown_account",
+    });
     if (user && !user.suspended) await this.links.send(user, "password-reset");
     return LINK_SENT;
   }
 
   /** Sets the new password. The link also proves the inbox, so the address counts as verified. */
-  async resetPassword({ token, password }: ResetPasswordDto) {
+  async resetPassword({ token, password }: ResetPasswordDto, ip?: string) {
     const userId = await this.links.consume(token, "password-reset");
-    if (!userId) throw new BadRequestException("ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
+    if (!userId) {
+      logSecurityEvent("auth.password.reset", { outcome: "failure", ip, reason: "invalid_or_expired_link" });
+      throw new BadRequestException("ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
+    }
     if (isCommonPassword(password)) {
       throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
     }
@@ -142,6 +166,7 @@ export class AuthService {
     // before now — including one an attacker who triggered this might hold —
     // stops working (ASVS 7.4.3).
     await this.revocation.revoke(userId.toString());
+    logSecurityEvent("auth.password.reset", { outcome: "success", userId: userId.toString(), ip });
     return { ok: true as const };
   }
 
@@ -152,7 +177,7 @@ export class AuthService {
    * Every session ends afterwards, this one included, so a token someone else
    * may hold stops working and the caller signs in again with the new password.
    */
-  async changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordDto) {
+  async changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordDto, ip?: string) {
     const user = ObjectId.isValid(userId) ? await this.db.users.findOne({ _id: new ObjectId(userId) }) : null;
     if (!user) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
     if (!user.passwordHash || !user.passwordSalt) {
@@ -160,9 +185,16 @@ export class AuthService {
       throw new BadRequestException("บัญชีนี้ยังไม่มีรหัสผ่าน กรุณาใช้ \"ลืมรหัสผ่าน\" เพื่อตั้งรหัสผ่าน");
     }
 
-    this.loginAttempts.assertAllowed(user.email);
+    this.assertNotLocked(user.email, ip);
     if (!(await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash))) {
       this.loginAttempts.recordFailure(user.email);
+      logSecurityEvent("auth.password.change", {
+        outcome: "failure",
+        userId,
+        email: user.email,
+        ip,
+        reason: "wrong_current_password",
+      });
       // 400 rather than 401: the session is fine, only the typed password is wrong.
       throw new BadRequestException("รหัสผ่านปัจจุบันไม่ถูกต้อง");
     }
@@ -178,18 +210,24 @@ export class AuthService {
     const { hash, salt } = await hashPassword(newPassword);
     await this.db.users.updateOne({ _id: user._id }, { $set: { passwordHash: hash, passwordSalt: salt } });
     await this.revocation.revoke(userId);
+    logSecurityEvent("auth.password.change", { outcome: "success", userId, email: user.email, ip });
     return { ok: true as const };
   }
 
   /** Invalidates every session token already issued to this account (ASVS 7.4.1). */
-  async logout(userId: string): Promise<void> {
+  async logout(userId: string, ip?: string): Promise<void> {
     await this.revocation.revoke(userId);
+    logSecurityEvent("auth.logout", { outcome: "success", userId, ip });
   }
 
   /** Confirms the address. Says whether the account still waits on an admin, so the page can say so. */
-  async verifyEmail({ token }: VerifyEmailDto) {
+  async verifyEmail({ token }: VerifyEmailDto, ip?: string) {
     const userId = await this.links.consume(token, "email-verify");
-    if (!userId) throw new BadRequestException("ลิงก์ยืนยันอีเมลไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
+    if (!userId) {
+      logSecurityEvent("auth.email.verify", { outcome: "failure", ip, reason: "invalid_or_expired_link" });
+      throw new BadRequestException("ลิงก์ยืนยันอีเมลไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
+    }
+    logSecurityEvent("auth.email.verify", { outcome: "success", userId: userId.toString(), ip });
 
     const user = await this.db.users.findOneAndUpdate(
       { _id: userId },
@@ -209,14 +247,14 @@ export class AuthService {
     return LINK_SENT;
   }
 
-  async googleAuth({ credential, as }: GoogleAuthDto) {
-    const { email, googleId, name } = await this.verifyGoogleCredential(credential);
+  async googleAuth({ credential, as }: GoogleAuthDto, ip?: string) {
+    const { email, googleId, name } = await this.verifyGoogleCredential(credential, ip);
     const user = await this.findOrLinkGoogleUser(googleId, email);
 
     // An existing account always signs in as itself, whichever button was
     // pressed — a company owner using the public button still lands as org.
     if (!user && as === "viewer") {
-      return this.issueSession(await this.createViewer(googleId, email, name ?? email));
+      return this.issueSession(await this.createViewer(googleId, email, name ?? email), "auth.google", ip);
     }
 
     if (!user) {
@@ -231,7 +269,7 @@ export class AuthService {
       return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
     }
 
-    return this.issueSession(user);
+    return this.issueSession(user, "auth.google", ip);
   }
 
   /**
@@ -240,8 +278,8 @@ export class AuthService {
    * never had. Re-verifies the credential rather than trusting a client-held
    * claim of who they are.
    */
-  async googleCompleteSignup({ credential, ...company }: GoogleCompleteSignupDto) {
-    const { email, googleId, name } = await this.verifyGoogleCredential(credential);
+  async googleCompleteSignup({ credential, ...company }: GoogleCompleteSignupDto, ip?: string) {
+    const { email, googleId, name } = await this.verifyGoogleCredential(credential, ip);
     const user = await this.findOrLinkGoogleUser(googleId, email);
 
     if (user) {
@@ -251,7 +289,7 @@ export class AuthService {
       if (user.status === "pending") {
         return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
       }
-      return this.issueSession(user);
+      return this.issueSession(user, "auth.google", ip);
     }
 
     const newUser: UserDoc = {
@@ -280,7 +318,7 @@ export class AuthService {
   }
 
   /** A malformed or expired token throws — any rejection here means "not verified". */
-  private async verifyGoogleCredential(credential: string) {
+  private async verifyGoogleCredential(credential: string, ip?: string) {
     const payload = await googleClient
       .verifyIdToken({ idToken: credential, audience: env.googleClientId })
       .then((ticket) => ticket.getPayload())
@@ -289,6 +327,11 @@ export class AuthService {
     // findOrLinkGoogleUser links by email, so an address Google hasn't proven
     // the caller owns would let them take over the account registered to it.
     if (!payload?.email || payload.email_verified !== true) {
+      logSecurityEvent("auth.google", {
+        outcome: "failure",
+        ip,
+        reason: payload?.email ? "email_not_verified_by_google" : "invalid_google_token",
+      });
       throw new UnauthorizedException("ยืนยันบัญชี Google ไม่สำเร็จ");
     }
 
@@ -336,20 +379,35 @@ export class AuthService {
     return { ...existing, googleId, emailVerified: true };
   }
 
-  private async issueSession(user: WithId<UserDoc>) {
+  /** The per-address lock, logged when it refuses (ASVS 6.3.1, 16.3.1). */
+  private assertNotLocked(email: string, ip?: string): void {
+    try {
+      this.loginAttempts.assertAllowed(email);
+    } catch (error) {
+      logSecurityEvent("auth.login.locked", { outcome: "failure", email, ip, reason: "too_many_failures" });
+      throw error;
+    }
+  }
+
+  private async issueSession(user: WithId<UserDoc>, event: SecurityEvent, ip?: string) {
+    const refuse = (reason: string) =>
+      logSecurityEvent(event, { outcome: "failure", userId: user._id.toString(), email: user.email, ip, reason });
     // Checked only after identity is established, so the response can't be
     // used to probe which emails are registered. googleAuth() already
     // special-cases "pending" before reaching here — this only fires for
     // login(), where a pending account should look like a blocked sign-in.
     if (user.status === "pending") {
+      refuse("account_pending");
       throw new ForbiddenException("บัญชีของคุณอยู่ระหว่างรอผู้ดูแลระบบตรวจสอบ");
     }
     if (user.status === "rejected") {
+      refuse("account_rejected");
       throw new ForbiddenException("บัญชีของคุณไม่ผ่านการอนุมัติ กรุณาติดต่อผู้ดูแลระบบ");
     }
     // Orthogonal to status: an admin can block an already-approved account
     // without reversing the approval itself (see AccountsService.setSuspended).
     if (user.suspended) {
+      refuse("account_suspended");
       throw new ForbiddenException("บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ");
     }
 
@@ -368,6 +426,13 @@ export class AuthService {
       role: user.role,
     });
 
+    logSecurityEvent(event, {
+      outcome: "success",
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      ip,
+    });
     return {
       user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role },
       token,

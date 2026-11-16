@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Logger, ValidationPipe } from "@nestjs/common";
+import { ConsoleLogger, Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import compression from "compression";
@@ -10,7 +10,11 @@ import { AppModule } from "./app.module";
 import { env } from "./config/env";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Production logs are one JSON object per line, no colour codes, so a log
+  // collector can parse and search them (ASVS 16.2.3); dev keeps the readable form.
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: env.isProduction ? new ConsoleLogger({ json: true }) : undefined,
+  });
 
   // Throttled calls arrive from the Next.js server, which names the browser in
   // X-Forwarded-For (frontend/src/lib/client-ip.ts). The header is believed only

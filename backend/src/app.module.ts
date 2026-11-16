@@ -1,10 +1,12 @@
 import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { ThrottlerModule } from "@nestjs/throttler";
 
 import { AccountsModule } from "./accounts/accounts.module";
 import { AuditModule } from "./audit/audit.module";
 import { AuthModule } from "./auth/auth.module";
+import { AllExceptionsFilter } from "./common/all-exceptions.filter";
+import { LoggingThrottlerGuard } from "./common/logging-throttler.guard";
 import { env } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
 import { AiModule } from "./ai/ai.module";
@@ -50,6 +52,9 @@ import { TorModule } from "./tor/tor.module";
     InsightsModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: LoggingThrottlerGuard },
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+  ],
 })
 export class AppModule {}

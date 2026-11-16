@@ -7,8 +7,22 @@ import {
 } from "@nestjs/common";
 import { Request } from "express";
 
+import { logSecurityEvent } from "./security-log";
 import { SessionRevocationService } from "./session-revocation.service";
 import { SessionPayload, verifySessionToken } from "./token";
+
+/** One `access.denied` line per refused request (ASVS 16.3.2); the path never carries its query string. */
+export function logDenied(request: Request, reason: string, userId?: string, role?: string): void {
+  logSecurityEvent("access.denied", {
+    outcome: "failure",
+    reason,
+    userId,
+    role,
+    ip: request.ip,
+    method: request.method,
+    path: request.path,
+  });
+}
 
 /** The route's own view of who is calling. */
 export type AuthenticatedRequest = Request & { session: SessionPayload };
@@ -35,7 +49,10 @@ export class SessionGuard implements CanActivate {
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
     const session = scheme === "Bearer" ? verifySessionToken(token) : null;
 
-    if (!session) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
+    if (!session) {
+      logDenied(request, token ? "invalid_token" : "no_token");
+      throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
+    }
 
     if (!this.revocation) {
       request.session = session;
@@ -46,7 +63,10 @@ export class SessionGuard implements CanActivate {
     // unexpired yet still revoked (logout, password reset, suspension) — see
     // SessionRevocationService.
     return this.revocation.isValid(session.sub, session.iat).then((valid) => {
-      if (!valid) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
+      if (!valid) {
+        logDenied(request, "revoked_token", session.sub, session.role);
+        throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
+      }
       request.session = session;
       return true;
     });
