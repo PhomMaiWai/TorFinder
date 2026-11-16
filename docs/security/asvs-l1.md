@@ -2,16 +2,16 @@
 
 Source-review results against all 70 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 1 requirements. This is a code read-through backed by local tests, not a pentest. TLS and certificates depend on hosting and are not covered.
 
-**Rev. 3 (2026-11-16): 0 Fail.** 52 Pass, 3 Partial, 13 N/A, 2 not reviewed.
+**Rev. 3 (2026-11-16): 0 Fail, 0 Partial.** 55 Pass, 13 N/A, 2 not reviewed.
 
-Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 failing and 10 partial items. All 7 failures and 8 of the partials are fixed on branch `fix/asvs-l1-critical-high`. The tables below describe the code on that branch.
+Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 failing and 10 partial items. All 17 are fixed on branch `fix/asvs-l1-critical-high`. The tables below describe the code on that branch.
 
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 52 | Control exists, with evidence in code or this file |
-| Partial | 3 | Control exists with a gap (see "Still open") |
+| Pass | 55 | Control exists, with evidence in code or this file |
+| Partial | 0 | — |
 | Fail | 0 | — |
 | N/A | 13 | The app has no such feature |
 | Not reviewed | 2 | TLS version and certificate, set by hosting |
@@ -32,7 +32,9 @@ Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 fail
 | 6.2.2, 6.2.3 | Partial, N/A | Partial, N/A | Pass | New change-password form on `/profile`; it requires the current password |
 | 15.3.1 | Pass | Partial | Pass | `/api/test-db` returned collection metadata and raw errors; deleted |
 | 2.1.1, 6.1.1, 8.1.1 | Partial | Partial | Pass | Validation rules, rate limits and access rules are now written down in this file |
-| 4.1.1, 14.2.1 | Pass | Partial | Partial | Found in the re-review; still open |
+| 4.1.1 | Pass | Partial | Pass | Next.js JSON had no charset; every route handler and the proxy now use `jsonResponse()` (`application/json; charset=utf-8`) |
+| 14.2.1 | Pass | Partial | Pass | Signup put the email in `/signup/pending?email=…`; it now travels in a 30-minute httpOnly cookie read by the server |
+| 12.2.1 | Partial | Partial | Pass | Compose published plain HTTP on 3000/4000 and MongoDB on 27017 to the network; every port is now bound to `127.0.0.1`, so outside traffic must come through an HTTPS proxy. MongoDB credentials come from `.env` |
 | 1.2.2 | Not reviewed | Pass | Pass | Checked: ids are URL-encoded; React 19 blocks `javascript:` hrefs |
 | 3.2.1 | Partial | Pass | Pass | Relayed files: PDF/JPEG/PNG allowlist, magic-byte check, `nosniff` |
 | 5.2.1, 5.2.2, 5.3.2 | N/A | Pass | Pass | The app does download and unzip portal files; size caps and type checks exist |
@@ -40,10 +42,10 @@ Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 fail
 
 ### Still open
 
-- **4.1.1**: Next.js JSON responses send `application/json` without `charset=utf-8`.
-- **14.2.1**: signup redirects to `/signup/pending?email=…`, so the address lands in browser history and logs.
-- **12.2.1**: compose publishes plain HTTP on 3000 and 4000, plus MongoDB on 27017 with `torr`/`torr`. A production deployment needs an HTTPS proxy and must not publish 4000 or 27017.
-- **Operations**: rotate `SESSION_SECRET` on any server that was ever started from compose with the old default.
+No requirement is open in code. Two things are left to whoever runs the server:
+
+- Put an HTTPS reverse proxy in front of `127.0.0.1:3000` (12.1.1, 12.2.2: TLS version and certificate), and set `MONGO_ROOT_USERNAME` / `MONGO_ROOT_PASSWORD` in `.env` before the database volume is first created.
+- Rotate `SESSION_SECRET` on any server that was ever started from compose with the old default.
 
 ---
 
@@ -86,7 +88,7 @@ Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 fail
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 4.1.1 | `Content-Type` matches the body, with charset | Partial | Nest sends `charset=utf-8`; Next.js `NextResponse.json` does not |
+| 4.1.1 | `Content-Type` matches the body, with charset | Pass | Nest sends `charset=utf-8`; the frontend's route handlers and proxy use `jsonResponse()` (`frontend/src/lib/json-response.ts`); relayed files keep their checked PDF/JPEG/PNG type |
 | 4.4.1 | WebSockets use WSS | N/A | No WebSockets |
 
 ## V5 — File Handling
@@ -162,7 +164,7 @@ All 5 items (10.4.1–10.4.5) are N/A: they apply to an authorization server. To
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 12.1.1 | Only TLS 1.2 / 1.3 | Not reviewed | Set by hosting |
-| 12.2.1 | TLS for all external traffic | Partial | HTTPS depends on a proxy outside the repo; compose publishes HTTP ports (see "Still open") |
+| 12.2.1 | TLS for all external traffic | Pass | Compose binds every port to `127.0.0.1`, so nothing is served to the network over plain HTTP; outside traffic goes through the host's HTTPS proxy (`docs/operations/deployment-checklist.md`), and HSTS stops browsers falling back to HTTP |
 | 12.2.2 | Publicly trusted certificates | Not reviewed | Set by hosting |
 
 ## V13 — Configuration
@@ -175,7 +177,7 @@ All 5 items (10.4.1–10.4.5) are N/A: they apply to an authorization server. To
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 14.2.1 | No sensitive data in URLs | Partial | Session tokens never in URLs; one-time `?token=` links are accepted, and `Referrer-Policy` keeps them from leaking. Email in `/signup/pending?email=…` is still open |
+| 14.2.1 | No sensitive data in URLs | Pass | Session tokens never in URLs. The signup email travels in a 30-minute httpOnly cookie (`frontend/src/lib/signup-email.ts`). One-time `?token=` reset/verify links are accepted, and `Referrer-Policy` keeps them from leaking |
 | 14.3.1 | Client data cleared after logout | Pass | Logout and password change clear the httpOnly cookie; no token in `localStorage` |
 
 ## V15 — Secure Coding and Architecture

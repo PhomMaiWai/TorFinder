@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 
+import { jsonResponse } from "@/lib/json-response";
 import { authHeaders } from "@/lib/session-headers";
 
 /**
@@ -14,5 +14,5 @@ export async function POST(request: Request) {
     body: await request.text(),
     cache: "no-store",
   });
-  return NextResponse.json(await res.json().catch(() => null), { status: res.status });
+  return jsonResponse(await res.json().catch(() => null), { status: res.status });
 }

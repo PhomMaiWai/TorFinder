@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 
 import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { clientIpHeaders } from "@/lib/client-ip";
+import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(8000),
     });
   } catch {
-    return NextResponse.json({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่" }, { status: 502 });
+    return jsonResponse({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่" }, { status: 502 });
   }
 
   const data = await backendRes.json().catch(() => null);
@@ -27,18 +27,18 @@ export async function POST(request: Request) {
   // already exist (a second tab, or a matching email/password account that
   // just got linked) — in which case the company form no longer matters.
   if (backendRes.ok && data?.status === "pending") {
-    return NextResponse.json({ status: "pending", companyName: data.companyName });
+    return jsonResponse({ status: "pending", companyName: data.companyName });
   }
 
   if (!backendRes.ok || !data?.token) {
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
-    return NextResponse.json(
+    return jsonResponse(
       { error: message ?? "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่" },
       { status: backendRes.status || 400 },
     );
   }
 
-  const response = NextResponse.json({ user: data.user });
+  const response = jsonResponse({ user: data.user });
   response.cookies.set(SESSION_COOKIE, data.token, sessionCookieOptions());
   return response;
 }

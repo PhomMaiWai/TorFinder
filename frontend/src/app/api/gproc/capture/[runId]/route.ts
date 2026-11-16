@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 
+import { jsonResponse } from "@/lib/json-response";
 import { authHeaders } from "@/lib/session-headers";
 
 /** One capture's progress, polled by the extension's popup. */
@@ -9,5 +9,5 @@ export async function GET(_request: Request, { params }: { params: Promise<{ run
     headers: await authHeaders(),
     cache: "no-store",
   });
-  return NextResponse.json(await res.json().catch(() => null), { status: res.status });
+  return jsonResponse(await res.json().catch(() => null), { status: res.status });
 }

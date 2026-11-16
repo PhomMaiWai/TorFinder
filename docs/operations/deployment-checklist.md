@@ -126,7 +126,7 @@ pre-production work, not yet done:
 
 - [ ] **Password wordlist** — `common-passwords.ts` ships a ~120-word starter list; the audit recommends the SecLists top-10k before production
 - [ ] **`npm audit`**, both services — explicitly listed as "outside source review," i.e. not yet checked
-- [ ] **TLS termination** — this codebase never terminates TLS or redirects HTTP→HTTPS itself; it's entirely the hosting/reverse-proxy layer's job. Whatever sits in front of these containers needs to do this, and needs `NODE_ENV=production` set correctly on the frontend for the `Secure` cookie attribute to follow along (see above)
+- [ ] **TLS termination** — this codebase never terminates TLS or redirects HTTP→HTTPS itself; it's entirely the hosting/reverse-proxy layer's job. `docker-compose.yml` binds every port to `127.0.0.1`, so the proxy must run on the same host and forward to `127.0.0.1:3000`; never publish 4000 or 27017. Set `MONGO_ROOT_USERNAME` / `MONGO_ROOT_PASSWORD` in `.env` before the database volume is first created. Whatever sits in front of these containers needs to do this, and needs `NODE_ENV=production` set correctly on the frontend for the `Secure` cookie attribute to follow along (see above)
 
 And not from the audit, just from reading the code:
 

@@ -1,8 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { clientIpHeaders } from "@/lib/client-ip";
+import { SIGNUP_EMAIL_COOKIE, signupEmailCookieOptions } from "@/lib/signup-email";
 
 export type SignupState = { error?: string };
 
@@ -40,8 +42,8 @@ export async function signupOrganization(
     return { error: message ?? "สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่" };
   }
 
-  // The email marks a password sign-up: its address still has to be confirmed (Google's already is).
-  redirect(
-    `/signup/pending?name=${encodeURIComponent(payload.companyName)}&email=${encodeURIComponent(payload.email)}`,
-  );
+  // The email marks a password sign-up: its address still has to be confirmed
+  // (Google's already is). It goes in a short-lived cookie, not the URL (ASVS 14.2.1).
+  (await cookies()).set(SIGNUP_EMAIL_COOKIE, payload.email, signupEmailCookieOptions);
+  redirect(`/signup/pending?name=${encodeURIComponent(payload.companyName)}`);
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
@@ -14,10 +14,10 @@ export async function GET(
       { signal: request.signal, cache: "no-store" },
     );
     const data = await res.json().catch(() => null);
-    if (!res.ok) return NextResponse.json({ error: data?.message ?? "เปิดชุดเอกสารไม่สำเร็จ" }, { status: res.status });
+    if (!res.ok) return jsonResponse({ error: data?.message ?? "เปิดชุดเอกสารไม่สำเร็จ" }, { status: res.status });
     // A published bundle doesn't change.
-    return NextResponse.json(data, { headers: { "Cache-Control": "public, max-age=3600" } });
+    return jsonResponse(data, { headers: { "Cache-Control": "public, max-age=3600" } });
   } catch {
-    return NextResponse.json({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ" }, { status: 502 });
+    return jsonResponse({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ" }, { status: 502 });
   }
 }

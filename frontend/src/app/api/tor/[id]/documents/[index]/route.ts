@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
@@ -24,12 +24,12 @@ export async function GET(
       { signal: request.signal, cache: "no-store" },
     );
   } catch {
-    return NextResponse.json({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ" }, { status: 502 });
+    return jsonResponse({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ" }, { status: 502 });
   }
 
   if (!res.ok || !res.body) {
     const data = await res.json().catch(() => null);
-    return NextResponse.json({ error: data?.message ?? "เปิดเอกสารไม่สำเร็จ" }, { status: res.status || 502 });
+    return jsonResponse({ error: data?.message ?? "เปิดเอกสารไม่สำเร็จ" }, { status: res.status || 502 });
   }
 
   const headers = new Headers();

@@ -5,8 +5,11 @@ services:
       args:
         # Baked into the client bundle at build time — see frontend/Dockerfile.
         - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+    # Every port is bound to this machine only (ASVS 12.2.1): nothing is served
+    # to the network over plain HTTP. On a server, put an HTTPS reverse proxy
+    # (Caddy, nginx, the host's load balancer) in front of 127.0.0.1:3000.
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       - BACKEND_URL=http://backend:4000
       # No fallback on purpose: the image runs with NODE_ENV=production and
@@ -17,10 +20,11 @@ services:
 
   backend:
     build: ./backend
+    # Browsers never call the backend; the frontend reaches it as backend:4000.
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     environment:
-      - MONGODB_URI=mongodb://torr:torr@db:27017/torr?authSource=admin
+      - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-torr}:${MONGO_ROOT_PASSWORD:-torr}@db:27017/torr?authSource=admin
       - SESSION_SECRET=${SESSION_SECRET:-}
       - FRONTEND_ORIGIN=http://localhost:3000
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
@@ -33,13 +37,15 @@ services:
 
   db:
     image: mongo:7
-    # Exposed so the app can also be run straight from the shell (npm run dev)
-    # with only the database in Docker.
+    # Exposed on this machine only, so the app can also be run straight from
+    # the shell (npm run dev) with only the database in Docker.
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
+    # torr/torr is for a local machine; any server sets its own in .env. Only
+    # read when the volume is first created.
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=torr
-      - MONGO_INITDB_ROOT_PASSWORD=torr
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-torr}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-torr}
     volumes:
       - torr_db_data:/data/db
       # Fills an empty database with a snapshot of real TOR records on first start.
