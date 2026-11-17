@@ -78,7 +78,7 @@ const entriesFor = (email) =>
   audit()
     .find({
       actor: ACTOR,
-      detail: { $regex: `^${email.replace(/[.+]/g, "\\$&")}:` },
+      detail: { $regex: `^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:` },
     })
     .toArray();
 

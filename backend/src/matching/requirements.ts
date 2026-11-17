@@ -2,6 +2,7 @@ import { foldThaiDigits } from "../tor/tor-normalize";
 
 /** "ISO 27001", "ISO/IEC 27001", "IEC 27001" — however a document spells the body. */
 function iso(standard: string): RegExp {
+  // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp -- `standard` is always a hard-coded number from CERTIFICATIONS below.
   return new RegExp(`(?:ISO|IEC)[\\s/]*(?:IEC\\s*)?${standard}(?!\\d)`, "i");
 }
 

@@ -9,6 +9,10 @@ version: 2
 updates:
   - package-ecosystem: npm
     directory: /backend
+    # Wait a few days after a release before proposing it, so a compromised
+    # version is usually caught and pulled before it reaches us.
+    cooldown:
+      default-days: 7
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -20,6 +24,10 @@ updates:
         update-types: [version-update:semver-major]
   - package-ecosystem: npm
     directory: /frontend
+    # Wait a few days after a release before proposing it, so a compromised
+    # version is usually caught and pulled before it reaches us.
+    cooldown:
+      default-days: 7
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -31,6 +39,10 @@ updates:
         update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
+    # Wait a few days after a release before proposing it, so a compromised
+    # version is usually caught and pulled before it reaches us.
+    cooldown:
+      default-days: 7
     schedule:
       interval: monthly
     groups:

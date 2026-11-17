@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { SESSION_COOKIE } from "@/lib/auth";
+import { idPath, isObjectId } from "@/lib/backend-path";
 import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
@@ -13,8 +14,9 @@ async function authHeaders(): Promise<HeadersInit> {
 
 export async function PATCH(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (!isObjectId(id)) return jsonResponse({ error: "ไม่พบการแจ้งเตือนนี้" }, { status: 404 });
 
-  const res = await fetch(`${BACKEND_URL}/api/notifications/${id}/read`, {
+  const res = await fetch(`${BACKEND_URL}/api/notifications/${idPath(id)}/read`, {
     method: "PATCH",
     headers: await authHeaders(),
     cache: "no-store",
