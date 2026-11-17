@@ -128,7 +128,7 @@ function bandOf(discount: number): DiscountBand {
 }
 
 /** One awarded project, after its announcement stages are folded together. */
-type Project = {
+export type Project = {
   agency: string;
   year: number | null;
   /** vendorKey → the name as published. */
@@ -142,7 +142,7 @@ type Project = {
  * announcement, and only some of them carry the contract or the price. A
  * reference price beats a budget, and the first figure found is kept.
  */
-function toProjects(records: AwardRecord[]): Project[] {
+export function toProjects(records: AwardRecord[]): Project[] {
   const byNumber = new Map<string, Project>();
   const projects: Project[] = [];
 
@@ -195,7 +195,7 @@ function discountStats(discounts: number[]) {
   };
 }
 
-function spreadOf(withWinner: number, distinct: number, topWins: number): WinnerSpread | null {
+export function spreadOf(withWinner: number, distinct: number, topWins: number): WinnerSpread | null {
   if (withWinner < MIN_WINNERS) return null;
   if (topWins / withWinner > DOMINANT_SHARE) return "low";
   if (distinct / withWinner >= SPREAD_RATIO) return "high";

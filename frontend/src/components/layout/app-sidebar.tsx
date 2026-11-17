@@ -18,6 +18,7 @@ import {
   Plus,
   Search,
   SearchCheck,
+  Sprout,
   Trophy,
   UserCheck,
   Users,
@@ -60,6 +61,7 @@ function getOrgNav(t: (key: string) => string): { section: string | null; links:
         { label: t("navLibrary"), href: "/library", icon: FolderOpen },
         { label: t("navMatches"), href: "/matches", icon: LayoutDashboard },
         { label: t("navInsights"), href: "/insights", icon: Trophy },
+        { label: t("navGrowth"), href: "/growth", icon: Sprout },
         { label: t("navSearchTor"), href: "/search", icon: Search },
         { label: t("navSavedList"), href: "/saved?scope=org", icon: Bookmark },
         {

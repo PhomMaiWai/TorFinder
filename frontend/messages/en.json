@@ -74,7 +74,8 @@
     "navMyProjects": "My projects",
     "navReports": "TOR reports",
     "navInsights": "Market insights",
-    "navLibrary": "Proposal library"
+    "navLibrary": "Proposal library",
+    "navGrowth": "Growth path"
   },
   "Dashboard": {
     "newBadge": "New",
@@ -1253,7 +1254,8 @@
     "limitBids": "Sources publish only the winner and the winning price, never the other bids. \"Against the average\" here means against the reference price, and a company's \"win rate\" is its share of an agency's awards.",
     "limitBase": "The reference price is used where published, otherwise the budget. Awards under 30% or over 105% of that figure are left out, as they are usually one lot of a bigger project or a figure in the wrong unit.",
     "limitSpread": "\"Low\" competition means one company won more than half of the agency's awards; \"high\" means nearly every award went to a different company. At least 3 awards with a named winner are needed.",
-    "limitSources": "Winner names come from e-GP contracts and the Comptroller General's contract reports (data.go.th). MEA publishes only the agreed price, not the winner's name."
+    "limitSources": "Winner names come from e-GP contracts and the Comptroller General's contract reports (data.go.th). MEA publishes only the agreed price, not the winner's name.",
+    "growthLink": "See your company's growth path"
   },
   "Certificates": {
     "loading": "Loading certificates...",
@@ -1372,5 +1374,51 @@
     "starterPack": "Download starter pack",
     "coverageFooter": "The pack holds a readiness checklist and the files cited as evidence. Add projects, team members or certificates in the",
     "openLibrary": "proposal library"
+  },
+  "GrowthPath": {
+    "eyebrow": "Growth path",
+    "title": "Start with jobs your company's size, then step up",
+    "subtitle": "A new company can't bid on a 10–100 M baht TOR without past work that size. This page finds agencies that buy jobs your size from only a few companies, and the open jobs you can bid on now and one step up, from published award notices.",
+    "noProfileTitle": "No company profile yet",
+    "noProfileBody": "Fill in your company profile first, especially your largest public-sector contract, so we know what size of job you can bid on.",
+    "noProfileCta": "Fill in the profile",
+    "step1": "Step 1 · Now",
+    "step1Title": "Jobs up to {cap}",
+    "capSource_pastContract": "From the largest public-sector contract in your profile ({cap}): you already have past work for this size.",
+    "capSource_library": "From the largest public-sector contract in your library ({cap}). Add it to your profile too so matching uses the same figure.",
+    "capSource_preferredMax": "No past contract in your profile yet, so this uses the largest budget you said you want to bid on ({cap}).",
+    "capSource_starter": "No past contract in your profile yet, so this starts at jobs up to 500,000 baht, which agencies may buy by the specific method.",
+    "addPastContract": "Add your past contract value",
+    "step2": "Step 2 · Next",
+    "step2Title": "Jobs from {cap} to {nextCap}",
+    "step2Body": "Once you win and deliver a job at today's size, that work lets you bid on jobs about twice as big. Keep an eye on these.",
+    "step3": "Step 3 · Keep going",
+    "step3Title": "Return to the same agencies every year",
+    "step3Body": "Agencies that buy this work every year, and have hired the same company again, give a first job the chance to continue next year. See \"Hired again\" below.",
+    "agenciesTitle": "Agencies that buy jobs up to {cap} from few companies",
+    "agenciesSubtitle": "Most jobs per winning company first, read from {projects} awarded projects",
+    "agenciesEmpty": "No agency has awarded at least 2 jobs up to {cap} yet",
+    "colJobs": "Jobs this size",
+    "jobsValue": "{count} projects · median {median}",
+    "colRivals": "Winning companies",
+    "rivalsValue": "{count} across {named} jobs with a named winner",
+    "rivalsUnknown": "Winners not named",
+    "colYears": "Years",
+    "colRehires": "Hired again",
+    "rehiresValue": "{count} in a later year",
+    "rehiresNone": "Not yet",
+    "incumbent": "{vendor} won {share} of the jobs this size here: you would face a regular supplier",
+    "nowTitle": "Open jobs up to {cap}",
+    "nowSubtitle": "You can bid now. Recommended agencies first, then by match score",
+    "nextTitle": "Next-step jobs, {cap} to {nextCap}",
+    "nextSubtitle": "For your next step, or to bid jointly with a larger company",
+    "jobsEmpty": "No open jobs in this range right now",
+    "matchValue": "{match}% match",
+    "statusOpen": "Open",
+    "recommendedAgency": "Recommended agency",
+    "limitsTitle": "What the data can't tell",
+    "limitWinners": "Sources publish only the winner, not every bidder, so \"few rivals\" means few companies have won there, not that few bid.",
+    "limitSize": "Job size is the winning price, else the reference price or budget.",
+    "limitRules": "Each TOR sets its own past-work rule; always check the document before bidding."
   }
 }

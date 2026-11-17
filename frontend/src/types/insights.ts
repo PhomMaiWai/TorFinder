@@ -43,3 +43,39 @@ export type MarketInsights = {
   agencies: AgencyInsight[];
   discountBands: { band: string; projects: number }[];
 };
+
+/** GET /api/insights/growth — see backend/src/insights/growth-path.ts (#261). */
+
+export type CapSource = "pastContract" | "library" | "preferredMax" | "starter";
+
+export type GrowthAgency = {
+  agency: string;
+  rightSized: number;
+  medianSize: number;
+  withWinner: number;
+  rivals: number;
+  topWinner: { vendor: string; share: number } | null;
+  years: number[];
+  rehires: number;
+};
+
+export type GrowthJob = {
+  id: string;
+  title: string;
+  agency: string;
+  budgetAmount: number;
+  daysLeft: number | null;
+  match: number;
+  status: "open" | "closed" | "unknown";
+  closesAt: string | null;
+  atRecommendedAgency: boolean;
+};
+
+export type GrowthPath = {
+  cap: number;
+  capSource: CapSource;
+  nextCap: number;
+  agencies: GrowthAgency[];
+  jobs: { now: GrowthJob[]; next: GrowthJob[] };
+  basis: { projects: number; sized: number };
+};

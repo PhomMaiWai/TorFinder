@@ -1,4 +1,7 @@
-import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
+import { BadRequestException, Controller, Get, Query, Req, UseGuards } from "@nestjs/common";
+
+import { OrgGuard } from "../common/org.guard";
+import { AuthenticatedRequest } from "../common/session.guard";
 
 import { InsightsService } from "./insights.service";
 
@@ -23,5 +26,16 @@ export class InsightsController {
       throw new BadRequestException("year ต้องเป็นปี ค.ศ. เช่น 2025");
     }
     return this.insights.market(parsed);
+  }
+
+  /**
+   * A growth path for the caller's own company (#261): where a company its
+   * size can start, and the open jobs it can bid on now and one step up.
+   * Company accounts only, since it reads the company's own profile.
+   */
+  @Get("growth")
+  @UseGuards(OrgGuard)
+  growth(@Req() request: AuthenticatedRequest) {
+    return this.insights.growth(request.session.sub);
   }
 }
