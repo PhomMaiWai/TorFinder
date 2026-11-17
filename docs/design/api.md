@@ -354,6 +354,7 @@ are compared with the reference price, or the budget where none was published.
 | Method | Path | Guard | Body | Response |
 | --- | --- | --- | --- | --- |
 | GET | `/insights/market?year=` | none | — | `{ year, years[], summary, topWinners[], agencies[], discountBands[] }`. `year` is optional, Christian era (400 otherwise). Each agency row has `projects`, `topWinners[{ vendor, wins, share }]`, `distinctWinners`, `medianDiscount`, `competition` (`low` / `medium` / `high` winner spread, null under 3 named winners) and `priceCompetition` (`blue` / `moderate` / `red`, null under 3 priced awards) |
+| GET | `/insights/growth` | org | — | Growth path for the caller's own company (#261): `{ cap, capSource, nextCap, agencies[], jobs: { now[], next[] }, basis }`. `cap` is the largest past public contract (else the library's, else `preferredBudgetMax`, else 500,000); `capSource` says which. `agencies[]` (up to 8) awarded at least 2 jobs ≤ `cap`, most jobs per winning company first, each with `rightSized`, `medianSize`, `rivals`, `topWinner`, `years[]`, `rehires`. `jobs` are open announcements ≤ `cap` and up to `nextCap` (2× cap). 403 for other roles, 404 without a company profile |
 
 ### AI
 
