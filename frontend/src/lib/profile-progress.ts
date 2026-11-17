@@ -1,4 +1,4 @@
-import type { Certification, WorkType } from "@/types/tor";
+import type { CertificateRecord, Certification, WorkType } from "@/types/tor";
 
 /**
  * The profile fields matching reads, as the company has them. Contact details
@@ -8,7 +8,9 @@ export type MatchingProfile = {
   workTypes?: WorkType[];
   largestPastContract?: number;
   registeredCapital?: number;
-  /** Undefined until answered: "none of these" is an answer, a blank isn't. */
+  /** Undefined until answered: "none" is an answer, a blank isn't. */
+  certificates?: CertificateRecord[] | null;
+  /** The yes/no list from before certificates were records. */
   certifications?: Certification[];
   preferredBudgetMin?: number;
   preferredBudgetMax?: number;
@@ -28,7 +30,7 @@ const ITEMS: ProfileItem[] = [
   { key: "workTypes", section: "work-types", done: (p) => Boolean(p.workTypes?.length) },
   { key: "pastContract", section: "qualifications", done: (p) => Boolean(p.largestPastContract) },
   { key: "capital", section: "qualifications", done: (p) => Boolean(p.registeredCapital) },
-  { key: "certifications", section: "standards", done: (p) => p.certifications !== undefined },
+  { key: "certifications", section: "standards", done: (p) => p.certificates != null || p.certifications !== undefined },
   {
     key: "budget",
     section: "budget-range",

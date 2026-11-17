@@ -1,6 +1,6 @@
 import { BackendError, fetchJson } from "@/lib/fetch-json";
 import { authHeaders } from "@/lib/session-headers";
-import type { Certification, ScoredTor, WorkType } from "@/types/tor";
+import type { CertificateRecord, Certification, ScoredTor, WorkType } from "@/types/tor";
 
 /** The profile fields the dashboard shows and judges completeness by. */
 export type CompanySummary = {
@@ -9,6 +9,7 @@ export type CompanySummary = {
   largestPastContract?: number;
   registeredCapital?: number;
   certifications?: Certification[];
+  certificates?: CertificateRecord[];
   preferredBudgetMin?: number;
   preferredBudgetMax?: number;
 };

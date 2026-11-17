@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { AnyBulkWriteOperation, MongoServerError, ObjectId } from "mongodb";
 
+import { heldCertifications } from "../certificates/certificate.types";
 import { env } from "../config/env";
 import { CompanyProfile, DatabaseService, TorDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -18,12 +19,14 @@ const DUPLICATE_KEY = 11000;
 
 /** The stored profile as matching reads it. */
 function candidateOf(company: CompanyProfile): MatchCandidate {
+  const { held, expired } = heldCertifications(company);
   return {
     companyName: company.companyName,
     workTypes: company.workTypes ?? [],
     largestPastContract: company.largestPastContract,
     registeredCapital: company.registeredCapital,
-    certifications: company.certifications,
+    certifications: held,
+    expiredCertifications: expired,
     preferredBudgetMin: company.preferredBudgetMin,
     preferredBudgetMax: company.preferredBudgetMax,
   };

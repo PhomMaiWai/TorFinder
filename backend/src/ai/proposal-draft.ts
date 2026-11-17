@@ -1,5 +1,6 @@
 import { Type, type Schema } from "@google/genai";
 
+import { bangkokToday, isExpired } from "../certificates/certificate.types";
 import { CompanyProfile } from "../database/database.service";
 import { CERTIFICATIONS } from "../matching/requirements";
 import { workTypeLabel } from "../matching/work-types";
@@ -58,6 +59,32 @@ export const PROPOSAL_SCHEMA: Schema = {
   required: ["sections", "gaps"],
 };
 
+/**
+ * The certificates a proposal can cite: in date, with who issued them and
+ * until when, since that is what the agency checks. Before a company has
+ * records, the old yes/no list is all there is.
+ */
+function certificateLines(company: CompanyProfile): string | false {
+  if (company.certificates === undefined) {
+    return Boolean(company.certifications?.length) &&
+      `ใบรับรองของบริษัท: ${company.certifications!.map((key) => CERTIFICATIONS[key].label).join(", ")}`;
+  }
+  const today = bangkokToday();
+  const valid = company.certificates.filter((record) => !isExpired(record, today));
+  if (valid.length === 0) return false;
+  const lines = valid.map((record) =>
+    [
+      `- ${record.name}`,
+      record.issuer && `ออกโดย ${record.issuer}`,
+      record.expiresAt && `ใช้ได้ถึง ${record.expiresAt}`,
+      record.scope && `ขอบเขต: ${record.scope}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  );
+  return `ใบรับรองของบริษัท:\n${lines.join("\n")}`;
+}
+
 const bullets = (items: string[] | undefined) => (items?.length ? items.map((item) => `- ${item}`).join("\n") : "-");
 
 /** Everything the model writes from, laid out as labelled plain text. */
@@ -70,8 +97,7 @@ export function proposalPrompt(tor: DraftTor, company: CompanyProfile | undefine
         `ชื่อบริษัท: ${company.companyName}`,
         company.specialty && `ความเชี่ยวชาญ: ${company.specialty}`,
         company.workTypes?.length && `ประเภทงาน: ${company.workTypes.map(workTypeLabel).join(", ")}`,
-        company.certifications?.length &&
-          `ใบรับรองของบริษัท: ${company.certifications.map((key) => CERTIFICATIONS[key].label).join(", ")}`,
+        certificateLines(company),
         company.largestPastContract && `ผลงานมูลค่าสูงสุด: ${formatBaht(company.largestPastContract)}`,
         company.pastExperience && `ผลงานที่ผ่านมา: ${company.pastExperience}`,
       ]

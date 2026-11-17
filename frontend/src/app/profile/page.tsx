@@ -9,8 +9,8 @@ import { AppShell } from "@/components/layout/app-sidebar";
 import { COMPANY_SIZE_OPTIONS, type CompanySize } from "@/data/company-profile";
 import { ChangePasswordSection } from "@/components/profile/change-password";
 import { ProfileNudges } from "@/components/profile/profile-nudges";
-import { StandardsPicker } from "@/components/profile/standards-picker";
-import { WORK_TYPE_GROUPS, type Certification, type WorkType } from "@/types/tor";
+import { CertificatesSection } from "@/components/profile/certificates-section";
+import { WORK_TYPE_GROUPS, type CertificateRecord, type WorkType } from "@/types/tor";
 import { profileProgress } from "@/lib/profile-progress";
 import { formatTaxId, hasValidTaxIdChecksum, isValidTaxId } from "@/lib/thai-validation";
 
@@ -32,7 +32,6 @@ type Account = {
     workTypes?: WorkType[];
     largestPastContract?: number;
     registeredCapital?: number;
-    certifications?: Certification[];
     preferredBudgetMin?: number;
     preferredBudgetMax?: number;
     matchAlerts?: boolean;
@@ -107,8 +106,9 @@ export default function ProfilePage() {
   const [workTypes, setWorkTypes] = useState<WorkType[]>([]);
   const [largestPastContract, setLargestPastContract] = useState("");
   const [registeredCapital, setRegisteredCapital] = useState("");
-  // Undefined until answered: "none of these" is an answer, a blank isn't.
-  const [certifications, setCertifications] = useState<Certification[] | undefined>(undefined);
+  // Null until answered: "none" is an answer, a blank isn't. Owned by
+  // CertificatesSection, which saves on its own; kept here for completeness.
+  const [certificates, setCertificates] = useState<CertificateRecord[] | null>(null);
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [matchAlerts, setMatchAlerts] = useState(true);
@@ -134,7 +134,6 @@ export default function ProfilePage() {
     setWorkTypes(account.company?.workTypes ?? []);
     setLargestPastContract(bahtInput(account.company?.largestPastContract));
     setRegisteredCapital(bahtInput(account.company?.registeredCapital));
-    setCertifications(account.company?.certifications);
     setBudgetMin(bahtInput(account.company?.preferredBudgetMin));
     setBudgetMax(bahtInput(account.company?.preferredBudgetMax));
     setMatchAlerts(account.company?.matchAlerts ?? true);
@@ -157,7 +156,7 @@ export default function ProfilePage() {
     workTypes,
     largestPastContract: parseBaht(largestPastContract),
     registeredCapital: parseBaht(registeredCapital),
-    certifications,
+    certificates,
     preferredBudgetMin: parseBaht(budgetMin),
     preferredBudgetMax: parseBaht(budgetMax),
   });
@@ -188,7 +187,6 @@ export default function ProfilePage() {
         workTypes,
         largestPastContract: parseBaht(largestPastContract),
         registeredCapital: parseBaht(registeredCapital),
-        certifications,
         preferredBudgetMin: parseBaht(budgetMin),
         preferredBudgetMax: parseBaht(budgetMax),
         matchAlerts,
@@ -413,22 +411,11 @@ export default function ProfilePage() {
                   </span>
                 </label>
               </div>
-              <div>
-                <span className="mb-2 block text-sm font-medium text-ink">{t("dealerLabel")}</span>
-                <div className="flex flex-wrap gap-2">
-                  <Chip
-                    active={certifications?.includes("dealer") ?? false}
-                    onClick={() => setCertifications((prev) => toggle<Certification>(prev ?? [], "dealer"))}
-                  >
-                    {tOptions("cert_dealer")}
-                  </Chip>
-                </div>
-              </div>
             </div>
           </Section>
 
           <Section id="standards" title={t("standardsSectionTitle")}>
-            <StandardsPicker value={certifications} onChange={setCertifications} />
+            <CertificatesSection onChange={setCertificates} />
           </Section>
 
           <Section id="budget-range" title={t("budgetRangeSectionTitle")}>

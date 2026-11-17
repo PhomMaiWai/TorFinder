@@ -32,6 +32,26 @@ export const CERTIFICATIONS = {
   iso9001: { label: "ISO 9001", pattern: iso("9001") },
   iso14001: { label: "ISO 14001", pattern: iso("14001") },
   iso42001: { label: "ISO/IEC 42001", pattern: iso("42001") },
+  // Penetration testing and vulnerability assessment — most security TORs
+  // now name one of these, for the firm (CREST) or for the testers on it.
+  crest: { label: "CREST", pattern: /\bCREST\b/ },
+  oscp: { label: "OSCP", pattern: /\bOSCP\b|Offensive\s*Security\s*Certified\s*Professional/i },
+  ceh: { label: "CEH", pattern: /\bC\|?EH\b|Certified\s*Ethical\s*Hacker/i },
+  pentestplus: { label: "CompTIA PenTest+", pattern: /PenTest\s*\+/i },
+  securityplus: { label: "CompTIA Security+", pattern: /Security\s*\+/i },
+  giac: { label: "GIAC (GPEN, GWAPT, …)", pattern: /\bGIAC\b|\bGPEN\b|\bGWAPT\b|\bGXPN\b/ },
+  cissp: { label: "CISSP", pattern: /\bCISSP\b/ },
+  cisa: { label: "CISA", pattern: /\bCISA\b/ },
+  cism: { label: "CISM", pattern: /\bCISM\b/ },
+  // AI and machine learning — vendor certifications, each matched on the
+  // vendor named close to the AI wording so a plain "AWS" or "NVIDIA" doesn't count.
+  awsAi: {
+    label: "AWS Certified (AI / Machine Learning)",
+    pattern: /AWS.{0,40}?(?:Machine\s*Learning|AI\s*Practitioner|\bML\b|Generative\s*AI)/i,
+  },
+  nvidiaAi: { label: "NVIDIA-Certified (AI)", pattern: /NVIDIA.{0,40}?(?:Certified|Certification|DLI|Deep\s*Learning\s*Institute)/i },
+  googleMl: { label: "Google Cloud Professional Machine Learning Engineer", pattern: /Google.{0,40}?Machine\s*Learning/i },
+  azureAi: { label: "Microsoft Azure AI (AI-102 / AI-900)", pattern: /Azure\s*AI|\bAI-102\b|\bAI-900\b/i },
   dealer: { label: "หนังสือแต่งตั้งตัวแทนจำหน่ายจากผู้ผลิต", pattern: /แต่งตั้ง.{0,20}ตัวแทนจำหน่าย|ตัวแทนจำหน่าย.{0,30}ผู้ผลิต/ },
 } as const satisfies Record<string, { label: string; pattern: RegExp }>;
 

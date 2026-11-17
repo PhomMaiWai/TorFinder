@@ -78,14 +78,13 @@ function eligibilityOf(tor: ScorableTor, company: MatchCandidate): EligibilityCh
       required.minRegisteredCapital,
       company.registeredCapital,
     ),
-    ...required.certifications.map((group): EligibilityCheck => ({
-      requirement: group.map((cert) => CERTIFICATIONS[cert].label).join(" หรือ "),
-      status: company.certifications === undefined
-        ? "unknown"
-        : group.some((cert) => company.certifications!.includes(cert))
-          ? "pass"
-          : "fail",
-    })),
+    ...required.certifications.map((group): EligibilityCheck => {
+      const label = group.map((cert) => CERTIFICATIONS[cert].label).join(" หรือ ");
+      if (company.certifications === undefined) return { requirement: label, status: "unknown" };
+      if (group.some((cert) => company.certifications!.includes(cert))) return { requirement: label, status: "pass" };
+      const lapsed = group.some((cert) => company.expiredCertifications?.includes(cert));
+      return { requirement: lapsed ? `${label} (ใบรับรองของบริษัทหมดอายุแล้ว)` : label, status: "fail" };
+    }),
   ];
   return checks.filter((check): check is EligibilityCheck => check !== null);
 }

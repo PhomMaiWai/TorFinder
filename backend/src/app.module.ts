@@ -5,6 +5,7 @@ import { ThrottlerModule } from "@nestjs/throttler";
 import { AccountsModule } from "./accounts/accounts.module";
 import { AuditModule } from "./audit/audit.module";
 import { AuthModule } from "./auth/auth.module";
+import { CertificatesModule } from "./certificates/certificates.module";
 import { AllExceptionsFilter } from "./common/all-exceptions.filter";
 import { LoggingThrottlerGuard } from "./common/logging-throttler.guard";
 import { env } from "./config/env";
@@ -35,6 +36,7 @@ import { TorModule } from "./tor/tor.module";
     AuthModule,
     AuditModule,
     AccountsModule,
+    CertificatesModule,
     TorModule,
     SimilarModule,
     AiModule,
