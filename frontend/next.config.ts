@@ -14,7 +14,18 @@ const SECURITY_HEADERS = [
   // one-time ?token= links) leaked to other sites, and no framing by other sites.
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+  // The fallback policy for every response the proxy doesn't set its nonce
+  // policy on: the proxy's matcher skips file-like paths (.txt, .xml, .png…),
+  // so a missing /robots.txt or /x.png answered with the HTML 404 page used to
+  // carry only frame-ancestors (ZAP DAST, docs/security/dast-report.md). No
+  // inline script and nothing from another origin; the proxy's own header
+  // replaces this one on every page and API route it handles.
+  {
+    key: "Content-Security-Policy",
+    value:
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+      "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+  },
 ];
 
 const nextConfig: NextConfig = {
