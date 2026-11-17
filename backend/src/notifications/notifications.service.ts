@@ -1,9 +1,19 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 
 import { env } from "../config/env";
 import { DatabaseService, NotificationChannels, NotificationType } from "../database/database.service";
 import { UpdateChannelsDto } from "./dto/update-channels.dto";
+import {
+  canLinkLine,
+  hashLinkCode,
+  LineEvent,
+  LINK_TTL_MS,
+  lineLinkUrls,
+  newLinkCode,
+  parseLinkCode,
+  replyLine,
+} from "./line-link";
 import { availableChannels, deliver, DeliveryResult } from "./notification-delivery";
 
 @Injectable()
@@ -73,12 +83,79 @@ export class NotificationsService {
     const account = await this.findAccount(userId, { notificationChannels: 1 });
     const next: NotificationChannels = { email: false, ...account.notificationChannels };
     if (dto.email !== undefined) next.email = dto.email;
-    for (const key of ["slackWebhookUrl", "lineUserId"] as const) {
-      if (dto[key] === "") delete next[key];
-      else if (dto[key] !== undefined) next[key] = dto[key];
-    }
+    // LINE is not set here: its id only ever comes from the link flow below,
+    // so nobody can point notifications at someone else's LINE.
+    if (dto.slackWebhookUrl === "") delete next.slackWebhookUrl;
+    else if (dto.slackWebhookUrl !== undefined) next.slackWebhookUrl = dto.slackWebhookUrl;
     await this.db.users.updateOne({ _id: new ObjectId(userId) }, { $set: { notificationChannels: next } });
     return this.getChannels(userId);
+  }
+
+  /**
+   * Step one of connecting LINE: a one-time code for the user to send to our
+   * OA, and the links that open the chat with it already typed in.
+   */
+  async startLineLink(userId: string) {
+    if (!canLinkLine()) throw new ServiceUnavailableException("ยังไม่ได้เปิดใช้การแจ้งเตือนทาง LINE บนเซิร์ฟเวอร์นี้");
+    const account = await this.findAccount(userId, { _id: 1 });
+    const code = newLinkCode();
+    const expiresAt = new Date(Date.now() + LINK_TTL_MS);
+    await this.db.users.updateOne({ _id: account._id }, { $set: { lineLink: { codeHash: hashLinkCode(code), expiresAt } } });
+    return { code, expiresAt, ...lineLinkUrls(code) };
+  }
+
+  async unlinkLine(userId: string) {
+    const account = await this.findAccount(userId, { _id: 1 });
+    await this.db.users.updateOne(
+      { _id: account._id },
+      { $unset: { "notificationChannels.lineUserId": "", lineLink: "" } },
+    );
+    return this.getChannels(userId);
+  }
+
+  /**
+   * Step two, from LINE's webhook (signature already checked): a message that
+   * is a live code links its sender to the account that asked for it. Someone
+   * blocking the OA unlinks them, since pushes to them would only fail.
+   */
+  async handleLineEvents(events: LineEvent[]): Promise<void> {
+    for (const event of events) {
+      const lineUserId = event.source?.type === "user" ? event.source.userId : undefined;
+      if (!lineUserId) continue;
+
+      if (event.type === "unfollow") {
+        await this.db.users.updateMany(
+          { "notificationChannels.lineUserId": lineUserId },
+          { $unset: { "notificationChannels.lineUserId": "" } },
+        );
+        continue;
+      }
+
+      if (event.type !== "message" || event.message?.type !== "text") continue;
+      const code = parseLinkCode(event.message.text ?? "");
+      if (!code) continue; // ordinary chat — left to the OA's own auto-reply
+
+      const account = await this.db.users.findOneAndUpdate(
+        { "lineLink.codeHash": hashLinkCode(code), "lineLink.expiresAt": { $gt: new Date() } },
+        { $set: { "notificationChannels.lineUserId": lineUserId }, $unset: { lineLink: "" } },
+        { projection: { notificationChannels: 1 } },
+      );
+      // A user who never set channels before has no `email` flag yet.
+      if (account && account.notificationChannels?.email === undefined) {
+        await this.db.users.updateOne({ _id: account._id }, { $set: { "notificationChannels.email": false } });
+      }
+      await this.reply(
+        event.replyToken,
+        account
+          ? "เชื่อมต่อ LINE กับ TOR Finder เรียบร้อยแล้ว ✅\nคุณจะได้รับแจ้งเตือนที่นี่เมื่อมีประกาศ TOR ใหม่ที่ตรงกับบริษัทของคุณ"
+          : "รหัสนี้ไม่ถูกต้องหรือหมดอายุแล้ว กรุณากด \"เชื่อมต่อ LINE\" ในหน้าการแจ้งเตือนของ TOR Finder เพื่อรับรหัสใหม่",
+      );
+    }
+  }
+
+  private async reply(replyToken: string | undefined, text: string) {
+    if (!replyToken) return;
+    await replyLine(replyToken, text).catch((error: Error) => this.logger.warn(`LINE reply failed: ${error.message}`));
   }
 
   /** Sends a sample to every channel the account turned on, and says which worked. */

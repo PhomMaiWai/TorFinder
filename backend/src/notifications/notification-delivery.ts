@@ -1,6 +1,7 @@
 import { escapeHtml, sendEmail as send } from "../common/email";
 import { env } from "../config/env";
 import { NotificationChannels } from "../database/database.service";
+import { canLinkLine } from "./line-link";
 
 export type Channel = "email" | "slack" | "line";
 
@@ -18,8 +19,6 @@ const TIMEOUT_MS = 8_000;
 
 /** Slack only ever issues incoming webhooks on this host. */
 export const SLACK_WEBHOOK = /^https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9/_-]+$/;
-/** LINE ids: U… for a user, C… for a group, R… for a room, then 32 hex digits. */
-export const LINE_ID = /^[UCR][0-9a-f]{32}$/;
 
 function plainText({ title, message, link }: OutgoingNotification): string {
   return [title, message, link].filter(Boolean).join("\n\n");
@@ -79,7 +78,7 @@ export function availableChannels(): Record<Channel, boolean> {
   return {
     email: Boolean(env.notify.resendApiKey),
     slack: true,
-    line: Boolean(env.notify.lineChannelAccessToken),
+    line: canLinkLine(),
   };
 }
 
