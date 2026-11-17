@@ -19,6 +19,8 @@ const SOURCES = {
 const TIMEOUT_MS = 180_000;
 
 async function sync(source: keyof typeof SOURCES): Promise<void> {
+  // A server action's arguments come from the browser; the type alone doesn't stop "../accounts".
+  if (!Object.hasOwn(SOURCES, source)) throw new Error("Unknown import source");
   const res = await fetch(`${process.env.BACKEND_URL}/api/${source}/sync`, {
     method: "POST",
     // The import route is admin-guarded, so the session travels with it.

@@ -1,3 +1,4 @@
+import { idPath } from "@/lib/backend-path";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { authHeaders } from "@/lib/session-headers";
 import type { TorRecord } from "@/types/tor";
@@ -67,7 +68,7 @@ export async function fetchFlaggedTors(page: number, flag?: FlaggedTorFilter): P
 }
 
 export async function deleteTor(id: string): Promise<void> {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${id}`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(id)}`, {
     method: "DELETE",
     headers: await authHeaders(),
     cache: "no-store",
@@ -77,7 +78,7 @@ export async function deleteTor(id: string): Promise<void> {
 }
 
 export async function restoreTor(id: string): Promise<void> {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${id}/restore`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(id)}/restore`, {
     method: "POST",
     headers: await authHeaders(),
     cache: "no-store",

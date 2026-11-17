@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { SESSION_COOKIE } from "@/lib/auth";
+import { idPath, isObjectId } from "@/lib/backend-path";
 import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
@@ -13,7 +14,8 @@ async function authHeaders(): Promise<HeadersInit> {
 
 /** The backend responds 204 to both — nothing to parse as JSON either way. */
 async function proxy(method: "POST" | "DELETE", torId: string) {
-  const res = await fetch(`${BACKEND_URL}/api/saved-tors/${torId}`, {
+  if (!isObjectId(torId)) return jsonResponse({ error: "ไม่พบรายการ TOR" }, { status: 404 });
+  const res = await fetch(`${BACKEND_URL}/api/saved-tors/${idPath(torId)}`, {
     method,
     headers: await authHeaders(),
     cache: "no-store",

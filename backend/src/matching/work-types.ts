@@ -1,3 +1,5 @@
+import { escapeRegex } from "../common/regex";
+
 /**
  * The kinds of public-sector IT work a company takes on, in the words a TOR's
  * title uses for them. This is what a company is matched on — not a list of
@@ -101,7 +103,8 @@ const MATCHERS = Object.fromEntries(
     type,
     terms.map((term) =>
       ENGLISH.test(term)
-        ? (text: string) => new RegExp(`(^|[^a-z])${term.replace(/[.-]/g, "\\$&")}([^a-z]|$)`).test(text)
+        ? // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp -- terms are this file's own constants, escaped.
+          (text: string) => new RegExp(`(^|[^a-z])${escapeRegex(term)}([^a-z]|$)`).test(text)
         : (text: string) => text.includes(term),
     ),
   ]),

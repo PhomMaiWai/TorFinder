@@ -78,6 +78,7 @@ change must keep.
 | Document | Covers |
 | --- | --- |
 | [asvs-l1.md](./security/asvs-l1.md) | Self-audit against OWASP ASVS 5.0 Level 1 |
+| [sast-report.md](./security/sast-report.md) | CodeQL and Semgrep scans: findings, fixes and false positives |
 
 ## Iterations
 

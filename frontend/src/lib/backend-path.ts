@@ -1,0 +1,19 @@
+/** Every record id the backend issues is a MongoDB ObjectId: 24 hex characters. */
+const OBJECT_ID = /^[a-f0-9]{24}$/i;
+
+export function isObjectId(value: unknown): value is string {
+  return typeof value === "string" && OBJECT_ID.test(value);
+}
+
+/**
+ * An id as one segment of a backend URL. Server actions and route params are
+ * values the browser chose, so an id like `..` or `x/../../accounts` would
+ * otherwise walk the request to a different backend path (CodeQL
+ * js/request-forgery). Only a real ObjectId gets through, and it is encoded
+ * anyway; `encodeURIComponent` alone isn't enough, because `fetch` still
+ * resolves a bare `..` segment.
+ */
+export function idPath(id: unknown): string {
+  if (!isObjectId(id)) throw new Error("Invalid record id");
+  return encodeURIComponent(id);
+}

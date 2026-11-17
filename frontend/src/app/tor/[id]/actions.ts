@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { idPath } from "@/lib/backend-path";
 import { clientIpHeaders } from "@/lib/client-ip";
 import { isReportReason } from "@/lib/report-reasons";
 import { authHeaders } from "@/lib/session-headers";
@@ -25,7 +26,7 @@ export async function submitFeedback(
     return { error: "กรุณาเขียนความคิดเห็นอย่างน้อย 10 ตัวอักษร" };
   }
 
-  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${torId}/feedback`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(torId)}/feedback`, {
     method: "POST",
     headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
     body: JSON.stringify({ text, author: author || undefined }),
@@ -64,7 +65,7 @@ export async function submitReport(
   if (!isReportReason(reason)) return { error: "กรุณาเลือกประเภทของปัญหา" };
   if (message.length < 10) return { error: "กรุณาอธิบายปัญหาอย่างน้อย 10 ตัวอักษร" };
 
-  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${torId}/reports`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(torId)}/reports`, {
     method: "POST",
     headers: { ...(await authHeaders()), ...(await clientIpHeaders()), "Content-Type": "application/json" },
     body: JSON.stringify({ reason, message, contact: contact || undefined }),

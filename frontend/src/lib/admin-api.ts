@@ -1,4 +1,5 @@
 import type { Role } from "@/lib/auth";
+import { idPath } from "@/lib/backend-path";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import type { ReportReason } from "@/lib/report-reasons";
 import { authHeaders } from "@/lib/session-headers";
@@ -101,7 +102,7 @@ export const fetchUserDirectory = () =>
 
 async function setSuspended(id: string, suspended: boolean): Promise<void> {
   const res = await fetch(
-    `${process.env.BACKEND_URL}/api/accounts/${id}/${suspended ? "suspend" : "reactivate"}`,
+    `${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/${suspended ? "suspend" : "reactivate"}`,
     {
       method: "PATCH",
       headers: await authHeaders(),
@@ -120,7 +121,7 @@ export type UserEdit = { name?: string; role?: Exclude<Role, "org"> };
 
 /** The backend's own message on a refusal (e.g. demoting the last admin), so the admin sees why. */
 export async function updateUser(id: string, edit: UserEdit): Promise<{ error?: string }> {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${id}/details`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/details`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "content-type": "application/json" },
     body: JSON.stringify(edit),
@@ -168,7 +169,7 @@ export async function fetchReport(id: string): Promise<TorReport | null> {
 
 /** `fixed`: resolved by correcting the TOR for it, which the audit log records apart from a plain close. */
 export async function setReportStatus(id: string, status: ReportStatus, fixed = false): Promise<void> {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/reports/${id}`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/reports/${idPath(id)}`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "content-type": "application/json" },
     body: JSON.stringify(fixed ? { status, fixed } : { status }),
