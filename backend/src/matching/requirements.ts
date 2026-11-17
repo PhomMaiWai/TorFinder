@@ -43,6 +43,8 @@ export const CERTIFICATIONS = {
   cissp: { label: "CISSP", pattern: /\bCISSP\b/ },
   cisa: { label: "CISA", pattern: /\bCISA\b/ },
   cism: { label: "CISM", pattern: /\bCISM\b/ },
+  // Asked of the project manager in most TORs; held by a person, checked against the team.
+  pmp: { label: "PMP", pattern: /\bPMP\b|Project\s*Management\s*Professional/i },
   // AI and machine learning — vendor certifications, each matched on the
   // vendor named close to the AI wording so a plain "AWS" or "NVIDIA" doesn't count.
   awsAi: {

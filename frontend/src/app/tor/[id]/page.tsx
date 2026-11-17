@@ -19,6 +19,7 @@ import { BidInsightPanel } from "@/components/public/bid-insight-panel";
 import { BiddingBadge } from "@/components/public/bidding-badge";
 import { FeedbackForm } from "@/components/public/feedback-form";
 import { ProposalDraftForm } from "@/components/public/proposal-draft-form";
+import { CoveragePanel } from "@/components/library/coverage-panel";
 import { ReportProblemForm } from "@/components/public/report-problem-form";
 import { SaveTorButton } from "@/components/public/save-tor-button";
 import { TorDocumentDetails } from "@/components/public/tor-document-details";
@@ -262,6 +263,9 @@ export default async function TorDetailPage({
               />
             </section>
           )}
+
+          {/* A signed-in company: how much of this bid its proposal library already covers. */}
+          {session?.role === "org" && tor.sourceRef && <CoveragePanel torId={tor.id} />}
 
           {/* A signed-in company preparing a bid, or reworking one for the next similar job. */}
           {inApp && tor.sourceRef && <ProposalDraftForm torId={tor.id} />}

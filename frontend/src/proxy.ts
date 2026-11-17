@@ -19,6 +19,7 @@ const PROTECTED_PREFIXES = [
   "/owner",
   "/auditor",
   "/profile",
+  "/library",
   "/saved",
   "/notifications",
 ];

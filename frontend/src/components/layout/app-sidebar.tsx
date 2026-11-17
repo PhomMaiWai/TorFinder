@@ -10,6 +10,7 @@ import {
   FileText,
   Flag,
   FolderKanban,
+  FolderOpen,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -56,6 +57,7 @@ function getOrgNav(t: (key: string) => string): { section: string | null; links:
         { label: t("navOverview"), href: "/dashboard", icon: Activity },
         // The profile before the matches: every match is computed from it.
         { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
+        { label: t("navLibrary"), href: "/library", icon: FolderOpen },
         { label: t("navMatches"), href: "/matches", icon: LayoutDashboard },
         { label: t("navInsights"), href: "/insights", icon: Trophy },
         { label: t("navSearchTor"), href: "/search", icon: Search },

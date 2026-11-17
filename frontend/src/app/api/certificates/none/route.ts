@@ -1,6 +1,6 @@
-import { forwardCertificates } from "@/lib/certificates-proxy";
+import { forwardToBackend } from "@/lib/backend-proxy";
 
 /** The answer "we hold no certificates" — an answer, unlike a blank. */
 export async function POST() {
-  return forwardCertificates({ method: "POST", path: "/none" });
+  return forwardToBackend({ method: "POST", path: "/certificates/none" });
 }
