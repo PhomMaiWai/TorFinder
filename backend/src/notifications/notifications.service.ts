@@ -120,12 +120,13 @@ export class NotificationsService {
    */
   async handleLineEvents(events: LineEvent[]): Promise<void> {
     for (const event of events) {
-      const lineUserId = event.source?.type === "user" ? event.source.userId : undefined;
-      if (!lineUserId) continue;
+      const rawLineUserId = event.source?.type === "user" ? event.source.userId : undefined;
+      if (typeof rawLineUserId !== "string" || rawLineUserId.length === 0) continue;
+      const lineUserId = rawLineUserId;
 
       if (event.type === "unfollow") {
         await this.db.users.updateMany(
-          { "notificationChannels.lineUserId": lineUserId },
+          { "notificationChannels.lineUserId": { $eq: lineUserId } },
           { $unset: { "notificationChannels.lineUserId": "" } },
         );
         continue;
