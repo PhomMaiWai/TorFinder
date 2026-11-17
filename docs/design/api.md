@@ -9,7 +9,7 @@ in the same PR.
 - [Authentication and roles](#authentication-and-roles)
 - [Errors, status codes and rate limits](#errors-status-codes-and-rate-limits)
 - [Endpoints](#endpoints): [Health](#health) · [Auth](#auth) ·
-  [Accounts](#accounts) · [TORs](#tors) · [TOR documents](#tor-documents) ·
+  [Accounts](#accounts) · [Certificates](#certificates) · [TORs](#tors) · [TOR documents](#tor-documents) ·
   [Matching](#matching) · [AI](#ai) · [Feedback](#feedback) ·
   [Reports](#reports) · [Owner](#owner) · [Saved TORs](#saved-tors) ·
   [Saved searches](#saved-searches) · [Notifications](#notifications) ·
@@ -178,7 +178,7 @@ include password fields. Their shape is
 `UpdateCompanyProfileDto` (all optional): `companyName`, `taxId` (both can
 only be filled once, when still blank), `contactName`, `phone`, `address`,
 `specialty`, `size`, `techStack[]`, `pastExperience`, `workTypes[]`,
-`certifications[]`, `largestPastContract`, `registeredCapital`,
+`largestPastContract`, `registeredCapital`,
 `preferredBudgetMin`, `preferredBudgetMax` (integers 0 to 100,000,000,000),
 `matchAlerts` (bool), `matchThreshold` (40-95).
 
@@ -186,9 +186,37 @@ only be filled once, when still blank), `contactName`, `phone`, `address`,
   `maintenance`, `helpdesk`, `license`, `consulting`, `hardware`,
   `peripherals`, `network`, `datacenter`, `security`, `data`, `ai`, `gis`,
   `health`, `education` (`backend/src/matching/work-types.ts`).
-- `certifications`: `iso29110`, `cmmi3`, `cmmi5`, `iso12207`, `iso25010`,
-  `iso27001`, `iso27701`, `iso27017`, `iso27018`, `pcidss`, `csastar`, …
-  (full list in `backend/src/matching/requirements.ts`).
+- Certificates are not part of this DTO; see [Certificates](#certificates).
+  A `certifications[]` sent here is dropped.
+
+### Certificates
+
+`backend/src/certificates/certificates.controller.ts`. A company's
+certificates as records (#260), stored on its profile as
+`company.certificates`. Only the signed-in company's own records are ever
+read or changed. A record is
+`{ id, name, standard?, issuer?, issuedAt?, expiresAt?, verifyUrl?, scope?, file?: { name, contentType, size, uploadedAt }, createdAt, updatedAt }`.
+
+| Method | Path | Guard | Body / query | Response |
+| --- | --- | --- | --- | --- |
+| GET | `/certificates` | Org | — | `{ certificates }`; `null` until the company has answered |
+| POST | `/certificates` | Org | `CertificateDto` | 201 the record; 409 over 100 records |
+| POST | `/certificates/none` | Org | — | `{ certificates }`; records the answer "none" when the list is empty, otherwise leaves it as is |
+| PUT | `/certificates/:id` | Org | `CertificateDto` | The record. Replaces every field; one left out is cleared. The file is kept |
+| DELETE | `/certificates/:id` | Org | — | 204; the file goes with it |
+| PUT | `/certificates/:id/file` | Org | multipart, one `file` part | The record. PDF, PNG or JPG judged by the file's bytes (415 otherwise), up to 5 MB (413). Replaces any earlier file |
+| GET | `/certificates/:id/file` | Org | — | The file, always as `Content-Disposition: attachment` |
+| DELETE | `/certificates/:id/file` | Org | — | The record without its file |
+
+`CertificateDto`: `name` (required, ≤200), `standard` (a key from
+`backend/src/matching/requirements.ts`: `iso27001`, `cmmi3`, `crest`, `oscp`,
+`ceh`, `cissp`, `awsAi`, `nvidiaAi`, `dealer`, …), `issuer` (≤200),
+`issuedAt`, `expiresAt` (`YYYY-MM-DD`, real calendar dates, expiry not
+before issue), `verifyUrl` (`http(s)://` only, ≤500), `scope` (≤1000).
+
+Matching counts a record's `standard` while `expiresAt` is today or later
+(Bangkok time). A requirement met only by an expired certificate fails with
+"(ใบรับรองของบริษัทหมดอายุแล้ว)" added to it.
 
 ### TORs
 
@@ -404,6 +432,7 @@ backend route of the same name. `frontend/src/proxy.ts` refuses every
 | `/api/auth/google` | POST | `/auth/google`; sets the cookie | ✓ |
 | `/api/auth/google/complete` | POST | `/auth/google/complete` | ✓ |
 | `/api/accounts/me` | GET, PATCH | `/accounts/me` | |
+| `/api/certificates`, `/api/certificates/none`, `/api/certificates/[id]`, `/api/certificates/[id]/file` | GET, POST, PUT, DELETE | `/certificates/…` | Bodies (JSON and the multipart upload) stream through unread; the file comes back as a download |
 | `/api/ai/proposal-draft/[torId]` | POST | `/ai/proposal-draft/:torId` | |
 | `/api/gproc/capture`, `/[runId]` | POST, GET | `/gproc/capture` | |
 | `/api/notifications`, `/[id]/read`, `/read-all`, `/channels`, `/channels/test` | as backend | `/notifications/...` | |

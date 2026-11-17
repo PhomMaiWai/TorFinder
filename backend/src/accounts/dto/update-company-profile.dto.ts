@@ -1,7 +1,6 @@
 import { Type } from "class-transformer";
 import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
 
-import { CERTIFICATION_KEYS, Certification } from "../../matching/requirements";
 import { WORK_TYPE_KEYS, WorkType } from "../../matching/work-types";
 
 import { IsThaiTaxId } from "../../common/thai-id";
@@ -11,7 +10,9 @@ import { IsThaiTaxId } from "../../common/thai-id";
  * Google sign-in never collects them, so the service layer allows a one-time
  * fill for whichever of the two is still blank, then locks it just the same.
  * email is never editable here at all; it's account identity, not a company
- * field.
+ * field. Certificates aren't either: they are records with their own
+ * endpoints (backend/src/certificates), and a `certifications` list sent here
+ * is dropped by the whitelist.
  */
 export class UpdateCompanyProfileDto {
   @IsOptional()
@@ -69,10 +70,6 @@ export class UpdateCompanyProfileDto {
   @Min(0)
   @Max(100_000_000_000)
   registeredCapital?: number;
-
-  @IsOptional()
-  @IsIn(CERTIFICATION_KEYS, { each: true })
-  certifications?: Certification[];
 
   @IsOptional()
   @Type(() => Number)

@@ -1,8 +1,9 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { Collection, MongoClient, ObjectId } from "mongodb";
+import { Collection, GridFSBucket, MongoClient, ObjectId } from "mongodb";
 
 import { StoredExtraction } from "../ai/ai.types";
-import { Certification } from "../matching/requirements";
+import { CertificateRecord } from "../certificates/certificate.types";
+import { CERTIFICATIONS, Certification } from "../matching/requirements";
 import { WorkType } from "../matching/work-types";
 import { FeedbackStatus } from "../feedback/feedback.constants";
 import { ReportReason, ReportStatus } from "../reports/reports.constants";
@@ -36,8 +37,14 @@ export type CompanyProfile = {
   largestPastContract?: number;
   /** Paid-up registered capital, in baht. */
   registeredCapital?: number;
-  /** Undefined until answered; an empty list means the company holds none. */
+  /**
+   * The yes/no list from before certificates were records (#260). Read only
+   * while `certificates` is absent; backfillCertificateRecords turns it into
+   * records at startup.
+   */
   certifications?: Certification[];
+  /** Undefined until answered; an empty list means the company holds none. */
+  certificates?: CertificateRecord[];
   /** The project size the company wants to bid on, in baht. */
   preferredBudgetMin?: number;
   preferredBudgetMax?: number;
@@ -394,6 +401,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   authTokens!: Collection<AuthTokenDoc>;
   matchAlerts!: Collection<MatchAlertDoc>;
   torEmbeddings!: Collection<TorEmbeddingDoc>;
+  /** Scans companies attach to their certificates; only ever read by their owner. */
+  certificateFiles!: GridFSBucket;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -409,6 +418,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.authTokens = this.client.db().collection<AuthTokenDoc>("authTokens");
     this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
     this.torEmbeddings = this.client.db().collection<TorEmbeddingDoc>("torEmbeddings");
+    this.certificateFiles = new GridFSBucket(this.client.db(), { bucketName: "certificateFiles" });
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
@@ -446,6 +456,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
     await this.seed();
+    // After seeding, so the demo companies start out with records too.
+    await this.backfillCertificateRecords();
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -472,6 +484,44 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       { $set: { "company.certifications.$": "cmmi3" } },
     );
     if (modifiedCount > 0) this.logger.log(`Backfilled CMMI level on ${modifiedCount} accounts`);
+  }
+
+  /**
+   * Each ticked certification becomes a record with only its name filled in —
+   * the company adds the issuer, dates and file later. Nothing is lost: a
+   * record without dates counts as held, exactly as the tick did.
+   */
+  private async backfillCertificateRecords(): Promise<void> {
+    const legacy = await this.users
+      .find(
+        { "company.certifications": { $exists: true }, "company.certificates": { $exists: false } },
+        { projection: { "company.certifications": 1 } },
+      )
+      .toArray();
+    if (legacy.length === 0) return;
+
+    const now = new Date();
+    await this.users.bulkWrite(
+      legacy.map(({ _id, company }) => ({
+        updateOne: {
+          filter: { _id, "company.certificates": { $exists: false } },
+          update: {
+            $set: {
+              "company.certificates": (company?.certifications ?? [])
+                .filter((key) => key in CERTIFICATIONS)
+                .map((standard) => ({
+                  id: new ObjectId().toHexString(),
+                  name: CERTIFICATIONS[standard].label,
+                  standard,
+                  createdAt: now,
+                  updatedAt: now,
+                })),
+            },
+          },
+        },
+      })),
+    );
+    this.logger.log(`Turned ticked certifications into records on ${legacy.length} accounts`);
   }
 
   /**

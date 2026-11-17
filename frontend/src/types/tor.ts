@@ -286,12 +286,45 @@ export const STANDARD_GROUPS = {
     { id: "iso14001", label: "ISO 14001" },
     { id: "iso42001", label: "ISO/IEC 42001" },
   ],
+  cyber: [
+    { id: "crest", label: "CREST" },
+    { id: "oscp", label: "OSCP" },
+    { id: "ceh", label: "CEH" },
+    { id: "pentestplus", label: "CompTIA PenTest+" },
+    { id: "giac", label: "GIAC (GPEN, GWAPT, …)" },
+    { id: "securityplus", label: "CompTIA Security+" },
+    { id: "cissp", label: "CISSP" },
+    { id: "cisa", label: "CISA" },
+    { id: "cism", label: "CISM" },
+  ],
+  ai: [
+    { id: "awsAi", label: "AWS Certified (AI / Machine Learning)" },
+    { id: "nvidiaAi", label: "NVIDIA-Certified (AI)" },
+    { id: "googleMl", label: "Google Cloud Professional Machine Learning Engineer" },
+    { id: "azureAi", label: "Microsoft Azure AI (AI-102 / AI-900)" },
+  ],
 } as const;
 
 export type StandardGroup = keyof typeof STANDARD_GROUPS;
 export type Standard = (typeof STANDARD_GROUPS)[StandardGroup][number]["id"];
 /** Not a standard: a manufacturer's letter appointing the company as its dealer. */
 export type Certification = Standard | "dealer";
+
+/** A certificate as the company recorded it (#260); dates are YYYY-MM-DD. */
+export type CertificateRecord = {
+  id: string;
+  name: string;
+  /** The TOR requirement it meets, if it is one matching knows. */
+  standard?: Certification;
+  issuer?: string;
+  issuedAt?: string;
+  expiresAt?: string;
+  verifyUrl?: string;
+  scope?: string;
+  file?: { name: string; contentType: string; size: number; uploadedAt: string };
+  createdAt: string;
+  updatedAt: string;
+};
 
 /** One requirement from the bidding document, checked against a company profile. */
 export type EligibilityCheck = { requirement: string; status: "pass" | "fail" | "unknown" };

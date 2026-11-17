@@ -8,8 +8,10 @@ export type MatchCandidate = {
   /** Largest single public-sector contract completed, baht. */
   largestPastContract?: number | null;
   registeredCapital?: number | null;
-  /** Undefined until the company has answered; an empty list means "none". */
+  /** Held and in date. Undefined until the company has answered; an empty list means "none". */
   certifications?: Certification[];
+  /** Ones the company has only an expired certificate for — said so, rather than a bare "fail". */
+  expiredCertifications?: Certification[];
   preferredBudgetMin?: number | null;
   preferredBudgetMax?: number | null;
 };
