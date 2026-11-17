@@ -3,6 +3,7 @@ import { Collection, GridFSBucket, MongoClient, ObjectId } from "mongodb";
 
 import { StoredExtraction } from "../ai/ai.types";
 import { CertificateRecord } from "../certificates/certificate.types";
+import { PastProject, TeamMember } from "../library/library.types";
 import { CERTIFICATIONS, Certification } from "../matching/requirements";
 import { WorkType } from "../matching/work-types";
 import { FeedbackStatus } from "../feedback/feedback.constants";
@@ -45,6 +46,10 @@ export type CompanyProfile = {
   certifications?: Certification[];
   /** Undefined until answered; an empty list means the company holds none. */
   certificates?: CertificateRecord[];
+  /** The proposal library (#259): contracts to cite as ผลงาน. */
+  pastProjects?: PastProject[];
+  /** The proposal library (#259): people to name on a bid, with their CVs. */
+  teamMembers?: TeamMember[];
   /** The project size the company wants to bid on, in baht. */
   preferredBudgetMin?: number;
   preferredBudgetMax?: number;
@@ -403,6 +408,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   torEmbeddings!: Collection<TorEmbeddingDoc>;
   /** Scans companies attach to their certificates; only ever read by their owner. */
   certificateFiles!: GridFSBucket;
+  /** Reference letters and CVs from the proposal library; only ever read by their owner. */
+  libraryFiles!: GridFSBucket;
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -419,6 +426,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
     this.torEmbeddings = this.client.db().collection<TorEmbeddingDoc>("torEmbeddings");
     this.certificateFiles = new GridFSBucket(this.client.db(), { bucketName: "certificateFiles" });
+    this.libraryFiles = new GridFSBucket(this.client.db(), { bucketName: "libraryFiles" });
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });

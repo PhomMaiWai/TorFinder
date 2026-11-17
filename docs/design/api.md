@@ -9,7 +9,7 @@ in the same PR.
 - [Authentication and roles](#authentication-and-roles)
 - [Errors, status codes and rate limits](#errors-status-codes-and-rate-limits)
 - [Endpoints](#endpoints): [Health](#health) · [Auth](#auth) ·
-  [Accounts](#accounts) · [Certificates](#certificates) · [TORs](#tors) · [TOR documents](#tor-documents) ·
+  [Accounts](#accounts) · [Certificates](#certificates) · [Library](#library) · [TORs](#tors) · [TOR documents](#tor-documents) ·
   [Matching](#matching) · [AI](#ai) · [Feedback](#feedback) ·
   [Reports](#reports) · [Owner](#owner) · [Saved TORs](#saved-tors) ·
   [Saved searches](#saved-searches) · [Notifications](#notifications) ·
@@ -217,6 +217,47 @@ before issue), `verifyUrl` (`http(s)://` only, ≤500), `scope` (≤1000).
 Matching counts a record's `standard` while `expiresAt` is today or later
 (Bangkok time). A requirement met only by an expired certificate fails with
 "(ใบรับรองของบริษัทหมดอายุแล้ว)" added to it.
+
+### Library
+
+`backend/src/library/library.controller.ts`. The proposal library (#259):
+past projects and team members, kept on the company's profile as
+`company.pastProjects` and `company.teamMembers`, beside its certificates.
+Company accounts only; only the caller's own records are ever read or
+changed. `:kind` is `projects` or `team` (anything else is 404).
+
+| Method | Path | Guard | Body / query | Response |
+| --- | --- | --- | --- | --- |
+| GET | `/library` | Org | — | `{ pastProjects, teamMembers, certificates }` |
+| POST | `/library/:kind` | Org | `PastProjectDto` / `TeamMemberDto` | 201 the record; 409 over 200 records of a kind |
+| PUT | `/library/:kind/:id` | Org | the same DTO | The record. Replaces every field; one left out is cleared. The file is kept |
+| DELETE | `/library/:kind/:id` | Org | — | 204; the file goes with it |
+| PUT | `/library/:kind/:id/file` | Org | multipart, one `file` part | The record. PDF, Word (.docx), PNG or JPG judged by the file's bytes (415 otherwise), up to 5 MB (413) |
+| GET | `/library/:kind/:id/file` | Org | — | The file, always as `Content-Disposition: attachment` |
+| DELETE | `/library/:kind/:id/file` | Org | — | The record without its file |
+| GET | `/library/coverage/:torId` | Org | — | `{ extracted, total, ready, partial, missing, manual, items: [{ line, group, status, evidence[], note }] }` |
+| GET | `/library/starter-pack/:torId` | Org | — | A ZIP: `00-รายการตรวจความพร้อม.html` and the files cited as evidence, foldered by kind (capped at 60 MB; files left out are named in the checklist) |
+
+`PastProjectDto`: `title` (required, ≤300), `client` (≤200), `clientType`
+(`government`, `stateEnterprise`, `private`), `value` (baht), `startedAt`,
+`completedAt` (`YYYY-MM-DD`, completion not before start), `workTypes[]`,
+`description` (≤2000).
+
+`TeamMemberDto`: `name`, `position` (both required, ≤200),
+`yearsExperience` (0-60), `education` (≤300), `certifications[]` (keys from
+`backend/src/matching/requirements.ts`, e.g. `pmp`, `cissp`, `oscp`),
+`skills` (≤2000).
+
+Coverage (`backend/src/library/coverage.ts`) reads each extracted
+qualification line and answers `ready`, `partial`, `missing` or `manual`
+(nothing a library holds can answer it):
+
+- Certificate lines: an in-date certificate of the standard named.
+- ผลงาน lines: past projects meeting the value, client type (หน่วยงานรัฐ /
+  รัฐวิสาหกิจ when the line says so), year window and count the line asks.
+- Personnel lines: team members of the role named, with the years and
+  personal certifications asked, as many as the head count.
+- Registered capital: the profile's `registeredCapital`.
 
 ### TORs
 
@@ -432,6 +473,7 @@ backend route of the same name. `frontend/src/proxy.ts` refuses every
 | `/api/auth/google` | POST | `/auth/google`; sets the cookie | ✓ |
 | `/api/auth/google/complete` | POST | `/auth/google/complete` | ✓ |
 | `/api/accounts/me` | GET, PATCH | `/accounts/me` | |
+| `/api/library`, `/api/library/[kind]`, `/api/library/[kind]/[id]`, `/api/library/[kind]/[id]/file`, `/api/library/coverage/[torId]`, `/api/library/starter-pack/[torId]` | GET, POST, PUT, DELETE | `/library/…` | Same streaming as the certificates routes; the starter pack comes back as a download |
 | `/api/certificates`, `/api/certificates/none`, `/api/certificates/[id]`, `/api/certificates/[id]/file` | GET, POST, PUT, DELETE | `/certificates/…` | Bodies (JSON and the multipart upload) stream through unread; the file comes back as a download |
 | `/api/ai/proposal-draft/[torId]` | POST | `/ai/proposal-draft/:torId` | |
 | `/api/gproc/capture`, `/[runId]` | POST, GET | `/gproc/capture` | |

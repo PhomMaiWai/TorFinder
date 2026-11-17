@@ -1,9 +1,9 @@
-import { forwardCertificates } from "@/lib/certificates-proxy";
+import { forwardToBackend } from "@/lib/backend-proxy";
 
 export async function GET() {
-  return forwardCertificates({ method: "GET" });
+  return forwardToBackend({ method: "GET", path: "/certificates" });
 }
 
 export async function POST(request: Request) {
-  return forwardCertificates({ method: "POST", request });
+  return forwardToBackend({ method: "POST", path: "/certificates", request });
 }

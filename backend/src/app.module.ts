@@ -19,6 +19,7 @@ import { MeaModule } from "./mea/mea.module";
 import { MatchingModule } from "./matching/matching.module";
 import { HealthController } from "./health.controller";
 import { InsightsModule } from "./insights/insights.module";
+import { LibraryModule } from "./library/library.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { OwnerModule } from "./owner/owner.module";
 import { ReportsModule } from "./reports/reports.module";
@@ -37,6 +38,7 @@ import { TorModule } from "./tor/tor.module";
     AuditModule,
     AccountsModule,
     CertificatesModule,
+    LibraryModule,
     TorModule,
     SimilarModule,
     AiModule,

@@ -3,30 +3,30 @@ import { authHeaders } from "@/lib/session-headers";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
-/** Only what the browser needs to save the scan; the backend's other headers stay behind. */
+/** Only what the browser needs to save a file; the backend's other headers stay behind. */
 const FILE_HEADERS = ["content-type", "content-length", "content-disposition"];
 
 type Forward = {
   method: "GET" | "POST" | "PUT" | "DELETE";
-  /** Below /api/certificates, already encoded. */
-  path?: string;
+  /** The backend path below /api, already encoded — e.g. "/certificates/abc/file". */
+  path: string;
   /** The browser's request, when its body (JSON or a multipart upload) goes along as-is. */
   request?: Request;
 };
 
 /**
- * Passes a certificates call through to the backend with the caller's
- * session. Bodies stream through untouched — a 5 MB upload is never read
- * into this server's memory — and the backend does all the validating.
+ * Passes a call through to the backend with the caller's session. Bodies
+ * stream through untouched — a 5 MB upload is never read into this server's
+ * memory — and the backend does all the validating.
  */
-export async function forwardCertificates({ method, path = "", request }: Forward): Promise<Response> {
+export async function forwardToBackend({ method, path, request }: Forward): Promise<Response> {
   const headers = new Headers(await authHeaders());
   const contentType = request?.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
 
   let res: Response;
   try {
-    res = await fetch(`${BACKEND_URL}/api/certificates${path}`, {
+    res = await fetch(`${BACKEND_URL}/api${path}`, {
       method,
       headers,
       body: request && method !== "GET" && method !== "DELETE" ? request.body : undefined,
@@ -44,11 +44,11 @@ export async function forwardCertificates({ method, path = "", request }: Forwar
   return jsonResponse(data, { status: res.status });
 }
 
-/** The scan itself, streamed back as a download. */
-export async function downloadCertificateFile(id: string, request: Request): Promise<Response> {
+/** A stored file (or a generated ZIP), streamed back as a download. */
+export async function downloadFromBackend(path: string, request: Request): Promise<Response> {
   let res: Response;
   try {
-    res = await fetch(`${BACKEND_URL}/api/certificates/${encodeURIComponent(id)}/file`, {
+    res = await fetch(`${BACKEND_URL}/api${path}`, {
       headers: await authHeaders(),
       signal: request.signal,
       cache: "no-store",

@@ -1,13 +1,13 @@
-import { forwardCertificates } from "@/lib/certificates-proxy";
+import { forwardToBackend } from "@/lib/backend-proxy";
 
 type Context = { params: Promise<{ id: string }> };
 
 export async function PUT(request: Request, { params }: Context) {
   const { id } = await params;
-  return forwardCertificates({ method: "PUT", path: `/${encodeURIComponent(id)}`, request });
+  return forwardToBackend({ method: "PUT", path: `/certificates/${encodeURIComponent(id)}`, request });
 }
 
 export async function DELETE(_request: Request, { params }: Context) {
   const { id } = await params;
-  return forwardCertificates({ method: "DELETE", path: `/${encodeURIComponent(id)}` });
+  return forwardToBackend({ method: "DELETE", path: `/certificates/${encodeURIComponent(id)}` });
 }
