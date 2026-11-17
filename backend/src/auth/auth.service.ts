@@ -9,7 +9,7 @@ import {
 import { OAuth2Client } from "google-auth-library";
 import { MongoServerError, ObjectId, WithId } from "mongodb";
 
-import { hashPassword, isCommonPassword, verifyPassword } from "../common/password";
+import { hashPassword, passwordProblem, verifyPassword } from "../common/password";
 import { logSecurityEvent, SecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { createSessionToken } from "../common/token";
@@ -48,11 +48,11 @@ export class AuthService {
   ) {}
 
   async signup({ email, password, ...company }: SignupDto, ip?: string) {
-    // ASVS 6.2.4: reject passwords that would fall to a first-pass dictionary
-    // attack, before they're ever hashed.
-    if (isCommonPassword(password)) {
-      throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
-    }
+    // ASVS 6.2.4 / 6.2.11: reject passwords that would fall to a first-pass
+    // dictionary attack or are built on this site's or the account's own words,
+    // before they're ever hashed.
+    const problem = passwordProblem(password, { email, companyName: company.companyName });
+    if (problem) throw new BadRequestException(problem);
     const { hash, salt } = await hashPassword(password);
     const address = email.trim().toLowerCase();
 
@@ -148,14 +148,22 @@ export class AuthService {
 
   /** Sets the new password. The link also proves the inbox, so the address counts as verified. */
   async resetPassword({ token, password }: ResetPasswordDto, ip?: string) {
-    const userId = await this.links.consume(token, "password-reset");
-    if (!userId) {
+    const invalidLink = () => {
       logSecurityEvent("auth.password.reset", { outcome: "failure", ip, reason: "invalid_or_expired_link" });
-      throw new BadRequestException("ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
-    }
-    if (isCommonPassword(password)) {
-      throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
-    }
+      return new BadRequestException("ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่");
+    };
+    // Checked before the link is used up, so a refused password doesn't cost the user their link.
+    const owner = await this.links.peek(token, "password-reset");
+    if (!owner) throw invalidLink();
+    const account = await this.db.users.findOne({ _id: owner }, { projection: { email: 1, company: 1 } });
+    const problem = passwordProblem(password, {
+      email: account?.email,
+      companyName: account?.company?.companyName,
+    });
+    if (problem) throw new BadRequestException(problem);
+
+    const userId = await this.links.consume(token, "password-reset");
+    if (!userId) throw invalidLink();
 
     const { hash, salt } = await hashPassword(password);
     await this.db.users.updateOne(
@@ -203,9 +211,8 @@ export class AuthService {
     if (newPassword === currentPassword) {
       throw new BadRequestException("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านปัจจุบัน");
     }
-    if (isCommonPassword(newPassword)) {
-      throw new BadRequestException("รหัสผ่านนี้พบได้ทั่วไปและคาดเดาง่ายเกินไป กรุณาตั้งรหัสผ่านอื่น");
-    }
+    const problem = passwordProblem(newPassword, { email: user.email, companyName: user.company?.companyName });
+    if (problem) throw new BadRequestException(problem);
 
     const { hash, salt } = await hashPassword(newPassword);
     await this.db.users.updateOne({ _id: user._id }, { $set: { passwordHash: hash, passwordSalt: salt } });

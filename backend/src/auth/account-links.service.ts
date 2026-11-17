@@ -82,6 +82,15 @@ export class AccountLinksService {
     }
   }
 
+  /** The account a live link belongs to, without using it up — to check a new password before the link is spent. */
+  async peek(token: string, purpose: AuthTokenPurpose): Promise<ObjectId | null> {
+    const doc = await this.db.authTokens.findOne(
+      { tokenHash: hashToken(token), purpose, expiresAt: { $gt: new Date() } },
+      { projection: { userId: 1 } },
+    );
+    return doc?.userId ?? null;
+  }
+
   /** The account a live link belongs to, deleting the link as it is read; null when unknown, used or expired. */
   async consume(token: string, purpose: AuthTokenPurpose): Promise<ObjectId | null> {
     const doc = await this.db.authTokens.findOneAndDelete({
