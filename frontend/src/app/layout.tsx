@@ -52,6 +52,7 @@ const CLIENT_NAMESPACES = [
   "AdminUsersPage",
   "AppShell",
   "Bidding",
+  "Certificates",
   "Common",
   "CompanyProfileOptions",
   "Dashboard",
