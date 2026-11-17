@@ -5,6 +5,7 @@ import { assessConfidence } from "../ai/extraction-confidence";
 import { AuditService } from "../audit/audit.service";
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { MatchingService } from "../matching/matching.service";
+import { workTypesOf } from "../matching/work-types";
 import { env } from "../config/env";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
@@ -156,6 +157,9 @@ export class TorService {
       bidding: biddingOf({ ...rest, documentDeadline, documentDeadlineTime }, awarded),
       currentStage: rest.stage,
       timeline: buildTimeline(rest),
+      // The kinds of work its title names, as matching reads them: the
+      // overview charts budget by them (#257).
+      workTypes: workTypesOf(rest.title),
     }));
   }
 

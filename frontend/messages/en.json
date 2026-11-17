@@ -840,7 +840,14 @@
     "savingsReference": "Reference total",
     "savingsAwarded": "Winning total",
     "savingsDifference": "Difference {amount}",
-    "savingsEmpty": "Shown once projects publish both a reference price and a winning price"
+    "savingsEmpty": "Shown once projects publish both a reference price and a winning price",
+    "workTypesTitle": "Project value by kind of work",
+    "workTypesSubtitle": "Total budget of each kind of work the project titles name",
+    "workTypesFootnote": "The kind of work is read from the project title with the same terms company matching uses. A project naming several kinds is split evenly among them.",
+    "tableWorkType": "Kind of work",
+    "workTypeRow": "{value} · {count} projects",
+    "workTypeNone": "Title names no kind of work",
+    "workTypesUnnamed": "Another {value} across {count} projects whose titles name no kind of work is left out of the bars (see the table)."
   },
   "AdminOverviewPage": {
     "title": "Overview",

@@ -1,7 +1,7 @@
 import { closingSchedule, newPerWeek, weekStartOf } from "@/lib/dashboard-stats";
 import { amountOf, openedAt } from "@/lib/tor-sort";
 import { BUDGET_RANGES, biddingOf, daysUntilClose, isClosingSoon } from "@/lib/tor-ui";
-import { TOR_STAGES, type TorRecord, type TorStage } from "@/types/tor";
+import { TOR_STAGES, type TorRecord, type TorStage, type WorkType } from "@/types/tor";
 
 /**
  * The public overview's numbers, computed on the server from every TOR in the
@@ -30,6 +30,8 @@ type Project = {
   opened: number;
   referencePrice: number | null;
   awardedAmount: number | null;
+  /** Every kind of work any of its announcements' titles names. */
+  workTypes: Set<WorkType>;
 };
 
 export type ListedTor = { id: string; title: string; agency: string; amount: number | null; days: number | null };
@@ -50,6 +52,12 @@ export type SiteOverview = {
   sizes: { id: (typeof BUDGET_RANGES)[number]["id"]; count: number }[];
   /** e-GP's procurement method, largest first; `null` folds the tail and the unknown. */
   methods: { method: string | null; count: number }[];
+  /**
+   * Project value by the kind of work its title names, largest first. A
+   * project naming several kinds is split evenly among them, so the bars add
+   * up to the total; `null` is the projects whose title names none.
+   */
+  workTypes: { type: WorkType | null; value: number; projects: number }[];
   /** Every agency, most announcements first, with the value of its projects. */
   agencies: { agency: string; announcements: number; value: number }[];
   closing: ReturnType<typeof closingSchedule>;
@@ -94,9 +102,11 @@ function toProjects(tors: TorRecord[]): Project[] {
         opened,
         referencePrice: tor.referencePrice ?? null,
         awardedAmount: tor.awardedAmount ?? null,
+        workTypes: new Set(tor.workTypes ?? []),
       });
       continue;
     }
+    for (const type of tor.workTypes ?? []) known.workTypes.add(type);
     if (amount !== null && (known.value === null || amount > known.value)) known.value = amount;
     if (stageIndex(stage) > stageIndex(known.stage)) known.stage = stage;
     known.method ??= tor.procurementMethod || null;
@@ -152,6 +162,21 @@ export function buildSiteOverview(tors: TorRecord[], now = Date.now()): SiteOver
   // Only worth a bar when some projects do name a method; otherwise the chart shows its empty state.
   if (methods.length > 0 && methodRest + unknownMethod > 0) methods.push({ method: null, count: methodRest + unknownMethod });
 
+  const byWorkType = new Map<WorkType | null, { value: number; projects: number }>();
+  for (const project of projects) {
+    if (project.value === null) continue;
+    const types: (WorkType | null)[] = project.workTypes.size > 0 ? [...project.workTypes] : [null];
+    for (const type of types) {
+      const row = byWorkType.get(type) ?? { value: 0, projects: 0 };
+      row.value += project.value / types.length;
+      row.projects += 1;
+      byWorkType.set(type, row);
+    }
+  }
+  const workTypes: SiteOverview["workTypes"] = [...byWorkType.entries()]
+    .map(([type, row]) => ({ type, value: Math.round(row.value), projects: row.projects }))
+    .sort((a, b) => Number(a.type === null) - Number(b.type === null) || b.value - a.value);
+
   const open = tors.filter((tor) => biddingOf(tor).status === "open");
 
   const status = { open: 0, closed: 0, unknown: 0 };
@@ -197,6 +222,7 @@ export function buildSiteOverview(tors: TorRecord[], now = Date.now()): SiteOver
       count: valued.filter((p) => p.value >= range.min && p.value < range.max).length,
     })),
     methods,
+    workTypes,
     agencies: [...agencyRows.values()].sort(
       (a, b) => b.announcements - a.announcements || b.value - a.value || a.agency.localeCompare(b.agency, "th"),
     ),

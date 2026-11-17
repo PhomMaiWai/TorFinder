@@ -9,6 +9,7 @@ import {
   SquareStack,
   TrendingUp,
   BadgePercent,
+  Boxes,
   Building2,
   CalendarClock,
   FileStack,
@@ -42,6 +43,9 @@ const CLOSING_LABEL = {
   month: "15–30",
   later: "> 30",
 } as const;
+
+/** Kinds of work drawn as bars; the table lists them all. */
+const TOP_WORK_TYPES = 10;
 
 function KpiTile({
   icon: Icon,
@@ -232,6 +236,7 @@ function AgencyTable({ rows, delay }: { rows: SiteOverview["agencies"]; delay: n
 export function Overview({ data, audience }: { data: SiteOverview; audience: Audience }) {
   const t = useTranslations("Overview");
   const tPublic = useTranslations("PublicPage");
+  const tOptions = useTranslations("CompanyProfileOptions");
   const locale = useLocale();
   const baht = useBahtCompact();
   const number = new Intl.NumberFormat(locale === "th" ? "th-TH" : "en-US");
@@ -261,6 +266,18 @@ export function Overview({ data, audience }: { data: SiteOverview; audience: Aud
     return { label: SIZE_AXIS[i], tip: tPublic(range.labelKey), value: row.count, emphasis: true };
   });
   const methods = data.methods.map((row) => ({ label: row.method ?? t("otherMethod"), value: row.count }));
+  // Projects whose title names no kind of work are said in the footnote, not
+  // drawn: one bar that size would flatten every other.
+  const workTypes = data.workTypes
+    .filter((row) => row.value > 0)
+    .map((row) => ({
+      type: row.type,
+      label: row.type ? tOptions(`workType_${row.type}`) : t("workTypeNone"),
+      value: row.value,
+      projects: row.projects,
+    }));
+  const workTypeBars = workTypes.filter((row) => row.type !== null).slice(0, TOP_WORK_TYPES);
+  const unnamedWorkType = workTypes.find((row) => row.type === null);
   const closing = data.closing.map((band) => ({
     label: CLOSING_LABEL[band.id],
     tip: `${CLOSING_LABEL[band.id]} · ${t("closingSubtitle")}`,
@@ -465,6 +482,24 @@ export function Overview({ data, audience }: { data: SiteOverview; audience: Aud
           delay={180}
         >
           <ValueTreemap data={treemap} format={baht} />
+        </ChartCard>
+        <ChartCard
+          className="lg:col-span-2"
+          title={t("workTypesTitle")}
+          subtitle={t("workTypesSubtitle")}
+          icon={<Boxes size={17} />}
+          footnote={
+            unnamedWorkType
+              ? `${t("workTypesFootnote")} ${t("workTypesUnnamed", { value: baht(unnamedWorkType.value), count: unnamedWorkType.projects })}`
+              : t("workTypesFootnote")
+          }
+          table={{
+            head: [t("tableWorkType"), t("tableValue")],
+            rows: workTypes.map((row) => [row.label, t("workTypeRow", { value: baht(row.value), count: row.projects })]),
+          }}
+          delay={240}
+        >
+          <RankedBars data={workTypeBars} format={baht} labelWidth={240} />
         </ChartCard>
       </div>
 
