@@ -65,6 +65,11 @@ export const env = {
   seedDemoData: (process.env.SEED_DEMO_DATA ?? String(!isProduction)) === "true",
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
   /**
+   * A session unused for this long must sign in again (ASVS 7.3.1), even
+   * within its 7-day absolute lifetime. Must match the frontend's value.
+   */
+  sessionIdleMinutes: optionalNumber("SESSION_IDLE_MINUTES", 30),
+  /**
    * Which hops may name the client in X-Forwarded-For (Express `trust proxy`).
    * The default trusts loopback and private addresses — the frontend on the
    * same machine or Docker network — and never a public address.

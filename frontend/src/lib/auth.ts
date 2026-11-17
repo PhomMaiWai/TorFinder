@@ -7,8 +7,20 @@ export type SessionPayload = {
   email: string;
   name: string;
   role: Role;
+  /** Issued at, epoch seconds; never changes, so revocation keeps working. */
+  iat?: number;
+  /** Last activity, epoch seconds (see refreshSessionToken). */
+  act?: number;
   exp: number;
 };
+
+/**
+ * A session unused this long must sign in again (ASVS 7.3.1), within the
+ * 7-day absolute lifetime. Must match the backend's SESSION_IDLE_MINUTES.
+ */
+export const SESSION_IDLE_SECONDS = Number(process.env.SESSION_IDLE_MINUTES || 30) * 60;
+/** How stale `act` may get before an active user's token is re-signed: at most one Set-Cookie per 5 minutes. */
+export const SESSION_REFRESH_AFTER_SECONDS = 5 * 60;
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
@@ -99,9 +111,30 @@ export async function verifySessionToken(token: string | undefined | null): Prom
 
   try {
     const payload = JSON.parse(decoder.decode(fromBase64Url(data))) as SessionPayload;
-    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp < now) return null;
+    const lastActive = payload.act ?? payload.iat;
+    if (lastActive !== undefined && now - lastActive > SESSION_IDLE_SECONDS) return null;
     return payload;
   } catch {
     return null;
   }
+}
+
+/**
+ * The same session with `act` set to now, re-signed — what keeps an active
+ * user signed in past the idle window. `iat` and `exp` are copied unchanged:
+ * the 7-day absolute lifetime and server-side revocation (which compares
+ * `iat`) still apply.
+ */
+export async function refreshSessionToken(payload: SessionPayload): Promise<string> {
+  const body: SessionPayload = { ...payload, act: Math.floor(Date.now() / 1000) };
+  const data = toBase64Url(encoder.encode(JSON.stringify(body)));
+  return `${data}.${await sign(data)}`;
+}
+
+/** True when an active session's last-activity time is old enough to re-sign. */
+export function sessionNeedsRefresh(payload: SessionPayload): boolean {
+  const lastActive = payload.act ?? payload.iat;
+  return lastActive === undefined || Math.floor(Date.now() / 1000) - lastActive > SESSION_REFRESH_AFTER_SECONDS;
 }

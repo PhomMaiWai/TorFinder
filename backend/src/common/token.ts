@@ -10,10 +10,16 @@ export type SessionPayload = {
   role: Role;
   /** When this token was issued, in epoch seconds — SessionRevocationService's unit of revocation. */
   iat: number;
+  /**
+   * Last activity, in epoch seconds. Starts at `iat`; the frontend re-signs the
+   * token with a fresh `act` while the user keeps using the site.
+   */
+  act?: number;
   exp: number;
 };
 
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+/** Absolute lifetime (ASVS 7.3.2): re-authenticate after 7 days whatever the activity. */
+const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
 function sign(data: string) {
   return createHmac("sha256", env.sessionSecret).update(data).digest("base64url");
@@ -21,7 +27,7 @@ function sign(data: string) {
 
 export function createSessionToken(payload: Omit<SessionPayload, "iat" | "exp">): string {
   const iat = Math.floor(Date.now() / 1000);
-  const body: SessionPayload = { ...payload, iat, exp: iat + SESSION_MAX_AGE };
+  const body: SessionPayload = { ...payload, iat, act: iat, exp: iat + SESSION_MAX_AGE };
   const data = Buffer.from(JSON.stringify(body)).toString("base64url");
   return `${data}.${sign(data)}`;
 }
@@ -36,7 +42,13 @@ export function verifySessionToken(token: string | undefined): SessionPayload | 
 
   try {
     const payload = JSON.parse(Buffer.from(data, "base64url").toString()) as SessionPayload;
-    return payload.exp > Math.floor(Date.now() / 1000) ? payload : null;
+    const now = Math.floor(Date.now() / 1000);
+    if (!(payload.exp > now)) return null;
+    // ASVS 7.3.1: an unused session ends after the idle window, even within
+    // its 7-day absolute lifetime (7.3.2). Every token we issue carries `iat`.
+    const lastActive = payload.act ?? payload.iat;
+    if (lastActive !== undefined && now - lastActive > env.sessionIdleMinutes * 60) return null;
+    return payload;
   } catch {
     return null;
   }
