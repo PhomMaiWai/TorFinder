@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgePercent, Building2, Info, Search, Trophy, Users } from "lucide-react";
+import { ArrowRight, BadgePercent, Building2, Info, Search, Sprout, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { type ComponentType, useMemo, useState } from "react";
@@ -237,7 +237,8 @@ function AgencyTable({ rows }: { rows: AgencyInsight[] }) {
   );
 }
 
-export function MarketInsightsView({ data }: { data: MarketInsights }) {
+/** `growthLink`: a company account also gets a way to its own growth path (#261). */
+export function MarketInsightsView({ data, growthLink = false }: { data: MarketInsights; growthLink?: boolean }) {
   const t = useTranslations("MarketInsights");
   const baht = useBahtCompact();
   const yearLabel = useYearLabel();
@@ -260,6 +261,14 @@ export function MarketInsightsView({ data }: { data: MarketInsights }) {
         <div className="mt-5">
           <YearFilter years={data.years} current={data.year} />
         </div>
+        {growthLink && (
+          <Link
+            href="/growth"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-accent-soft px-3 py-2 text-xs font-semibold text-accent-text hover:underline"
+          >
+            <Sprout size={14} /> {t("growthLink")} <ArrowRight size={13} />
+          </Link>
+        )}
       </section>
 
       {summary.projects === 0 ? (

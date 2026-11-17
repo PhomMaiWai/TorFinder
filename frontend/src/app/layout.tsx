@@ -66,6 +66,7 @@ const CLIENT_NAMESPACES = [
   "LandingPreview",
   "Library",
   "MarketInsights",
+  "GrowthPath",
   "Navbar",
   "NotificationsPage",
   "Overview",
