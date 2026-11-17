@@ -259,6 +259,14 @@ export class AccountsService {
     );
     if (!current) throw new NotFoundException("ไม่พบบัญชีนี้");
 
+    // ASVS 2.2.3: the preferred budget range must make sense as a pair, checked
+    // against the stored value when only one end is being changed.
+    const budgetMin = dto.preferredBudgetMin ?? current.company?.preferredBudgetMin;
+    const budgetMax = dto.preferredBudgetMax ?? current.company?.preferredBudgetMax;
+    if (budgetMin !== undefined && budgetMax !== undefined && budgetMin > budgetMax) {
+      throw new BadRequestException("งบประมาณขั้นต่ำต้องไม่มากกว่างบประมาณสูงสุด");
+    }
+
     const filtered = { ...dto };
     for (const field of AccountsService.LOCKED_ONCE_SET) {
       if (current.company?.[field]) delete filtered[field];

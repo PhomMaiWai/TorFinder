@@ -446,7 +446,8 @@
     "passwordMismatch": "รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน",
     "changePasswordFailed": "เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่",
     "passwordChangedConfirmation": "เปลี่ยนรหัสผ่านแล้ว ระบบได้ออกจากระบบทุกอุปกรณ์ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่",
-    "signInAgainButton": "เข้าสู่ระบบอีกครั้ง"
+    "signInAgainButton": "เข้าสู่ระบบอีกครั้ง",
+    "budgetRangeInvalid": "งบประมาณขั้นต่ำต้องไม่มากกว่างบประมาณสูงสุด"
   },
   "NotificationsPage": {
     "pageTitle": "การแจ้งเตือน",

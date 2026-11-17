@@ -163,6 +163,10 @@ export default function ProfilePage() {
   });
 
   const hasInvalidTaxId = !taxIdLocked && taxId.trim() !== "" && !isValidTaxId(taxId);
+  // The backend refuses this too (ASVS 2.2.3); saying so here saves a round trip.
+  const minBudget = parseBaht(budgetMin);
+  const maxBudget = parseBaht(budgetMax);
+  const hasInvalidBudgetRange = minBudget !== undefined && maxBudget !== undefined && minBudget > maxBudget;
 
 
   async function handleSave(event: SubmitEvent<HTMLFormElement>) {
@@ -452,6 +456,12 @@ export default function ProfilePage() {
                   />
                 </label>
               </div>
+              {hasInvalidBudgetRange && (
+                <p role="alert" className="mt-2 flex items-start gap-1 text-xs text-danger">
+                  <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                  {t("budgetRangeInvalid")}
+                </p>
+              )}
             </div>
           </Section>
 
@@ -545,7 +555,7 @@ export default function ProfilePage() {
 
           <button
             type="submit"
-            disabled={saving || hasInvalidTaxId}
+            disabled={saving || hasInvalidTaxId || hasInvalidBudgetRange}
             className="flex h-10 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
             {t("saveButton")}

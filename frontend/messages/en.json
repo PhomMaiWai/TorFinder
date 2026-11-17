@@ -446,7 +446,8 @@
     "passwordMismatch": "The new passwords don't match.",
     "changePasswordFailed": "Couldn't change the password. Please try again.",
     "passwordChangedConfirmation": "Password changed. You've been signed out everywhere — sign in with your new password.",
-    "signInAgainButton": "Sign in again"
+    "signInAgainButton": "Sign in again",
+    "budgetRangeInvalid": "The minimum budget can't be more than the maximum."
   },
   "NotificationsPage": {
     "pageTitle": "Notifications",
