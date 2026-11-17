@@ -7,13 +7,15 @@ and nothing else changes.
 
 ## 1. Create the Official Account (one team member, about 10 minutes)
 
-1. Go to <https://developers.line.biz/console/> and sign in with a LINE account.
-   Any team member's account works. You can add the others as admins later.
-2. Create a **Provider**, for example "TOR Finder".
-3. Under the provider, create a **Messaging API** channel. The console walks
-   you through creating the OA on LINE Official Account Manager. The free
-   plan is enough for development.
-4. In **LINE Official Account Manager → Settings → Response settings**:
+1. Go to <https://entry.line.biz/start/th/> and choose **Create a LINE
+   Official Account**. Sign in with a LINE account. Any team member's account
+   works, and you can add the others as admins later. Fill in the name
+   ("TOR Finder"), email and business type. The free plan is enough.
+2. Open the account in **LINE Official Account Manager**
+   (<https://manager.line.biz>) → **Settings** (top right) → **Messaging API**
+   → **Enable Messaging API**. Create a provider, for example "TOR Finder".
+   This creates the channel you'll see in <https://developers.line.biz/console/>.
+3. In **LINE Official Account Manager → Settings → Response settings**:
    - turn **Webhook** on
    - turn **Auto-response** off. If you leave it on, the OA also answers the
      link code with its generic "can't reply" message.
