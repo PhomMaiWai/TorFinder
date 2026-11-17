@@ -228,6 +228,10 @@ Roles: `viewer` (public Google sign-in), `org` (company), `admin`, `owner` (proj
 
 Data-level rule: a route that serves a caller's own data takes the user id from the session token, never from the request.
 
+## Level 2
+
+The Level 2 triage (183 requirements) is in [asvs-l2.md](./asvs-l2.md).
+
 ## Logging and error handling (Level 2)
 
 Security events, error handling and the git-history secret scan are described in [logging-and-errors.md](./logging-and-errors.md).
