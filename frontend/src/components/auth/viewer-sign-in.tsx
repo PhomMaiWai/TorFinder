@@ -6,12 +6,12 @@ import { useState } from "react";
 
 import { GoogleSignInButton, isGoogleSignInEnabled } from "@/components/auth/google-sign-in-button";
 import { homeFor } from "@/lib/roles";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { resetSession } from "@/lib/use-session";
 
 /** Back to the page that sent them to sign in — same-origin paths only, never an open redirect. */
 function nextPath(fallback: string): string {
-  const next = new URLSearchParams(window.location.search).get("next");
-  return next?.startsWith("/") && !next.startsWith("//") ? next : fallback;
+  return safeNextPath(new URLSearchParams(window.location.search).get("next"), fallback);
 }
 
 function GoogleLogo() {

@@ -22,6 +22,12 @@ async function bootstrap() {
   // rate-limit bucket (ASVS 6.3.1).
   app.set("trust proxy", env.trustProxy);
   app.use(helmet());
+  // ASVS 14.3.2: API answers carry account data, so no browser or proxy keeps
+  // a copy. Routes that serve public documents set their own caching after this.
+  app.use((_request: unknown, response: { setHeader(name: string, value: string): void }, next: () => void) => {
+    response.setHeader("Cache-Control", "no-store");
+    next();
+  });
   app.use(compression());
   app.enableCors({ origin: env.frontendOrigin });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
