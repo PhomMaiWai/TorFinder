@@ -1,3 +1,4 @@
+import { idPath } from "@/lib/backend-path";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { cookies } from "next/headers";
 
@@ -44,7 +45,7 @@ export async function fetchAccounts(status?: AccountStatus): Promise<OrgAccount[
 }
 
 export async function reviewAccount(id: string, status: Exclude<AccountStatus, "pending">) {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${id}`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "Content-Type": "application/json" },
     body: JSON.stringify({ status }),

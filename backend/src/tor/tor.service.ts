@@ -429,10 +429,14 @@ const FIELD_LABELS = {
  * "ปกติ" against no budget status, and the days left the detail page showed
  * (worked out from the deadline) against the stored count.
  */
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 function changedFields(current: TorDoc, dto: UpdateTorDto): Partial<TorDoc> {
   const changes: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(dto)) {
-    if (value === undefined) continue;
+    // The DTO whitelist already limits keys to known fields; this keeps a
+    // prototype key from ever becoming a write target (CodeQL js/remote-property-injection).
+    if (value === undefined || UNSAFE_KEYS.has(key)) continue;
     const stored = current[key as keyof TorDoc];
     const same =
       key === "tags"

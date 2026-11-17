@@ -1,3 +1,4 @@
+import { idPath } from "@/lib/backend-path";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { cookies } from "next/headers";
 
@@ -25,7 +26,7 @@ export async function reviewFeedback(
   id: string,
   status: Exclude<TorFeedback["status"], "รอตรวจสอบ">,
 ): Promise<void> {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/feedback/${id}`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/feedback/${idPath(id)}`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "Content-Type": "application/json" },
     body: JSON.stringify({ status }),

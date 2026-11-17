@@ -89,6 +89,7 @@ export function TorDocumentList({
 
   const base = `/api/tor/${encodeURIComponent(torId)}`;
   const egpDocs = Array.isArray(egp) ? egp : [];
+  // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp -- `covers` is one of three fixed patterns defined in the backend (egp-documents.service.ts), never user input.
   const coverOf = (label: string) => egpDocs.find((doc) => new RegExp(doc.covers).test(label));
 
   // A row with no file of its own is replaced by the e-GP copy of the same

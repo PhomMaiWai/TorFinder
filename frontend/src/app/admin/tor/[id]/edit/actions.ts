@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { setReportStatus } from "@/lib/admin-api";
+import { idPath } from "@/lib/backend-path";
 import { authHeaders } from "@/lib/session-headers";
 import { assertTorFormValid, parseTorFormData } from "@/lib/tor-form";
 
@@ -11,7 +12,7 @@ export async function updateTorEntry(id: string, formData: FormData) {
   const values = parseTorFormData(formData);
   assertTorFormValid(values);
 
-  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${id}`, {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(id)}`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "Content-Type": "application/json" },
     body: JSON.stringify(values),
@@ -26,7 +27,7 @@ export async function updateTorEntry(id: string, formData: FormData) {
   // The owner link is its own call: it isn't a correction, so it locks nothing.
   const ownerId = String(formData.get("ownerId") ?? "");
   if (ownerId !== String(formData.get("currentOwnerId") ?? "")) {
-    const owner = await fetch(`${process.env.BACKEND_URL}/api/tor/${id}/owner`, {
+    const owner = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(id)}/owner`, {
       method: "PUT",
       headers: { ...(await authHeaders()), "Content-Type": "application/json" },
       body: JSON.stringify({ ownerId: ownerId || null }),
