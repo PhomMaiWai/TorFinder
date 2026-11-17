@@ -12,6 +12,7 @@ docs/
 ├── design/         how it is built: diagrams and API
 ├── process/        how we work: SDLC, team workflow, code, tests
 ├── operations/     running the import pipeline and deploying
+├── research/       investigations into new data sources
 └── security/       security self-audit
 ```
 
@@ -65,6 +66,12 @@ change must keep.
 | [sync-and-poll.md](./operations/sync-and-poll.md) | Older Thai notes on e-GP sync (pipeline.md says where they drifted) |
 | [deployment-checklist.md](./operations/deployment-checklist.md) | What to check before, during and after a deploy |
 | [maintenance.md](./operations/maintenance.md) | Keeping it running after release: monitoring, backups, updates, bug reports |
+
+## Research
+
+| Document | Covers |
+| --- | --- |
+| [budget-bill.md](./research/budget-bill.md) | Budget documents (national act and Bangkok ordinance) as an early source of upcoming projects (#262) |
 
 ## Security
 
