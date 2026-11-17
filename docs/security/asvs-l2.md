@@ -1,50 +1,49 @@
 # ASVS 5.0 Level 2
 
-Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes, in review). Like Level 1 this is a code read-through, not a pentest.
+Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 82 Pass, 21 Partial, 9 Planned, 7 Not done, 61 N/A, 3 not reviewed.** Of the 119 items that apply to TorFinder (excluding N/A), 82 pass (69%).
+**Result: 92 Pass, 20 Partial, 7 Not done, 61 N/A, 3 not reviewed.** Of the 122 items that apply to TorFinder (excluding N/A), 92 pass (75%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
 
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 82 | Control exists, with evidence in code or in this file |
-| Partial | 21 | Control exists with a gap; the gap is named |
-| Planned | 9 | Small fix scheduled for this week (below) |
+| Pass | 92 | Control exists, with evidence in code or in this file |
+| Partial | 20 | Control exists with a gap; the gap is named |
 | Not done | 7 | Not implemented; out of scope for this deadline (below) |
 | N/A | 61 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 3 | Set by the hosting proxy, outside the repository |
 
-| Chapter | L2 items | Pass | Partial | Planned | Not done | N/A | Not reviewed |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| V1 Encoding and Sanitization | 19 | 6 | 1 | 0 | 0 | 12 | 0 |
-| V2 Validation and Business Logic | 7 | 4 | 1 | 1 | 0 | 1 | 0 |
-| V3 Web Frontend Security | 11 | 7 | 1 | 2 | 0 | 1 | 0 |
-| V4 API and Web Service | 8 | 0 | 1 | 0 | 0 | 5 | 2 |
-| V5 File Handling | 5 | 4 | 0 | 0 | 1 | 0 | 0 |
-| V6 Authentication | 22 | 7 | 0 | 2 | 1 | 12 | 0 |
-| V7 Session Management | 12 | 8 | 2 | 2 | 0 | 0 | 0 |
-| V8 Authorization | 3 | 3 | 0 | 0 | 0 | 0 | 0 |
-| V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 0 | 1 | 0 |
-| V10 OAuth and OIDC | 24 | 4 | 2 | 0 | 0 | 18 | 0 |
-| V11 Cryptography | 11 | 6 | 3 | 0 | 0 | 2 | 0 |
-| V12 Secure Communication | 6 | 1 | 2 | 0 | 0 | 2 | 1 |
-| V13 Configuration | 12 | 6 | 3 | 0 | 3 | 0 | 0 |
-| V14 Data Protection | 7 | 4 | 2 | 1 | 0 | 0 | 0 |
-| V15 Secure Coding and Architecture | 10 | 7 | 2 | 1 | 0 | 0 | 0 |
-| V16 Security Logging and Error Handling | 16 | 13 | 1 | 0 | 2 | 0 | 0 |
-| V17 WebRTC | 7 | 0 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **82** | **21** | **9** | **7** | **61** | **3** |
+| Chapter | L2 items | Pass | Partial | Not done | N/A | Not reviewed |
+| --- | --- | --- | --- | --- | --- | --- |
+| V1 Encoding and Sanitization | 19 | 6 | 1 | 0 | 12 | 0 |
+| V2 Validation and Business Logic | 7 | 5 | 1 | 0 | 1 | 0 |
+| V3 Web Frontend Security | 11 | 9 | 1 | 0 | 1 | 0 |
+| V4 API and Web Service | 8 | 0 | 1 | 0 | 5 | 2 |
+| V5 File Handling | 5 | 4 | 0 | 1 | 0 | 0 |
+| V6 Authentication | 22 | 9 | 0 | 1 | 12 | 0 |
+| V7 Session Management | 12 | 10 | 2 | 0 | 0 | 0 |
+| V8 Authorization | 3 | 3 | 0 | 0 | 0 | 0 |
+| V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 1 | 0 |
+| V10 OAuth and OIDC | 24 | 4 | 2 | 0 | 18 | 0 |
+| V11 Cryptography | 11 | 6 | 3 | 0 | 2 | 0 |
+| V12 Secure Communication | 6 | 1 | 2 | 0 | 2 | 1 |
+| V13 Configuration | 12 | 6 | 3 | 3 | 0 | 0 |
+| V14 Data Protection | 7 | 6 | 1 | 0 | 0 | 0 |
+| V15 Secure Coding and Architecture | 10 | 8 | 2 | 0 | 0 | 0 |
+| V16 Security Logging and Error Handling | 16 | 13 | 1 | 2 | 0 | 0 |
+| V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
+| **Total** | **183** | **92** | **20** | **7** | **61** | **3** |
 
-## Planned this week
+## Fixed after the triage (PR #343)
 
-Small fixes that close Level 2 items, in the order they will be done:
+The triage marked these as Planned; all are now implemented and tested:
 
 | # | Fix | Closes |
 | --- | --- | --- |
 | 1 | Content-Security-Policy header on every response | V3.4.3 |
-| 2 | Session inactivity timeout, documented with the 7-day absolute lifetime | V7.1.1, V7.3.1 |
-| 3 | `Cache-Control: no-store` on authenticated API and page responses | V14.3.2 (and the gap in V14.2.2) |
+| 2 | 30-minute session inactivity timeout, with the 7-day absolute lifetime | V7.1.1, V7.3.1 |
+| 3 | `Cache-Control: no-store` on API responses | V14.3.2, V14.2.2 |
 | 4 | Context-specific password words (TorFinder, BMA, กรุงเทพ, role names…), used at signup, reset and change | V6.1.2, V6.2.11 |
 | 5 | Reject `/\host` in the sign-in `next` parameter | V3.7.2 |
 | 6 | Company profile: preferred budget minimum must not exceed the maximum | V2.2.3 |
@@ -73,13 +72,16 @@ Small fixes that close Level 2 items, in the order they will be done:
 | Email + password (`POST /auth/login`) | Organizations, staff | scrypt-hashed password; email must be verified | Per-IP and per-email rate limits; account must be approved and not suspended |
 | Google sign-in (`POST /auth/google`, `/auth/google/complete`) | Public viewers, organizations | Google ID token: signature, audience, expiry, `email_verified` | Same approval and suspension checks |
 
-Both end in `AuthService.issueSession`, which applies the same status checks and issues the same 7-day session token. Password reset and email verification use single-use, hashed, expiring links; they never create a session by themselves. There are no other ways in.
+Both end in `AuthService.issueSession`, which applies the same status checks and issues the same session token.
+
+**New passwords** (signup, reset, change) must be 8–128 characters and must not be one of the 10,000 most common breached passwords, or be built mostly on a **context-specific word**: `torfinder`, `torr`, `bma`, `bangkok`, `krungthep`, `กรุงเทพ`, `กรุงเทพมหานคร`, `กทม`, `egp`, `procurement`, `จัดซื้อจัดจ้าง`, `admin`, `administrator`, `auditor`, `owner`, `viewer`, `organization`, or the account's own email name, email domain or company-name words. "Built mostly on" means fewer than 8 other letters or digits remain once the word is removed, so `TorFinder2026!` is refused but a long passphrase containing `bangkok` is not. Password reset and email verification use single-use, hashed, expiring links; they never create a session by themselves. There are no other ways in.
 
 ## Sessions
 
 (V7.1.1, V7.1.2, V7.1.3, V7.6.1)
 
-- **Lifetime:** a session token expires 7 days after sign-in (absolute). An inactivity timeout is planned this week.
+- **Lifetime:** a session ends after **30 minutes without activity** (`SESSION_IDLE_MINUTES`) and **7 days after sign-in** whatever the activity. NIST SP 800-63B suggests 30 minutes of inactivity for AAL2; we follow it.
+- **How:** each token carries `act`, its last activity. While the user keeps using the site, `proxy.ts` re-signs the token with a fresh `act` at most every 5 minutes, keeping `iat` (for revocation) and `exp` (the absolute limit). Backend and frontend both refuse an idle token.
 - **Concurrency:** any number of sessions per account (several devices are normal). Logout, password change or reset, suspension and role change end **all** of them at once.
 - **Google:** Google is used only to prove identity at sign-in. The TorFinder session is independent of the Google session: signing out of Google doesn't end it, and logging out of TorFinder doesn't sign you out of Google.
 
@@ -90,7 +92,7 @@ Both end in `AuthService.issueSession`, which applies the same status checks and
 | Rule | Scope | Enforced by |
 | --- | --- | --- |
 | Company name and tax id can be set once, then are locked | Per account | `accounts.service.ts` |
-| Preferred budget minimum ≤ maximum | Per account | Planned (V2.2.3) |
+| Preferred budget minimum ≤ maximum | Per account | `accounts.service.ts` and the profile page |
 | Organizations must be approved by an admin before signing in | Per account | `issueSession` |
 | Feedback only during a TOR's comment window | Per TOR | `feedback.service.ts` |
 | Saved searches per account are capped | Per account | `saved-searches.service.ts` |
@@ -117,7 +119,7 @@ TorFinder has no user uploads. It relays documents that procurement portals publ
 | Data | Read | Write |
 | --- | --- | --- |
 | Password hash and salt | Never returned by any API | Only signup, reset, change |
-| Role, status, suspended | Admins | Admins only, through the admin-guarded `/accounts/:id` routes; never through `/accounts/me` |
+| Role, status, suspended | Admins | Admins only (`PATCH /accounts/:id`); never through `/accounts/me` |
 | Email | The account itself, admins | Nobody (fixed at signup) |
 | Company name, tax id | The account, admins | The account once, then locked; admins |
 | Other company profile fields | The account, admins | The account |
@@ -215,7 +217,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | --- | --- | --- | --- |
 | 2.1.2 | The application's documentation defines how to validate the logical and contextual consistency of combined data… | Pass | Combined-data rules are written in [Business rules and limits](#business-rules-and-limits) |
 | 2.1.3 | Expectations for business logic limits and validations are documented, including both per-user and globally across… | Pass | Per-user and global limits are written in [Business rules and limits](#business-rules-and-limits) |
-| 2.2.3 | The application ensures that combinations of related data items are reasonable according to the pre-defined rules | **Planned** | The company profile accepts a preferred budget minimum larger than the maximum; add a cross-field check |
+| 2.2.3 | The application ensures that combinations of related data items are reasonable according to the pre-defined rules | Pass | The preferred budget minimum can't exceed the maximum: checked in `accounts.service.ts` (against the stored value too) and on the profile page (PR #343) |
 | 2.3.2 | Business logic limits are implemented per the application's documentation to avoid business logic flaws being exploited | Pass | Limits are enforced as documented: rate limits, per-email lockout, saved-search cap, page-size caps |
 | 2.3.3 | Transactions are being used at the business logic level such that either a business logic operation succeeds in its… | Partial | Multi-step writes (e.g. role change, then session revocation, then audit entry) don't use MongoDB transactions; the last-admin guard compensates for its own case |
 | 2.3.4 | Business logic level locking mechanisms are used to ensure that limited quantity resources (such as theater seats or… | N/A | No limited-quantity resources to double-book |
@@ -228,14 +230,14 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 3.3.2 | Each cookie's 'SameSite' attribute value is set according to the purpose of the cookie, to limit exposure to user… | Pass | `SameSite=Lax` on the session cookie: blocks cross-site POSTs, still allows arriving from an email link |
 | 3.3.3 | Cookies have the '__Host-' prefix for the cookie name unless they are explicitly designed to be shared with other hosts | Partial | The session cookie is `__Host-torr_session`; the locale cookie and the path-scoped signup-email cookie have no prefix (neither is a credential) |
 | 3.3.4 | If the value of a cookie is not meant to be accessible to client-side scripts (such as a session token), the cookie… | Pass | The session cookie is `HttpOnly` and only ever sent in `Set-Cookie`; the frontend never returns the token in a body |
-| 3.4.3 | HTTP responses include a Content-Security-Policy response header field which defines directives to ensure the… | **Planned** | Only `frame-ancestors` is set today; add a full Content-Security-Policy |
+| 3.4.3 | HTTP responses include a Content-Security-Policy response header field which defines directives to ensure the… | Pass | Strict CSP on every page from `proxy.ts`: per-request nonce, `'strict-dynamic'`, only Google sign-in added to `'self'`, `object-src 'none'` (PR #343) |
 | 3.4.4 | All HTTP responses contain an 'X-Content-Type-Options: nosniff' header field | Pass | `nosniff` on every frontend response (`next.config.ts`) and backend response (helmet) |
 | 3.4.5 | The application sets a referrer policy to prevent leakage of technically sensitive data to third-party services via… | Pass | `Referrer-Policy: strict-origin-when-cross-origin` |
 | 3.4.6 | The web application uses the frame-ancestors directive of the Content-Security-Policy header field for every HTTP… | Pass | `Content-Security-Policy: frame-ancestors 'self'` on every response |
 | 3.5.4 | Separate applications are hosted on different hostnames to leverage the restrictions provided by same-origin policy,… | Pass | One application on one origin; the backend is not exposed |
 | 3.5.5 | Messages received by the postMessage interface are discarded if the origin of the message is not trusted, or if the… | N/A | Our code doesn't use `postMessage` |
 | 3.7.1 | The application only uses client-side technologies which are still supported and considered secure | Pass | Only current web technology (React 19, Next.js 16); no plugins |
-| 3.7.2 | The application will only automatically redirect the user to a different hostname or domain (which is not controlled… | **Planned** | The sign-in `next` parameter blocks `//host` but not `/\host`, which browsers treat the same; reject backslashes too |
+| 3.7.2 | The application will only automatically redirect the user to a different hostname or domain (which is not controlled… | Pass | `safeNextPath()` allows only a same-site path for `next`; `//host`, `/\host` and control characters fall back (PR #343) |
 
 ### V4 API and Web Service
 
@@ -264,11 +266,11 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 6.1.2 | A list of context-specific words is documented in order to prevent their use in passwords | **Planned** | No context-specific word list yet (TorFinder, BMA, กรุงเทพ, role names…) |
+| 6.1.2 | A list of context-specific words is documented in order to prevent their use in passwords | Pass | The context-specific word list is in [Authentication pathways](#authentication-pathways) and `common/password.ts` `CONTEXT_WORDS` (PR #343) |
 | 6.1.3 | Verify that, if the application includes multiple authentication pathways, these are all documented together with… | Pass | Both sign-in pathways are written in [Authentication pathways](#authentication-pathways) |
 | 6.2.9 | Passwords of at least 64 characters are permitted | Pass | Passwords up to 128 characters |
 | 6.2.10 | A user's password stays valid until it is discovered to be compromised or the user rotates it | Pass | No forced periodic password change |
-| 6.2.11 | The documented list of context specific words is used to prevent easy to guess passwords being created | **Planned** | Use the context-specific list in signup, reset and change (with V6.1.2) |
+| 6.2.11 | The documented list of context specific words is used to prevent easy to guess passwords being created | Pass | `passwordProblem()` refuses passwords built on those words or the account's own email or company name, at signup, reset and change (PR #343) |
 | 6.2.12 | Passwords submitted during account registration or password changes are checked against a set of breached passwords | Pass | Checked against the 10,000 most common breached passwords (NCSC / Have I Been Pwned list) on signup, reset and change |
 | 6.3.3 | Either a multi-factor authentication mechanism or a combination of single-factor authentication mechanisms, must be… | **Not done** | No multi-factor authentication for password accounts; Google accounts carry Google's own MFA. Email verification is not a second factor |
 | 6.3.4 | Verify that, if the application includes multiple authentication pathways, there are no undocumented pathways and… | Pass | Only the two documented pathways exist, and both end in the same `issueSession` checks |
@@ -291,10 +293,10 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 7.1.1 | The user's session inactivity timeout and absolute maximum session lifetime are documented, are appropriate in… | **Planned** | The 7-day absolute lifetime is documented; add and document an inactivity timeout |
+| 7.1.1 | The user's session inactivity timeout and absolute maximum session lifetime are documented, are appropriate in… | Pass | 30-minute inactivity timeout and 7-day absolute lifetime, written in [Sessions](#sessions) (PR #343) |
 | 7.1.2 | The documentation defines how many concurrent (parallel) sessions are allowed for one account as well as the… | Pass | Concurrent sessions are written in [Sessions](#sessions) |
 | 7.1.3 | All systems that create and manage user sessions as part of a federated identity management ecosystem (such as SSO… | Pass | Written in [Sessions](#sessions): Google is used only at sign-in, the TorFinder session is independent |
-| 7.3.1 | There is an inactivity timeout such that re-authentication is enforced according to risk analysis and documented… | **Planned** | No inactivity timeout yet |
+| 7.3.1 | There is an inactivity timeout such that re-authentication is enforced according to risk analysis and documented… | Pass | Tokens carry `act`; backend and frontend refuse a token idle more than 30 minutes; `proxy.ts` keeps an active session alive (PR #343) |
 | 7.3.2 | There is an absolute maximum session lifetime such that re-authentication is enforced according to risk analysis and… | Pass | Tokens expire 7 days after sign-in (`exp`), checked by backend and frontend |
 | 7.4.3 | The application gives the option to terminate all other active sessions after a successful change or removal of any… | Pass | A password change or reset ends every session automatically |
 | 7.4.4 | All pages that require authentication have easy and visible access to logout functionality | Pass | Sign out is in the sidebar and the navbar on every signed-in page |
@@ -399,17 +401,17 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | --- | --- | --- | --- |
 | 14.1.1 | All sensitive data created and processed by the application has been identified and classified into protection levels | Pass | Data classification in [Data protection](#data-protection) |
 | 14.1.2 | All sensitive data protection levels have a documented set of protection requirements | Pass | Protection requirements per class in [Data protection](#data-protection) |
-| 14.2.2 | The application prevents sensitive data from being cached in server components, such as load balancers and… | Partial | Public documents are cached on purpose; authenticated API responses carry no `Cache-Control` header (fixed with V14.3.2) |
+| 14.2.2 | The application prevents sensitive data from being cached in server components, such as load balancers and… | Pass | Public documents are cached on purpose; every other backend and frontend API answer is `no-store` (PR #343) |
 | 14.2.3 | Defined sensitive data is not sent to untrusted parties (e.g., user trackers) to prevent unwanted collection of data… | Pass | No analytics or trackers; fonts are self-hosted; the only third-party script is Google sign-in |
 | 14.2.4 | Controls around sensitive data related to encryption, integrity verification, retention, how the data is to be… | Partial | Controls follow the classification, but there is no retention policy for logs or closed accounts |
-| 14.3.2 | The application sets sufficient anti-caching HTTP response header fields (i.e., Cache-Control: no-store) so that… | **Planned** | Add `Cache-Control: no-store` to authenticated API and page responses |
+| 14.3.2 | The application sets sufficient anti-caching HTTP response header fields (i.e., Cache-Control: no-store) so that… | Pass | `Cache-Control: no-store` on every API answer; pages already send `private, no-cache, no-store` (PR #343) |
 | 14.3.3 | Data stored in browser storage (such as localStorage, sessionStorage, IndexedDB, or cookies) does not contain… | Pass | Browser storage holds only the theme and a guest's saved TOR ids |
 
 ### V15 Secure Coding and Architecture
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 15.1.2 | An inventory catalog, such as software bill of materials (SBOM), is maintained of all third-party libraries in use,… | **Planned** | Generate an SBOM (CycloneDX via `npm sbom`) for both apps |
+| 15.1.2 | An inventory catalog, such as software bill of materials (SBOM), is maintained of all third-party libraries in use,… | Pass | CycloneDX SBOMs for backend and frontend in `docs/security/evidence/` (PR #343) |
 | 15.1.3 | The application documentation identifies functionality which is time-consuming or resource-demanding | Pass | Costly functions are written in [Resource-heavy functions](#resource-heavy-functions) |
 | 15.2.2 | The application has implemented defenses against loss of availability due to functionality which is time-consuming… | Pass | Rate limits, timeouts, size caps, batch limits and off-by-default AI runs, as documented |
 | 15.2.3 | The production environment only includes functionality that is required for the application to function, and does… | Pass | Debug route removed; demo data opt-in; no test code in the images |
