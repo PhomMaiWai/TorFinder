@@ -427,20 +427,35 @@ const FIELD_LABELS = {
 } as const;
 
 /**
+ * Every field an admin can correct. changedFields walks this list rather than
+ * the request body, so the field names that get written are always these
+ * constants, never a key that came from the request (CodeQL js/remote-property-injection).
+ */
+const UPDATABLE_FIELDS = [
+  "title",
+  "agency",
+  "budget",
+  "deadline",
+  "daysLeft",
+  "tags",
+  "stage",
+  "summary",
+  "budgetStatus",
+  "classification",
+] as const satisfies readonly (keyof UpdateTorDto)[];
+
+/**
  * The fields of an edit that differ from the stored record. The edit form
  * sends every field every time, so without this a save would lock fields the
  * admin never touched. Two values read the same to the admin are not a change:
  * "ปกติ" against no budget status, and the days left the detail page showed
  * (worked out from the deadline) against the stored count.
  */
-const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
-
 function changedFields(current: TorDoc, dto: UpdateTorDto): Partial<TorDoc> {
-  const changes: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(dto)) {
-    // The DTO whitelist already limits keys to known fields; this keeps a
-    // prototype key from ever becoming a write target (CodeQL js/remote-property-injection).
-    if (value === undefined || UNSAFE_KEYS.has(key)) continue;
+  const changes = new Map<string, unknown>();
+  for (const key of UPDATABLE_FIELDS) {
+    const value = dto[key];
+    if (value === undefined) continue;
     const stored = current[key as keyof TorDoc];
     const same =
       key === "tags"
@@ -452,7 +467,7 @@ function changedFields(current: TorDoc, dto: UpdateTorDto): Partial<TorDoc> {
             : key === "daysLeft"
               ? stored === value || currentDaysLeft(current) === value
               : stored === value;
-    if (!same) changes[key] = value;
+    if (!same) changes.set(key, value);
   }
-  return changes as Partial<TorDoc>;
+  return Object.fromEntries(changes) as Partial<TorDoc>;
 }
