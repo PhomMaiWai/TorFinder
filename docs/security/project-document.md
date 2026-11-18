@@ -87,7 +87,7 @@ The assignment asks for four. TorFinder has six:
 | Feature | How it works | ASVS |
 | --- | --- | --- |
 | Login rate limit | 5 attempts per minute per client IP on every auth route. Separately, 10 failures per email in 15 minutes lock that email. The client IP is trusted only from private hops, so one attacker can't lock everyone out | 6.3.1 |
-| Backend API rate limit | 100 requests per minute per IP overall; 30 per minute for "find similar"; 5 per minute for AI drafts | 2.4.1 |
+| Backend API rate limit | 100 requests per minute per IP overall; 30 per minute for "find similar"; 5 per minute for AI drafts; 300 per minute per IP on the public LINE webhook | 2.4.1 |
 | Login timeout | The session ends after 30 minutes without activity, and 7 days after sign-in whatever the activity | 7.3.1, 7.3.2 |
 | Token expiry and revocation | HMAC-signed session token with an expiry, checked on every guarded request. A per-user revocation time ends every session at logout, password change, role change or suspension | 7.4.1, 7.4.2, 9.1.1 |
 | Compromised-password check at signup | New passwords are refused if they are among the 10,000 most common breached passwords (SecLists NCSC list). The check runs at signup, reset and change | 6.2.4 |
@@ -95,7 +95,7 @@ The assignment asks for four. TorFinder has six:
 
 ### 3.3 OWASP Top 10 mapping [C17]
 
-**TODO (#348):** map each OWASP Top 10 (2021) category to the controls above and to the threats in §4.
+**TODO (#348):** map each OWASP Top 10 (2025) category to the controls above and to the threats in §4.
 
 ## 4. Threat model
 
@@ -111,14 +111,14 @@ Full model: [threat-model.md](./threat-model.md) **[C2]**.
 | 3–4 | Medium |
 | 1–2 | Low |
 
-**Result: 36 threats. 34 are mitigated, 2 are partly mitigated (both Low), and none is open.**
+**Result: 36 threats. 35 are mitigated, 1 is partly mitigated (Low), and none is open.**
 
 | Priority | Threats | Mitigated | Partial |
 | --- | --- | --- | --- |
 | Critical | 3 | 3 | 0 |
 | High | 15 | 15 | 0 |
 | Medium | 12 | 12 | 0 |
-| Low | 6 | 4 | 2 |
+| Low | 6 | 5 | 1 |
 
 ### Implemented by priority
 
@@ -139,9 +139,7 @@ Full model: [threat-model.md](./threat-model.md) **[C2]**.
    - security logging and error messages (R1, I3)
    - request-forgery path checks found by SAST (T5)
    - upload size limits (D5)
-4. **Low:** most are done. Two are left:
-   - **E3:** a host allowlist for document fetches (issue #345)
-   - **D6:** a rate limit on the LINE webhook
+4. **Low:** all but one are done, including the LINE webhook rate limit (D6, PR #363). The one left is **E3**, a host allowlist for document fetches (issue #345).
 
 ### Mitigation checklist [C16]
 
@@ -171,12 +169,12 @@ Each principle is mapped to where the code applies it **[C3]**. The full table i
 | Step | Tool | When | Result | Report |
 | --- | --- | --- | --- | --- |
 | Source review against ASVS | Manual, by requirement | 16–18 Nov | L1: 0 Fail; L2: 76% Pass | [asvs-l1.md](./asvs-l1.md), [asvs-l2.md](./asvs-l2.md) |
-| Threat modeling | STRIDE | 16 Nov, revised 18 Nov | 36 threats, 34 mitigated | [threat-model.md](./threat-model.md) |
+| Threat modeling | STRIDE | 16 Nov, revised 18 Nov | 36 threats, 35 mitigated | [threat-model.md](./threat-model.md) |
 | SAST **[C14]** | CodeQL 2.27.4 (on every PR), Semgrep 1.185.0 | 17 Nov | 44 findings: 34 real and fixed, 10 false positives explained; 0 open after the fixes | [sast-report.md](./sast-report.md) |
 | DAST **[C15]** | OWASP ZAP 2.16.1, baseline and signed-in active scan (5,573 requests) | 17 Nov | No working injection, XSS or traversal; 1 real finding (missing script CSP on some 404s), fixed | [dast-report.md](./dast-report.md) |
 | Dependency audit | `npm audit` in CI; Dependabot | Every PR | CI fails on high or critical advisories; the one exception is reasoned and expires 2026-12-31 | `.github/scripts/npm-audit.mjs` |
 | Secret scan | `git log --all -p` pattern search | 16 Nov | No real secret in 372 commits | [logging-and-errors.md](./logging-and-errors.md#secret-scan-of-the-git-history) |
-| Regression tests | Node test runner, end-to-end against a real MongoDB | Every PR (GitHub Actions) | Backend: 717 passed, 0 failed, 3 skipped; ASVS regressions in `asvs-l1-regressions` and `asvs-l2-regressions` | `backend/test/`, `frontend/test/` |
+| Regression tests | Node test runner, end-to-end against a real MongoDB | Every PR (GitHub Actions) | Backend: 718 passed, 0 failed, 3 skipped (721 tests); ASVS regressions in `asvs-l1-regressions` and `asvs-l2-regressions` | `backend/test/`, `frontend/test/` |
 
 **How a fix was verified:**
 1. Each finding got a test that failed before the fix and passes after it.
