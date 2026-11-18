@@ -56,6 +56,11 @@ jobs:
       EGP_POLL_MINUTES: "0"
       EGP_POLL_ON_STARTUP: "false"
       VERTEX_PROJECT_ID: ""
+      # Fake LINE credentials: line-link.e2e.test.mjs signs webhook calls with
+      # this secret. The backend's chat replies go nowhere (bad token, ignored).
+      LINE_CHANNEL_ACCESS_TOKEN: ci-line-token
+      LINE_CHANNEL_SECRET: ci-line-secret
+      LINE_BOT_ID: "@torfinder-ci"
       # Generous general limit so the full suite fits one 60s window; only the
       # auth brute-force test cares about the (separate, tighter) login limit.
       THROTTLE_LIMIT: "300"

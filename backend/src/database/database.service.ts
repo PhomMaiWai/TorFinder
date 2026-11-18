@@ -64,7 +64,7 @@ export type NotificationChannels = {
   email: boolean;
   /** A Slack incoming-webhook URL the company created for its own channel. */
   slackWebhookUrl?: string;
-  /** The LINE user (or group) id our official account pushes to. */
+  /** The LINE user id our official account pushes to — only ever set by the link flow. */
   lineUserId?: string;
 };
 
@@ -83,6 +83,11 @@ export type UserDoc = {
   company?: CompanyProfile;
   /** Where notifications are sent besides the in-app list; absent means in-app only. */
   notificationChannels?: NotificationChannels;
+  /**
+   * A pending "connect LINE" request: the SHA-256 of the one-time code the
+   * user sends to our OA, and when it stops working. Cleared once used.
+   */
+  lineLink?: { codeHash: string; expiresAt: Date };
   reviewedAt?: Date;
   /**
    * Orthogonal to `status`: an admin can suspend an already-approved account

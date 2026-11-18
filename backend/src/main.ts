@@ -14,6 +14,9 @@ async function bootstrap() {
   // collector can parse and search them (ASVS 16.2.3); dev keeps the readable form.
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: env.isProduction ? new ConsoleLogger({ json: true }) : undefined,
+    // Keeps the exact request bytes beside the parsed body: LINE's webhook
+    // signature is over those bytes, not over a re-serialised object.
+    rawBody: true,
   });
 
   // Throttled calls arrive from the Next.js server, which names the browser in

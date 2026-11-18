@@ -98,6 +98,11 @@ export const env = {
     emailFrom: process.env.NOTIFY_EMAIL_FROM ?? "TOR Finder <noreply@torfinder.app>",
     // LINE Messaging API: the official account's long-lived channel access token.
     lineChannelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
+    // Signs the webhook LINE calls when someone messages the OA — how a user
+    // links their LINE to their account (Basic settings → Channel secret).
+    lineChannelSecret: process.env.LINE_CHANNEL_SECRET ?? "",
+    // The OA's basic id, e.g. "@123abcde" — builds the add-friend link.
+    lineBotId: process.env.LINE_BOT_ID ?? "",
     // A new announcement scoring at least this for a company is worth telling it about.
     matchThreshold: optionalNumber("NOTIFY_MATCH_THRESHOLD", 70),
     // Per company per import, so a large first sync doesn't flood anyone.

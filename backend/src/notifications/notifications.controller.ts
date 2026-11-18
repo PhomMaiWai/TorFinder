@@ -1,4 +1,17 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Req, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
 
 import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
 import { UpdateChannelsDto } from "./dto/update-channels.dto";
@@ -23,6 +36,18 @@ export class NotificationsController {
   @Put("channels")
   updateChannels(@Req() request: AuthenticatedRequest, @Body() dto: UpdateChannelsDto) {
     return this.notifications.updateChannels(request.session.sub, dto);
+  }
+
+  /** Starts connecting LINE: a one-time code to send to the OA. */
+  @Post("channels/line/link")
+  @HttpCode(HttpStatus.OK)
+  startLineLink(@Req() request: AuthenticatedRequest) {
+    return this.notifications.startLineLink(request.session.sub);
+  }
+
+  @Delete("channels/line")
+  unlinkLine(@Req() request: AuthenticatedRequest) {
+    return this.notifications.unlinkLine(request.session.sub);
   }
 
   @Post("channels/test")

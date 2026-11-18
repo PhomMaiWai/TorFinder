@@ -1,6 +1,6 @@
 "use client";
 
-import { Hash, Mail, MessageCircle, Send } from "lucide-react";
+import { CheckCircle2, Hash, Mail, MessageCircle, Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
@@ -13,20 +13,28 @@ type ChannelsResponse = {
 
 type TestResult = { channel: Channel; ok: boolean; error?: string };
 
+type LineLink = { code: string; expiresAt: string; addFriendUrl: string; messageUrl: string };
+
+/** How often the page asks whether the code has arrived in the OA chat. */
+const LINK_POLL_MS = 3_000;
+
 const INPUT =
   "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-ink placeholder:text-ink-subtle focus:border-accent focus:outline-none disabled:opacity-50";
 
 /**
  * Where notifications go besides the in-app list. Email goes to the sign-in
- * address; Slack and LINE need something only the company has, so it pastes
- * that here. A channel the server isn't configured for is shown but disabled.
+ * address; Slack needs a webhook only the company has, so it pastes that here.
+ * LINE is connected by sending a one-time code to our Official Account — the
+ * LINE app never shows anyone their user id. A channel the server isn't
+ * configured for is shown but disabled.
  */
 export function ChannelSettings() {
   const t = useTranslations("NotificationsPage");
   const [loaded, setLoaded] = useState<ChannelsResponse | null>(null);
   const [email, setEmail] = useState(false);
   const [slack, setSlack] = useState("");
-  const [line, setLine] = useState("");
+  const [lineUserId, setLineUserId] = useState<string | undefined>();
+  const [lineLink, setLineLink] = useState<LineLink | null>(null);
   const [status, setStatus] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
   const [results, setResults] = useState<TestResult[]>([]);
   const [busy, setBusy] = useState(false);
@@ -39,10 +47,31 @@ export function ChannelSettings() {
         setLoaded(data);
         setEmail(data.channels.email);
         setSlack(data.channels.slackWebhookUrl ?? "");
-        setLine(data.channels.lineUserId ?? "");
+        setLineUserId(data.channels.lineUserId);
       })
       .catch(() => setLoaded(null));
   }, []);
+
+  // While a code is out, watch for the webhook to link it; stop when it expires.
+  useEffect(() => {
+    if (!lineLink) return;
+    const timer = setInterval(async () => {
+      if (Date.now() > Date.parse(lineLink.expiresAt)) {
+        setLineLink(null);
+        setStatus({ tone: "danger", text: t("lineCodeExpired") });
+        return;
+      }
+      const data = await fetch("/api/notifications/channels")
+        .then((res) => (res.ok ? (res.json() as Promise<ChannelsResponse>) : null))
+        .catch(() => null);
+      if (data?.channels.lineUserId) {
+        setLineUserId(data.channels.lineUserId);
+        setLineLink(null);
+        setStatus({ tone: "success", text: t("lineConnected") });
+      }
+    }, LINK_POLL_MS);
+    return () => clearInterval(timer);
+  }, [lineLink, t]);
 
   if (!loaded) return null;
   const { available } = loaded;
@@ -54,7 +83,7 @@ export function ChannelSettings() {
     const res = await fetch("/api/notifications/channels", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, slackWebhookUrl: slack.trim(), lineUserId: line.trim() }),
+      body: JSON.stringify({ email, slackWebhookUrl: slack.trim() }),
     }).catch(() => null);
     setBusy(false);
     if (res?.ok) {
@@ -64,6 +93,24 @@ export function ChannelSettings() {
     const body = (await res?.json().catch(() => null)) as { message?: string | string[] } | null;
     const message = Array.isArray(body?.message) ? body.message.join(" · ") : body?.message;
     setStatus({ tone: "danger", text: message ?? t("channelsSaveFailed") });
+  }
+
+  async function connectLine() {
+    setBusy(true);
+    setStatus(null);
+    const res = await fetch("/api/notifications/channels/line/link", { method: "POST" }).catch(() => null);
+    setBusy(false);
+    if (res?.ok) setLineLink((await res.json()) as LineLink);
+    else setStatus({ tone: "danger", text: t("lineConnectFailed") });
+  }
+
+  async function disconnectLine() {
+    setBusy(true);
+    setStatus(null);
+    const res = await fetch("/api/notifications/channels/line", { method: "DELETE" }).catch(() => null);
+    setBusy(false);
+    if (res?.ok) setLineUserId(undefined);
+    else setStatus({ tone: "danger", text: t("channelsSaveFailed") });
   }
 
   async function test() {
@@ -120,16 +167,64 @@ export function ChannelSettings() {
             <MessageCircle size={15} className="text-ink-subtle" />
             LINE
           </p>
-          <input
-            value={line}
-            disabled={!available.line}
-            onChange={(e) => setLine(e.target.value)}
-            placeholder="U1234…"
-            className={INPUT}
-          />
-          <p className="mt-1.5 text-xs text-ink-muted">
-            {available.line ? t("channelLineHint") : t("channelUnavailable")}
-          </p>
+          {!available.line ? (
+            <p className="text-xs text-ink-muted">{t("channelUnavailable")}</p>
+          ) : lineUserId ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-sm font-medium text-success">
+                <CheckCircle2 size={15} />
+                {t("lineConnectedBadge")}
+              </span>
+              <button
+                onClick={disconnectLine}
+                disabled={busy}
+                className="text-xs text-ink-muted underline underline-offset-2 hover:text-danger disabled:opacity-50"
+              >
+                {t("lineDisconnect")}
+              </button>
+            </div>
+          ) : lineLink ? (
+            <div className="space-y-2">
+              <p className="text-xs text-ink-muted">{t("lineSendCode")}</p>
+              <p className="rounded-lg bg-surface-alt py-2 text-center font-mono text-lg font-bold tracking-widest text-ink select-all">
+                {lineLink.code}
+              </p>
+              <a
+                href={lineLink.messageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 items-center justify-center rounded-lg bg-[#06C755] px-4 text-sm font-semibold text-white hover:opacity-90"
+              >
+                {t("lineOpenChat")}
+              </a>
+              <p className="text-xs text-ink-muted">
+                {t.rich("lineAddFriendFirst", {
+                  link: (chunks) => (
+                    <a
+                      href={lineLink.addFriendUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent underline underline-offset-2"
+                    >
+                      {chunks}
+                    </a>
+                  ),
+                })}
+              </p>
+              <p className="text-xs text-ink-subtle">{t("lineWaiting")}</p>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={connectLine}
+                disabled={busy}
+                className="inline-flex h-9 items-center rounded-lg bg-[#06C755] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {t("lineConnect")}
+              </button>
+              <p className="mt-1.5 text-xs text-ink-muted">{t("channelLineHint")}</p>
+            </>
+          )}
         </div>
       </div>
 

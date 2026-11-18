@@ -46,6 +46,8 @@ const PUBLIC_API_ROUTES = [
   "/api/auth/me",
   "/api/auth/google",
   "/api/auth/google/complete",
+  // Called by LINE's servers, not a browser; the backend checks its signature.
+  "/api/line/webhook",
 ];
 
 /** Announcement files are as public as the announcement pages that show them. */
