@@ -232,8 +232,20 @@ function AgencyTable({ rows, delay }: { rows: SiteOverview["agencies"]; delay: n
   );
 }
 
-/** The public overview of everything TorFinder holds (see lib/site-stats.ts). */
-export function Overview({ data, audience }: { data: SiteOverview; audience: Audience }) {
+/**
+ * The public overview of everything TorFinder holds (see lib/site-stats.ts).
+ * `matchesLink`: a company account also gets a way to its matches; an owner
+ * shares the workspace layout but /matches is org-only (proxy.ts).
+ */
+export function Overview({
+  data,
+  audience,
+  matchesLink = false,
+}: {
+  data: SiteOverview;
+  audience: Audience;
+  matchesLink?: boolean;
+}) {
   const t = useTranslations("Overview");
   const tPublic = useTranslations("PublicPage");
   const tOptions = useTranslations("CompanyProfileOptions");
@@ -306,7 +318,7 @@ export function Overview({ data, audience }: { data: SiteOverview; audience: Aud
     : 0;
 
   const secondary =
-    audience === "workspace" ? (
+    matchesLink ? (
       <Link
         href="/matches"
         className="glass flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-ink transition-all duration-200 hover:-translate-y-0.5"
