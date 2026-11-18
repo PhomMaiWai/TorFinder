@@ -430,19 +430,22 @@ const FIELD_LABELS = {
  * Every field an admin can correct. changedFields walks this list rather than
  * the request body, so the field names that get written are always these
  * constants, never a key that came from the request (CodeQL js/remote-property-injection).
+ * Typed as a Record over UpdateTorDto so the build fails if a field is added
+ * to the DTO but not here (it would pass validation and then be dropped).
  */
-const UPDATABLE_FIELDS = [
-  "title",
-  "agency",
-  "budget",
-  "deadline",
-  "daysLeft",
-  "tags",
-  "stage",
-  "summary",
-  "budgetStatus",
-  "classification",
-] as const satisfies readonly (keyof UpdateTorDto)[];
+const UPDATABLE: Record<keyof UpdateTorDto, true> = {
+  title: true,
+  agency: true,
+  budget: true,
+  deadline: true,
+  daysLeft: true,
+  tags: true,
+  stage: true,
+  summary: true,
+  budgetStatus: true,
+  classification: true,
+};
+const UPDATABLE_FIELDS = Object.keys(UPDATABLE) as (keyof UpdateTorDto)[];
 
 /**
  * The fields of an edit that differ from the stored record. The edit form
