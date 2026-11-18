@@ -28,7 +28,12 @@ export default async function DashboardPage() {
       ? "workspace"
       : "viewer";
   // Only the summary crosses to the client, never the records themselves.
-  const body = tors.length === 0 ? <OverviewEmpty /> : <Overview data={buildSiteOverview(tors)} audience={audience} />;
+  const body =
+    tors.length === 0 ? (
+      <OverviewEmpty />
+    ) : (
+      <Overview data={buildSiteOverview(tors)} audience={audience} matchesLink={session?.role === "org"} />
+    );
 
   if (audience === "workspace") {
     return (
