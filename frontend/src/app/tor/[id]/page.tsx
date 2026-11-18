@@ -267,8 +267,8 @@ export default async function TorDetailPage({
           {/* A signed-in company: how much of this bid its proposal library already covers. */}
           {session?.role === "org" && tor.sourceRef && <CoveragePanel torId={tor.id} />}
 
-          {/* A signed-in company preparing a bid, or reworking one for the next similar job. */}
-          {inApp && tor.sourceRef && <ProposalDraftForm torId={tor.id} />}
+          {/* A signed-in company preparing a bid, or reworking one for the next similar job (org only, like the backend's OrgGuard). */}
+          {inApp && session?.role === "org" && tor.sourceRef && <ProposalDraftForm torId={tor.id} />}
 
           {publishedFeedback.length > 0 && (
             <section className={CARD}>
