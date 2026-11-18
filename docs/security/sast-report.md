@@ -7,7 +7,7 @@ Static application security testing of TorFinder (course criterion 14), run on 1
 | Tool | Findings | Real, fixed | False positive | After the fixes |
 | --- | --- | --- | --- | --- |
 | Semgrep 1.185.0 | 16 | 13 | 3 | **0** (re-scanned) |
-| CodeQL 2.27.4 | 28 | 21 | 7 | Re-scanned by GitHub when the branch merges |
+| CodeQL 2.27.4 | 28 | 21 | 7 | **0** open (21 closed as fixed, 7 dismissed as false positives) |
 | **Total** | **44** | **34** | **10** | |
 
 No finding showed an exploitable vulnerability that a user could use to reach data or functions they aren't allowed to. The real findings are hardening: one path-traversal pattern between the frontend and the backend, supply-chain settings for CI and Dependabot, containers running as root, and three code-quality patterns.
@@ -33,7 +33,7 @@ CodeQL now runs automatically on every push to `main` and on every pull request.
 | 3 | CodeQL #4–#6, Semgrep (8) | Unpinned / mutable action tags | `.github/workflows/auth.yml` | A moved or hijacked tag would change the code CI runs | Every action pinned to a full commit SHA, with the version as a comment |
 | 4 | Semgrep (3) | `dependabot-missing-cooldown` | `.github/dependabot.yml` | A just-published (possibly compromised) version could be proposed immediately | `cooldown: default-days: 7` for every ecosystem |
 | 5 | Semgrep (2) | `dockerfile.missing-user` | `backend/Dockerfile`, `frontend/Dockerfile` | Both containers ran as root | `USER node` and `COPY --chown=node:node` in the runtime stage |
-| 6 | CodeQL #24 | `js/remote-property-injection` | `backend/src/tor/tor.service.ts` `changedFields` | A request key becomes an object key. The DTO whitelist already limits keys to known fields | `__proto__`, `constructor` and `prototype` are skipped explicitly |
+| 6 | CodeQL #24 | `js/remote-property-injection` | `backend/src/tor/tor.service.ts` `changedFields` | A request key becomes an object key. The DTO whitelist already limits keys to known fields | The function walks a fixed list of updatable field names instead of the request body and collects changes in a `Map`, so no request key is ever used as a property name (#350). The earlier `__proto__`/`constructor`/`prototype` skip was not recognised by CodeQL as a sanitizer and is gone |
 | 7 | CodeQL #18, #19 | `js/incomplete-sanitization` | `matching/work-types.ts`, one e2e test | Only `.` and `-` were escaped before building a RegExp | Uses the shared `escapeRegex()` (all special characters) |
 | 8 | CodeQL #28 | `js/regex/missing-regexp-anchor` | `common/document-labels.ts` | `/^boq|pricebuild/` reads as if both halves were anchored | Split into two explicit patterns with the same meaning |
 
@@ -53,6 +53,7 @@ The Semgrep false positives are marked in the code with `nosemgrep` and the reas
 ## Verification
 
 - Semgrep re-scan of the fixed branch: **0 findings** (267 rules, 443 files).
+- CodeQL re-scan of `main` after #350: **0 open alerts** in GitHub → Security → Code scanning.
 - Backend: lint, build and 624 e2e tests pass (3 skipped).
 - Frontend: lint, build and all 81 e2e tests pass.
 - Manual check: `POST /api/saved-tors/not-an-id` and `/api/saved-tors/..%2Faccounts` now get a 404 from the frontend without reaching the backend; a real id still works.
