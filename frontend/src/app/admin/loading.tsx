@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { AppShell } from "@/components/layout/app-sidebar";
 import { Skeleton, SkeletonCard, SkeletonRow, SkeletonScreen } from "@/components/ui/skeleton";
 
@@ -6,6 +8,7 @@ import { Skeleton, SkeletonCard, SkeletonRow, SkeletonScreen } from "@/component
  * summary cards and a list, so a skeleton per page would be five copies of this.
  */
 export default function AdminLoading() {
+  const t = useTranslations("Loading");
   return (
     <AppShell>
       <main className="flex min-h-screen flex-col bg-surface-alt/50">
@@ -17,7 +20,7 @@ export default function AdminLoading() {
         </header>
 
         <div className="mx-auto w-full max-w-[1400px] px-8 py-8">
-          <SkeletonScreen label="กำลังโหลดข้อมูลผู้ดูแลระบบ">
+          <SkeletonScreen label={t("admin")}>
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {Array.from({ length: 4 }, (_, i) => (
                 <SkeletonCard key={i} />

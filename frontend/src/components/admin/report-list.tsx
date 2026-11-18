@@ -1,11 +1,14 @@
 "use client";
 
 import { Check, ExternalLink, Pencil, RotateCcw } from "lucide-react";
+import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useTransition } from "react";
 
 import { reopenReport, resolveReport } from "@/app/admin/reports/actions";
+import type { Locale } from "@/i18n/config";
 import type { TorReport } from "@/lib/admin-api";
+import { formatDateTime } from "@/lib/datetime";
 import type { ReportReason } from "@/lib/report-reasons";
 
 export type ReportListLabels = {
@@ -24,15 +27,6 @@ export type ReportListLabels = {
   empty: string;
 };
 
-const DATE = new Intl.DateTimeFormat("th-TH", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "Asia/Bangkok",
-});
-
 /**
  * The admins' list of "report a problem" entries (FR-21). Each one names the
  * TOR it is about, opens it, and is resolved once the record has been checked
@@ -40,6 +34,7 @@ const DATE = new Intl.DateTimeFormat("th-TH", {
  */
 export function ReportList({ items, labels }: { items: TorReport[]; labels: ReportListLabels }) {
   const [isPending, startTransition] = useTransition();
+  const locale = useLocale() as Locale;
 
   if (items.length === 0) {
     return (
@@ -73,7 +68,7 @@ export function ReportList({ items, labels }: { items: TorReport[]; labels: Repo
                       ? `${labels.guest} · ${item.contact}`
                       : labels.guest}
                   {" · "}
-                  {DATE.format(new Date(item.createdAt))}
+                  {formatDateTime(item.createdAt, locale)}
                 </span>
               </div>
 
@@ -84,7 +79,7 @@ export function ReportList({ items, labels }: { items: TorReport[]; labels: Repo
                 <p className="mt-2 text-xs text-ink-subtle">
                   {labels.resolvedBy
                     .replace("{who}", item.resolvedBy)
-                    .replace("{date}", DATE.format(new Date(item.resolvedAt)))}
+                    .replace("{date}", formatDateTime(item.resolvedAt, locale))}
                 </p>
               )}
             </div>

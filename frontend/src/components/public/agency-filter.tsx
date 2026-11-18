@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { FilterCheckbox } from "./filter-checkbox";
@@ -10,13 +11,14 @@ const SEPARATOR = " · ";
 /**
  * The sidebar's top level: a handful of areas a reader thinks in, rather than
  * the dozens of offices e-GP names. An office is placed by the start of its
- * name; anything unrecognised still lands under "อื่นๆ", so no announcement
- * ever drops out of the filter.
+ * name; anything unrecognised still lands under "other", so no announcement
+ * ever drops out of the filter. Prefixes match the Thai names e-GP publishes;
+ * category labels are PublicPage.agencyCategory.<id> in messages/*.json.
  */
 const CATEGORIES: { name: string; prefixes: string[] }[] = [
-  { name: "การไฟฟ้านครหลวง (กฟน.)", prefixes: ["การไฟฟ้านครหลวง"] },
+  { name: "mea", prefixes: ["การไฟฟ้านครหลวง"] },
   {
-    name: "ดิจิทัลและบริหารงาน กทม.",
+    name: "digital",
     prefixes: [
       "สำนักดิจิทัล",
       "สำนักปลัด",
@@ -29,7 +31,7 @@ const CATEGORIES: { name: string; prefixes: string[] }[] = [
     ],
   },
   {
-    name: "เมือง จราจร และสิ่งแวดล้อม",
+    name: "city",
     prefixes: [
       "สำนักสิ่งแวดล้อม",
       "สำนักการจราจร",
@@ -39,15 +41,15 @@ const CATEGORIES: { name: string; prefixes: string[] }[] = [
       "สำนักป้องกันและบรรเทาสาธารณภัย",
     ],
   },
-  { name: "สาธารณสุขและการแพทย์", prefixes: ["สำนักการแพทย์", "สำนักอนามัย"] },
+  { name: "health", prefixes: ["สำนักการแพทย์", "สำนักอนามัย"] },
   {
-    name: "การศึกษา สังคม และวัฒนธรรม",
+    name: "education",
     prefixes: ["สำนักการศึกษา", "สำนักวัฒนธรรม", "กรมพัฒนาสังคม"],
   },
-  { name: "สำนักงานเขต", prefixes: ["สำนักงานเขต"] },
+  { name: "district", prefixes: ["สำนักงานเขต"] },
 ];
 
-const OTHER_CATEGORY = "อื่นๆ";
+const OTHER_CATEGORY = "other";
 
 function categoryOf(office: string): string {
   return (
@@ -127,6 +129,7 @@ export function AgencyFilter({
   selected: string[];
   onChange: (values: string[]) => void;
 }) {
+  const t = useTranslations("PublicPage");
   const categories = useMemo(() => buildCategories(agencies), [agencies]);
   // Membership is checked once per rendered row, so a Set beats scanning the
   // selection array for every agency on the page.
@@ -168,7 +171,7 @@ export function AgencyFilter({
                   />
                 </span>
                 <span className="flex min-w-0 flex-1 items-center gap-1.5 text-ink">
-                  <span className="min-w-0 flex-1 font-medium">{category.name}</span>
+                  <span className="min-w-0 flex-1 font-medium">{t(`agencyCategory.${category.name}`)}</span>
                   <span className="shrink-0 text-2xs tabular-nums text-ink-subtle">{category.count}</span>
                 </span>
               </label>

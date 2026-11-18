@@ -1,9 +1,13 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 
 import { approveFeedback, rejectFeedback } from "@/app/admin/moderation/actions";
+import type { Locale } from "@/i18n/config";
+import { formatDate } from "@/lib/datetime";
+import { valueLabel } from "@/lib/value-labels";
 import type { TorFeedback } from "@/types/tor";
 
 const STATUS_STYLES: Record<TorFeedback["status"], string> = {
@@ -23,6 +27,8 @@ export function ModerationList({
   labels: { approve: string; reject: string; empty: string };
 }) {
   const [isPending, startTransition] = useTransition();
+  const tv = useTranslations("Values");
+  const locale = useLocale() as Locale;
 
   if (items.length === 0) {
     return (
@@ -42,10 +48,10 @@ export function ModerationList({
                 <span
                   className={`rounded-md px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[item.status]}`}
                 >
-                  {item.status}
+                  {valueLabel(tv, "reviewStatus", item.status)}
                 </span>
                 <span className="text-xs text-ink-muted">
-                  {item.author} · {new Date(item.createdAt).toLocaleDateString("th-TH")}
+                  {item.author} · {formatDate(item.createdAt, locale)}
                 </span>
               </div>
               <p className="text-xs text-ink-muted">

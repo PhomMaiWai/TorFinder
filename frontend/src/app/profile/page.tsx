@@ -13,6 +13,7 @@ import { CertificatesSection } from "@/components/profile/certificates-section";
 import { WORK_TYPE_GROUPS, type CertificateRecord, type WorkType } from "@/types/tor";
 import { profileProgress } from "@/lib/profile-progress";
 import { formatTaxId, hasValidTaxIdChecksum, isValidTaxId } from "@/lib/thai-validation";
+import { valueLabel } from "@/lib/value-labels";
 
 const readOnlyInputCls =
   "w-full rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-ink-muted outline-none";
@@ -89,6 +90,7 @@ function Chip({
 export default function ProfilePage() {
   const t = useTranslations("ProfilePage");
   const tOptions = useTranslations("CompanyProfileOptions");
+  const tv = useTranslations("Values");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -331,7 +333,7 @@ export default function ProfilePage() {
                 >
                   {COMPANY_SIZE_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
-                      {opt}
+                      {valueLabel(tv, "companySize", opt)}
                     </option>
                   ))}
                 </select>

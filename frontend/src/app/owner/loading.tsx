@@ -1,7 +1,10 @@
+import { useTranslations } from "next-intl";
+
 import { AppShell } from "@/components/layout/app-sidebar";
 import { Skeleton, SkeletonRow, SkeletonScreen } from "@/components/ui/skeleton";
 
 export default function OwnerLoading() {
+  const t = useTranslations("Loading");
   return (
     <AppShell>
       <main className="flex min-h-screen flex-col bg-surface-alt/50">
@@ -13,7 +16,7 @@ export default function OwnerLoading() {
         </header>
 
         <div className="mx-auto w-full max-w-[1400px] px-8 py-8">
-          <SkeletonScreen label="กำลังโหลดประกาศของหน่วยงาน">
+          <SkeletonScreen label={t("owner")}>
             <div className="overflow-hidden rounded-xl border border-border bg-surface">
               {Array.from({ length: 5 }, (_, i) => (
                 <SkeletonRow key={i} />

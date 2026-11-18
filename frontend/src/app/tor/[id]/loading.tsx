@@ -1,12 +1,15 @@
+import { useTranslations } from "next-intl";
+
 import { Skeleton, SkeletonScreen } from "@/components/ui/skeleton";
 
 /** Mirrors the announcement page: the document on the left, its facts on the right. */
 export default function TorDetailLoading() {
+  const t = useTranslations("Loading");
   return (
     <div className="flex min-h-screen flex-col bg-surface-alt">
       <main className="flex-1 py-8">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
-          <SkeletonScreen label="กำลังโหลดรายละเอียดประกาศ">
+          <SkeletonScreen label={t("torDetail")}>
             <div className="mb-6 space-y-3">
               <Skeleton className="h-6 w-28 rounded-full" />
               <Skeleton className="h-8 w-3/4" />

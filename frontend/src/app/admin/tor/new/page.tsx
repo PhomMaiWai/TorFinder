@@ -1,11 +1,13 @@
 "use client";
 
 import { FileText, Info, Landmark, Tags } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
+import { valueLabel } from "@/lib/value-labels";
 import { TOR_STAGES } from "@/types/tor";
 
 import { createTorEntry, type CreateTorState } from "./actions";
@@ -17,32 +19,35 @@ const INITIAL_STATE: CreateTorState = {};
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const t = useTranslations("AdminTor");
   return (
     <button
       type="submit"
       disabled={pending}
       className="mt-4 flex h-11 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? "กำลังบันทึก..." : "บันทึกรายการ"}
+      {pending ? t("saving") : t("saveEntry")}
     </button>
   );
 }
 
 export default function AdminCreateTorPage() {
   const [state, formAction] = useActionState(createTorEntry, INITIAL_STATE);
+  const t = useTranslations("AdminTor");
+  const tv = useTranslations("Values");
 
   return (
-    <AdminPageShell title="เพิ่มรายการ TOR" description="เพิ่มรายการ TOR เข้าระบบด้วยตนเอง">
+    <AdminPageShell title={t("createTitle")} description={t("createDescription")}>
       <form action={formAction} className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Section icon={FileText} title="ข้อมูลโครงการ">
-            <Field label="ชื่อโครงการ">
-              <input name="title" required placeholder="เช่น พัฒนาระบบบริหารจัดการ..." className={inputCls} />
+          <Section icon={FileText} title={t("projectSection")}>
+            <Field label={tv("field.title")}>
+              <input name="title" required placeholder={t("titlePlaceholder")} className={inputCls} />
             </Field>
-            <Field label="หน่วยงาน">
+            <Field label={tv("field.agency")}>
               <select name="agency" required defaultValue="" className={inputCls}>
                 <option value="" disabled>
-                  เลือกหน่วยงาน
+                  {t("chooseAgency")}
                 </option>
                 {BMA_AGENCIES.map((agency) => (
                   <option key={agency} value={agency}>
@@ -51,48 +56,48 @@ export default function AdminCreateTorPage() {
                 ))}
               </select>
             </Field>
-            <Field label="สถานะ TOR">
+            <Field label={tv("field.stage")}>
               <select name="stage" defaultValue="เปิดรับฟังความคิดเห็น" className={inputCls}>
                 {TOR_STAGES.map((stage) => (
                   <option key={stage} value={stage}>
-                    {stage}
+                    {valueLabel(tv, "stage", stage)}
                   </option>
                 ))}
               </select>
             </Field>
           </Section>
 
-          <Section icon={Landmark} title="งบประมาณและกำหนดการ">
+          <Section icon={Landmark} title={t("budgetSection")}>
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="งบประมาณ">
+              <Field label={tv("field.budget")}>
                 <input name="budget" required placeholder="฿1,200,000" className={inputCls} />
               </Field>
-              <Field label="สถานะงบประมาณ">
+              <Field label={tv("field.budgetStatus")}>
                 <select name="budgetStatus" defaultValue="ปกติ" className={inputCls}>
-                  <option value="ปกติ">ปกติ</option>
-                  <option value="สูงกว่าปกติ">สูงกว่าปกติ</option>
-                  <option value="ต่ำกว่าปกติ">ต่ำกว่าปกติ</option>
+                  <option value="ปกติ">{valueLabel(tv, "budgetStatus", "ปกติ")}</option>
+                  <option value="สูงกว่าปกติ">{valueLabel(tv, "budgetStatus", "สูงกว่าปกติ")}</option>
+                  <option value="ต่ำกว่าปกติ">{valueLabel(tv, "budgetStatus", "ต่ำกว่าปกติ")}</option>
                 </select>
               </Field>
-              <Field label="วันที่ปิดรับ">
-                <input name="deadline" required placeholder="18 ส.ค. 2569" className={inputCls} />
+              <Field label={tv("field.deadline")}>
+                <input name="deadline" required placeholder={t("deadlinePlaceholder")} className={inputCls} />
               </Field>
-              <Field label="จำนวนวันที่เหลือ">
+              <Field label={tv("field.daysLeft")}>
                 <input name="daysLeft" type="number" min={0} defaultValue={0} className={inputCls} />
               </Field>
             </div>
           </Section>
 
-          <Section icon={Tags} title="รายละเอียดเพิ่มเติม">
-            <Field label="แท็ก (คั่นด้วยจุลภาค)">
+          <Section icon={Tags} title={t("extraSection")}>
+            <Field label={t("tagsLabel")}>
               <input name="tags" placeholder="Next.js, Cloud, API" className={inputCls} />
             </Field>
-            <Field label="รายละเอียดโดยย่อ">
+            <Field label={t("summaryHeading")}>
               <textarea
                 name="summary"
                 required
                 rows={5}
-                placeholder="อธิบายขอบเขตงานโดยสังเขป"
+                placeholder={t("summaryPlaceholder")}
                 className={`${inputCls} h-auto resize-none py-3`}
               />
             </Field>
@@ -103,13 +108,13 @@ export default function AdminCreateTorPage() {
           <div className="rounded-xl border border-border bg-surface-alt p-5">
             <div className="mb-2 flex items-center gap-2">
               <Info size={16} className="text-accent" />
-              <h3 className="text-sm font-bold text-ink">คำแนะนำ</h3>
+              <h3 className="text-sm font-bold text-ink">{t("tipsHeading")}</h3>
             </div>
             <ul className="space-y-2 text-xs leading-relaxed text-ink-muted">
-              <li>ระบุชื่อโครงการให้ชัดเจน ตรงกับที่ประกาศจริง</li>
-              <li>รูปแบบงบประมาณ/วันที่ควรเขียนให้เหมือนรายการอื่นในระบบ</li>
-              <li>แท็กช่วยให้ผู้ประกอบการค้นหาเจอง่ายขึ้น</li>
-              <li>รายการที่เพิ่มจะไปแสดงในหน้าค้นหา TOR ทันที</li>
+              <li>{t("tip1")}</li>
+              <li>{t("tip2")}</li>
+              <li>{t("tip3")}</li>
+              <li>{t("tip4")}</li>
             </ul>
           </div>
 

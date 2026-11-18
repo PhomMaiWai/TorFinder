@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { Role } from "@/lib/auth";
 import { idPath } from "@/lib/backend-path";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
@@ -121,6 +122,7 @@ export type UserEdit = { name?: string; role?: Exclude<Role, "org"> };
 
 /** The backend's own message on a refusal (e.g. demoting the last admin), so the admin sees why. */
 export async function updateUser(id: string, edit: UserEdit): Promise<{ error?: string }> {
+  const te = await getTranslations("Errors");
   const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/details`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "content-type": "application/json" },
@@ -131,7 +133,7 @@ export async function updateUser(id: string, edit: UserEdit): Promise<{ error?: 
   if (res.ok) return {};
   const body = (await res.json().catch(() => null)) as { message?: string | string[] } | null;
   const message = Array.isArray(body?.message) ? body.message[0] : body?.message;
-  return { error: message ?? "บันทึกไม่สำเร็จ" };
+  return { error: message ?? te("saveFailed") };
 }
 
 export type ReportStatus = "open" | "resolved";

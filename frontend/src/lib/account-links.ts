@@ -1,5 +1,7 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
+
 import { clientIpHeaders } from "@/lib/client-ip";
 
 /**
@@ -14,6 +16,7 @@ export type LinkResult =
   | { ok: false; error: string; httpStatus?: number };
 
 async function post(path: string, body: Record<string, string>): Promise<LinkResult> {
+  const te = await getTranslations("Errors");
   let res: Response;
   try {
     res = await fetch(`${process.env.BACKEND_URL}/api/auth/${path}`, {
@@ -24,16 +27,16 @@ async function post(path: string, body: Record<string, string>): Promise<LinkRes
       signal: AbortSignal.timeout(10_000),
     });
   } catch {
-    return { ok: false, error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่" };
+    return { ok: false, error: te("connectionFailed") };
   }
 
   const data = await res.json().catch(() => null);
   if (res.status === 429) {
-    return { ok: false, error: "ส่งคำขอบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่", httpStatus: 429 };
+    return { ok: false, error: te("tooManyRequests"), httpStatus: 429 };
   }
   if (!res.ok) {
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
-    return { ok: false, error: message ?? "ทำรายการไม่สำเร็จ กรุณาลองใหม่", httpStatus: res.status };
+    return { ok: false, error: message ?? te("actionFailed"), httpStatus: res.status };
   }
   return { ok: true, status: typeof data?.status === "string" ? data.status : undefined };
 }

@@ -7,9 +7,11 @@ import { useState, useMemo } from "react";
 
 import { OPPORTUNITIES } from "@/data/opportunities";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
+import { valueLabel } from "@/lib/value-labels";
 
 export function PreviewSection() {
   const t = useTranslations("LandingPreview");
+  const tv = useTranslations("Values");
   const [search, setSearch] = useState("");
   const [feedbackOpenId, setFeedbackOpenId] = useState<number | null>(null);
   const [feedbackText, setFeedbackText] = useState("");
@@ -84,7 +86,7 @@ export function PreviewSection() {
                           : "bg-accent-soft text-accent"
                       }`}
                     >
-                      {tor.stage}
+                      {valueLabel(tv, "stage", tor.stage)}
                     </span>
                     {isUrgent && (
                       <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-2xs font-semibold text-red-600">

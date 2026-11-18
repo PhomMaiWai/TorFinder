@@ -8,6 +8,7 @@ import { useFormStatus } from "react-dom";
 
 import { PasswordInput } from "@/components/ui/password-input";
 import { COMPANY_SIZE_OPTIONS } from "@/data/company-profile";
+import { valueLabel } from "@/lib/value-labels";
 import {
   digitsOnly,
   formatPhone,
@@ -84,6 +85,7 @@ function SubmitButton({ label, disabled }: { label: string; disabled: boolean })
 export default function OrganizationSignupPage() {
   const t = useTranslations("SignupOrganizationPage");
   const tc = useTranslations("Common");
+  const tv = useTranslations("Values");
   const [state, formAction] = useActionState(signupOrganization, {});
   const [values, setValues] = useState<Values>(EMPTY);
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
@@ -267,7 +269,7 @@ export default function OrganizationSignupPage() {
                 >
                   {COMPANY_SIZE_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
-                      {opt}
+                      {valueLabel(tv, "companySize", opt)}
                     </option>
                   ))}
                 </select>

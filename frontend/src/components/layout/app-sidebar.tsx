@@ -283,11 +283,11 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
             className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-border/50"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink-muted ring-1 ring-border">
-              {(user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : isAuditor ? "ผู้ตรวจสอบ" : "..."))[0]}
+              {(user?.name ?? (isAdmin ? t("adminFallbackName") : isAuditor ? t("auditorFallbackName") : "..."))[0]}
             </span>
             <div className="min-w-0 flex-1 text-left">
               <p className="truncate text-sm font-medium text-ink">
-                {user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : isAuditor ? "ผู้ตรวจสอบ" : "กำลังโหลด...")}
+                {user?.name ?? (isAdmin ? t("adminFallbackName") : isAuditor ? t("auditorFallbackName") : t("loadingName"))}
               </p>
               <p className="truncate text-xs text-ink-muted">{user?.email ?? t("accountSettings")}</p>
             </div>
@@ -296,8 +296,8 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
             type="button"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            aria-label="ออกจากระบบ"
-            title="ออกจากระบบ"
+            aria-label={t("logout")}
+            title={t("logout")}
             className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
           >
             <LogOut size={15} />

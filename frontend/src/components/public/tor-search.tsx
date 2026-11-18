@@ -19,7 +19,10 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/config";
+import { formatDayMonth } from "@/lib/datetime";
+import { displayValue, valueLabel } from "@/lib/value-labels";
 import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import {
@@ -80,7 +83,6 @@ const AMOUNT_LABEL = {
 const PER_PAGE = 10;
 
 /** "5 พ.ย." — a card has room for the day, not the year. */
-const SHORT_DATE = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", timeZone: "Asia/Bangkok" });
 
 /** A stable empty list, so the sorted results aren't recomputed on every render. */
 const NO_PINS: string[] = [];
@@ -300,6 +302,8 @@ function PublicTorCard({
 }) {
   const t = useTranslations("PublicPage");
   const ts = useTranslations("FindSimilar");
+  const tv = useTranslations("Values");
+  const locale = useLocale() as Locale;
   const bidding = biddingOf(tor);
   const amount = torAmount(tor);
   const feedback = feedbackWindow(tor);
@@ -323,13 +327,13 @@ function PublicTorCard({
             <span
               className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
             >
-              {tor.stage}
+              {valueLabel(tv, "stage", tor.stage)}
             </span>
             <BiddingBadge bidding={bidding} />
             {feedback.open && feedback.until && (
               <span className="flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-2xs font-semibold text-amber-700">
                 <MessageSquare size={12} />
-                {t("feedbackOpenUntilBadge", { date: SHORT_DATE.format(new Date(feedback.until)) })}
+                {t("feedbackOpenUntilBadge", { date: formatDayMonth(feedback.until, locale) ?? "" })}
               </span>
             )}
             {tor.budgetStatus === "สูงกว่าปกติ" && (
@@ -418,7 +422,7 @@ function PublicTorCard({
               <div className="mb-1 text-xs font-medium text-ink-muted">
                 {t(AMOUNT_LABEL[amount.kind])}
               </div>
-              <div className="text-lg font-bold text-ink">{amount.value}</div>
+              <div className="text-lg font-bold text-ink">{displayValue(tv, amount.value)}</div>
             </div>
             <button
               onClick={onToggleSave}

@@ -1,11 +1,14 @@
+import { useTranslations } from "next-intl";
+
 import { Skeleton, SkeletonCard, SkeletonScreen } from "@/components/ui/skeleton";
 
 /** No shell here, as on /dashboard: which one depends on the session. */
 export default function InsightsLoading() {
+  const t = useTranslations("Loading");
   return (
     <main className="aurora min-h-screen bg-surface-alt/40">
       <div className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-8">
-        <SkeletonScreen label="กำลังรวบรวมข้อมูลผู้ชนะการประกวดราคา">
+        <SkeletonScreen label={t("insights")}>
           <Skeleton className="h-28 w-full rounded-3xl" />
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }, (_, i) => (

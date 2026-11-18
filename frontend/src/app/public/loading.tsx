@@ -1,12 +1,15 @@
+import { useTranslations } from "next-intl";
+
 import { Skeleton, SkeletonScreen } from "@/components/ui/skeleton";
 
 /** Mirrors the search page: heading, filter bar, then the result cards. */
 export default function PublicLoading() {
+  const t = useTranslations("Loading");
   return (
     <div className="flex min-h-screen flex-col bg-surface-alt">
       <main className="flex-1 py-8 sm:py-12">
         <div className="mx-auto w-full max-w-[1400px] px-6 sm:px-8">
-          <SkeletonScreen label="กำลังโหลดประกาศ">
+          <SkeletonScreen label={t("public")}>
             <div className="mb-8 space-y-3">
               <Skeleton className="h-9 w-72 max-w-full" />
               <Skeleton className="h-4 w-96 max-w-full" />

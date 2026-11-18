@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Plus, RefreshCw } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { DeleteTorButton } from "@/components/admin/delete-tor-button";
@@ -7,27 +8,29 @@ import { AdminPageShell } from "@/components/layout/admin-page";
 import { fetchDeletedTors, fetchNotSoftwareTors } from "@/lib/tor-admin-api";
 import { fetchTorList } from "@/lib/tor-api";
 import { stageBadgeCls } from "@/lib/tor-ui";
+import { displayValue, valueLabel } from "@/lib/value-labels";
 
 import { syncFromDataGov, syncFromEgp, syncFromMea } from "./actions";
 
 const PAGE_SIZE = 20;
 
+/** Labels are AdminTor.tabs.<id> in messages/*.json. */
 const TABS = [
-  { id: "manual", label: "สร้างเอง" },
-  { id: "egp", label: "จาก e-GP" },
-  { id: "gproc", label: "จาก e-GP กรมบัญชีกลาง" },
-  { id: "mea", label: "จาก กฟน." },
-  { id: "datagov", label: "จาก data.go.th" },
-  { id: "all", label: "ทั้งหมด" },
-  { id: "not-software", label: "ไม่ใช่ซอฟต์แวร์" },
-  { id: "deleted", label: "ถังขยะ" },
+  { id: "manual" },
+  { id: "egp" },
+  { id: "gproc" },
+  { id: "mea" },
+  { id: "datagov" },
+  { id: "all" },
+  { id: "not-software" },
+  { id: "deleted" },
 ] as const;
 
 /** One button per portal, in the order their records outrank each other. */
 const IMPORTS = [
-  { label: "e-GP", action: syncFromEgp },
-  { label: "กฟน.", action: syncFromMea },
-  { label: "data.go.th", action: syncFromDataGov },
+  { id: "egp", label: "e-GP", action: syncFromEgp },
+  { id: "mea", label: null, action: syncFromMea },
+  { id: "datagov", label: "data.go.th", action: syncFromDataGov },
 ] as const;
 
 
@@ -36,13 +39,6 @@ type TabId = (typeof TABS)[number]["id"];
 /** Anything else in the query string — a stale link, a typo — falls back below. */
 const isTab = (value: string | undefined): value is TabId =>
   TABS.some((tab) => tab.id === value);
-
-const DELETE_LABELS = {
-  delete: "ลบ",
-  confirm: "ยืนยันลบ?",
-  cancel: "ยกเลิก",
-  restore: "กู้คืน",
-};
 
 export default async function AdminTorListPage({
   searchParams,
@@ -57,6 +53,13 @@ export default async function AdminTorListPage({
   // rest of the tabs are one listing with a source filter.
   const isTrash = source === "deleted";
   const isOwnList = isTrash || source === "not-software";
+  const [t, tv] = await Promise.all([getTranslations("AdminTor"), getTranslations("Values")]);
+  const deleteLabels = {
+    delete: t("deleteLabel"),
+    confirm: t("deleteConfirm"),
+    cancel: t("deleteCancel"),
+    restore: t("restoreLabel"),
+  };
   const tors = isTrash
     ? await fetchDeletedTors()
     : source === "not-software"
@@ -64,7 +67,7 @@ export default async function AdminTorListPage({
       : await fetchTorList(page, PAGE_SIZE, source === "all" ? undefined : source);
 
   return (
-    <AdminPageShell title="รายการ TOR" description="รายการ TOR ทั้งหมดในระบบ">
+    <AdminPageShell title={t("listTitle")} description={t("listDescription")}>
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-surface p-1">
@@ -78,19 +81,19 @@ export default async function AdminTorListPage({
                     : "text-ink-muted hover:bg-surface-alt hover:text-ink"
                 }`}
               >
-                {tab.label}
+                {t(`tabs.${tab.id}`)}
               </Link>
             ))}
           </div>
           <div className="flex flex-wrap gap-3">
           {IMPORTS.map((portal) => (
-            <form key={portal.label} action={portal.action}>
+            <form key={portal.id} action={portal.action}>
               <button
                 type="submit"
                 className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface-alt"
               >
                 <RefreshCw size={16} />
-                ดึงจาก {portal.label}
+                {t("pullFrom", { portal: portal.label ?? t("portalMea") })}
               </button>
             </form>
           ))}
@@ -99,7 +102,7 @@ export default async function AdminTorListPage({
             className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
           >
             <Plus size={16} />
-            เพิ่มรายการ TOR
+            {t("addTor")}
           </Link>
           </div>
         </div>
@@ -110,20 +113,20 @@ export default async function AdminTorListPage({
           {tors.length === 0 ? (
             <p className="p-6 text-sm text-ink-muted">
               {isTrash
-                ? "ถังขยะว่าง"
+                ? t("trashEmpty")
                 : source === "not-software"
-                  ? "ไม่มีรายการที่ถูกจัดเป็นงานที่ไม่ใช่ซอฟต์แวร์"
-                  : "ยังไม่มีรายการ TOR"}
+                  ? t("noNotSoftware")
+                  : t("noTors")}
             </p>
           ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[40rem] text-sm">
                   <thead>
                     <tr className="border-b border-border bg-surface-alt text-left text-xs text-ink-muted">
-                      <th className="px-5 py-3 font-medium">ชื่อโครงการ</th>
-                      <th className="px-5 py-3 font-medium">หน่วยงาน</th>
-                      <th className="px-5 py-3 font-medium">สถานะ</th>
-                      <th className="px-5 py-3 font-medium">วันที่ปิดรับ</th>
+                      <th className="px-5 py-3 font-medium">{tv("field.title")}</th>
+                      <th className="px-5 py-3 font-medium">{tv("field.agency")}</th>
+                      <th className="px-5 py-3 font-medium">{t("colStatus")}</th>
+                      <th className="px-5 py-3 font-medium">{tv("field.deadline")}</th>
                       <th className="px-5 py-3 font-medium"></th>
                     </tr>
                   </thead>
@@ -136,22 +139,22 @@ export default async function AdminTorListPage({
                           <span
                             className={`rounded-full px-2.5 py-1 text-2xs font-semibold ${stageBadgeCls(tor.stage)}`}
                           >
-                            {tor.stage}
+                            {valueLabel(tv, "stage", tor.stage)}
                           </span>
                         </td>
-                        <td className="px-5 py-3 text-ink-muted">{tor.deadline}</td>
+                        <td className="px-5 py-3 text-ink-muted">{displayValue(tv, tor.deadline)}</td>
                         <td className="px-5 py-3 text-right">
                           <span className="inline-flex items-center gap-4">
                             <Link
                               href={`/admin/tor/${tor.id}`}
                               className="font-medium text-accent hover:text-accent-dark"
                             >
-                              ดูรายละเอียด
+                              {t("viewDetails")}
                             </Link>
                             <DeleteTorButton
                               torId={tor.id}
                               deleted={isTrash}
-                              labels={DELETE_LABELS}
+                              labels={deleteLabels}
                             />
                           </span>
                         </td>
@@ -172,9 +175,9 @@ export default async function AdminTorListPage({
             }`}
           >
             <ChevronLeft size={16} />
-            ก่อนหน้า
+            {t("previous")}
           </Link>
-          <span className="text-sm text-ink-muted">หน้า {page}</span>
+          <span className="text-sm text-ink-muted">{t("pageN", { page })}</span>
           <Link
             href={`/admin/tor?source=${source}&page=${page + 1}`}
             aria-disabled={tors.length < PAGE_SIZE}
@@ -182,7 +185,7 @@ export default async function AdminTorListPage({
               tors.length < PAGE_SIZE ? "pointer-events-none text-ink-subtle" : "text-ink-muted hover:text-ink"
             }`}
           >
-            ถัดไป
+            {t("next")}
             <ChevronRight size={16} />
           </Link>
         </div>

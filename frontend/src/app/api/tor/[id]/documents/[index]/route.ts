@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
@@ -13,6 +15,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string; index: string }> },
 ) {
+  const te = await getTranslations("Errors");
   const { id, index } = await params;
   const download = new URL(request.url).searchParams.get("download") === "1" ? "?download=1" : "";
 
@@ -24,12 +27,12 @@ export async function GET(
       { signal: request.signal, cache: "no-store" },
     );
   } catch {
-    return jsonResponse({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ" }, { status: 502 });
+    return jsonResponse({ error: te("connectionFailedShort") }, { status: 502 });
   }
 
   if (!res.ok || !res.body) {
     const data = await res.json().catch(() => null);
-    return jsonResponse({ error: data?.message ?? "เปิดเอกสารไม่สำเร็จ" }, { status: res.status || 502 });
+    return jsonResponse({ error: data?.message ?? te("openDocumentFailed") }, { status: res.status || 502 });
   }
 
   const headers = new Headers();

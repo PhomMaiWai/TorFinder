@@ -47,6 +47,8 @@ const notoSansThai = localFont({
  */
 const CLIENT_NAMESPACES = [
   "AccountLinks",
+  // Admin TOR form and e-GP import box (client components).
+  "AdminTor",
   "AdminAccountsPage",
   "AdminCompaniesPage",
   "AdminUsersPage",
@@ -57,6 +59,8 @@ const CLIENT_NAMESPACES = [
   "CompanyProfileOptions",
   "Dashboard",
   "ErrorState",
+  // Error messages shown by client-side forms (sign-in, Google, imports).
+  "Errors",
   "FindSimilar",
   // SiteFooter renders inside client trees too: the error boundary and /saved.
   "Footer",
@@ -82,6 +86,8 @@ const CLIENT_NAMESPACES = [
   "SignupPendingPage",
   "TorDocuments",
   "ViewerSignIn",
+  // Labels for values stored in Thai (stage, budget status, …), see lib/value-labels.ts.
+  "Values",
 ];
 
 export async function generateMetadata(): Promise<Metadata> {

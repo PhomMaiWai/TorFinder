@@ -158,7 +158,9 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
     if (PUBLIC_API_ROUTES.includes(pathname) || PUBLIC_API_PATTERNS.some((pattern) => pattern.test(pathname))) {
       return null;
     }
-    return session ? null : jsonResponse({ error: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
+    // The proxy runs before next-intl's request config, so it reads the language cookie itself.
+    const signIn = request.cookies.get("NEXT_LOCALE")?.value === "en" ? "Please sign in." : "กรุณาเข้าสู่ระบบ";
+    return session ? null : jsonResponse({ error: signIn }, { status: 401 });
   }
 
   // The landing page is the first impression for guests; once signed in, the

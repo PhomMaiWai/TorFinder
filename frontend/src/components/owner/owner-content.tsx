@@ -20,8 +20,10 @@ import {
 import { AppShell } from "@/components/layout/app-sidebar";
 import type { OwnTors } from "@/lib/owner-api";
 import { isKnown } from "@/lib/tor-ui";
+import { valueLabel } from "@/lib/value-labels";
 
-const ALL = "ทั้งหมด";
+/** The "every stage" pill; not a stage name, so it can never collide with one. */
+const ALL = "__all__";
 
 /**
  * The project owner's page: only the announcements an admin linked to this
@@ -30,6 +32,7 @@ const ALL = "ทั้งหมด";
  */
 export function OwnerContent({ data }: { data: OwnTors }) {
   const t = useTranslations("OwnerPage");
+  const tv = useTranslations("Values");
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState(ALL);
   const { tors, totals } = data;
@@ -37,7 +40,7 @@ export function OwnerContent({ data }: { data: OwnTors }) {
   // Only the stages the owner's own records are in — an empty pill is a dead end.
   const pills = [
     { id: ALL, label: t("stagePillAll") },
-    ...[...new Set(tors.map((tor) => tor.stage))].map((id) => ({ id, label: id })),
+    ...[...new Set(tors.map((tor) => tor.stage))].map((id) => ({ id, label: valueLabel(tv, "stage", id) })),
   ];
 
   const q = search.trim().toLowerCase();
@@ -103,7 +106,7 @@ export function OwnerContent({ data }: { data: OwnTors }) {
                                 {t("topScore", { score: tor.topScore })}
                               </span>
                             )}
-                            <StatusBadge label={tor.stage} />
+                            <StatusBadge label={valueLabel(tv, "stage", tor.stage)} />
                             <span className="text-xs tabular-nums text-ink-subtle">
                               {isKnown(tor.deadline) ? t("daysSuffix", { days: tor.daysLeft }) : tor.budget}
                             </span>

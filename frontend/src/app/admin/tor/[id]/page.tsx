@@ -1,10 +1,12 @@
 import { ArrowLeft, ExternalLink, Pencil } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TorCorrectionInfo } from "@/components/admin/tor-correction-info";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { fetchTor } from "@/lib/tor-api";
+import { displayValue, valueLabel } from "@/lib/value-labels";
 import { stageBadgeCls } from "@/lib/tor-ui";
 
 export default async function AdminTorDetailPage({
@@ -13,11 +15,11 @@ export default async function AdminTorDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const tor = await fetchTor(id);
+  const [tor, t, tv] = await Promise.all([fetchTor(id), getTranslations("AdminTor"), getTranslations("Values")]);
   if (!tor) notFound();
 
   return (
-    <AdminPageShell title="รายละเอียด TOR" description={tor.agency}>
+    <AdminPageShell title={t("detailTitle")} description={tor.agency}>
       <div className="max-w-3xl space-y-6">
         <div className="flex items-center justify-between">
           <Link
@@ -25,14 +27,14 @@ export default async function AdminTorDetailPage({
             className="flex items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink"
           >
             <ArrowLeft size={16} />
-            กลับไปรายการ TOR
+            {t("backToList")}
           </Link>
           <Link
             href={`/admin/tor/${tor.id}/edit`}
             className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
           >
             <Pencil size={14} />
-            แก้ไข
+            {t("edit")}
           </Link>
         </div>
 
@@ -43,11 +45,11 @@ export default async function AdminTorDetailPage({
             <span
               className={`rounded-full px-2.5 py-1 text-2xs font-semibold ${stageBadgeCls(tor.stage)}`}
             >
-              {tor.stage}
+              {valueLabel(tv, "stage", tor.stage)}
             </span>
             {tor.sourceRef && (
               <span className="rounded-full bg-surface-alt px-2.5 py-1 text-2xs font-semibold text-ink-muted">
-                นำเข้าจากระบบ e-GP
+                {t("importedFromEgp")}
               </span>
             )}
           </div>
@@ -55,10 +57,10 @@ export default async function AdminTorDetailPage({
           <p className="mt-1 text-sm text-ink-muted">{tor.agency}</p>
 
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Stat label="งบประมาณ" value={tor.budget} />
-            <Stat label="วันที่ปิดรับ" value={tor.deadline} />
-            <Stat label="วันที่เหลือ" value={`${tor.daysLeft} วัน`} />
-            <Stat label="สถานะงบประมาณ" value={tor.budgetStatus ?? "ปกติ"} />
+            <Stat label={valueLabel(tv, "field", "budget")} value={displayValue(tv, tor.budget)} />
+            <Stat label={valueLabel(tv, "field", "deadline")} value={displayValue(tv, tor.deadline)} />
+            <Stat label={valueLabel(tv, "field", "daysLeft")} value={t("daysLeftValue", { days: tor.daysLeft })} />
+            <Stat label={valueLabel(tv, "field", "budgetStatus")} value={valueLabel(tv, "budgetStatus", tor.budgetStatus ?? "ปกติ")} />
           </div>
 
           {tor.tags.length > 0 && (
@@ -72,7 +74,7 @@ export default async function AdminTorDetailPage({
           )}
 
           <div className="mt-6 border-t border-border pt-6">
-            <h2 className="mb-2 text-sm font-bold text-ink">รายละเอียดโดยย่อ</h2>
+            <h2 className="mb-2 text-sm font-bold text-ink">{t("summaryHeading")}</h2>
             <p className="text-sm leading-relaxed text-ink-muted">{tor.summary}</p>
 
             {tor.sourceUrl && (
@@ -83,7 +85,7 @@ export default async function AdminTorDetailPage({
                 className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-dark"
               >
                 <ExternalLink size={14} />
-                เปิดเอกสารประกาศฉบับเต็ม (e-GP)
+                {t("openFullNotice")}
               </a>
             )}
           </div>

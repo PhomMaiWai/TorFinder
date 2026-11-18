@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -13,8 +14,9 @@ async function authHeaders(): Promise<HeadersInit> {
 }
 
 export async function PATCH(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const te = await getTranslations("Errors");
   const { id } = await params;
-  if (!isObjectId(id)) return jsonResponse({ error: "ไม่พบการแจ้งเตือนนี้" }, { status: 404 });
+  if (!isObjectId(id)) return jsonResponse({ error: te("notificationNotFound") }, { status: 404 });
 
   const res = await fetch(`${BACKEND_URL}/api/notifications/${idPath(id)}/read`, {
     method: "PATCH",

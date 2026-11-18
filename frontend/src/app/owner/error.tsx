@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { PageBody, PageHeader } from "@/components/layout/app-page";
 import { AppShell } from "@/components/layout/app-sidebar";
 import { ErrorState } from "@/components/ui/error-state";
@@ -12,9 +14,10 @@ export default function OwnerError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("ErrorState");
   return (
     <AppShell>
-      <PageHeader title="เกิดข้อผิดพลาด" description="โหลดโครงการของคุณไม่สำเร็จ" />
+      <PageHeader title={t("pageTitle")} description={t("ownerDescription")} />
       <PageBody>
         <ErrorState error={error} reset={reset} />
       </PageBody>

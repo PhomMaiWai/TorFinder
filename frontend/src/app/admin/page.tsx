@@ -1,19 +1,21 @@
 import { Activity, AlertTriangle, Check, FileText, Plus, UserCheck, Users } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { RunAgainButton } from "@/components/admin/run-again-button";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { fetchEgpMetrics, fetchUserDirectory } from "@/lib/admin-api";
-import { thaiDateTime, timeAgo } from "@/lib/datetime";
+import { formatDateTime, timeAgo } from "@/lib/datetime";
+import type { Locale } from "@/i18n/config";
 
 import { runEgpSyncAgain } from "./actions";
 
 export default async function AdminOverviewPage() {
-  const [metrics, users, t] = await Promise.all([
+  const [metrics, users, t, locale] = await Promise.all([
     fetchEgpMetrics(),
     fetchUserDirectory(),
     getTranslations("AdminOverviewPage"),
+    getLocale() as Promise<Locale>,
   ]);
 
   const pendingAccounts = users.filter((user) => user.status === "pending").length;
@@ -24,7 +26,7 @@ export default async function AdminOverviewPage() {
     {
       label: t("pipelineStatusLabel"),
       value: t(`pipelineStatus.${metrics.status}`),
-      sub: metrics.lastRunAt ? t("lastRunAt", { when: timeAgo(metrics.lastRunAt) }) : t("neverRun"),
+      sub: metrics.lastRunAt ? t("lastRunAt", { when: timeAgo(metrics.lastRunAt, locale) }) : t("neverRun"),
       icon: Activity,
       tone: healthy ? "success" : "danger",
     },
@@ -110,7 +112,7 @@ export default async function AdminOverviewPage() {
                   key={run.startedAt}
                   className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 text-sm max-sm:flex-col max-sm:items-start"
                 >
-                  <span className="text-ink-muted">{thaiDateTime(run.startedAt)}</span>
+                  <span className="text-ink-muted">{formatDateTime(run.startedAt, locale)}</span>
                   <span className="font-medium text-ink">
                     {run.status === "failed"
                       ? (run.error ?? t("runFailedDetail"))

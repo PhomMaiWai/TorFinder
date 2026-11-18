@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { isPlainPath } from "@/lib/backend-path";
 import { jsonResponse } from "@/lib/json-response";
 import { authHeaders } from "@/lib/session-headers";
@@ -20,7 +22,8 @@ const LIBRARY_KINDS = new Set(["projects", "team"]);
 export const isLibraryKind = (kind: string) => LIBRARY_KINDS.has(kind);
 
 /** The answer for a malformed id or kind: the record can't exist, so the backend isn't asked. */
-export const notFound = () => jsonResponse({ message: "ไม่พบรายการนี้" }, { status: 404 });
+export const notFound = async () =>
+  jsonResponse({ message: (await getTranslations("Errors"))("notFound") }, { status: 404 });
 
 /**
  * Passes a call through to the backend with the caller's session. Bodies
@@ -45,7 +48,7 @@ export async function forwardToBackend({ method, path, request }: Forward): Prom
       cache: "no-store",
     } as RequestInit);
   } catch {
-    return jsonResponse({ message: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ" }, { status: 502 });
+    return jsonResponse({ message: (await getTranslations("Errors"))("connectionFailedShort") }, { status: 502 });
   }
 
   if (res.status === 204) return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
@@ -64,11 +67,12 @@ export async function downloadFromBackend(path: string, request: Request): Promi
       cache: "no-store",
     });
   } catch {
-    return jsonResponse({ message: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ" }, { status: 502 });
+    return jsonResponse({ message: (await getTranslations("Errors"))("connectionFailedShort") }, { status: 502 });
   }
   if (!res.ok || !res.body) {
     const data = await res.json().catch(() => null);
-    return jsonResponse({ message: data?.message ?? "เปิดไฟล์ไม่สำเร็จ" }, { status: res.status || 502 });
+    const fallback = (await getTranslations("Errors"))("openFileFailed");
+    return jsonResponse({ message: data?.message ?? fallback }, { status: res.status || 502 });
   }
 
   const headers = new Headers({ "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" });

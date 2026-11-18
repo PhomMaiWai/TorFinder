@@ -89,10 +89,12 @@ describe("TOR detail page — stage timeline", () => {
     const headingAt = html.indexOf("Project timeline");
     assert.ok(headingAt >= 0, "the section heading should render");
 
-    // The header badge above the timeline also prints tor.stage ("ประกาศ
-    // TOR"), so the order check starts searching only from the heading on —
-    // otherwise that earlier mention would read as an out-of-order stage.
-    const order = ["แผนการจัดซื้อจัดจ้าง", "เปิดรับฟังความคิดเห็น", "ประกาศราคากลาง", "ประกาศ TOR", "ประกาศผู้ชนะ"];
+    // The header badge above the timeline also prints the stage ("TOR
+    // announced"), so the order check starts searching only from the heading
+    // on — otherwise that earlier mention would read as an out-of-order stage.
+    // Stage names are stored in Thai and shown in the reader's language
+    // (lib/value-labels.ts); this page renders in English.
+    const order = ["Procurement plan", "Public hearing", "Reference price", "TOR announced", "Winner announced"];
     const positions = [];
     for (const stage of order) {
       positions.push(html.indexOf(stage, positions.at(-1) ?? headingAt));
@@ -110,25 +112,25 @@ describe("TOR detail page — stage timeline", () => {
   it("marks the draft and invitation reached, with the dates their documents carry", async () => {
     const html = await renderPage(`/tor/${insertedId}`);
 
-    assert.ok(hasStageStyledAs(html, "เปิดรับฟังความคิดเห็น", "reached"), "the draft stage should read as reached");
-    assert.ok(html.includes("15 ส.ค. 2569"), "the draft's date should be the document's publishedAt");
-    assert.ok(html.includes("1 ก.ย. 2569"), "the invitation's date should be the document's publishedAt");
+    assert.ok(hasStageStyledAs(html, "Public hearing", "reached"), "the draft stage should read as reached");
+    assert.ok(html.includes("15 Aug 2026"), "the draft's date should be the document's publishedAt");
+    assert.ok(html.includes("1 Sept 2026"), "the invitation's date should be the document's publishedAt");
   });
 
   it("marks the invitation as the current stage", async () => {
     const html = await renderPage(`/tor/${insertedId}`);
-    assert.ok(hasStageStyledAs(html, "ประกาศ TOR", "current"), "the record's own stage should read as current");
+    assert.ok(hasStageStyledAs(html, "TOR announced", "current"), "the record's own stage should read as current");
   });
 
   it("leaves the plan and reference price unreached — no document names either one", async () => {
     const html = await renderPage(`/tor/${insertedId}`);
 
-    assert.ok(hasStageStyledAs(html, "แผนการจัดซื้อจัดจ้าง", "unreached"), "no plan document was ever published");
-    assert.ok(hasStageStyledAs(html, "ประกาศราคากลาง", "unreached"), "no reference price document was ever published");
+    assert.ok(hasStageStyledAs(html, "Procurement plan", "unreached"), "no plan document was ever published");
+    assert.ok(hasStageStyledAs(html, "Reference price", "unreached"), "no reference price document was ever published");
   });
 
   it("leaves the award unreached — the project hasn't gotten there yet", async () => {
     const html = await renderPage(`/tor/${insertedId}`);
-    assert.ok(hasStageStyledAs(html, "ประกาศผู้ชนะ", "unreached"));
+    assert.ok(hasStageStyledAs(html, "Winner announced", "unreached"));
   });
 });

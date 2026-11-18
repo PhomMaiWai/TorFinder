@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
 import { idPath } from "@/lib/backend-path";
@@ -19,11 +20,12 @@ export async function submitFeedback(
   _prev: FeedbackState,
   formData: FormData,
 ): Promise<FeedbackState> {
+  const te = await getTranslations("Errors");
   const text = String(formData.get("text") ?? "").trim();
   const author = String(formData.get("author") ?? "").trim();
 
   if (text.length < 10) {
-    return { error: "กรุณาเขียนความคิดเห็นอย่างน้อย 10 ตัวอักษร" };
+    return { error: te("feedbackTooShort") };
   }
 
   const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(torId)}/feedback`, {
@@ -35,10 +37,10 @@ export async function submitFeedback(
 
   if (!res.ok) {
     // 429 is the rate limit, and saying so beats a generic failure.
-    if (res.status === 429) return { error: "ส่งความคิดเห็นถี่เกินไป กรุณารอสักครู่" };
+    if (res.status === 429) return { error: te("feedbackTooFrequent") };
     // A 400 says why in its own words — e.g. the comment period closed while the page was open.
     const body = res.status === 400 ? await res.json().catch(() => null) : null;
-    return { error: typeof body?.message === "string" ? body.message : "ส่งความคิดเห็นไม่สำเร็จ" };
+    return { error: typeof body?.message === "string" ? body.message : te("feedbackFailed") };
   }
 
   revalidatePath(`/tor/${torId}`);
@@ -58,12 +60,13 @@ export async function submitReport(
   _prev: ReportState,
   formData: FormData,
 ): Promise<ReportState> {
+  const te = await getTranslations("Errors");
   const reason = String(formData.get("reason") ?? "");
   const message = String(formData.get("message") ?? "").trim();
   const contact = String(formData.get("contact") ?? "").trim();
 
-  if (!isReportReason(reason)) return { error: "กรุณาเลือกประเภทของปัญหา" };
-  if (message.length < 10) return { error: "กรุณาอธิบายปัญหาอย่างน้อย 10 ตัวอักษร" };
+  if (!isReportReason(reason)) return { error: te("reportReasonRequired") };
+  if (message.length < 10) return { error: te("reportTooShort") };
 
   const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(torId)}/reports`, {
     method: "POST",
@@ -73,10 +76,10 @@ export async function submitReport(
   });
 
   if (!res.ok) {
-    if (res.status === 429) return { error: "แจ้งปัญหาถี่เกินไป กรุณารอสักครู่" };
+    if (res.status === 429) return { error: te("reportTooFrequent") };
     const body = res.status === 400 ? await res.json().catch(() => null) : null;
     const reasonText = Array.isArray(body?.message) ? body.message[0] : body?.message;
-    return { error: typeof reasonText === "string" ? reasonText : "แจ้งปัญหาไม่สำเร็จ กรุณาลองใหม่" };
+    return { error: typeof reasonText === "string" ? reasonText : te("reportFailed") };
   }
 
   return { submitted: true };

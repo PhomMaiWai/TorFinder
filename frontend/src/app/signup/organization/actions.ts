@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -12,6 +13,7 @@ export async function signupOrganization(
   _prev: SignupState,
   formData: FormData,
 ): Promise<SignupState> {
+  const te = await getTranslations("Errors");
   const payload = Object.fromEntries(
     ["email", "password", "companyName", "taxId", "contactName", "phone", "address", "specialty", "size"].map(
       // The password goes exactly as typed: trimming it here but not at login
@@ -33,13 +35,13 @@ export async function signupOrganization(
       signal: AbortSignal.timeout(8000),
     });
   } catch {
-    return { error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่" };
+    return { error: te("connectionFailed") };
   }
 
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
-    return { error: message ?? "สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่" };
+    return { error: message ?? te("signupFailed") };
   }
 
   // The email marks a password sign-up: its address still has to be confirmed
