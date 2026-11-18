@@ -33,14 +33,22 @@ async function api(path, { method = "GET", body, token } = {}) {
   return { status: res.status, body: text ? JSON.parse(text) : undefined };
 }
 
-/** Posts events the way LINE does; `signature` overrides the real one. */
-async function webhook(events, { signature, secret = LINE_SECRET } = {}) {
+// Must match LINE_WEBHOOK_THROTTLE_LIMIT in the workflow (backend default 300).
+const WEBHOOK_LIMIT = Number(process.env.LINE_WEBHOOK_THROTTLE_LIMIT ?? "300");
+
+/**
+ * Posts events the way LINE does; `signature` overrides the real one. `ip` is
+ * sent as X-Forwarded-For, as the frontend relay does; the backend trusts it
+ * from loopback, so a test can stand in for a separate client.
+ */
+async function webhook(events, { signature, secret = LINE_SECRET, ip } = {}) {
   const raw = JSON.stringify({ destination: "Uxxxx", events });
   const res = await fetch(`${API}/line/webhook`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "x-line-signature": signature ?? createHmac("sha256", secret).update(raw).digest("base64"),
+      ...(ip ? { "x-forwarded-for": ip } : {}),
     },
     body: raw,
   });
@@ -62,6 +70,19 @@ describe("LINE webhook", () => {
 
   it("refuses to start linking without a session", async () => {
     assert.equal((await api("/notifications/channels/line/link", { method: "POST" })).status, 401);
+  });
+
+  it("rate-limits a flood of forged calls from one client, but not other clients", async () => {
+    // A documentation address (RFC 5737) of its own, so this flood doesn't
+    // spend the bucket the other webhook tests use.
+    const flooder = "192.0.2.77";
+    const statuses = [];
+    for (let i = 0; i < WEBHOOK_LIMIT + 5; i += 1) {
+      statuses.push(await webhook([], { signature: "forged", ip: flooder }));
+    }
+    assert.equal(statuses[0], 401, "the first forged calls reach the signature check");
+    assert.equal(statuses.at(-1), 429, "past the limit they are refused before it");
+    assert.equal(await webhook([], { signature: "forged", ip: "192.0.2.78" }), 401, "another client is unaffected");
   });
 });
 

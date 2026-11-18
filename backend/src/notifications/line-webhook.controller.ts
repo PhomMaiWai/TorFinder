@@ -9,7 +9,7 @@ import {
   Req,
   UnauthorizedException,
 } from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
+import { Throttle } from "@nestjs/throttler";
 import { Request } from "express";
 
 import { logSecurityEvent } from "../common/security-log";
@@ -22,9 +22,13 @@ import { NotificationsService } from "./notifications.service";
  * the X-Line-Signature over the raw body, made with the channel secret only
  * LINE and this server know. Set the Webhook URL in the LINE Developers
  * console to https://<site>/api/line/webhook (the frontend passes it through).
+ *
+ * Rate limited per client IP (LINE_WEBHOOK_THROTTLE_LIMIT a minute, default
+ * 300): generous for LINE, but a flood of forged calls gets 429s before any
+ * signature work or bad_signature log line (threat model D6, ASVS 2.4.1).
  */
 @Controller("line")
-@SkipThrottle()
+@Throttle({ default: { limit: env.throttle.lineWebhookLimit, ttl: 60_000 } })
 export class LineWebhookController {
   constructor(private readonly notifications: NotificationsService) {}
 

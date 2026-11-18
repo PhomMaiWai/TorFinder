@@ -236,7 +236,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 2.3.2 | Business logic limits are implemented per the application's documentation to avoid business logic flaws being exploited | Pass | Limits are enforced as documented: rate limits, per-email lockout, saved-search cap, page-size caps |
 | 2.3.3 | Transactions are being used at the business logic level such that either a business logic operation succeeds in its… | Partial | Multi-step writes (e.g. role change, then session revocation, then audit entry) don't use MongoDB transactions; the last-admin guard compensates for its own case |
 | 2.3.4 | Business logic level locking mechanisms are used to ensure that limited quantity resources (such as theater seats or… | N/A | No limited-quantity resources to double-book |
-| 2.4.1 | Anti-automation controls are in place to protect against excessive calls to application functions that could lead to… | Pass | Global, per-route and per-email rate limits; costly AI calls 5/min; see `asvs-l1.md` |
+| 2.4.1 | Anti-automation controls are in place to protect against excessive calls to application functions that could lead to… | Pass | Global, per-route and per-email rate limits; costly AI calls 5/min; the public LINE webhook 300/min per client IP; see `asvs-l1.md` |
 
 ### V3 Web Frontend Security
 

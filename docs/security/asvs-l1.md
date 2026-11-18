@@ -211,6 +211,7 @@ All 5 items (10.4.1–10.4.5) are N/A: they apply to an authorization server. To
 | Signup, login, Google sign-in, password forgot/reset/change, email verify/resend, feedback, reports | 5 / 60 s per client IP (`AUTH_THROTTLE_LIMIT`) | `@Throttle` on each route |
 | Find similar | 30 / 60 s per client IP | `similar.controller.ts` |
 | AI proposal draft | 5 / 60 s per client IP | `ai.controller.ts` |
+| LINE webhook | 300 / 60 s per client IP (`LINE_WEBHOOK_THROTTLE_LIMIT`) | `notifications/line-webhook.controller.ts` |
 | Failed logins and wrong current passwords | 10 per email address, lock lifts after 15 quiet minutes (`LOGIN_FAILURE_LIMIT`) | `auth/login-attempts.ts` |
 
 The client IP is the right-most `X-Forwarded-For` entry the frontend forwards (`frontend/src/lib/client-ip.ts`). The backend believes it only from loopback and private addresses (`TRUST_PROXY`, default `loopback, uniquelocal`). If browsers reach Next.js directly with no proxy in front, a client can still spoof its IP; the per-email limit is the backstop. All counters are per process.
