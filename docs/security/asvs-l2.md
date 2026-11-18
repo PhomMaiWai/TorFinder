@@ -2,21 +2,23 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 92 Pass, 20 Partial, 7 Not done, 61 N/A, 3 not reviewed.** Of the 122 items that apply to TorFinder (excluding N/A), 92 pass (75%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 93 Pass, 20 Partial, 7 Not done, 60 N/A, 3 not reviewed.** Of the 123 items that apply to TorFinder (excluding N/A), 93 pass (76%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+
+**Update 18 Nov 2026:** company file uploads (certificates in #354, the proposal library in #355) made V1.3.4 apply. It passes, since SVG is not an accepted type. The File handling rules and V5.4.1 and V5.4.3 now cover uploads too. The threats these features add are in [threat-model.md](./threat-model.md).
 
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 92 | Control exists, with evidence in code or in this file |
+| Pass | 93 | Control exists, with evidence in code or in this file |
 | Partial | 20 | Control exists with a gap; the gap is named |
 | Not done | 7 | Not implemented; out of scope for this deadline (below) |
-| N/A | 61 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
+| N/A | 60 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 3 | Set by the hosting proxy, outside the repository |
 
 | Chapter | L2 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
-| V1 Encoding and Sanitization | 19 | 6 | 1 | 0 | 12 | 0 |
+| V1 Encoding and Sanitization | 19 | 7 | 1 | 0 | 11 | 0 |
 | V2 Validation and Business Logic | 7 | 5 | 1 | 0 | 1 | 0 |
 | V3 Web Frontend Security | 11 | 9 | 1 | 0 | 1 | 0 |
 | V4 API and Web Service | 8 | 0 | 1 | 0 | 5 | 2 |
@@ -33,7 +35,7 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V15 Secure Coding and Architecture | 10 | 8 | 2 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 16 | 13 | 1 | 2 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **92** | **20** | **7** | **61** | **3** |
+| **Total** | **183** | **93** | **20** | **7** | **60** | **3** |
 
 ## Fixed after the triage (PR #343)
 
@@ -103,7 +105,9 @@ Both end in `AuthService.issueSession`, which applies the same status checks and
 
 (V5.1.1)
 
-TorFinder has no user uploads. It relays documents that procurement portals publish:
+TorFinder handles files from two sources: documents that procurement portals publish, which it relays, and files a company uploads with its own records (certificate scans in #354; CVs, reference letters and past-project files in the proposal library, #355).
+
+**Relayed portal documents:**
 
 | | Rule |
 | --- | --- |
@@ -111,6 +115,17 @@ TorFinder has no user uploads. It relays documents that procurement portals publ
 | Size | 40 MB per file and per zip archive; each zip entry's declared size is checked before it is inflated |
 | Serving | `Content-Disposition` with an RFC 6266 file name, `X-Content-Type-Options: nosniff`; other types are refused |
 | Source | Only URLs stored on a TOR record, fetched server-side |
+
+**Company uploads** (`backend/src/common/stored-files.ts`):
+
+| | Rule |
+| --- | --- |
+| Types | Certificates: PDF, PNG, JPEG. Library: the same plus Word `.docx`. The type comes from the file's bytes, never from its name or the browser's `Content-Type`; a `.docx` must be a ZIP that contains `[Content_Types].xml` and `word/document.xml` |
+| Size | 5 MB per file; 1 file and no other fields per request (multer limits); 100 certificates and 200 library records per company |
+| Name | Reduced to a display name with the extension of its real type (`safeFileName`); never used as a path |
+| Storage | MongoDB GridFS, never the file system or a public folder |
+| Serving | Owner's company only (`OrgGuard`, ownership checked per record); always `Content-Disposition: attachment`, `nosniff`, `Cache-Control: no-store` |
+| Generated | The proposal starter pack is a ZIP built by the server from the company's own files; it stops adding files past 60 MB and says which it left out |
 
 ## Field-level access
 
@@ -198,7 +213,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 1.2.8 | LaTeX processors are configured securely (such as not using the "--shell-escape" flag) and an allowlist of commands… | N/A | No LaTeX |
 | 1.2.9 | The application escapes special characters in regular expressions (typically using a backslash) to prevent them from… | Pass | `common/regex.ts` `escapeRegex` before every `$regex`; `work-types.ts` uses it too (PR #341) |
 | 1.3.3 | Data being passed to a potentially dangerous context is sanitized beforehand to enforce safety measures, such as… | Pass | `@MaxLength` on every text field; "find similar" text is cut to 5,000 characters before it is sent for embedding |
-| 1.3.4 | User-supplied Scalable Vector Graphics (SVG) scriptable content is validated or sanitized to contain only tags and… | N/A | No user file uploads; relayed portal files are limited to PDF, JPEG and PNG (no SVG) |
+| 1.3.4 | User-supplied Scalable Vector Graphics (SVG) scriptable content is validated or sanitized to contain only tags and… | Pass | SVG is never accepted: uploads are typed by their bytes and limited to PDF, PNG, JPEG and Word (`common/stored-files.ts` `sniffFileType`); relayed portal files to PDF, JPEG and PNG (#354, #355) |
 | 1.3.5 | The application sanitizes or disables user-supplied scriptable or expression template language content, such as… | N/A | No user-supplied Markdown, templates or stylesheets; feedback is shown as plain text |
 | 1.3.6 | The application protects against Server-side Request Forgery (SSRF) attacks, by validating untrusted data against an… | Partial | The backend only fetches URLs stored on TOR records, and only document paths; there is no host allowlist (threat E3) |
 | 1.3.7 | The application protects against template injection attacks by not allowing templates to be built based on untrusted… | N/A | No server-side templates built from input |
@@ -258,9 +273,9 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | --- | --- | --- | --- |
 | 5.1.1 | The documentation defines the permitted file types, expected file extensions, and maximum size (including unpacked… | Pass | File handling is written in [File handling](#file-handling) |
 | 5.2.3 | The application checks compressed files (e.g., zip, gz, docx, odt) against maximum allowed uncompressed size and… | Pass | Each zip entry's declared size is checked before inflating, inflation is capped at that size, archives are ≤ 40 MB and only one entry is inflated per request |
-| 5.4.1 | The application validates or ignores user-submitted filenames, including in a JSON, JSONP, or URL parameter and… | Pass | Users never submit file names; every file response sets `Content-Disposition` |
+| 5.4.1 | The application validates or ignores user-submitted filenames, including in a JSON, JSONP, or URL parameter and… | Pass | An uploaded file's name is reduced to a display name: no path, no control characters or quotes, at most 120 characters, and the extension of its real type (`safeFileName`). It is never used as a storage path (GridFS ids are), and every file response sets `Content-Disposition` |
 | 5.4.2 | File names served (e.g., in HTTP response header fields or email attachments) are encoded or sanitized (e.g.,… | Pass | `filename*=UTF-8''` + `encodeURIComponent` (RFC 6266 / 5987) |
-| 5.4.3 | Files obtained from untrusted sources are scanned by antivirus scanners to prevent serving of known malicious content | **Not done** | Portal files are not virus-scanned; they are limited to PDF/JPEG/PNG with magic-byte checks and `nosniff` (accepted risk) |
+| 5.4.3 | Files obtained from untrusted sources are scanned by antivirus scanners to prevent serving of known malicious content | **Not done** | Neither portal files nor company uploads are virus-scanned. Both are limited by type with magic-byte checks and served with `nosniff`; uploads are always attachments, and only their owner's company can download them (accepted risk) |
 
 ### V6 Authentication
 

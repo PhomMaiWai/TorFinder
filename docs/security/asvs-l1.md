@@ -2,7 +2,9 @@
 
 Source-review results against all 70 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 1 requirements. This is a code read-through backed by local tests, not a pentest. TLS and certificates depend on hosting and are not covered.
 
-**Rev. 3 (2026-11-16): 0 Fail, 0 Partial.** 55 Pass, 13 N/A, 2 not reviewed.
+**Rev. 3 (2026-11-16): 0 Fail, 0 Partial.** 56 Pass, 12 N/A, 2 not reviewed.
+
+**Update 18 Nov 2026:** company file uploads (#354, #355) made V5.3.1 apply. It passes, because uploads are stored in GridFS and never written to disk. See [threat-model.md](./threat-model.md).
 
 Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 failing and 10 partial items. All 17 are fixed on branch `fix/asvs-l1-critical-high`. The tables below describe the code on that branch.
 
@@ -10,10 +12,10 @@ Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 fail
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 55 | Control exists, with evidence in code or this file |
+| Pass | 56 | Control exists, with evidence in code or this file |
 | Partial | 0 | — |
 | Fail | 0 | — |
-| N/A | 13 | The app has no such feature |
+| N/A | 12 | The app has no such feature |
 | Not reviewed | 2 | TLS version and certificate, set by hosting |
 
 ### Changes since rev. 2
@@ -97,8 +99,8 @@ No requirement is open in code. Two things are left to whoever runs the server:
 | --- | --- | --- | --- |
 | 5.2.1 | Only file sizes it can process | Pass | 40 MB caps in `tor-document.service.ts`, `tor-archive.service.ts`, `archive-files.ts`; `inflateRawSync` with `maxOutputLength` (`common/zip.ts`) |
 | 5.2.2 | Extension and content match the expected type | Pass | Extension and magic bytes both checked (`common/archive-files.ts`) |
-| 5.3.1 | Untrusted files in public folders not executed | N/A | Nothing is written to disk |
-| 5.3.2 | File paths don't use user-supplied names | Pass | Zip entry names reduced to a base name, used only in `Content-Disposition` |
+| 5.3.1 | Untrusted files in public folders not executed | Pass | Company uploads (#354, #355) go to MongoDB GridFS, never to disk or a public folder, and are only ever served as attachments with `nosniff`; relayed portal files are never written to disk |
+| 5.3.2 | File paths don't use user-supplied names | Pass | Zip entry names reduced to a base name, used only in `Content-Disposition`; uploaded files are stored under a GridFS id, and their name is only a display name (`safeFileName`) |
 
 ## V6 — Authentication
 
