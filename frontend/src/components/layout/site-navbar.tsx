@@ -179,7 +179,7 @@ export function SiteNavbar() {
                 onMouseEnter={movePill}
                 onFocus={movePill}
                 aria-current={active ? "location" : undefined}
-                className={`relative px-3.5 py-2 text-sm transition-colors duration-200 ${
+                className={`relative whitespace-nowrap px-3.5 py-2 text-sm transition-colors duration-200 ${
                   active ? "font-semibold text-ink" : "text-ink-muted hover:text-ink"
                 }`}
               >
@@ -289,7 +289,7 @@ export function SiteNavbar() {
             ) : (
               <Link
                 href="/login"
-                className="hidden h-9 items-center rounded-xl bg-accent px-4 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-px hover:bg-accent-dark md:flex"
+                className="hidden h-9 items-center whitespace-nowrap rounded-xl bg-accent px-4 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-px hover:bg-accent-dark md:flex"
               >
                 {t("login")}
               </Link>

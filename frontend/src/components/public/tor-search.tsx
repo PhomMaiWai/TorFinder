@@ -410,7 +410,7 @@ function PublicTorCard({
                 key={tag}
                 className="rounded-md bg-surface-alt px-2.5 py-1 text-2xs font-medium text-ink-muted ring-1 ring-border"
               >
-                {tag}
+                {valueLabel(tv, "tag", tag)}
               </span>
             ))}
           </div>

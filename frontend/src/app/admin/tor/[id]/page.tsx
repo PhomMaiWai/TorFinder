@@ -67,7 +67,7 @@ export default async function AdminTorDetailPage({
             <div className="mt-6 flex flex-wrap gap-2">
               {tor.tags.map((tag) => (
                 <span key={tag} className="rounded-full bg-surface-alt px-2.5 py-1 text-xs font-medium text-ink-muted">
-                  {tag}
+                  {valueLabel(tv, "tag", tag)}
                 </span>
               ))}
             </div>

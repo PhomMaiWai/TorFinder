@@ -11,8 +11,8 @@
     "orDivider": "or"
   },
   "Navbar": {
-    "navSearch": "Search TORs",
-    "navDashboard": "Market overview",
+    "navSearch": "Search",
+    "navDashboard": "Overview",
     "navHowItWorks": "How it works",
     "navFeatures": "Features",
     "navPreview": "Preview",
@@ -24,7 +24,7 @@
     "closeMenuAriaLabel": "Close menu",
     "openMenuAriaLabel": "Open menu",
     "logout": "Sign out",
-    "navInsights": "Market insights"
+    "navInsights": "Insights"
   },
   "Footer": {
     "productsHeading": "Products",
@@ -1505,6 +1505,20 @@
       "s11to50": "11–50 people",
       "s51to200": "51–200 people",
       "s200plus": "200+ people"
+    },
+    "tag": {
+      "draftTor": "Draft TOR",
+      "invitation": "Invitation to bid",
+      "winnersList": "Winning / selected bidders",
+      "hearing": "Public hearing",
+      "procurementNews": "Procurement news",
+      "winner": "Winning bidder",
+      "plan": "Procurement plan",
+      "referencePrice": "Reference price",
+      "draftBidDocuments": "Draft bid documents",
+      "invitationCancelled": "Invitation cancelled",
+      "procurement": "Procurement",
+      "general": "General"
     }
   },
   "AdminTor": {

@@ -45,6 +45,26 @@ const KEYS = {
     software: "software",
     "not-software": "notSoftware",
   },
+  /**
+   * A TOR's tag: the importers tag each record with the portal's announcement
+   * type (backend egp/mea/gproc constants). data.go.th sends its own type names,
+   * which pass through as published.
+   */
+  tag: {
+    "ร่างขอบเขตของงาน (TOR)": "draftTor",
+    ประกาศเชิญชวน: "invitation",
+    "ประกาศรายชื่อผู้ชนะการเสนอราคา / ประกาศรายชื่อผู้ได้รับการคัดเลือก": "winnersList",
+    ประกาศรับฟังความคิดเห็น: "hearing",
+    ประกาศข่าวจัดซื้อจัดจ้าง: "procurementNews",
+    ประกาศผู้ชนะการเสนอราคา: "winner",
+    ประกาศผู้ชนะ: "winner",
+    แผนการจัดซื้อจัดจ้าง: "plan",
+    ประกาศราคากลาง: "referencePrice",
+    ร่างเอกสารประกวดราคา: "draftBidDocuments",
+    ยกเลิกประกาศเชิญชวน: "invitationCancelled",
+    จัดซื้อจัดจ้าง: "procurement",
+    ทั่วไป: "general",
+  },
   companySize: {
     "1-10 คน": "s1to10",
     "11-50 คน": "s11to50",
