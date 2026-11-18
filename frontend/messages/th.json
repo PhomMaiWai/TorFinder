@@ -75,7 +75,8 @@
     "navReports": "แจ้งปัญหา TOR",
     "navInsights": "ข้อมูลเชิงลึกตลาด",
     "navLibrary": "คลังเอกสาร",
-    "navGrowth": "เส้นทางเติบโต"
+    "navGrowth": "เส้นทางเติบโต",
+    "accountSettings": "ตั้งค่าบัญชี"
   },
   "Dashboard": {
     "newBadge": "ใหม่",
@@ -441,6 +442,10 @@
     "passwordChangedConfirmation": "เปลี่ยนรหัสผ่านแล้ว ระบบได้ออกจากระบบทุกอุปกรณ์ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่",
     "signInAgainButton": "เข้าสู่ระบบอีกครั้ง",
     "budgetRangeInvalid": "งบประมาณขั้นต่ำต้องไม่มากกว่างบประมาณสูงสุด"
+  },
+  "AccountPage": {
+    "pageTitle": "ตั้งค่าบัญชี",
+    "pageDescription": "การตั้งค่าการเข้าสู่ระบบของบัญชีเจ้าหน้าที่หรือบริษัท"
   },
   "NotificationsPage": {
     "pageTitle": "การแจ้งเตือน",
