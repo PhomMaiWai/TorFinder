@@ -125,6 +125,22 @@ describe("the normal user's pages are open to every role", () => {
   }
 });
 
+describe("/account is every password account's own settings", () => {
+  for (const role of ["org", "owner", "admin", "auditor"]) {
+    it(`opens for ${role}`, async () => {
+      assert.equal(await redirectOf("/account", role), null);
+    });
+  }
+
+  it("sends a viewer home (Google sign-in only, no password to change)", async () => {
+    assert.equal(await redirectOf("/account", "viewer"), HOME.viewer);
+  });
+
+  it("sends a guest to sign in", async () => {
+    assert.equal(await redirectOf("/account"), `/login?next=${encodeURIComponent("/account")}`);
+  });
+});
+
 describe("/saved?scope=org is the company's shared list", () => {
   it("sends a viewer to their own saved list", async () => {
     assert.equal(await redirectOf("/saved?scope=org", "viewer"), "/saved");

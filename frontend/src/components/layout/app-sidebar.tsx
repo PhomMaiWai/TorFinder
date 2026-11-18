@@ -195,13 +195,14 @@ function NavLinks({
   );
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: Role }) {
   const t = useTranslations("AppShell");
   const pathname = usePathname();
   const router = useRouter();
-  const isAdmin = pathname.startsWith("/admin");
-  const isAuditor = pathname.startsWith("/auditor");
-  const isOwner = pathname.startsWith("/owner");
+  // A page every role shares (/account) says whose menu to show; elsewhere the path does.
+  const isAdmin = role ? role === "admin" : pathname.startsWith("/admin");
+  const isAuditor = role ? role === "auditor" : pathname.startsWith("/auditor");
+  const isOwner = role ? role === "owner" : pathname.startsWith("/owner");
   const nav = isAdmin
     ? getAdminNav(t)
     : isAuditor
@@ -273,16 +274,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* User */}
       <div className="shrink-0 border-t border-border/80 p-3">
-        <div className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink-muted ring-1 ring-border">
-            {(user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : isAuditor ? "ผู้ตรวจสอบ" : "..."))[0]}
-          </span>
-          <div className="min-w-0 flex-1 text-left">
-            <p className="truncate text-sm font-medium text-ink">
-              {user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : isAuditor ? "ผู้ตรวจสอบ" : "กำลังโหลด...")}
-            </p>
-            <p className="truncate text-xs text-ink-muted">{user?.email ?? ""}</p>
-          </div>
+        <div className="flex w-full items-center gap-1 rounded-lg">
+          {/* The account's own settings (change password), for every role. */}
+          <Link
+            href="/account"
+            onClick={onNavigate}
+            title={t("accountSettings")}
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-border/50"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink-muted ring-1 ring-border">
+              {(user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : isAuditor ? "ผู้ตรวจสอบ" : "..."))[0]}
+            </span>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="truncate text-sm font-medium text-ink">
+                {user?.name ?? (isAdmin ? "ผู้ดูแลระบบ" : isAuditor ? "ผู้ตรวจสอบ" : "กำลังโหลด...")}
+              </p>
+              <p className="truncate text-xs text-ink-muted">{user?.email ?? t("accountSettings")}</p>
+            </div>
+          </Link>
           <button
             type="button"
             onClick={handleLogout}
@@ -299,21 +308,22 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+/** `role`: whose menu to show on a page every role shares; otherwise it follows the path. */
+export function AppShell({ children, role }: { children: React.ReactNode; role?: Role }) {
   const t = useTranslations("AppShell");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-surface">
       <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 border-r border-border/80 md:block">
-        <SidebarContent />
+        <SidebarContent role={role} />
       </aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
           <aside className="absolute left-0 top-0 h-full w-[260px] border-r border-border/80 shadow-xl">
-            <SidebarContent onNavigate={() => setMobileOpen(false)} />
+            <SidebarContent role={role} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}

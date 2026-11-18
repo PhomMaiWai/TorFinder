@@ -23,6 +23,9 @@ const PROTECTED_PREFIXES = [
   "/growth",
   "/saved",
   "/notifications",
+  // Every password account's own sign-in settings (change password); a viewer
+  // is sent home below, as they sign in with Google only.
+  "/account",
 ];
 /** Pages only an admin may see. */
 const ADMIN_ONLY_PREFIXES = ["/admin"];

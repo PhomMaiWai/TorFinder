@@ -75,7 +75,8 @@
     "navReports": "TOR reports",
     "navInsights": "Market insights",
     "navLibrary": "Proposal library",
-    "navGrowth": "Growth path"
+    "navGrowth": "Growth path",
+    "accountSettings": "Account settings"
   },
   "Dashboard": {
     "newBadge": "New",
@@ -441,6 +442,10 @@
     "passwordChangedConfirmation": "Password changed. You've been signed out everywhere — sign in with your new password.",
     "signInAgainButton": "Sign in again",
     "budgetRangeInvalid": "The minimum budget can't be more than the maximum."
+  },
+  "AccountPage": {
+    "pageTitle": "Account settings",
+    "pageDescription": "Sign-in settings for your staff or company account."
   },
   "NotificationsPage": {
     "pageTitle": "Notifications",
