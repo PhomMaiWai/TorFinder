@@ -9,7 +9,7 @@ import {
   verifySessionToken,
 } from "@/lib/auth";
 import { jsonResponse } from "@/lib/json-response";
-import { homeFor } from "@/lib/roles";
+import { type Role, homeFor } from "@/lib/roles";
 
 /** Pages only a signed-in account may see. */
 // /dashboard is the public overview now; the company workspace lives at /matches.
@@ -26,6 +26,8 @@ const PROTECTED_PREFIXES = [
 ];
 /** Pages only an admin may see. */
 const ADMIN_ONLY_PREFIXES = ["/admin"];
+/** The company's own workspace; staff have their own consoles and a viewer has none. */
+const ORG_ONLY_PREFIXES = ["/matches", "/profile", "/library", "/growth", "/notifications"];
 /** The project owner's own announcements; the data behind it is owner-only too. */
 const OWNER_ONLY_PREFIXES = ["/owner"];
 /** Pages only the Auditor Office may see. */
@@ -49,6 +51,13 @@ const PUBLIC_API_ROUTES = [
   // Called by LINE's servers, not a browser; the backend checks its signature.
   "/api/line/webhook",
 ];
+
+/**
+ * Accounts that work inside the company workspace (the sidebar with company
+ * profile, matches, library…). /search and a TOR opened with `?in=app` are that
+ * workspace's view of public pages; anyone else gets the public view.
+ */
+const WORKSPACE_ROLES: readonly Role[] = ["org", "owner"];
 
 /** Announcement files are as public as the announcement pages that show them. */
 const PUBLIC_API_PATTERNS = [
@@ -155,6 +164,9 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
     return session ? NextResponse.redirect(new URL(homeFor(session.role), request.url)) : null;
   }
 
+  const toPublicView = publicViewFor(request, session);
+  if (toPublicView) return NextResponse.redirect(toPublicView);
+
   const isProtected = matches(pathname, PROTECTED_PREFIXES);
   const isGuestOnly = matches(pathname, GUEST_ONLY_PREFIXES);
   if (!isProtected && !isGuestOnly) return null;
@@ -179,6 +191,10 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  if (matches(pathname, ORG_ONLY_PREFIXES) && session.role !== "org") {
+    return NextResponse.redirect(new URL(homeFor(session.role), request.url));
+  }
+
   if (matches(pathname, OWNER_ONLY_PREFIXES) && session.role !== "owner") {
     return NextResponse.redirect(new URL(homeFor(session.role), request.url));
   }
@@ -187,6 +203,32 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
     return NextResponse.redirect(new URL(homeFor(session.role), request.url));
   }
 
+  return null;
+}
+
+/**
+ * The public page a workspace URL stands for, when the session isn't a
+ * workspace account (a viewer, staff, or a guest); null otherwise. Keeps the
+ * rest of the query, so filters and `?similar=` survive the move.
+ */
+function publicViewFor(request: NextRequest, session: SessionPayload | null): URL | null {
+  const { pathname, searchParams } = request.nextUrl;
+  const inWorkspace = session ? WORKSPACE_ROLES.includes(session.role) : false;
+  const url = request.nextUrl.clone();
+
+  if (pathname === "/search" && !inWorkspace) {
+    url.pathname = "/public";
+    return url;
+  }
+  if (/^\/tor\/[^/]+$/.test(pathname) && searchParams.get("in") === "app" && !inWorkspace) {
+    url.searchParams.delete("in");
+    return url;
+  }
+  // The company's shared saved list; a viewer's own list is plain /saved.
+  if (pathname === "/saved" && searchParams.get("scope") === "org" && session?.role !== "org") {
+    url.searchParams.delete("scope");
+    return url;
+  }
   return null;
 }
 
