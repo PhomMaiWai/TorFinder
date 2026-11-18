@@ -30,7 +30,8 @@ import { LibraryService } from "./library.service";
 
 /** ":kind" is "projects" or "team"; anything else is a route that doesn't exist. */
 function kindOf(kind: string): LibraryKind {
-  if (!(kind in LIBRARY_KINDS)) throw new NotFoundException();
+  // Own keys only: `in` would also accept "constructor" or "__proto__".
+  if (!Object.hasOwn(LIBRARY_KINDS, kind)) throw new NotFoundException();
   return kind as LibraryKind;
 }
 

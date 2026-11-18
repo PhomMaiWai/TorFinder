@@ -1,3 +1,4 @@
+import { isPlainPath } from "@/lib/backend-path";
 import { jsonResponse } from "@/lib/json-response";
 import { authHeaders } from "@/lib/session-headers";
 
@@ -14,12 +15,20 @@ type Forward = {
   request?: Request;
 };
 
+/** The proposal library's record kinds, as the backend's `LIBRARY_KINDS` names them. */
+const LIBRARY_KINDS = new Set(["projects", "team"]);
+export const isLibraryKind = (kind: string) => LIBRARY_KINDS.has(kind);
+
+/** The answer for a malformed id or kind: the record can't exist, so the backend isn't asked. */
+export const notFound = () => jsonResponse({ message: "ไม่พบรายการนี้" }, { status: 404 });
+
 /**
  * Passes a call through to the backend with the caller's session. Bodies
  * stream through untouched — a 5 MB upload is never read into this server's
  * memory — and the backend does all the validating.
  */
 export async function forwardToBackend({ method, path, request }: Forward): Promise<Response> {
+  if (!isPlainPath(path)) return notFound();
   const headers = new Headers(await authHeaders());
   const contentType = request?.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
@@ -46,6 +55,7 @@ export async function forwardToBackend({ method, path, request }: Forward): Prom
 
 /** A stored file (or a generated ZIP), streamed back as a download. */
 export async function downloadFromBackend(path: string, request: Request): Promise<Response> {
+  if (!isPlainPath(path)) return notFound();
   let res: Response;
   try {
     res = await fetch(`${BACKEND_URL}/api${path}`, {

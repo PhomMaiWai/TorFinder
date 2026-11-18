@@ -1,18 +1,23 @@
-import { downloadFromBackend, forwardToBackend } from "@/lib/backend-proxy";
+import { idPath, isObjectId } from "@/lib/backend-path";
+import { downloadFromBackend, forwardToBackend, notFound } from "@/lib/backend-proxy";
 
 type Context = { params: Promise<{ id: string }> };
 
-const pathOf = (id: string) => `/certificates/${encodeURIComponent(id)}/file`;
+/** Only a real ObjectId reaches the backend path (see `idPath`). */
+const pathOf = (id: string) => (isObjectId(id) ? `/certificates/${idPath(id)}/file` : null);
 
 export async function GET(request: Request, { params }: Context) {
-  return downloadFromBackend(pathOf((await params).id), request);
+  const path = pathOf((await params).id);
+  return path ? downloadFromBackend(path, request) : notFound();
 }
 
 /** A multipart upload with one `file` part, streamed through to the backend. */
 export async function PUT(request: Request, { params }: Context) {
-  return forwardToBackend({ method: "PUT", path: pathOf((await params).id), request });
+  const path = pathOf((await params).id);
+  return path ? forwardToBackend({ method: "PUT", path, request }) : notFound();
 }
 
 export async function DELETE(_request: Request, { params }: Context) {
-  return forwardToBackend({ method: "DELETE", path: pathOf((await params).id) });
+  const path = pathOf((await params).id);
+  return path ? forwardToBackend({ method: "DELETE", path }) : notFound();
 }

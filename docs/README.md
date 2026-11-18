@@ -77,6 +77,7 @@ change must keep.
 
 | Document | Covers |
 | --- | --- |
+| [threat-model.md](./security/threat-model.md) | STRIDE threat model: data-flow diagram, 36 threats scored by likelihood × impact, design principles, mitigation checklist |
 | [asvs-l1.md](./security/asvs-l1.md) | Self-audit against OWASP ASVS 5.0 Level 1 |
 | [asvs-l2.md](./security/asvs-l2.md) | Triage against all 183 OWASP ASVS 5.0 Level 2 requirements |
 | [sast-report.md](./security/sast-report.md) | CodeQL and Semgrep scans: findings, fixes and false positives |

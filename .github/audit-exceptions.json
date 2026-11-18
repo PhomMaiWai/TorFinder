@@ -1,0 +1,9 @@
+[
+  {
+    "advisory": "GHSA-fc5q-39xc-vjpf",
+    "package": "picomatch",
+    "project": "frontend",
+    "until": "2026-12-31",
+    "reason": "ReDoS in picomatch through repeated extglobs; no patched version exists (every release up to 4.0.7 is affected). Shipped only through next-intl -> @parcel/watcher, which next-intl loads for its message extractor, and only when next.config.ts sets experimental.extract. TorFinder does not, and the globs it would match are config, never user input. Unreachable at runtime. Re-check before the date; remove once picomatch ships a fix."
+  }
+]

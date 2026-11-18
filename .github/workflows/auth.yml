@@ -89,9 +89,10 @@ jobs:
         run: npm ci
 
       # ASVS 15.2.1: a high or critical advisory in a shipped package fails the
-      # build, enforcing the patch SLA in docs/security/asvs-l1.md.
+      # build, enforcing the patch SLA in docs/security/asvs-l1.md. The only
+      # way past one is a reasoned, dated entry in .github/audit-exceptions.json.
       - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: node ../.github/scripts/npm-audit.mjs backend
 
       - name: Lint
         run: npm run lint
@@ -149,8 +150,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Same rule as the backend (ASVS 15.2.1), with the same exceptions file.
       - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: node ../.github/scripts/npm-audit.mjs frontend
 
       - name: Lint
         run: npm run lint

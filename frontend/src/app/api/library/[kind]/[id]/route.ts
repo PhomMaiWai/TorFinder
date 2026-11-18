@@ -1,16 +1,20 @@
-import { forwardToBackend } from "@/lib/backend-proxy";
+import { idPath, isObjectId } from "@/lib/backend-path";
+import { forwardToBackend, isLibraryKind, notFound } from "@/lib/backend-proxy";
 
 type Context = { params: Promise<{ kind: string; id: string }> };
 
+/** Only a known kind and a real ObjectId reach the backend path. */
 const pathOf = async (params: Context["params"]) => {
   const { kind, id } = await params;
-  return `/library/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`;
+  return isLibraryKind(kind) && isObjectId(id) ? `/library/${kind}/${idPath(id)}` : null;
 };
 
 export async function PUT(request: Request, { params }: Context) {
-  return forwardToBackend({ method: "PUT", path: await pathOf(params), request });
+  const path = await pathOf(params);
+  return path ? forwardToBackend({ method: "PUT", path, request }) : notFound();
 }
 
 export async function DELETE(_request: Request, { params }: Context) {
-  return forwardToBackend({ method: "DELETE", path: await pathOf(params) });
+  const path = await pathOf(params);
+  return path ? forwardToBackend({ method: "DELETE", path }) : notFound();
 }

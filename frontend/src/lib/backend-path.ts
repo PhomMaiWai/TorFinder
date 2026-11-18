@@ -17,3 +17,21 @@ export function idPath(id: unknown): string {
   if (!isObjectId(id)) throw new Error("Invalid record id");
   return encodeURIComponent(id);
 }
+
+/**
+ * True when every segment of a backend path is an ordinary name: no `.` or
+ * `..`, and no `/` or `\` hidden by percent-encoding. The shared proxy
+ * (`backend-proxy.ts`) refuses any other path, as a last line behind
+ * `idPath()` at each route.
+ */
+export function isPlainPath(path: string): boolean {
+  return path.split("/").every((segment) => {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      return false;
+    }
+    return decoded !== "." && decoded !== ".." && !decoded.includes("/") && !decoded.includes("\\");
+  });
+}
