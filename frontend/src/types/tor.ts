@@ -158,6 +158,8 @@ export type TorRecord = {
   procurementType?: string;
   goodsCategory?: string;
   contractStatus?: string;
+  /** The kinds of work the title names, as matching reads them (list endpoint only). */
+  workTypes?: WorkType[];
 };
 
 /** What a model read out of the announcement document — inferred, not published. */

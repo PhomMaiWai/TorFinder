@@ -195,6 +195,15 @@ describe("GET /api/tor — list", () => {
     assert.ok(res.body.some((t) => t.id === created.id), "new record is in the listing");
   });
 
+  it("names the kinds of work the title states, for the overview's budget-by-kind chart", async () => {
+    const res = await api("/tor");
+    const row = res.body.find((t) => t.id === created.id);
+
+    // "จ้างพัฒนาระบบ…" is custom development in the matching vocabulary.
+    assert.ok(Array.isArray(row.workTypes));
+    assert.ok(row.workTypes.includes("development"), JSON.stringify(row.workTypes));
+  });
+
   it("honours pageSize", async () => {
     const res = await api("/tor?pageSize=1");
 
