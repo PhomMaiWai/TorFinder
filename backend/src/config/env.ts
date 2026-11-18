@@ -82,6 +82,11 @@ export const env = {
     // Login is brute-forceable, so it gets its own tighter budget.
     authTtlMs: optionalNumber("AUTH_THROTTLE_TTL_MS", 60_000),
     authLimit: optionalNumber("AUTH_THROTTLE_LIMIT", 5),
+    // The public LINE webhook (threat model D6): far above what LINE itself
+    // sends for one bot, but enough to stop a flood of forged calls filling the
+    // security log with bad_signature events. Counted per client IP, which the
+    // frontend relay forwards.
+    lineWebhookLimit: optionalNumber("LINE_WEBHOOK_THROTTLE_LIMIT", 300),
     // Failed logins per email address, whatever IP they come from — what still
     // stops guessing one account's password when the attacker rotates or
     // spoofs addresses (ASVS 6.3.1).

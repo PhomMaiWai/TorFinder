@@ -4,20 +4,18 @@ STRIDE threat model of TorFinder for the Software Development Security course (0
 
 ## Summary
 
-We found **36 threats**. **34 are mitigated, 2 are partly mitigated (both Low), and none is open.** All 3 Critical and all 15 High threats are closed.
+We found **36 threats**. **35 are mitigated, 1 is partly mitigated (Low), and none is open.** All 3 Critical and all 15 High threats are closed.
 
 - **New since the first draft:** 9 threats, from three features that add new entry points (company file uploads in #354 and #355, the public LINE webhook in #358) and from what the SAST and DAST scans showed.
-- **Partly mitigated:**
-  - E3: a host allowlist for document fetches. Stretch issue #345.
-  - D6: a rate limit on the LINE webhook.
+- **Partly mitigated:** E3, a host allowlist for document fetches (stretch issue #345).
 
 | Priority | Threats | Mitigated | Partial | Open |
 | --- | --- | --- | --- | --- |
 | Critical | 3 | 3 | 0 | 0 |
 | High | 15 | 15 | 0 | 0 |
 | Medium | 12 | 12 | 0 | 0 |
-| Low | 6 | 4 | 2 | 0 |
-| **Total** | **36** | **34** | **2** | **0** |
+| Low | 6 | 5 | 1 | 0 |
+| **Total** | **36** | **35** | **1** | **0** |
 
 How the mitigations are checked:
 
@@ -132,7 +130,7 @@ L = likelihood and I = impact, each rated 1–3. Priority comes from L × I (see
 | S8 | **New.** Guess a live LINE link code and link one's own LINE to another account | LINE webhook | 1 | 2 | Low | 8 characters from a 31-letter alphabet (~39 bits) from `randomInt`; valid 10 minutes, single use, stored as a SHA-256 hash; every guess must be a separate LINE message | 6.4.1 | Done (#358) |
 | T8 | **New.** Pollute an object's prototype with a key such as `__proto__` or `constructor` from a request | `tor.service.ts` `changedFields`, library `:kind` | 1 | 2 | Low | DTO whitelist; `changedFields` skips prototype keys (#341); the library's `kind` check uses `Object.hasOwn` instead of `in` (this PR). CodeQL alert #24 still flags `changedFields`; closing it is issue #350 | 15.3.6 | Done (alert open in #350) |
 | E3 | Make the backend fetch an internal address through an admin-entered document URL (SSRF) | Document relay | 1 | 2 | Low | Only URLs stored on a TOR are fetched, and only PDF/image paths; admin-only input. A host allowlist is not in place (stretch issue #345) | 1.3.6, 15.3.2 | Partial |
-| D6 | **New.** Flood the public LINE webhook, or the security log with `bad_signature` events | `POST /api/line/webhook` | 2 | 1 | Low | Signature check is cheap and fails closed; but the route has `@SkipThrottle()`, so it has no rate limit. A generous limit (e.g. 300/min) is the remaining step | 2.4.1 | Partial |
+| D6 | **New.** Flood the public LINE webhook, or the security log with `bad_signature` events | `POST /api/line/webhook` | 2 | 1 | Low | Signature check is cheap and fails closed. The route is rate limited per client IP (`LINE_WEBHOOK_THROTTLE_LIMIT`, 300 a minute), counted before the signature check or any log line; the frontend relay forwards the caller's IP so a flood doesn't share LINE's bucket (`line-webhook.controller.ts`, `frontend/src/app/api/line/webhook/route.ts`) | 2.4.1 | Done (this PR) |
 
 ## Priorities
 
@@ -162,9 +160,7 @@ Score = likelihood × impact, each rated 1 (low) to 3 (high). Mitigations were i
    - request forgery (T5), from the SAST scan, in PR #341
 4. **Level 2 hardening (PR #343):** CSP, the inactivity timeout and `no-store` strengthened S5 and E2.
 5. **New features (#354, #355, #358):** these were reviewed as they merged. Their High threats (S7, T6, I8) were mitigated in the features themselves. T5's gap in the new routes and T8's `in` check are fixed in this revision.
-6. **Low:** the email in the signup URL (I5) is done. Two items are left for later:
-   - the host allowlist for document fetches (E3)
-   - the webhook rate limit (D6)
+6. **Low:** the email in the signup URL (I5) and the webhook rate limit (D6) are done. One item is left for later: the host allowlist for document fetches (E3).
 
 ## Security design principles
 
@@ -187,7 +183,7 @@ Each principle (Saltzer and Schroeder, plus OWASP's secure-design list) is mappe
 
 ## Mitigation checklist
 
-**34 of 36 mitigations are done.** Each one's evidence is in the Threats table, [asvs-l1.md](./asvs-l1.md), [asvs-l2.md](./asvs-l2.md) and [logging-and-errors.md](./logging-and-errors.md).
+**35 of 36 mitigations are done.** Each one's evidence is in the Threats table, [asvs-l1.md](./asvs-l1.md), [asvs-l2.md](./asvs-l2.md) and [logging-and-errors.md](./logging-and-errors.md).
 
 Done since the first draft:
 
@@ -202,11 +198,11 @@ Done since the first draft:
   - The DAST scan added the fallback CSP for pages the proxy skips (PR #357).
 - [x] **T6, I8, D5:** company file uploads are typed by their bytes, owner-only and size-capped (PRs #354, #355).
 - [x] **S7, T7, S8:** LINE linking uses a signed webhook, no pasted ids and one-time hashed codes (PR #358).
+- [x] **D6 (Low):** the LINE webhook is rate limited per client IP, 300 a minute, instead of `@SkipThrottle()`.
 
 Not done:
 
 - [ ] **E3 (Low, partial):** limit document fetches to the known portal hosts. Stretch issue #345.
-- [ ] **D6 (Low, partial):** give the LINE webhook a generous rate limit instead of `@SkipThrottle()`.
 
 ## Scan results against this model
 

@@ -24,6 +24,7 @@ Code: `backend/src/common/security-log.ts` (`logSecurityEvent`).
 | `auth.password.reset` | Reset link used | `invalid_or_expired_link` |
 | `auth.email.verify` | Email verification link used | `invalid_or_expired_link` |
 | `access.denied` | A session or role guard refuses a request | `no_token`, `invalid_token`, `revoked_token`, `wrong_role` |
+| `line.webhook.bad_signature` | A call to `POST /api/line/webhook` without a valid `X-Line-Signature` (refused with 401) | — |
 | `rate.limited` | Any 429 from the rate limiter | `limit_<n>_per_<s>s` |
 
 Every record carries `ts` (UTC ISO time), `event` and `outcome`, and when known `userId`, `email`, `role`, `ip` (the client address, see `trust proxy` in `backend/src/main.ts`), `method` and `path` (without the query string).

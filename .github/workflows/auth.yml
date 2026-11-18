@@ -61,6 +61,9 @@ jobs:
       LINE_CHANNEL_ACCESS_TOKEN: ci-line-token
       LINE_CHANNEL_SECRET: ci-line-secret
       LINE_BOT_ID: "@torfinder-ci"
+      # Kept low so line-link.e2e.test.mjs can reach it quickly; that test
+      # floods from its own X-Forwarded-For address and sizes itself off this.
+      LINE_WEBHOOK_THROTTLE_LIMIT: "40"
       # Generous general limit so the full suite fits one 60s window; only the
       # auth brute-force test cares about the (separate, tighter) login limit.
       THROTTLE_LIMIT: "300"
