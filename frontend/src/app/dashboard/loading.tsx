@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { Skeleton, SkeletonCard, SkeletonScreen } from "@/components/ui/skeleton";
 
 /**
@@ -5,10 +7,11 @@ import { Skeleton, SkeletonCard, SkeletonScreen } from "@/components/ui/skeleton
  * public navbar depends on the session, which isn't known until it renders.
  */
 export default function DashboardLoading() {
+  const t = useTranslations("Loading");
   return (
     <main className="aurora min-h-screen bg-surface-alt/40">
       <div className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-8">
-        <SkeletonScreen label="กำลังรวบรวมภาพรวมของประกาศทั้งหมด">
+        <SkeletonScreen label={t("dashboard")}>
           <div className="grid gap-8 rounded-3xl border border-border/60 bg-surface/60 p-8 lg:grid-cols-2">
             <div className="space-y-3">
               <Skeleton className="h-6 w-56 rounded-full" />

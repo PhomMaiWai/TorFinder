@@ -173,7 +173,7 @@ export function FilterBar({
               onClick={() => onPillChange(id)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 activePill === id
-                  ? "bg-ink text-white"
+                  ? "bg-ink text-surface"
                   : "bg-surface text-ink-muted ring-1 ring-border hover:text-ink"
               }`}
             >

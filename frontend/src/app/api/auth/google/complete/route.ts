@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 
 import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { clientIpHeaders } from "@/lib/client-ip";
@@ -6,6 +7,7 @@ import { jsonResponse } from "@/lib/json-response";
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 export async function POST(request: Request) {
+  const te = await getTranslations("Errors");
   const body = await request.json().catch(() => null);
 
   let backendRes: Response;
@@ -18,7 +20,7 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(8000),
     });
   } catch {
-    return jsonResponse({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่" }, { status: 502 });
+    return jsonResponse({ error: te("connectionFailed") }, { status: 502 });
   }
 
   const data = await backendRes.json().catch(() => null);
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
   if (!backendRes.ok || !data?.token) {
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
     return jsonResponse(
-      { error: message ?? "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่" },
+      { error: message ?? te("submitFailed") },
       { status: backendRes.status || 400 },
     );
   }

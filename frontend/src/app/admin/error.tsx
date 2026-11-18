@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { ErrorState } from "@/components/ui/error-state";
 
@@ -11,8 +13,9 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("ErrorState");
   return (
-    <AdminPageShell title="เกิดข้อผิดพลาด" description="โหลดข้อมูลส่วนนี้ไม่สำเร็จ">
+    <AdminPageShell title={t("pageTitle")} description={t("adminDescription")}>
       <ErrorState error={error} reset={reset} />
     </AdminPageShell>
   );

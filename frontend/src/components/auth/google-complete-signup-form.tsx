@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { type SubmitEvent, useState } from "react";
 
 import { COMPANY_SIZE_OPTIONS } from "@/data/company-profile";
+import { valueLabel } from "@/lib/value-labels";
 import {
   digitsOnly,
   formatPhone,
@@ -47,6 +48,8 @@ export function GoogleCompleteSignupForm({
 }: GoogleCompleteSignupFormProps) {
   const t = useTranslations("SignupOrganizationPage");
   const tg = useTranslations("GoogleCompleteSignupForm");
+  const te = useTranslations("Errors");
+  const tv = useTranslations("Values");
   const [values, setValues] = useState<Values>(EMPTY);
   const [touched, setTouched] = useState<Partial<Record<RequiredField, boolean>>>({});
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +97,7 @@ export function GoogleCompleteSignupForm({
       }
       onSubmitted(values.companyName);
     } catch {
-      setError("เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่");
+      setError(te("connectionFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -194,7 +197,7 @@ export function GoogleCompleteSignupForm({
             >
               {COMPANY_SIZE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
-                  {opt}
+                  {valueLabel(tv, "companySize", opt)}
                 </option>
               ))}
             </select>

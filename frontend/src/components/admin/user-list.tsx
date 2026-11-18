@@ -1,12 +1,13 @@
 "use client";
 
 import { Ban, CheckCircle2, Pencil, Search } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import type { DirectoryUser, UserEdit } from "@/lib/admin-api";
 import type { Role } from "@/lib/auth";
-import { thaiDate, timeAgo } from "@/lib/datetime";
+import { formatDate, timeAgo } from "@/lib/datetime";
+import type { Locale } from "@/i18n/config";
 
 /** Exhaustive on purpose: a new role that has no label here is a compile error. */
 const ROLE_LABEL = {
@@ -157,6 +158,7 @@ function UserEditor({
  */
 export function UserList({ users, onSuspend, onReactivate, onEdit }: Props) {
   const t = useTranslations("AdminUsersPage");
+  const locale = useLocale() as Locale;
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -260,10 +262,10 @@ export function UserList({ users, onSuspend, onReactivate, onEdit }: Props) {
                         user.company?.companyName,
                         user.lastLoginAt
                           ? t("lastActiveInfo", {
-                              date: timeAgo(user.lastLoginAt),
+                              date: timeAgo(user.lastLoginAt, locale),
                             })
                           : t("neverSignedIn", {
-                              date: thaiDate(user.createdAt),
+                              date: formatDate(user.createdAt, locale) ?? "",
                             }),
                       ]
                         .filter(Boolean)

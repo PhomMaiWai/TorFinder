@@ -1,6 +1,7 @@
 "use client";
 
 import Script from "next/script";
+import { useTranslations } from "next-intl";
 import { useRef } from "react";
 
 import type { SessionUser } from "@/lib/use-session";
@@ -63,6 +64,7 @@ export function GoogleSignInButton({
   onNeedsCompanyInfo,
 }: GoogleSignInButtonProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
+  const te = useTranslations("Errors");
 
   if (!CLIENT_ID) return null;
 
@@ -76,11 +78,11 @@ export function GoogleSignInButton({
       const data = await res.json();
 
       if (!res.ok) {
-        onError(data.error ?? "เข้าสู่ระบบด้วย Google ไม่สำเร็จ");
+        onError(data.error ?? te("googleLoginFailed"));
         return;
       }
       if (data.status === "pending") {
-        onPending(data.companyName ?? "บริษัทของคุณ");
+        onPending(data.companyName ?? te("yourCompany"));
         return;
       }
       if (data.status === "needs-company-info") {
@@ -93,7 +95,7 @@ export function GoogleSignInButton({
       }
       onSuccess(data.user);
     } catch {
-      onError("เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่");
+      onError(te("connectionFailed"));
     }
   }
 

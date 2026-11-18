@@ -1,28 +1,17 @@
 import { ExternalLink } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { BiddingBadge } from "@/components/public/bidding-badge";
+import type { Locale } from "@/i18n/config";
+import { formatDate } from "@/lib/datetime";
 import { biddingOf } from "@/lib/tor-ui";
 import type { TorRecord } from "@/types/tor";
-
-const DATE = new Intl.DateTimeFormat("th-TH", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "Asia/Bangkok",
-});
 
 const BAHT = new Intl.NumberFormat("th-TH", {
   style: "currency",
   currency: "THB",
   maximumFractionDigits: 0,
 });
-
-function thaiDate(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : DATE.format(date);
-}
 
 const IS_PDF = /\.pdf(\?|$)/i;
 
@@ -47,6 +36,8 @@ type Row = { label: string; value: React.ReactNode; hint?: string };
  */
 export function TorRecordFacts({ tor }: { tor: TorRecord }) {
   const t = useTranslations("TorDetailPage");
+  const locale = useLocale() as Locale;
+  const dateOf = (value: string | null | undefined) => formatDate(value, locale, "long");
   const bidding = biddingOf(tor);
   const [agency, ...units] = tor.agency.split(" · ");
   const contract = tor.contracts?.[0];
@@ -72,17 +63,17 @@ export function TorRecordFacts({ tor }: { tor: TorRecord }) {
       ? {
           label: t("procurementStepLabel"),
           value: tor.procurementStep.name,
-          hint: t("checkedOn", { date: thaiDate(tor.procurementStep.checkedAt) ?? "" }),
+          hint: t("checkedOn", { date: dateOf(tor.procurementStep.checkedAt) ?? "" }),
         }
       : null,
-    tor.feedbackDeadline ? { label: t("feedbackDeadlineLabel"), value: thaiDate(tor.feedbackDeadline) } : null,
-    bidding.opensAt ? { label: t("opensAtLabel"), value: thaiDate(bidding.opensAt) } : null,
+    tor.feedbackDeadline ? { label: t("feedbackDeadlineLabel"), value: dateOf(tor.feedbackDeadline) } : null,
+    bidding.opensAt ? { label: t("opensAtLabel"), value: dateOf(bidding.opensAt) } : null,
     bidding.closesAt
       ? {
           label: t("closesAtLabel"),
           value: bidding.submissionTime
-            ? `${thaiDate(bidding.closesAt)} · ${t("submissionTime", { time: bidding.submissionTime })}`
-            : thaiDate(bidding.closesAt),
+            ? `${dateOf(bidding.closesAt)} · ${t("submissionTime", { time: bidding.submissionTime })}`
+            : dateOf(bidding.closesAt),
           hint: bidding.closesAtSource === "document" ? t("closesFromDocument") : undefined,
         }
       : null,
@@ -106,16 +97,16 @@ export function TorRecordFacts({ tor }: { tor: TorRecord }) {
             : undefined,
         }
       : null,
-    contract?.signedAt ? { label: t("contractSignedLabel"), value: thaiDate(contract.signedAt) } : null,
-    contract?.startsAt ? { label: t("contractStartLabel"), value: thaiDate(contract.startsAt) } : null,
-    contract?.endsAt ? { label: t("contractEndLabel"), value: thaiDate(contract.endsAt) } : null,
+    contract?.signedAt ? { label: t("contractSignedLabel"), value: dateOf(contract.signedAt) } : null,
+    contract?.startsAt ? { label: t("contractStartLabel"), value: dateOf(contract.startsAt) } : null,
+    contract?.endsAt ? { label: t("contractEndLabel"), value: dateOf(contract.endsAt) } : null,
     durationDays
       ? { label: t("contractDurationLabel"), value: t("durationDays", { days: durationDays }) }
       : tor.extraction?.contractPeriod
         ? { label: t("contractDurationLabel"), value: tor.extraction.contractPeriod }
         : null,
-    tor.importedAt ? { label: t("importedAtLabel"), value: thaiDate(tor.importedAt) } : null,
-    updatedAt ? { label: t("updatedAtLabel"), value: thaiDate(updatedAt) } : null,
+    tor.importedAt ? { label: t("importedAtLabel"), value: dateOf(tor.importedAt) } : null,
+    updatedAt ? { label: t("updatedAtLabel"), value: dateOf(updatedAt) } : null,
     pdf
       ? {
           label: t("sourcePdfLabel"),

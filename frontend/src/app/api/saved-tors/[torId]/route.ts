@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -14,7 +15,8 @@ async function authHeaders(): Promise<HeadersInit> {
 
 /** The backend responds 204 to both — nothing to parse as JSON either way. */
 async function proxy(method: "POST" | "DELETE", torId: string) {
-  if (!isObjectId(torId)) return jsonResponse({ error: "ไม่พบรายการ TOR" }, { status: 404 });
+  const te = await getTranslations("Errors");
+  if (!isObjectId(torId)) return jsonResponse({ error: te("torNotFound") }, { status: 404 });
   const res = await fetch(`${BACKEND_URL}/api/saved-tors/${idPath(torId)}`, {
     method,
     headers: await authHeaders(),

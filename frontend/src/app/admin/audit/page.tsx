@@ -1,10 +1,11 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { type AuditFeedQuery, fetchAuditFeed } from "@/lib/admin-api";
-import { thaiDateTime } from "@/lib/datetime";
+import { formatDateTime } from "@/lib/datetime";
+import type { Locale } from "@/i18n/config";
 
 const inputCls =
   "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10";
@@ -35,9 +36,10 @@ export default async function AdminAuditPage({
   };
   const page = Math.max(1, Number(params.page) || 1);
 
-  const [{ items, total, pageSize, actions }, t] = await Promise.all([
+  const [{ items, total, pageSize, actions }, t, locale] = await Promise.all([
     fetchAuditFeed({ ...filters, page }),
     getTranslations("AdminAuditPage"),
+    getLocale() as Promise<Locale>,
   ]);
   const filtered = Object.values(filters).some(Boolean);
   const lastPage = page * pageSize >= total;
@@ -92,7 +94,7 @@ export default async function AdminAuditPage({
           <div className="flex items-end gap-2">
             <button
               type="submit"
-              className="h-10 rounded-lg bg-ink px-4 text-sm font-semibold text-white transition-colors hover:bg-ink/90"
+              className="h-10 rounded-lg bg-ink px-4 text-sm font-semibold text-surface transition-colors hover:bg-ink/90"
             >
               {t("filterApply")}
             </button>
@@ -136,7 +138,7 @@ export default async function AdminAuditPage({
 
                   <div className="shrink-0 text-right max-sm:text-left">
                     <p className="text-xs font-medium break-words text-ink">{log.actor}</p>
-                    <p className="text-xs text-ink-muted">{thaiDateTime(log.date)}</p>
+                    <p className="text-xs text-ink-muted">{formatDateTime(log.date, locale)}</p>
                   </div>
                 </div>
               ))}

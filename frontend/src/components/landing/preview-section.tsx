@@ -7,9 +7,11 @@ import { useState, useMemo } from "react";
 
 import { OPPORTUNITIES } from "@/data/opportunities";
 import { FEEDBACK_ENTRIES } from "@/data/tor-details";
+import { valueLabel } from "@/lib/value-labels";
 
 export function PreviewSection() {
   const t = useTranslations("LandingPreview");
+  const tv = useTranslations("Values");
   const [search, setSearch] = useState("");
   const [feedbackOpenId, setFeedbackOpenId] = useState<number | null>(null);
   const [feedbackText, setFeedbackText] = useState("");
@@ -54,7 +56,7 @@ export function PreviewSection() {
             />
             <Link
               href="/public"
-              className="hidden h-10 shrink-0 items-center justify-center rounded-lg bg-ink px-5 text-sm font-semibold text-white transition-colors hover:bg-ink/90 sm:flex"
+              className="hidden h-10 shrink-0 items-center justify-center rounded-lg bg-ink px-5 text-sm font-semibold text-surface transition-colors hover:bg-ink/90 sm:flex"
             >
               {t("searchAll")}
             </Link>
@@ -84,7 +86,7 @@ export function PreviewSection() {
                           : "bg-accent-soft text-accent"
                       }`}
                     >
-                      {tor.stage}
+                      {valueLabel(tv, "stage", tor.stage)}
                     </span>
                     {isUrgent && (
                       <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-2xs font-semibold text-red-600">
@@ -149,7 +151,7 @@ export function PreviewSection() {
                     )}
                     <Link
                       href={`/tor/${tor.id}`}
-                      className="flex h-8 items-center gap-1.5 rounded-lg bg-ink px-3 text-xs font-medium text-white transition-colors hover:bg-ink/90"
+                      className="flex h-8 items-center gap-1.5 rounded-lg bg-ink px-3 text-xs font-medium text-surface transition-colors hover:bg-ink/90"
                     >
                       {t("viewDetails")}
                     </Link>

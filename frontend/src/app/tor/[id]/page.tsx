@@ -7,7 +7,7 @@ import {
   Scale,
   Sparkles,
 } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -28,7 +28,9 @@ import { TorRecordFacts } from "@/components/public/tor-record-facts";
 import { TorTimeline } from "@/components/public/tor-timeline";
 import { TOR_DETAILS } from "@/data/tor-details";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
-import { thaiDateTime } from "@/lib/datetime";
+import { formatDate, formatDateTime } from "@/lib/datetime";
+import type { Locale } from "@/i18n/config";
+import { displayValue, valueLabel } from "@/lib/value-labels";
 import { fetchBidInsight, fetchBudgetAssessment, fetchFeedback } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
 import {
@@ -43,19 +45,6 @@ import {
 
 const CARD = "rounded-xl border border-border bg-surface p-6 shadow-sm";
 const HEADING = "mb-4 flex items-center gap-2 text-lg font-bold text-ink";
-
-const DATE = new Intl.DateTimeFormat("th-TH", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "Asia/Bangkok",
-});
-
-function thaiDate(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : DATE.format(date);
-}
 
 const AMOUNT_LABEL = {
   budget: "budgetLabel",
@@ -72,13 +61,16 @@ export default async function TorDetailPage({
 }) {
   const [{ id }, { in: context }] = await Promise.all([params, searchParams]);
   const inApp = context === "app";
-  const [tor, t, ts, session] = await Promise.all([
+  const [tor, t, ts, tv, locale, session] = await Promise.all([
     getTorById(id),
     getTranslations("TorDetailPage"),
     getTranslations("FindSimilar"),
+    getTranslations("Values"),
+    getLocale() as Promise<Locale>,
     cookies().then((jar) => verifySessionToken(jar.get(SESSION_COOKIE)?.value)),
   ]);
   if (!tor) notFound();
+  const dateOf = (value: string | null | undefined) => formatDate(value, locale, "long");
 
   // Supplementary panels exist only for real records; the showcase ones aren't
   // in the corpus they are computed against.
@@ -107,7 +99,7 @@ export default async function TorDetailPage({
     (documents.length === 0 || documents.some((doc) => !doc.viewable))
       ? tor.projectNumber
       : undefined;
-  const publishedAt = thaiDate(tor.createdAt);
+  const publishedAt = dateOf(tor.createdAt);
 
   const content = (
     <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
@@ -126,7 +118,7 @@ export default async function TorDetailPage({
               <span
                 className={`rounded-full px-2.5 py-1 text-2xs font-semibold tracking-wide ${stageBadgeCls(tor.stage)}`}
               >
-                {tor.stage}
+                {valueLabel(tv, "stage", tor.stage)}
               </span>
               <BiddingBadge bidding={bidding} />
               {budgetStatus && budgetStatus !== "ปกติ" && (
@@ -144,7 +136,7 @@ export default async function TorDetailPage({
             </p>
             {tor.lastEdited && (
               <p className="mt-1.5 text-xs text-ink-subtle">
-                {t("lastEdited", { by: tor.lastEdited.by, date: thaiDateTime(tor.lastEdited.at) })}
+                {t("lastEdited", { by: tor.lastEdited.by, date: formatDateTime(tor.lastEdited.at, locale) })}
               </p>
             )}
           </div>
@@ -178,12 +170,12 @@ export default async function TorDetailPage({
         <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border lg:grid-cols-4">
           <div className="bg-surface p-4">
             <dt className="text-xs text-ink-muted">{t(AMOUNT_LABEL[amount.kind])}</dt>
-            <dd className="mt-1 text-lg font-bold text-ink">{amount.value}</dd>
+            <dd className="mt-1 text-lg font-bold text-ink">{displayValue(tv, amount.value)}</dd>
           </div>
           <div className="bg-surface p-4">
             <dt className="text-xs text-ink-muted">{t("closesAtLabel")}</dt>
             <dd className="mt-1 text-lg font-bold text-ink">
-              {thaiDate(bidding.closesAt) ?? t("unknownValue")}
+              {dateOf(bidding.closesAt) ?? t("unknownValue")}
             </dd>
             {bidding.submissionTime && (
               <dd className="mt-0.5 text-sm text-ink-muted">
@@ -199,7 +191,7 @@ export default async function TorDetailPage({
           <div className="bg-surface p-4">
             <dt className="text-xs text-ink-muted">{t("opensAtLabel")}</dt>
             <dd className="mt-1 text-lg font-bold text-ink">
-              {thaiDate(bidding.opensAt) ?? publishedAt ?? t("unknownValue")}
+              {dateOf(bidding.opensAt) ?? publishedAt ?? t("unknownValue")}
             </dd>
           </div>
           <div className="bg-surface p-4">
@@ -258,7 +250,7 @@ export default async function TorDetailPage({
                 egpSourceUrl={`https://process5.gprocurement.go.th/egp-agpc01-web/announcement?keywordSearch=${encodeURIComponent(tor.projectNumber ?? "")}`}
                 documents={documents.map((doc) => ({
                   ...doc,
-                  dateLabel: thaiDate(doc.publishedAt) ?? t("unknownValue"),
+                  dateLabel: dateOf(doc.publishedAt) ?? t("unknownValue"),
                 }))}
               />
             </section>
@@ -281,7 +273,7 @@ export default async function TorDetailPage({
                   <li key={entry.id} className="rounded-lg bg-surface-alt p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-ink">{entry.author}</p>
-                      <span className="text-xs text-ink-subtle">{thaiDate(entry.createdAt) ?? ""}</span>
+                      <span className="text-xs text-ink-subtle">{dateOf(entry.createdAt) ?? ""}</span>
                     </div>
                     <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{entry.text}</p>
                   </li>
@@ -297,7 +289,7 @@ export default async function TorDetailPage({
               labels={{
                 heading: t("shareFeedback"),
                 until: feedback.until
-                  ? t("feedbackOpenUntil", { date: thaiDate(feedback.until) ?? "" })
+                  ? t("feedbackOpenUntil", { date: dateOf(feedback.until) ?? "" })
                   : undefined,
                 authorPlaceholder: t("feedbackAuthorPlaceholder"),
                 textPlaceholder: t("feedbackTextareaPlaceholder"),
@@ -330,7 +322,7 @@ export default async function TorDetailPage({
                         : "bg-warn-soft text-warn"
                     }`}
                   >
-                    {budgetAssessment.status}
+                    {valueLabel(tv, "budgetStatus", budgetAssessment.status)}
                   </span>
                 </div>
                 <ul className="mt-3 space-y-1.5">

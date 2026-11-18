@@ -1,20 +1,10 @@
 import { Check } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
+import type { Locale } from "@/i18n/config";
+import { formatDate } from "@/lib/datetime";
+import { valueLabel } from "@/lib/value-labels";
 import type { TimelineEntry } from "@/types/tor";
-
-const DATE = new Intl.DateTimeFormat("th-TH", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "Asia/Bangkok",
-});
-
-function thaiDate(value: string | null): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : DATE.format(date);
-}
 
 function circleCls(entry: TimelineEntry): string {
   if (entry.current) return "bg-accent text-white ring-4 ring-accent-soft";
@@ -60,6 +50,9 @@ function isBehindCurrent(segmentIndex: number, currentIndex: number): boolean {
  */
 export function TorTimeline({ timeline }: { timeline: TimelineEntry[] }) {
   const t = useTranslations("TorDetailPage");
+  const tv = useTranslations("Values");
+  const locale = useLocale() as Locale;
+  const dateOf = (value: string | null) => formatDate(value, locale);
   const currentIndex = timeline.findIndex((entry) => entry.current);
 
   return (
@@ -80,9 +73,9 @@ export function TorTimeline({ timeline }: { timeline: TimelineEntry[] }) {
               )}
             </div>
             <div className="min-w-0 pb-6 last:pb-0">
-              <p className={`text-sm font-semibold leading-snug ${labelCls(entry)}`}>{entry.stage}</p>
-              {thaiDate(entry.publishedAt) && (
-                <p className="mt-0.5 text-xs text-ink-subtle">{thaiDate(entry.publishedAt)}</p>
+              <p className={`text-sm font-semibold leading-snug ${labelCls(entry)}`}>{valueLabel(tv, "stage", entry.stage)}</p>
+              {dateOf(entry.publishedAt) && (
+                <p className="mt-0.5 text-xs text-ink-subtle">{dateOf(entry.publishedAt)}</p>
               )}
             </div>
           </li>
@@ -114,10 +107,10 @@ export function TorTimeline({ timeline }: { timeline: TimelineEntry[] }) {
         </div>
         <div className="mt-2 grid grid-cols-5 gap-1">
           {timeline.map((entry) => {
-            const date = thaiDate(entry.publishedAt);
+            const date = dateOf(entry.publishedAt);
             return (
               <div key={entry.stage} className="text-center">
-                <p className={`text-xs font-semibold leading-snug ${labelCls(entry)}`}>{entry.stage}</p>
+                <p className={`text-xs font-semibold leading-snug ${labelCls(entry)}`}>{valueLabel(tv, "stage", entry.stage)}</p>
                 {date && <p className="mt-0.5 text-2xs text-ink-subtle">{date}</p>}
               </div>
             );

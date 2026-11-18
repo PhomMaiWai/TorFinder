@@ -7,11 +7,8 @@ import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
 import { fetchReport, fetchUserDirectory } from "@/lib/admin-api";
 import { fetchTor } from "@/lib/tor-api";
-import {
-  CLASSIFICATION_LABEL,
-  TOR_CLASSIFICATIONS,
-  TOR_STAGES,
-} from "@/types/tor";
+import { valueLabel } from "@/lib/value-labels";
+import { TOR_CLASSIFICATIONS, TOR_STAGES } from "@/types/tor";
 
 import { updateTorEntry } from "./actions";
 
@@ -27,11 +24,13 @@ export default async function AdminEditTorPage({
   searchParams: Promise<{ report?: string }>;
 }) {
   const [{ id }, { report: reportId }] = await Promise.all([params, searchParams]);
-  const [tor, users, found, reasons] = await Promise.all([
+  const [tor, users, found, reasons, t, tv] = await Promise.all([
     fetchTor(id),
     fetchUserDirectory(),
     reportId ? fetchReport(reportId) : Promise.resolve(null),
     getTranslations("ReportProblem"),
+    getTranslations("AdminTor"),
+    getTranslations("Values"),
   ]);
   if (!tor) notFound();
   // Only an open report about this TOR is worth fixing from; anything else is a stale link.
@@ -51,18 +50,23 @@ export default async function AdminEditTorPage({
   const stages: readonly string[] = TOR_STAGES.includes(tor.stage) ? TOR_STAGES : [tor.stage, ...TOR_STAGES];
 
   return (
-    <AdminPageShell title="แก้ไขรายการ TOR" description={tor.title}>
+    <AdminPageShell title={t("editTitle")} description={tor.title}>
       <div className="max-w-2xl space-y-4">
         {report && (
-          <section className="rounded-xl border border-warn/30 bg-warn-soft p-5" aria-label="เรื่องที่แจ้ง">
+          <section className="rounded-xl border border-warn/30 bg-warn-soft p-5" aria-label={t("reportRegion")}>
             <p className="flex items-center gap-2 text-sm font-semibold text-ink">
               <Flag size={15} className="text-warn" />
-              แก้ไขตามเรื่องที่แจ้ง: {reasons(`reason_${report.reason}`)}
+              {t("fixingReport", { reason: reasons(`reason_${report.reason}`) })}
             </p>
             <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink">{report.message}</p>
             <p className="mt-2 text-xs text-ink-muted">
-              แจ้งโดย {report.reporter ? `${report.reporter.name} (${report.reporter.email})` : (report.contact ?? "ผู้ใช้ทั่วไป")}
-              {" · "}เมื่อบันทึกการแก้ไข เรื่องนี้จะถูกปิดและบันทึกใน Audit Log
+              {t("reportedBy", {
+                who: report.reporter
+                  ? `${report.reporter.name} (${report.reporter.email})`
+                  : (report.contact ?? t("anonymousReporter")),
+              })}
+              {" · "}
+              {t("reportClosesOnSave")}
             </p>
           </section>
         )}
@@ -72,7 +76,7 @@ export default async function AdminEditTorPage({
           className="space-y-5 rounded-xl border border-border bg-surface p-6"
         >
           {report && <input type="hidden" name="reportId" value={report.id} />}
-          <Field label="ประเภทงาน">
+          <Field label={tv("field.classification")}>
             <select
               name="classification"
               defaultValue={tor.classification ?? "software"}
@@ -80,39 +84,38 @@ export default async function AdminEditTorPage({
             >
               {TOR_CLASSIFICATIONS.map((value) => (
                 <option key={value} value={value}>
-                  {CLASSIFICATION_LABEL[value]}
+                  {valueLabel(tv, "classification", value)}
                 </option>
               ))}
             </select>
             <span className="mt-1.5 block text-xs text-ink-muted">
-              ถ้าระบบจัดผิดว่าเป็นงานซอฟต์แวร์ เลือก
-              &quot;ไม่ใช่งานซอฟต์แวร์&quot; รายการจะหายจากหน้าค้นหาและการจับคู่
+              {t("classificationHint", { notSoftware: valueLabel(tv, "classification", "not-software") })}
             </span>
           </Field>
 
-          <Field label="เจ้าของโครงการ">
+          <Field label={t("ownerLabel")}>
             <input type="hidden" name="currentOwnerId" value={tor.ownerId ?? ""} />
             <select name="ownerId" defaultValue={tor.ownerId ?? ""} className={inputCls}>
-              <option value="">ไม่ระบุเจ้าของโครงการ</option>
+              <option value="">{t("noOwner")}</option>
               {linkedElsewhere && (
                 <option value={tor.ownerId}>
-                  บัญชีที่ไม่ใช่เจ้าของโครงการแล้ว
+                  {t("formerOwner")}
                 </option>
               )}
               {owners.map((owner) => (
                 <option key={owner.id} value={owner.id}>
-                  {owner.name} ({owner.email}){owner.suspended ? " · ถูกระงับ" : ""}
+                  {owner.name} ({owner.email}){owner.suspended ? t("suspendedSuffix") : ""}
                 </option>
               ))}
             </select>
             <span className="mt-1.5 block text-xs text-ink-muted">
               {owners.length === 0
-                ? "ยังไม่มีบัญชีเจ้าของโครงการ เปลี่ยนบทบาทผู้ใช้เป็น \"เจ้าของโครงการ\" ได้ที่หน้าผู้ใช้"
-                : "เจ้าของโครงการจะเห็นรายการนี้ในหน้าโครงการของฉัน พร้อมจำนวนบริษัทที่ตรงและความคิดเห็น"}
+                ? t("noOwnerAccounts")
+                : t("ownerHint")}
             </span>
           </Field>
 
-          <Field label="ชื่อโครงการ">
+          <Field label={tv("field.title")}>
             <input
               name="title"
               required
@@ -121,7 +124,7 @@ export default async function AdminEditTorPage({
             />
           </Field>
 
-          <Field label="หน่วยงาน">
+          <Field label={tv("field.agency")}>
             <select
               name="agency"
               required
@@ -137,7 +140,7 @@ export default async function AdminEditTorPage({
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="งบประมาณ">
+            <Field label={tv("field.budget")}>
               <input
                 name="budget"
                 required
@@ -145,7 +148,7 @@ export default async function AdminEditTorPage({
                 className={inputCls}
               />
             </Field>
-            <Field label="วันที่ปิดรับ">
+            <Field label={tv("field.deadline")}>
               <input
                 name="deadline"
                 required
@@ -156,7 +159,7 @@ export default async function AdminEditTorPage({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="จำนวนวันที่เหลือ">
+            <Field label={tv("field.daysLeft")}>
               <input
                 name="daysLeft"
                 type="number"
@@ -165,30 +168,30 @@ export default async function AdminEditTorPage({
                 className={inputCls}
               />
             </Field>
-            <Field label="สถานะงบประมาณ">
+            <Field label={tv("field.budgetStatus")}>
               <select
                 name="budgetStatus"
                 defaultValue={tor.budgetStatus ?? "ปกติ"}
                 className={inputCls}
               >
-                <option value="ปกติ">ปกติ</option>
-                <option value="สูงกว่าปกติ">สูงกว่าปกติ</option>
-                <option value="ต่ำกว่าปกติ">ต่ำกว่าปกติ</option>
+                <option value="ปกติ">{valueLabel(tv, "budgetStatus", "ปกติ")}</option>
+                <option value="สูงกว่าปกติ">{valueLabel(tv, "budgetStatus", "สูงกว่าปกติ")}</option>
+                <option value="ต่ำกว่าปกติ">{valueLabel(tv, "budgetStatus", "ต่ำกว่าปกติ")}</option>
               </select>
             </Field>
           </div>
 
-          <Field label="สถานะ TOR">
+          <Field label={tv("field.stage")}>
             <select name="stage" defaultValue={tor.stage} className={inputCls}>
               {stages.map((stage) => (
                 <option key={stage} value={stage}>
-                  {stage}
+                  {valueLabel(tv, "stage", stage)}
                 </option>
               ))}
             </select>
           </Field>
 
-          <Field label="แท็ก (คั่นด้วยจุลภาค)">
+          <Field label={t("tagsLabel")}>
             <input
               name="tags"
               defaultValue={tor.tags.join(", ")}
@@ -196,7 +199,7 @@ export default async function AdminEditTorPage({
             />
           </Field>
 
-          <Field label="รายละเอียดโดยย่อ">
+          <Field label={t("summaryHeading")}>
             <textarea
               name="summary"
               required
@@ -210,11 +213,10 @@ export default async function AdminEditTorPage({
             type="submit"
             className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
           >
-            บันทึกการแก้ไข
+            {t("saveChanges")}
           </button>
           <p className="text-xs text-ink-muted">
-            ช่องที่แก้จะถูกล็อกไว้
-            ไม่ให้การนำเข้าข้อมูลจากระบบต้นทางรอบถัดไปเขียนทับ
+            {t("lockOnSave")}
           </p>
         </form>
       </div>

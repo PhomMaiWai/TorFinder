@@ -6,9 +6,11 @@ import { useState } from "react";
 
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { ADMIN_COMPANIES } from "@/data/admin";
+import { valueLabel } from "@/lib/value-labels";
 
 export default function AdminCompaniesPage() {
   const t = useTranslations("AdminCompaniesPage");
+  const tv = useTranslations("Values");
   const [companies, setCompanies] = useState(ADMIN_COMPANIES);
   const [query, setQuery] = useState("");
 
@@ -63,7 +65,7 @@ export default function AdminCompaniesPage() {
                         : "bg-danger-soft text-danger"
                     }`}
                   >
-                    {c.status}
+                    {valueLabel(tv, "accountStatus", c.status)}
                   </span>
                   <span className="flex items-center gap-1 text-xs text-ink-muted">
                     <Mail size={12} />
@@ -72,7 +74,7 @@ export default function AdminCompaniesPage() {
                 </div>
                 <h3 className="text-sm font-semibold text-ink">{c.name}</h3>
                 <p className="mt-1 text-xs text-ink-muted">
-                  {c.specialty} · {c.size} · {t("joinedOn", { date: c.joinedAt })} ·{" "}
+                  {c.specialty} · {valueLabel(tv, "companySize", c.size)} · {t("joinedOn", { date: c.joinedAt })} ·{" "}
                   {t("followingCount", { count: c.torCount })}
                 </p>
               </div>

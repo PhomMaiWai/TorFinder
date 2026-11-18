@@ -16,11 +16,14 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/config";
+import { formatDateTime } from "@/lib/datetime";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import type { AccountStatus, OrgAccount } from "@/lib/accounts-api";
+import { valueLabel } from "@/lib/value-labels";
 
 const STATUS_STYLES: Record<AccountStatus, string> = {
   approved: "bg-success-soft text-success",
@@ -80,6 +83,8 @@ export function AccountReviewList({
   onReject: (id: string) => Promise<void>;
 }) {
   const t = useTranslations("AdminAccountsPage");
+  const tv = useTranslations("Values");
+  const locale = useLocale() as Locale;
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (accounts.length === 0) {
@@ -127,14 +132,9 @@ export function AccountReviewList({
                   {company?.companyName ?? account.name}
                 </h3>
                 <p className="mt-1 text-xs text-ink-muted">
-                  {[company?.specialty, company?.size].filter(Boolean).join(" · ")}
+                  {[company?.specialty, valueLabel(tv, "companySize", company?.size)].filter(Boolean).join(" · ")}
                   {company?.specialty || company?.size ? " · " : ""}
-                  {t("submittedInfo", {
-                    date: new Date(account.createdAt).toLocaleString("th-TH", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }),
-                  })}
+                  {t("submittedInfo", { date: formatDateTime(account.createdAt, locale) })}
                 </p>
               </div>
 

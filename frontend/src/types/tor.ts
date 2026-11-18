@@ -68,25 +68,6 @@ export type TorContract = {
 export const TOR_CLASSIFICATIONS = ["software", "not-software"] as const;
 export type TorClassification = (typeof TOR_CLASSIFICATIONS)[number];
 
-export const CLASSIFICATION_LABEL: Record<TorClassification, string> = {
-  software: "งานซอฟต์แวร์",
-  "not-software": "ไม่ใช่งานซอฟต์แวร์",
-};
-
-/** How the admin pages name each field an admin can correct (and lock). */
-export const TOR_FIELD_LABEL: Record<string, string> = {
-  title: "ชื่อโครงการ",
-  agency: "หน่วยงาน",
-  budget: "งบประมาณ",
-  deadline: "วันที่ปิดรับ",
-  daysLeft: "จำนวนวันที่เหลือ",
-  tags: "แท็ก",
-  stage: "สถานะ TOR",
-  summary: "รายละเอียด",
-  budgetStatus: "สถานะงบประมาณ",
-  classification: "ประเภทงาน",
-};
-
 export type TorRecord = {
   id: string;
   title: string;

@@ -48,6 +48,7 @@ export function SignInForm({
 }: SignInFormProps) {
   const t = useTranslations("SignInForm");
   const tc = useTranslations("Common");
+  const te = useTranslations("Errors");
   const router = useRouter();
   const Icon = ICONS[icon];
   const [email, setEmail] = useState("");
@@ -82,7 +83,7 @@ export function SignInForm({
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error ?? "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่");
+        setError(data.error ?? te("loginFailed"));
         if (data.code === "email-unverified") setUnverifiedEmail(email);
         return;
       }
@@ -90,7 +91,7 @@ export function SignInForm({
       router.push(redirectTo);
       router.refresh();
     } catch {
-      setError("เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่");
+      setError(te("connectionFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -195,7 +196,7 @@ export function SignInForm({
                   disabled={isSubmitting}
                   className={`flex h-12 w-full items-center justify-center rounded-lg text-base font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${buttonCls}`}
                 >
-                  {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                  {isSubmitting ? t("submitting") : t("submitLabel")}
                 </button>
               </form>
 

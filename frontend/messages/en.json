@@ -11,8 +11,8 @@
     "orDivider": "or"
   },
   "Navbar": {
-    "navSearch": "Search TORs",
-    "navDashboard": "Market overview",
+    "navSearch": "Search",
+    "navDashboard": "Overview",
     "navHowItWorks": "How it works",
     "navFeatures": "Features",
     "navPreview": "Preview",
@@ -24,7 +24,7 @@
     "closeMenuAriaLabel": "Close menu",
     "openMenuAriaLabel": "Open menu",
     "logout": "Sign out",
-    "navInsights": "Market insights"
+    "navInsights": "Insights"
   },
   "Footer": {
     "productsHeading": "Products",
@@ -76,7 +76,11 @@
     "navInsights": "Market insights",
     "navLibrary": "Proposal library",
     "navGrowth": "Growth path",
-    "accountSettings": "Account settings"
+    "accountSettings": "Account settings",
+    "adminFallbackName": "Administrator",
+    "auditorFallbackName": "Auditor",
+    "loadingName": "Loading...",
+    "logout": "Sign out"
   },
   "Dashboard": {
     "newBadge": "New",
@@ -291,7 +295,8 @@
     "submitLabel": "Sign in",
     "noAccountQuestion": "Don't have an account?",
     "chooseOtherAccountType": "← Choose a different account type",
-    "forgotPassword": "Forgot password?"
+    "forgotPassword": "Forgot password?",
+    "submitting": "Signing in..."
   },
   "LoginPage": {
     "orgTitle": "Sign in for organizations",
@@ -556,7 +561,16 @@
     "budgetRange500kTo1m": "500,000 - 1,000,000 baht",
     "budgetRange1to3m": "1,000,000 - 3,000,000 baht",
     "budgetRange3to5m": "3,000,000 - 5,000,000 baht",
-    "budgetRangeOver10m": "10,000,000 baht and up"
+    "budgetRangeOver10m": "10,000,000 baht and up",
+    "agencyCategory": {
+      "mea": "Metropolitan Electricity Authority (MEA)",
+      "digital": "BMA digital and administration",
+      "city": "City, traffic and environment",
+      "health": "Public health and medical",
+      "education": "Education, social and culture",
+      "district": "District offices",
+      "other": "Other"
+    }
   },
   "FindSimilar": {
     "title": "Find TORs like work you have done",
@@ -1033,7 +1047,10 @@
     "title": "This page didn't load",
     "description": "Something went wrong on our side. Nothing of yours is lost — try again.",
     "retry": "Try again",
-    "reference": "Reference"
+    "reference": "Reference",
+    "pageTitle": "Something went wrong",
+    "ownerDescription": "Couldn't load your projects",
+    "adminDescription": "Couldn't load this section"
   },
   "NotFoundPage": {
     "title": "We couldn't find that page",
@@ -1442,5 +1459,210 @@
     "limitWinners": "Sources publish only the winner, not every bidder, so \"few rivals\" means few companies have won there, not that few bid.",
     "limitSize": "Job size is the winning price, else the reference price or budget.",
     "limitRules": "Each TOR sets its own past-work rule; always check the document before bidding."
+  },
+  "Values": {
+    "unknown": "Not specified",
+    "stage": {
+      "plan": "Procurement plan",
+      "hearing": "Public hearing",
+      "referencePrice": "Reference price",
+      "tor": "TOR announced",
+      "winner": "Winner announced"
+    },
+    "budgetStatus": {
+      "high": "Above normal",
+      "low": "Below normal",
+      "normal": "Normal",
+      "notAssessed": "Not assessed"
+    },
+    "reviewStatus": {
+      "pending": "Pending review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "accountStatus": {
+      "active": "Active",
+      "suspended": "Suspended"
+    },
+    "field": {
+      "title": "Project title",
+      "agency": "Agency",
+      "budget": "Budget",
+      "deadline": "Closing date",
+      "daysLeft": "Days left",
+      "tags": "Tags",
+      "stage": "TOR status",
+      "summary": "Details",
+      "budgetStatus": "Budget status",
+      "classification": "Work type"
+    },
+    "classification": {
+      "software": "Software work",
+      "notSoftware": "Not software work"
+    },
+    "companySize": {
+      "s1to10": "1–10 people",
+      "s11to50": "11–50 people",
+      "s51to200": "51–200 people",
+      "s200plus": "200+ people"
+    },
+    "tag": {
+      "draftTor": "Draft TOR",
+      "invitation": "Invitation to bid",
+      "winnersList": "Winning / selected bidders",
+      "hearing": "Public hearing",
+      "procurementNews": "Procurement news",
+      "winner": "Winning bidder",
+      "plan": "Procurement plan",
+      "referencePrice": "Reference price",
+      "draftBidDocuments": "Draft bid documents",
+      "invitationCancelled": "Invitation cancelled",
+      "procurement": "Procurement",
+      "general": "General"
+    }
+  },
+  "AdminTor": {
+    "notSoftwareNotice": "Classified as {label} — hidden from search and never matched to companies",
+    "lastEditedBy": "Last edited by",
+    "editedAt": "on {date}",
+    "lockedFields": "Locked against the next import:",
+    "detailTitle": "TOR details",
+    "backToList": "Back to TOR list",
+    "edit": "Edit",
+    "importedFromEgp": "Imported from e-GP",
+    "daysLeftValue": "{days, plural, one {# day} other {# days}}",
+    "summaryHeading": "Summary",
+    "openFullNotice": "Open the full announcement (e-GP)",
+    "tabs": {
+      "manual": "Created here",
+      "egp": "From e-GP",
+      "gproc": "From e-GP (Comptroller General)",
+      "mea": "From MEA",
+      "datagov": "From data.go.th",
+      "all": "All",
+      "not-software": "Not software",
+      "deleted": "Trash"
+    },
+    "portalMea": "MEA",
+    "deleteLabel": "Delete",
+    "deleteConfirm": "Delete?",
+    "deleteCancel": "Cancel",
+    "restoreLabel": "Restore",
+    "listTitle": "TOR list",
+    "listDescription": "Every TOR in the system",
+    "pullFrom": "Pull from {portal}",
+    "addTor": "Add TOR",
+    "trashEmpty": "The trash is empty",
+    "noNotSoftware": "Nothing is classified as non-software work",
+    "noTors": "No TORs yet",
+    "colStatus": "Status",
+    "viewDetails": "View details",
+    "previous": "Previous",
+    "pageN": "Page {page}",
+    "next": "Next",
+    "saving": "Saving...",
+    "saveEntry": "Save entry",
+    "createTitle": "Add a TOR",
+    "createDescription": "Add a TOR to the system by hand",
+    "projectSection": "Project",
+    "titlePlaceholder": "e.g. Development of a management system...",
+    "chooseAgency": "Choose an agency",
+    "budgetSection": "Budget and schedule",
+    "deadlinePlaceholder": "Thai format, e.g. 18 ส.ค. 2569",
+    "extraSection": "More details",
+    "tagsLabel": "Tags (comma-separated)",
+    "summaryPlaceholder": "Briefly describe the scope of work",
+    "tipsHeading": "Tips",
+    "tip1": "Use the project title exactly as announced",
+    "tip2": "Write budgets and dates in the same format as other entries",
+    "tip3": "Tags help companies find the TOR",
+    "tip4": "New entries appear in TOR search right away",
+    "editTitle": "Edit TOR",
+    "reportRegion": "Reported issue",
+    "fixingReport": "Fixing a reported issue: {reason}",
+    "reportedBy": "Reported by {who}",
+    "anonymousReporter": "a member of the public",
+    "reportClosesOnSave": "Saving closes this report and records it in the audit log",
+    "classificationHint": "If this was wrongly classified as software work, choose \"{notSoftware}\" to remove it from search and matching",
+    "ownerLabel": "Project owner",
+    "noOwner": "No project owner",
+    "formerOwner": "An account that is no longer a project owner",
+    "suspendedSuffix": " · suspended",
+    "noOwnerAccounts": "There are no project owner accounts yet. Change a user's role to \"Project owner\" on the Users page",
+    "ownerHint": "The owner sees this record on their My projects page, with matching companies and feedback",
+    "saveChanges": "Save changes",
+    "lockOnSave": "Fields you change are locked so the next import from the source portal won't overwrite them",
+    "gproc": {
+      "busyElsewhere": "Another import is still running. Wait for it to finish.",
+      "failedStatus": "Import failed ({status})",
+      "heading": "Import from e-GP (Comptroller General)",
+      "openSearch": "Open e-GP search",
+      "help": "Search on the e-GP website, then paste the 11-digit project numbers here. Pasting whole text is fine: only project numbers are picked out, and only software/IT projects are imported, up to 100 at a time.",
+      "placeholder": "e.g. 69099314442, 69099316505",
+      "importing": "Importing…",
+      "importN": "Import {count, plural, one {# project} other {# projects}}",
+      "running": "Processing · ",
+      "failed": "Failed · ",
+      "done": "Done · ",
+      "counts": "{created} new · {updated} updated · {known} already here · {skipped} skipped · {failed} failed"
+    }
+  },
+  "AuditorPage": {
+    "tabs": {
+      "all": "All",
+      "budget-high": "Unusually high price",
+      "budget-low": "Unusually low price",
+      "competition": "Little competition"
+    },
+    "title": "Flagged TORs",
+    "description": "Projects with an unusual budget, or bought through a method with few bidders",
+    "empty": "No flagged TORs",
+    "colStatus": "Status",
+    "colReason": "Reason",
+    "viewDetails": "View details",
+    "previous": "Previous",
+    "pageN": "Page {page}",
+    "totalSuffix": " · {total} in total",
+    "next": "Next"
+  },
+  "Errors": {
+    "connectionFailed": "Couldn't reach the server. Please try again.",
+    "connectionFailedShort": "Couldn't reach the server.",
+    "systemConnectionFailed": "Couldn't reach the system.",
+    "loginFailed": "Sign-in failed. Please try again.",
+    "googleLoginFailed": "Google sign-in failed.",
+    "emailPasswordRequired": "Enter your email and password.",
+    "signInRequired": "Please sign in.",
+    "submitFailed": "Couldn't send this. Please try again.",
+    "signupFailed": "Sign-up failed. Please try again.",
+    "openDocumentFailed": "Couldn't open the document.",
+    "openDocumentSetFailed": "Couldn't open the document set.",
+    "openFileFailed": "Couldn't open the file.",
+    "torNotFound": "TOR not found.",
+    "notFound": "Not found.",
+    "notificationNotFound": "Notification not found.",
+    "fillAllFields": "Fill in every field before saving.",
+    "saveTorFailed": "Couldn't save the TOR.",
+    "saveFailed": "Couldn't save.",
+    "feedbackTooShort": "Write at least 10 characters.",
+    "feedbackTooFrequent": "You're sending feedback too often. Please wait a moment.",
+    "feedbackFailed": "Couldn't send your feedback.",
+    "reportReasonRequired": "Choose what kind of problem it is.",
+    "reportTooShort": "Describe the problem in at least 10 characters.",
+    "reportTooFrequent": "You're reporting too often. Please wait a moment.",
+    "reportFailed": "Couldn't send the report. Please try again.",
+    "tooManyRequests": "Too many requests. Please wait a moment and try again.",
+    "actionFailed": "Something went wrong. Please try again.",
+    "yourCompany": "your company"
+  },
+  "Loading": {
+    "saved": "Loading your saved TORs",
+    "insights": "Gathering award winners",
+    "owner": "Loading your agency's TORs",
+    "admin": "Loading admin data",
+    "matches": "Ranking TORs that match your company",
+    "dashboard": "Building the overview of all TORs",
+    "public": "Loading TORs",
+    "torDetail": "Loading TOR details"
   }
 }

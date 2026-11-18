@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { authHeaders } from "@/lib/session-headers";
@@ -11,11 +12,13 @@ export async function createTorEntry(
   _prev: CreateTorState,
   formData: FormData,
 ): Promise<CreateTorState> {
+  const te = await getTranslations("Errors");
   const values = parseTorFormData(formData);
   try {
     assertTorFormValid(values);
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "กรอกข้อมูลให้ครบก่อนบันทึก" };
+  } catch {
+    // The only thing assertTorFormValid refuses is a missing required field.
+    return { error: te("fillAllFields") };
   }
 
   let res: Response;
@@ -28,13 +31,13 @@ export async function createTorEntry(
       signal: AbortSignal.timeout(8000),
     });
   } catch {
-    return { error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่" };
+    return { error: te("connectionFailed") };
   }
 
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
-    return { error: message ?? "บันทึกรายการ TOR ไม่สำเร็จ" };
+    return { error: message ?? te("saveTorFailed") };
   }
 
   redirect("/admin");

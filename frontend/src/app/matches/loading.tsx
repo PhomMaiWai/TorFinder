@@ -1,8 +1,11 @@
+import { useTranslations } from "next-intl";
+
 import { AppShell } from "@/components/layout/app-sidebar";
 import { Skeleton, SkeletonCard, SkeletonScreen } from "@/components/ui/skeleton";
 
 /** The sidebar stays put while the ranked list is being worked out. */
 export default function DashboardLoading() {
+  const t = useTranslations("Loading");
   return (
     <AppShell>
       <main className="flex min-h-screen flex-col bg-surface-alt/50">
@@ -14,7 +17,7 @@ export default function DashboardLoading() {
         </header>
 
         <div className="mx-auto w-full max-w-[1400px] px-8 py-8">
-          <SkeletonScreen label="กำลังจัดอันดับประกาศที่ตรงกับบริษัทของคุณ">
+          <SkeletonScreen label={t("matches")}>
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {Array.from({ length: 4 }, (_, i) => (
                 <SkeletonCard key={i} />

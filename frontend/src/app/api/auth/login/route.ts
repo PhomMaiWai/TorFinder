@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 
 import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { clientIpHeaders } from "@/lib/client-ip";
@@ -6,12 +7,13 @@ import { jsonResponse } from "@/lib/json-response";
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 export async function POST(request: Request) {
+  const te = await getTranslations("Errors");
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
   if (!email || !password) {
-    return jsonResponse({ error: "กรุณากรอกอีเมลและรหัสผ่าน" }, { status: 400 });
+    return jsonResponse({ error: te("emailPasswordRequired") }, { status: 400 });
   }
 
   let backendRes: Response;
@@ -22,14 +24,14 @@ export async function POST(request: Request) {
       body: JSON.stringify({ email, password }),
     });
   } catch {
-    return jsonResponse({ error: "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่" }, { status: 502 });
+    return jsonResponse({ error: te("connectionFailed") }, { status: 502 });
   }
 
   const data = await backendRes.json().catch(() => null);
   if (!backendRes.ok || !data?.token) {
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
     return jsonResponse(
-      { error: message ?? "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่", code: data?.code },
+      { error: message ?? te("loginFailed"), code: data?.code },
       { status: backendRes.status || 401 },
     );
   }
