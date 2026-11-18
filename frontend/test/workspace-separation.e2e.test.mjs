@@ -82,6 +82,49 @@ describe("a TOR opened with ?in=app", () => {
   });
 });
 
+// Each role's own pages, and where everyone else is sent (their own home).
+const HOME = { viewer: "/dashboard", org: "/dashboard", owner: "/owner", admin: "/admin", auditor: "/auditor" };
+const OWN_PAGES = {
+  org: ["/matches", "/profile", "/library", "/growth", "/notifications"],
+  owner: ["/owner"],
+  admin: ["/admin", "/admin/users", "/admin/audit"],
+  auditor: ["/auditor"],
+};
+
+describe("each role's pages are its own", () => {
+  for (const [owner, pages] of Object.entries(OWN_PAGES)) {
+    for (const page of pages) {
+      it(`${page} opens for ${owner}`, async () => {
+        assert.equal(await redirectOf(page, owner), null);
+      });
+
+      for (const role of Object.keys(HOME).filter((r) => r !== owner)) {
+        it(`${page} sends ${role} away`, async () => {
+          // admin pages send other signed-in roles to the public overview, as before.
+          const expected = owner === "admin" ? "/dashboard" : HOME[role];
+          assert.equal(await redirectOf(page, role), expected);
+        });
+      }
+
+      it(`${page} sends a guest to sign in`, async () => {
+        assert.equal(await redirectOf(page), `/login?next=${encodeURIComponent(page)}`);
+      });
+    }
+  }
+});
+
+describe("the normal user's pages are open to every role", () => {
+  for (const page of ["/", "/public", "/dashboard", "/insights", TOR, "/saved"]) {
+    for (const role of Object.keys(HOME)) {
+      it(`${page} for ${role}`, async () => {
+        const target = await redirectOf(page, role);
+        // "/" is the guest landing page; a signed-in account goes to its own home from there.
+        assert.equal(target, page === "/" ? HOME[role] : null);
+      });
+    }
+  }
+});
+
 describe("/saved?scope=org is the company's shared list", () => {
   it("sends a viewer to their own saved list", async () => {
     assert.equal(await redirectOf("/saved?scope=org", "viewer"), "/saved");

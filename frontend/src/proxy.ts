@@ -26,6 +26,8 @@ const PROTECTED_PREFIXES = [
 ];
 /** Pages only an admin may see. */
 const ADMIN_ONLY_PREFIXES = ["/admin"];
+/** The company's own workspace; staff have their own consoles and a viewer has none. */
+const ORG_ONLY_PREFIXES = ["/matches", "/profile", "/library", "/growth", "/notifications"];
 /** The project owner's own announcements; the data behind it is owner-only too. */
 const OWNER_ONLY_PREFIXES = ["/owner"];
 /** Pages only the Auditor Office may see. */
@@ -187,6 +189,10 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
 
   if (matches(pathname, ADMIN_ONLY_PREFIXES) && session.role !== "admin") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  if (matches(pathname, ORG_ONLY_PREFIXES) && session.role !== "org") {
+    return NextResponse.redirect(new URL(homeFor(session.role), request.url));
   }
 
   if (matches(pathname, OWNER_ONLY_PREFIXES) && session.role !== "owner") {
