@@ -445,7 +445,7 @@ function PublicTorCard({
             )}
             <Link
               href={detailHref}
-              className="flex w-full items-center justify-center rounded-lg bg-ink py-2 text-sm font-medium text-white transition-colors hover:bg-ink"
+              className="flex w-full items-center justify-center rounded-lg bg-ink py-2 text-sm font-medium text-surface transition-colors hover:bg-ink"
             >
               {t("viewDetails")}
             </Link>

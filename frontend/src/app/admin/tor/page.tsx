@@ -74,7 +74,7 @@ export default async function AdminTorListPage({
                 href={`/admin/tor?source=${tab.id}`}
                 className={`whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
                   source === tab.id
-                    ? "bg-ink text-white"
+                    ? "bg-ink text-surface"
                     : "text-ink-muted hover:bg-surface-alt hover:text-ink"
                 }`}
               >

@@ -41,7 +41,7 @@ export default async function AuditorPage({
               key={t.id}
               href={`/auditor?flag=${t.id}`}
               className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                tab === t.id ? "bg-ink text-white" : "text-ink-muted hover:bg-surface-alt hover:text-ink"
+                tab === t.id ? "bg-ink text-surface" : "text-ink-muted hover:bg-surface-alt hover:text-ink"
               }`}
             >
               {t.label}

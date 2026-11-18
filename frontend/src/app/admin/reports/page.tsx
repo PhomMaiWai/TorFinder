@@ -40,7 +40,7 @@ export default async function AdminReportsPage({
               href={`/admin/reports?status=${id}`}
               aria-current={tab === id ? "page" : undefined}
               className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                tab === id ? "bg-ink text-white" : "text-ink-muted hover:bg-surface-alt hover:text-ink"
+                tab === id ? "bg-ink text-surface" : "text-ink-muted hover:bg-surface-alt hover:text-ink"
               }`}
             >
               {t(`tab_${id}`)}

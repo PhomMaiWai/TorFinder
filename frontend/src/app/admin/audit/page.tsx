@@ -92,7 +92,7 @@ export default async function AdminAuditPage({
           <div className="flex items-end gap-2">
             <button
               type="submit"
-              className="h-10 rounded-lg bg-ink px-4 text-sm font-semibold text-white transition-colors hover:bg-ink/90"
+              className="h-10 rounded-lg bg-ink px-4 text-sm font-semibold text-surface transition-colors hover:bg-ink/90"
             >
               {t("filterApply")}
             </button>

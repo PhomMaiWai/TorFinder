@@ -122,7 +122,7 @@ export function SavedSearches({ searchPath }: { searchPath: string }) {
                 <div className="flex shrink-0 items-center gap-2">
                   <Link
                     href={searchHref(searchPath, filters)}
-                    className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink/90"
+                    className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-surface hover:bg-ink/90"
                   >
                     {t("applySearchCta")}
                   </Link>

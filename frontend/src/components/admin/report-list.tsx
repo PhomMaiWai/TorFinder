@@ -104,7 +104,7 @@ export function ReportList({ items, labels }: { items: TorReport[]; labels: Repo
               {item.torTitle && item.status === "open" && (
                 <Link
                   href={`/admin/tor/${item.torId}/edit?report=${item.id}`}
-                  className="flex items-center gap-1.5 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-ink/90"
+                  className="flex items-center gap-1.5 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-surface hover:bg-ink/90"
                 >
                   <Pencil size={14} />
                   {labels.fixTor}

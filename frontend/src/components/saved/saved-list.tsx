@@ -55,7 +55,7 @@ function SavedList({
           </p>
           <Link
             href={scope === "org" ? "/search" : "/public"}
-            className="mt-4 inline-block rounded-lg bg-ink px-5 py-2 text-sm font-medium text-white hover:bg-ink"
+            className="mt-4 inline-block rounded-lg bg-ink px-5 py-2 text-sm font-medium text-surface hover:bg-ink"
           >
             {t("goToSearchCta")}
           </Link>
@@ -91,7 +91,7 @@ function SavedList({
               <div className="flex shrink-0 items-center gap-2">
                 <Link
                   href={`/tor/${tor.id}${scope === "org" ? "?in=app" : ""}`}
-                  className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink"
+                  className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-surface hover:bg-ink"
                 >
                   {t("viewDetailsCta")}
                 </Link>

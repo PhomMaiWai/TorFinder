@@ -54,7 +54,7 @@ export function PreviewSection() {
             />
             <Link
               href="/public"
-              className="hidden h-10 shrink-0 items-center justify-center rounded-lg bg-ink px-5 text-sm font-semibold text-white transition-colors hover:bg-ink/90 sm:flex"
+              className="hidden h-10 shrink-0 items-center justify-center rounded-lg bg-ink px-5 text-sm font-semibold text-surface transition-colors hover:bg-ink/90 sm:flex"
             >
               {t("searchAll")}
             </Link>
@@ -149,7 +149,7 @@ export function PreviewSection() {
                     )}
                     <Link
                       href={`/tor/${tor.id}`}
-                      className="flex h-8 items-center gap-1.5 rounded-lg bg-ink px-3 text-xs font-medium text-white transition-colors hover:bg-ink/90"
+                      className="flex h-8 items-center gap-1.5 rounded-lg bg-ink px-3 text-xs font-medium text-surface transition-colors hover:bg-ink/90"
                     >
                       {t("viewDetails")}
                     </Link>

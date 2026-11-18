@@ -95,7 +95,7 @@ export function SaveSearchForm({ filters, savedHref }: { filters: SearchFilters;
         <button
           type="submit"
           disabled={state.step === "saving" || !name.trim()}
-          className="flex-1 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-surface transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {state.step === "saving" ? t("saveSearchSaving") : t("saveSearchSubmit")}
         </button>
