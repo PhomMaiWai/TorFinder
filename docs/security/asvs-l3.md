@@ -4,17 +4,19 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 36 Pass, 15 Partial, 16 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 36 pass (51%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+**Result: 37 Pass, 16 Partial, 14 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 37 pass (52%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
+
+**Update 19 Nov 2026 (branch `feat/asvs-l3-lockout-reset`):** the owner is emailed when their account is locked after too many wrong passwords (6.3.5 moves to Partial: sign-ins from a new device are not reported yet), and admins can send an account's owner a password-reset link from Manage Users (6.4.6 passes).
 
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 36 | Control exists, with evidence in code or in this file |
-| Partial | 15 | Control exists with a gap; the gap is named |
-| Not done | 16 | Not implemented |
+| Pass | 37 | Control exists, with evidence in code or in this file |
+| Partial | 16 | Control exists with a gap; the gap is named |
+| Not done | 14 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
 
@@ -25,7 +27,7 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V3 Web Frontend Security | 12 | 9 | 1 | 2 | 0 | 0 |
 | V4 API and Web Service | 6 | 2 | 1 | 0 | 1 | 2 |
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
-| V6 Authentication | 12 | 5 | 0 | 2 | 5 | 0 |
+| V6 Authentication | 12 | 6 | 1 | 0 | 5 | 0 |
 | V7 Session Management | 1 | 0 | 1 | 0 | 0 | 0 |
 | V8 Authorization | 6 | 3 | 2 | 1 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
@@ -37,7 +39,7 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V15 Secure Coding and Architecture | 8 | 6 | 1 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **36** | **15** | **16** | **21** | **4** |
+| **Total** | **92** | **37** | **16** | **14** | **21** | **4** |
 
 ## Done on this branch
 
@@ -182,12 +184,12 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 6.3.5 | Users notified of suspicious authentication attempts | **Not done** | Lockouts and sign-ins from new places are logged, not emailed |
+| 6.3.5 | Users notified of suspicious authentication attempts | Partial | The wrong password that locks an account emails its owner, once per lock (`login-locked` notice, `auth.login.lockout` event; `AuthService.recordPasswordFailure`, `test/lockout-notice.test.mjs`). An unknown address locks the same way but sends nothing, and the mail is not awaited, so neither reveals which addresses exist. Gap: a successful sign-in from a new device or place is logged, not emailed |
 | 6.3.6 | Email not used as an authentication factor | Pass | Email links verify an address or reset a password; neither creates a session, and there is no email OTP sign-in |
 | 6.3.7 | Users notified after changes to authentication details | Pass | Email after a password change, a password reset and a new Google link (this branch); the email address itself can't be changed |
 | 6.3.8 | Valid users can't be deduced from failed authentication, registration or forgot-password | Pass | Login: same message and the same scrypt cost for unknown addresses; "unverified" and "pending" are only told after the right password. Signup: the same answer for a registered address (this branch). Forgot-password and resend-verification: always the same answer. Google sign-up still says an address is taken, but only after Google proved the caller owns it |
 | 6.4.5 | Renewal reminders before an authentication mechanism expires | N/A | Nothing expires (no certificates or tokens issued to users) |
-| 6.4.6 | Admins can start a reset without choosing the user's password | **Not done** | Admins can suspend, not start a reset |
+| 6.4.6 | Admins can start a reset without choosing the user's password | Pass | **Send reset link** in Manage Users (`POST /accounts/:id/password-reset`, admin + step-up) emails the owner the same single-use, one-hour link as "forgot password". The admin never sees or sets the password, the current one keeps working until the link is used, and the action is in the audit log (`test/admin-password-reset.e2e.test.mjs`). Viewers (Google only) and suspended accounts are refused |
 | 6.5.6 | Any authentication factor can be revoked | Pass | A staff member removes their own passkeys (after a passkey check); another admin can clear them all, which ends every session; a password is replaced by reset |
 | 6.5.7 | Biometrics only as a secondary factor | N/A | No biometrics |
 | 6.5.8 | TOTPs checked against a trusted time source | N/A | No TOTP |
@@ -312,7 +314,7 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 ## Suggested order for the rest
 
 1. ~~**6.3.3 / 7.5.3:** passkeys for staff and step-up before admin actions~~ — done on `feat/staff-passkeys`. Left: step-up on owner assignment, and a second factor for company accounts.
-2. **6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action.
+2. ~~**6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action~~ — done on `feat/asvs-l3-lockout-reset`. Left: an email for a sign-in from a new device.
 3. **2.3.5, 8.4.2:** a second admin's approval to grant the admin role.
 4. **14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on.
 5. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.

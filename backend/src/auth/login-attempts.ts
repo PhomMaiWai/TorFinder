@@ -32,8 +32,11 @@ export class LoginAttempts {
     }
   }
 
-  recordFailure(email: string): void {
-    this.failures.set(email, (this.failures.get(email) ?? 0) + 1);
+  /** Counts a failure; true when this one used up the last try, i.e. the address has just been locked. */
+  recordFailure(email: string): boolean {
+    const count = (this.failures.get(email) ?? 0) + 1;
+    this.failures.set(email, count);
+    return count === env.throttle.loginFailureLimit;
   }
 
   /** A correct password clears the count, so the owner isn't punished for an attacker's guesses after signing in. */
