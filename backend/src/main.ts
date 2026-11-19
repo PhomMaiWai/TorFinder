@@ -9,7 +9,27 @@ import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { env } from "./config/env";
 
+/**
+ * ASVS 16.5.4, the last resort. Request errors already end in
+ * AllExceptionsFilter; these catch what escapes everything else, mostly the
+ * schedulers' background work. A rejected promise is logged and the server
+ * keeps serving. An uncaught exception leaves the process in an unknown state,
+ * so it is logged and the process exits for the container to restart
+ * (`restart: unless-stopped` in docker-compose.yml), as Node advises.
+ */
+function installLastResortHandlers(): void {
+  const logger = new Logger("Process");
+  process.on("unhandledRejection", (reason) => {
+    logger.error(`Unhandled rejection: ${reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)}`);
+  });
+  process.on("uncaughtException", (error) => {
+    logger.error(`Uncaught exception, exiting: ${error.stack ?? error.message}`);
+    process.exit(1);
+  });
+}
+
 async function bootstrap() {
+  installLastResortHandlers();
   // Production logs are one JSON object per line, no colour codes, so a log
   // collector can parse and search them (ASVS 16.2.3); dev keeps the readable form.
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

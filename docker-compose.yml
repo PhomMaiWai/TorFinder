@@ -17,6 +17,8 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-}
     depends_on:
       - backend
+    # A crashed process comes back by itself (ASVS 16.5.4; see backend main.ts).
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -40,6 +42,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
 
   db:
     image: mongo:7
@@ -61,6 +64,7 @@ services:
       interval: 2s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
 
 volumes:
   torr_db_data:
