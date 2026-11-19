@@ -4,9 +4,11 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 37 Pass, 16 Partial, 14 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 37 pass (52%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+**Result: 38 Pass, 15 Partial, 14 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 38 pass (54%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
+
+**Update 19 Nov 2026 (branch `fix/step-up-tor-owner`):** assigning an announcement's owner now needs step-up too, so 7.5.3 moves from Partial to Pass.
 
 **Update 19 Nov 2026 (branch `feat/asvs-l3-lockout-reset`):** the owner is emailed when their account is locked after too many wrong passwords (6.3.5 moves to Partial: sign-ins from a new device are not reported yet), and admins can send an account's owner a password-reset link from Manage Users (6.4.6 passes).
 
@@ -14,8 +16,8 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 37 | Control exists, with evidence in code or in this file |
-| Partial | 16 | Control exists with a gap; the gap is named |
+| Pass | 38 | Control exists, with evidence in code or in this file |
+| Partial | 15 | Control exists with a gap; the gap is named |
 | Not done | 14 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
@@ -28,7 +30,7 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V4 API and Web Service | 6 | 2 | 1 | 0 | 1 | 2 |
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
 | V6 Authentication | 12 | 6 | 1 | 0 | 5 | 0 |
-| V7 Session Management | 1 | 0 | 1 | 0 | 0 | 0 |
+| V7 Session Management | 1 | 1 | 0 | 0 | 0 | 0 |
 | V8 Authorization | 6 | 3 | 2 | 1 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
@@ -39,7 +41,7 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V15 Secure Coding and Architecture | 8 | 6 | 1 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **37** | **16** | **14** | **21** | **4** |
+| **Total** | **92** | **38** | **15** | **14** | **21** | **4** |
 
 ## Done on this branch
 
@@ -201,7 +203,7 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 7.5.3 | Further authentication before highly sensitive operations | Partial | Approving or rejecting a company, editing a role, suspending, deleting an announcement and clearing passkeys need a passkey check from the last 10 minutes (`StepUpGuard`). Assigning an announcement's owner doesn't yet ([passkeys.md](./passkeys.md#known-limits)) |
+| 7.5.3 | Further authentication before highly sensitive operations | Pass | Approving or rejecting a company, editing a role, suspending, deleting an announcement, assigning an announcement's owner and clearing passkeys need a passkey check from the last 10 minutes (`StepUpGuard`; list in [passkeys.md](./passkeys.md)) |
 
 ### V8 Authorization
 
@@ -313,7 +315,7 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 
 ## Suggested order for the rest
 
-1. ~~**6.3.3 / 7.5.3:** passkeys for staff and step-up before admin actions~~ — done on `feat/staff-passkeys`. Left: step-up on owner assignment, and a second factor for company accounts.
+1. ~~**6.3.3 / 7.5.3:** passkeys for staff and step-up before admin actions~~ — done on `feat/staff-passkeys`, and step-up on owner assignment on `fix/step-up-tor-owner`. Left: a second factor for company accounts.
 2. ~~**6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action~~ — done on `feat/asvs-l3-lockout-reset`. Left: an email for a sign-in from a new device.
 3. **2.3.5, 8.4.2:** a second admin's approval to grant the admin role.
 4. **14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on.
