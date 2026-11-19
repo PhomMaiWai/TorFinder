@@ -2,7 +2,7 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 104 Pass, 13 Partial, 5 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 104 pass (83%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 105 Pass, 12 Partial, 5 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 105 pass (84%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
 
 **Update 19 Nov 2026 (branch `feat/asvs-l2-batch`):** nine items move to Pass. Announcement files are fetched only from the allowlisted portal hosts, and redirects are checked hop by hop (1.3.6, 13.2.4, 15.3.2; threat E3). Google sign-in is bound to the browser with a nonce (10.1.2, 10.5.1). Password hashes use stronger scrypt settings and store them, and old hashes are upgraded at sign-in (11.4.2, 11.2.2). The backend connects to MongoDB as a least-privilege account (13.2.2). Input refused by validation is logged (16.3.3).
 
@@ -16,8 +16,8 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 104 | Control exists, with evidence in code or in this file |
-| Partial | 13 | Control exists with a gap; the gap is named |
+| Pass | 105 | Control exists, with evidence in code or in this file |
+| Partial | 12 | Control exists with a gap; the gap is named |
 | Not done | 5 | Not implemented; out of scope for this deadline (below) |
 | N/A | 58 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 3 | Set by the hosting proxy, outside the repository |
@@ -37,11 +37,11 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V11 Cryptography | 11 | 8 | 1 | 0 | 2 | 0 |
 | V12 Secure Communication | 6 | 1 | 2 | 0 | 2 | 1 |
 | V13 Configuration | 12 | 8 | 2 | 2 | 0 | 0 |
-| V14 Data Protection | 7 | 6 | 1 | 0 | 0 | 0 |
+| V14 Data Protection | 7 | 7 | 0 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 10 | 9 | 1 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 16 | 14 | 0 | 2 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **104** | **13** | **5** | **58** | **3** |
+| **Total** | **183** | **105** | **12** | **5** | **58** | **3** |
 
 ## Fixed after the triage (PR #343)
 
