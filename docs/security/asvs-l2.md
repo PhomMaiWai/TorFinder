@@ -6,6 +6,8 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 **Update 18 Nov 2026:** company file uploads (certificates in #354, the proposal library in #355) made V1.3.4 apply. It passes, since SVG is not an accepted type. The File handling rules and V5.4.1 and V5.4.3 now cover uploads too. The threats these features add are in [threat-model.md](./threat-model.md).
 
+**Re-check 19 Nov 2026** (branch `fix/asvs-l3-quick-wins`): the counts below still hold, but only after two corrections on this branch. **3.4.3** had been marked Pass with `base-uri 'self'`, while ASVS 5.0 sets the minimum at `base-uri 'none'`; both policies now send `'none'`. **13.1.1** said a user can never give the backend a URL to call, but a company can save a Slack incoming-webhook URL that the backend posts its alerts to; the [External communication](#external-communication) table now lists it, with the host pin that keeps it from being used for SSRF. The Level 3 review is in [asvs-l3.md](./asvs-l3.md).
+
 ## Summary
 
 | Status | Count | Meaning |
@@ -152,9 +154,11 @@ TorFinder handles files from two sources: documents that procurement portals pub
 | Backend → e-GP, MEA, data.go.th, national e-GP | HTTPS | Scheduled imports and document relay |
 | Backend → Google | HTTPS | ID-token verification keys; Vertex AI when enabled |
 | Backend → Resend, LINE | HTTPS | Email and LINE notifications, when keys are set |
+| Backend → a company's Slack webhook | HTTPS | Match alerts, when the company saved a webhook URL **(user-supplied)** |
+| LINE → frontend → backend | HTTPS | `POST /api/line/webhook`, signed by LINE, links a LINE account to a TorFinder account |
 | Browser → Google | HTTPS | The Google sign-in button script |
 
-A user can never supply a URL for the backend to fetch; document URLs come only from imported or admin-entered TOR records.
+The one destination a user supplies is a Slack incoming-webhook URL in their notification settings. It must match `^https://hooks\.slack\.com/services/[A-Za-z0-9/_-]+$` (`notifications/notification-delivery.ts` `SLACK_WEBHOOK`, checked by the DTO before it is saved), so the backend can only ever post to Slack's own host over HTTPS, with an 8-second timeout. Document URLs come only from imported or admin-entered TOR records; no other user input becomes a URL the backend calls.
 
 ## Cryptography
 
@@ -215,7 +219,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 1.3.3 | Data being passed to a potentially dangerous context is sanitized beforehand to enforce safety measures, such as… | Pass | `@MaxLength` on every text field; "find similar" text is cut to 5,000 characters before it is sent for embedding |
 | 1.3.4 | User-supplied Scalable Vector Graphics (SVG) scriptable content is validated or sanitized to contain only tags and… | Pass | SVG is never accepted: uploads are typed by their bytes and limited to PDF, PNG, JPEG and Word (`common/stored-files.ts` `sniffFileType`); relayed portal files to PDF, JPEG and PNG (#354, #355) |
 | 1.3.5 | The application sanitizes or disables user-supplied scriptable or expression template language content, such as… | N/A | No user-supplied Markdown, templates or stylesheets; feedback is shown as plain text |
-| 1.3.6 | The application protects against Server-side Request Forgery (SSRF) attacks, by validating untrusted data against an… | Partial | The backend only fetches URLs stored on TOR records, and only document paths; there is no host allowlist (threat E3) |
+| 1.3.6 | The application protects against Server-side Request Forgery (SSRF) attacks, by validating untrusted data against an… | Partial | The backend only fetches URLs stored on TOR records, and only document paths; there is no host allowlist (threat E3). The one user-supplied URL, a Slack webhook, is pinned to `https://hooks.slack.com/services/` |
 | 1.3.7 | The application protects against template injection attacks by not allowing templates to be built based on untrusted… | N/A | No server-side templates built from input |
 | 1.3.8 | The application appropriately sanitizes untrusted input before use in Java Naming and Directory Interface (JNDI)… | N/A | No JNDI |
 | 1.3.9 | The application sanitizes content before it is sent to memcache to prevent injection attacks | N/A | No memcache |
@@ -245,7 +249,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 3.3.2 | Each cookie's 'SameSite' attribute value is set according to the purpose of the cookie, to limit exposure to user… | Pass | `SameSite=Lax` on the session cookie: blocks cross-site POSTs, still allows arriving from an email link |
 | 3.3.3 | Cookies have the '__Host-' prefix for the cookie name unless they are explicitly designed to be shared with other hosts | Partial | The session cookie is `__Host-torr_session`; the locale cookie and the path-scoped signup-email cookie have no prefix (neither is a credential) |
 | 3.3.4 | If the value of a cookie is not meant to be accessible to client-side scripts (such as a session token), the cookie… | Pass | The session cookie is `HttpOnly` and only ever sent in `Set-Cookie`; the frontend never returns the token in a body |
-| 3.4.3 | HTTP responses include a Content-Security-Policy response header field which defines directives to ensure the… | Pass | Strict CSP on every page from `proxy.ts`: per-request nonce, `'strict-dynamic'`, only Google sign-in added to `'self'`, `object-src 'none'` (PR #343) |
+| 3.4.3 | HTTP responses include a Content-Security-Policy response header field which defines directives to ensure the… | Pass | Strict CSP on every page from `proxy.ts`: per-request nonce, `'strict-dynamic'`, only Google sign-in added to `'self'`, `object-src 'none'`, `base-uri 'none'` (PR #343; `base-uri` tightened from `'self'` on 19 Nov). Static files get the same minimum from `next.config.ts` |
 | 3.4.4 | All HTTP responses contain an 'X-Content-Type-Options: nosniff' header field | Pass | `nosniff` on every frontend response (`next.config.ts`) and backend response (helmet) |
 | 3.4.5 | The application sets a referrer policy to prevent leakage of technically sensitive data to third-party services via… | Pass | `Referrer-Policy: strict-origin-when-cross-origin` |
 | 3.4.6 | The web application uses the frame-ancestors directive of the Content-Security-Policy header field for every HTTP… | Pass | `Content-Security-Policy: frame-ancestors 'self'` on every response |
@@ -397,7 +401,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 13.1.1 | All communication needs for the application are documented | Pass | Communication needs are written in [External communication](#external-communication) |
+| 13.1.1 | All communication needs for the application are documented | Pass | Communication needs are written in [External communication](#external-communication), including the user-supplied Slack webhook and the inbound LINE webhook (added on re-check, 19 Nov) |
 | 13.2.1 | Communications between backend application components that don't support the application's standard user session… | Pass | MongoDB requires credentials; every frontend→backend call carries the user's own session token; no unauthenticated internal API |
 | 13.2.2 | Communications between backend application components, including local or operating system services, APIs,… | **Not done** | The backend connects to MongoDB as the root account; it should use a `readWrite` user for its own database |
 | 13.2.3 | If a credential has to be used for service authentication, the credential being used by the consumer is not a… | Partial | Compose defaults to `torr`/`torr`, overridable in `.env`; the deployment checklist says to set real credentials |
