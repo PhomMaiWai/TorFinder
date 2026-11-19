@@ -22,6 +22,8 @@ origin, which the backend takes from `FRONTEND_ORIGIN`. If that is still
 reach their console.
 
 - Set `FRONTEND_ORIGIN=https://<the address users type>` in `.env`.
+- Set `STAFF_PASSKEYS_REQUIRED=true` in `.env`: compose defaults it to
+  `false` so a local stack or demo works without a passkey.
 - `STAFF_PASSKEYS_REQUIRED` must be the same on the frontend and backend
   (compose passes the one value to both).
 - Tell staff they will add a passkey at their next sign-in, and that a second

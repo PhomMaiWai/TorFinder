@@ -31,7 +31,7 @@ If the check is too old, the action is refused with `step-up-required`. The page
 
 | Variable | Where | Default | Meaning |
 | --- | --- | --- | --- |
-| `STAFF_PASSKEYS_REQUIRED` | backend **and** frontend (must match) | `true` in production, `false` otherwise | Required: staff can't use the console until they add a passkey, and step-up applies to every admin. Optional: passkeys are opt-in, but anyone who added one must always use it and gets step-up |
+| `STAFF_PASSKEYS_REQUIRED` | backend **and** frontend (must match) | `true` in production, `false` otherwise; `docker-compose.yml` passes `false` unless `.env` sets it | Required: staff can't use the console until they add a passkey, and step-up applies to every admin. Optional: passkeys are opt-in, but anyone who added one must always use it and gets step-up |
 | `FRONTEND_ORIGIN` | backend | `http://localhost:3000` | The site's public address. Passkeys only work on this origin; on a server it must be the `https://` address users type |
 | `WEBAUTHN_RP_ID` | backend | `FRONTEND_ORIGIN`'s host | Set to a parent domain only to share passkeys across subdomains |
 | `STEP_UP_MINUTES` | backend | `10` | How long a passkey check counts for the actions above |
@@ -39,7 +39,7 @@ If the check is too old, the action is refused with `step-up-required`. The page
 ## Rolling it out
 
 1. Set `FRONTEND_ORIGIN` to the public `https://` address and deploy. Passkeys need a secure context: HTTPS, or `localhost` on a developer's machine.
-2. With `STAFF_PASSKEYS_REQUIRED=true` (the production default), each staff member is sent to `/account` at their next sign-in and adds a passkey. Tell them beforehand; adding a second device (phone plus laptop) is a good idea.
+2. Set `STAFF_PASSKEYS_REQUIRED=true` in `.env` (compose defaults it to `false`). Each staff member is sent to `/account` at their next sign-in and adds a passkey. Tell them beforehand; adding a second device (phone plus laptop) is a good idea.
 3. Check `/admin/audit` and the security log for `auth.passkey.register` events, one per staff member.
 
 To try it without forcing anyone, deploy with `STAFF_PASSKEYS_REQUIRED=false` on both services first. Staff who add a passkey are then protected; the rest are not.
@@ -60,6 +60,7 @@ Record who did it and why. The admin then signs in with their password and adds 
 - **First enrolment trusts the password.** Someone who learns a staff password before the owner adds a passkey could add theirs first. The owner is emailed when it happens, and an admin can reset it. Rolling out soon after accounts are created keeps this window short.
 - **Assigning an announcement's owner** (`PUT /tor/:id/owner`) is not behind step-up yet. It runs inside the TOR edit form's full-page save, which can't pause for the passkey prompt; it needs that form moved to a client-side submit first.
 - **Company and public accounts** still have no second factor of their own (L2 6.3.3 stays Partial). Google accounts carry Google's.
+- **User verification is preferred, not required** (`requireUserVerification: false`). Every passkey check needs the user present (a touch or tap), but a security key without a PIN or biometric is accepted. That is enough for a second factor: the password is the first, and the passkey proves possession of the device. It is why the 6.3.3 claim rests on password plus passkey, not on the passkey alone as a single multi-factor step.
 - **Attestation is `none`.** Any standards-compliant authenticator is accepted; the app doesn't restrict to particular makes of security key.
 
 ## Where it lives

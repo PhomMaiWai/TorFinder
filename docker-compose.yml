@@ -16,7 +16,7 @@ services:
       # refuses a missing or published secret. Set it in .env (see .env.example).
       - SESSION_SECRET=${SESSION_SECRET:-}
       # Must match the backend's value (docs/security/passkeys.md).
-      - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-true}
+      - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
     depends_on:
       - backend
     # A crashed process comes back by itself (ASVS 16.5.4; see backend main.ts).
@@ -43,8 +43,10 @@ services:
       # the README, so they must never appear on a reachable server (ASVS 6.3.2).
       - SEED_DEMO_DATA=${SEED_DEMO_DATA:-false}
       # Staff passkeys (docs/security/passkeys.md). Bound to FRONTEND_ORIGIN's
-      # host, which on a server must be the public https:// address.
-      - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-true}
+      # host, which on a server must be the public https:// address. Optional
+      # unless .env opts in, so a local stack or demo works without a passkey;
+      # a real deployment sets STAFF_PASSKEYS_REQUIRED=true (rollout in passkeys.md).
+      - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
     depends_on:
       db:
