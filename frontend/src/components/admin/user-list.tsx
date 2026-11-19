@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle2, KeyRound, Pencil, Search } from "lucide-react";
+import { Ban, CheckCircle2, KeyRound, Mail, Pencil, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
@@ -44,6 +44,8 @@ type Props = {
   onEdit: (id: string, edit: UserEdit) => Promise<ActionResult>;
   /** Clears a staff member's passkeys (a lost device). */
   onResetPasskeys: (id: string) => Promise<ActionResult>;
+  /** Emails the owner a password-reset link (ASVS 6.4.6); not for viewers, who have no password. */
+  onSendPasswordReset: (id: string) => Promise<ActionResult>;
 };
 
 /** The words for a passkey check that didn't happen, so the admin knows nothing changed. */
@@ -168,7 +170,7 @@ function UserEditor({
  * suspension first — that is the state an admin is here to change — and falls
  * back to the approval status when the account is free to use.
  */
-export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasskeys }: Props) {
+export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasskeys, onSendPasswordReset }: Props) {
   const t = useTranslations("AdminUsersPage");
   const tp = useTranslations("Passkeys");
   const stepUpMessage = useStepUpMessage();
@@ -334,6 +336,33 @@ export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasske
                           {t("suspendAction")}
                         </>
                       )}
+                    </button>
+                  )}
+
+                  {user.role !== "viewer" && !suspended && (
+                    <button
+                      onClick={() => {
+                        setBusyId(user.id);
+                        setRowMessage(null);
+                        startTransition(async () => {
+                          try {
+                            const result = await withStepUp(() => onSendPasswordReset(user.id), stepUpMessage);
+                            setRowMessage({
+                              id: user.id,
+                              text: result.error ?? t("resetLinkSent", { email: user.email }),
+                              ok: !result.error,
+                            });
+                          } finally {
+                            setBusyId(null);
+                          }
+                        });
+                      }}
+                      disabled={busyId === user.id}
+                      title={t("resetLinkHint")}
+                      className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink disabled:opacity-50"
+                    >
+                      <Mail size={14} />
+                      {t("resetLinkAction")}
                     </button>
                   )}
 

@@ -15,11 +15,13 @@ import { env } from "../config/env";
 export type SecurityEvent =
   | "auth.login"
   | "auth.login.locked"
+  | "auth.login.lockout"
   | "auth.google"
   | "auth.logout"
   | "auth.signup"
   | "auth.password.change"
   | "auth.password.reset.request"
+  | "auth.password.reset.admin"
   | "auth.password.reset"
   | "auth.email.verify"
   | "access.denied"

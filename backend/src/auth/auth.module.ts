@@ -10,6 +10,6 @@ import { PasskeysService } from "./passkeys.service";
   imports: [DatabaseModule],
   controllers: [AuthController],
   providers: [AuthService, AccountLinksService, PasskeysService],
-  exports: [PasskeysService],
+  exports: [PasskeysService, AccountLinksService],
 })
 export class AuthModule {}

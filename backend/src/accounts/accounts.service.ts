@@ -2,7 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
+import { AccountLinksService } from "../auth/account-links.service";
 import { PasskeysService } from "../auth/passkeys.service";
+import { logSecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { SessionPayload } from "../common/token";
 import { Role } from "../common/roles";
@@ -49,6 +51,7 @@ export class AccountsService {
     private readonly audit: AuditService,
     private readonly revocation: SessionRevocationService,
     private readonly passkeys: PasskeysService,
+    private readonly links: AccountLinksService,
   ) {}
 
   async findAll(status?: AccountStatus) {
@@ -82,6 +85,35 @@ export class AccountsService {
   async resetPasskeys(id: string, actor: SessionPayload, ip?: string) {
     const user = await this.passkeys.resetFor(id, actor, ip);
     await this.audit.record(actor.email, "ล้างพาสคีย์ของบัญชี", `${user.name} (${user.email})`);
+    return { ok: true as const };
+  }
+
+  /**
+   * ASVS 6.4.6: an admin starts a reset without choosing the password. The
+   * owner gets the same single-use, one-hour link as "forgot password"; their
+   * current password and sessions stay until they use it. Viewers sign in only
+   * with Google and have no password to reset; a suspended account must be
+   * reactivated first, as with "forgot password".
+   */
+  async sendPasswordReset(id: string, actor: SessionPayload, ip?: string) {
+    const user = ObjectId.isValid(id)
+      ? await this.db.users.findOne({ _id: new ObjectId(id) }, { projection: { email: 1, name: 1, role: 1, suspended: 1 } })
+      : null;
+    if (!user) throw new NotFoundException("ไม่พบบัญชีนี้");
+    if (user.role === "viewer") throw new BadRequestException("บัญชีประชาชนทั่วไปเข้าสู่ระบบด้วย Google จึงไม่มีรหัสผ่านให้ตั้งใหม่");
+    if (user.suspended) throw new BadRequestException("บัญชีนี้ถูกระงับอยู่ กรุณาเปิดใช้งานก่อนส่งลิงก์ตั้งรหัสผ่าน");
+
+    await this.links.send(user, "password-reset", {
+      intro: "ผู้ดูแลระบบ TOR Finder ส่งลิงก์ตั้งรหัสผ่านใหม่ให้บัญชีนี้ กดลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่ด้วยตัวเอง ผู้ดูแลระบบไม่เห็นและไม่ได้กำหนดรหัสผ่านของคุณ",
+    });
+    logSecurityEvent("auth.password.reset.admin", {
+      outcome: "success",
+      userId: id,
+      email: user.email,
+      ip,
+      reason: `by_${actor.sub}`,
+    });
+    await this.audit.record(actor.email, "ส่งลิงก์ตั้งรหัสผ่านใหม่", `${user.name} (${user.email})`);
     return { ok: true as const };
   }
 

@@ -105,7 +105,7 @@ export class AuthService {
         ? await verifyPassword(password, user.passwordSalt, user.passwordHash)
         : await spendPasswordCheck(password);
     if (!user || !valid) {
-      this.loginAttempts.recordFailure(address);
+      this.recordPasswordFailure(address, user, ip);
       logSecurityEvent("auth.login", {
         outcome: "failure",
         email: address,
@@ -205,7 +205,7 @@ export class AuthService {
 
     this.assertNotLocked(user.email, ip);
     if (!(await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash))) {
-      this.loginAttempts.recordFailure(user.email);
+      this.recordPasswordFailure(user.email, user, ip);
       logSecurityEvent("auth.password.change", {
         outcome: "failure",
         userId,
@@ -401,6 +401,19 @@ export class AuthService {
   }
 
   /** The per-address lock, logged when it refuses (ASVS 6.3.1, 16.3.1). */
+  /**
+   * Counts a wrong password. The failure that locks a real account also emails
+   * its owner (ASVS 6.3.5), once per lock. The mail is not awaited: an unknown
+   * address sends nothing, so waiting would let the response time tell which
+   * addresses have accounts (ASVS 6.3.8). notify() never throws.
+   */
+  private recordPasswordFailure(address: string, user: { _id: ObjectId; email: string } | null, ip?: string): void {
+    const justLocked = this.loginAttempts.recordFailure(address);
+    if (!justLocked || !user) return;
+    logSecurityEvent("auth.login.lockout", { outcome: "failure", userId: user._id.toString(), email: address, ip, reason: "owner_notified" });
+    void this.links.notify(user.email, "login-locked");
+  }
+
   private assertNotLocked(email: string, ip?: string): void {
     try {
       this.loginAttempts.assertAllowed(email);

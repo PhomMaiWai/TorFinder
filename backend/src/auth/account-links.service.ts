@@ -41,7 +41,8 @@ export type AccountNotice =
   | "signup-existing"
   | "passkey-added"
   | "passkey-removed"
-  | "passkeys-reset";
+  | "passkeys-reset"
+  | "login-locked";
 
 const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) => string[] }> = {
   // ASVS 6.3.7
@@ -82,6 +83,15 @@ const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) =
       `เข้าสู่ระบบที่ ${origin}/login แล้วเพิ่มพาสคีย์ใหม่ ถ้าคุณไม่ได้ขอให้ล้าง กรุณาติดต่อผู้ดูแลระบบ`,
     ],
   },
+  // ASVS 6.3.5: someone used up the address's sign-in tries; its owner should know.
+  "login-locked": {
+    subject: "มีการพยายามเข้าสู่ระบบบัญชีของคุณ — TOR Finder",
+    body: (origin) => [
+      "มีการกรอกรหัสผ่านผิดหลายครั้งติดกันสำหรับบัญชี TOR Finder ที่ใช้อีเมลนี้ ระบบจึงพักการเข้าสู่ระบบด้วยรหัสผ่านไว้ 15 นาที",
+      `ถ้าเป็นคุณ รอ 15 นาทีแล้วลองใหม่ หรือตั้งรหัสผ่านใหม่ที่ ${origin}/forgot-password`,
+      "ถ้าไม่ใช่คุณ รหัสผ่านของคุณยังไม่ถูกเปิดเผย แต่ควรตั้งรหัสผ่านใหม่ที่ไม่ซ้ำกับเว็บไซต์อื่น และแจ้งผู้ดูแลระบบหากเกิดขึ้นบ่อย",
+    ],
+  },
   // ASVS 6.3.8: the signup form answers as if it worked, so the owner is told here instead.
   "signup-existing": {
     subject: "มีการสมัครด้วยอีเมลของคุณ — TOR Finder",
@@ -108,7 +118,11 @@ export class AccountLinksService {
   constructor(private readonly db: DatabaseService) {}
 
   /** Issues a link and mails it. Mail failures are logged, never thrown: the caller's answer can't depend on them. */
-  async send(user: { _id: ObjectId; email: string }, purpose: EmailLinkPurpose): Promise<void> {
+  async send(
+    user: { _id: ObjectId; email: string },
+    purpose: EmailLinkPurpose,
+    options: { intro?: string } = {},
+  ): Promise<void> {
     const token = randomBytes(32).toString("base64url");
     const now = new Date();
     await this.db.authTokens.deleteMany({ userId: user._id, purpose });
@@ -128,7 +142,7 @@ export class AccountLinksService {
       return;
     }
 
-    const mail = MAIL[purpose];
+    const mail = { ...MAIL[purpose], ...(options.intro && { intro: options.intro }) };
     try {
       await sendEmail({
         to: user.email,
