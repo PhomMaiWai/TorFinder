@@ -110,10 +110,38 @@ export type UserDoc = {
    * suspension; absent means no token for this account has ever been revoked.
    */
   sessionMinIssuedAt?: Date;
+  /** Staff passkeys (WebAuthn credentials); see auth/passkeys.service.ts. Absent or empty means none. */
+  passkeys?: StoredPasskey[];
 };
 
-/** What a single-use emailed link is for. */
-export type AuthTokenPurpose = "password-reset" | "email-verify";
+/** One registered passkey. Only the public key is held; the private key never leaves the user's device. */
+export type StoredPasskey = {
+  /** The credential id, base64url — unique across all accounts. */
+  id: string;
+  /** COSE public key, base64url. */
+  publicKey: string;
+  /** The authenticator's signature counter, kept to spot a cloned key. */
+  counter: number;
+  transports?: string[];
+  /** The user's own label, e.g. "Work laptop". */
+  name: string;
+  createdAt: Date;
+  lastUsedAt?: Date;
+};
+
+/**
+ * What a single-use secret in `authTokens` is for: an emailed link, or a
+ * WebAuthn challenge (sign-in, adding a passkey, a step-up check).
+ */
+export type AuthTokenPurpose =
+  | "password-reset"
+  | "email-verify"
+  | "passkey-login"
+  | "passkey-register"
+  | "passkey-step-up";
+
+/** The purposes that are emailed links (AccountLinksService). */
+export type EmailLinkPurpose = Extract<AuthTokenPurpose, "password-reset" | "email-verify">;
 
 /**
  * One emailed link. Only the SHA-256 of the token is kept, so a copy of the
@@ -126,6 +154,8 @@ export type AuthTokenDoc = {
   tokenHash: string;
   expiresAt: Date;
   createdAt: Date;
+  /** For a passkey sign-in challenge: the first factor that already passed. */
+  factor?: "pwd" | "google";
 };
 
 export type TorContract = {
@@ -435,6 +465,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.users.createIndex({ email: 1 }, { unique: true });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
+    // A credential belongs to one account. Partial rather than sparse: an
+    // empty `passkeys` array must not count as a value two accounts share.
+    await this.users.createIndex(
+      { "passkeys.id": 1 },
+      { unique: true, partialFilterExpression: { "passkeys.id": { $exists: true } } },
+    );
     await this.tors.createIndex({ createdAt: -1 });
     // An owner's dashboard lists only their own announcements, newest first.
     await this.tors.createIndex({ ownerId: 1, createdAt: -1 });

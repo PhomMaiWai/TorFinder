@@ -1,6 +1,7 @@
 import { idPath } from "@/lib/backend-path";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import { cookies } from "next/headers";
+import { type ActionResult, actionResultFrom } from "@/lib/action-result";
 
 import { SESSION_COOKIE } from "@/lib/auth";
 
@@ -44,7 +45,7 @@ export async function fetchAccounts(status?: AccountStatus): Promise<OrgAccount[
   );
 }
 
-export async function reviewAccount(id: string, status: Exclude<AccountStatus, "pending">) {
+export async function reviewAccount(id: string, status: Exclude<AccountStatus, "pending">): Promise<ActionResult> {
   const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "Content-Type": "application/json" },
@@ -52,5 +53,5 @@ export async function reviewAccount(id: string, status: Exclude<AccountStatus, "
     cache: "no-store",
     signal: AbortSignal.timeout(8000),
   });
-  if (!res.ok) throw new Error("อัปเดตสถานะบัญชีไม่สำเร็จ");
+  return actionResultFrom(res, "อัปเดตสถานะบัญชีไม่สำเร็จ");
 }

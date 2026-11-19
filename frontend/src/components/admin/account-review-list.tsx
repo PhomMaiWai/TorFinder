@@ -18,7 +18,9 @@ import {
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/config";
+import type { ActionResult } from "@/lib/action-result";
 import { formatDateTime } from "@/lib/datetime";
+import { type PasskeyFailureResult, withStepUp } from "@/lib/passkeys-client";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -79,10 +81,24 @@ export function AccountReviewList({
   onReject,
 }: {
   accounts: OrgAccount[];
-  onApprove: (id: string) => Promise<void>;
-  onReject: (id: string) => Promise<void>;
+  onApprove: (id: string) => Promise<ActionResult>;
+  onReject: (id: string) => Promise<ActionResult>;
 }) {
   const t = useTranslations("AdminAccountsPage");
+  const tp = useTranslations("Passkeys");
+  /** Why a decision didn't go through, under the account it was about. */
+  const [refusal, setRefusal] = useState<{ id: string; text: string } | null>(null);
+
+  const stepUpMessage = (result: PasskeyFailureResult) =>
+    result.message ??
+    (result.reason === "cancelled" ? tp("cancelled") : result.reason === "unsupported" ? tp("unsupported") : tp("stepUpFailed"));
+
+  /** Approval decides who gets in, so it may first ask for a fresh passkey check (ASVS 7.5.3). */
+  async function decide(id: string, action: (id: string) => Promise<ActionResult>) {
+    setRefusal(null);
+    const result = await withStepUp(() => action(id), stepUpMessage);
+    if (result.error) setRefusal({ id, text: result.error });
+  }
   const tv = useTranslations("Values");
   const locale = useLocale() as Locale;
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -144,13 +160,13 @@ export function AccountReviewList({
               >
                 {account.status === "pending" && (
                   <>
-                    <form action={onReject.bind(null, account.id)}>
+                    <form action={() => decide(account.id, onReject)}>
                       <ReviewButton className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink">
                         <XCircle size={15} />
                         {t("rejectAction")}
                       </ReviewButton>
                     </form>
-                    <form action={onApprove.bind(null, account.id)}>
+                    <form action={() => decide(account.id, onApprove)}>
                       <ReviewButton className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark">
                         <Check size={15} />
                         {t("approveAction")}
@@ -167,6 +183,11 @@ export function AccountReviewList({
               </div>
             </div>
 
+            {refusal?.id === account.id && (
+              <p role="alert" className="px-5 pb-4 text-xs font-medium text-danger">
+                {refusal.text}
+              </p>
+            )}
             {isExpanded && company && <CompanyReviewDetail company={company} />}
           </div>
         );

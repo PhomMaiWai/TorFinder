@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeft, Building2, ShieldAlert, type LucideIcon } from "lucide-react";
+import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser";
+import { ArrowLeft, Building2, KeyRound, ShieldAlert, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -10,6 +11,7 @@ import { GoogleCompleteSignupForm } from "@/components/auth/google-complete-sign
 import { GoogleSignInButton, isGoogleSignInEnabled } from "@/components/auth/google-sign-in-button";
 import { ResendVerification } from "@/components/auth/resend-verification";
 import { PasswordInput } from "@/components/ui/password-input";
+import { type PasskeyFailureResult, signInWithPasskey } from "@/lib/passkeys-client";
 
 const ICONS = {
   building: Building2,
@@ -49,6 +51,7 @@ export function SignInForm({
   const t = useTranslations("SignInForm");
   const tc = useTranslations("Common");
   const te = useTranslations("Errors");
+  const tp = useTranslations("Passkeys");
   const router = useRouter();
   const Icon = ICONS[icon];
   const [email, setEmail] = useState("");
@@ -60,6 +63,33 @@ export function SignInForm({
   const [googleSignup, setGoogleSignup] = useState<{ credential: string; email: string } | null>(
     null,
   );
+  /** Set once the first factor passed for a staff account with a passkey (ASVS 6.3.3). */
+  const [passkeyOptions, setPasskeyOptions] = useState<PublicKeyCredentialRequestOptionsJSON | null>(null);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+
+  function passkeyMessage(result: PasskeyFailureResult): string {
+    if (result.message) return result.message;
+    if (result.reason === "cancelled") return tp("cancelled");
+    if (result.reason === "unsupported") return tp("unsupported");
+    return tp("failed");
+  }
+
+  /** Step two: the device signs the challenge, and the session cookie is set. */
+  async function completeWithPasskey(options: PublicKeyCredentialRequestOptionsJSON) {
+    setError(null);
+    setPasskeyOptions(options);
+    setPasskeyBusy(true);
+    const result = await signInWithPasskey(options);
+    setPasskeyBusy(false);
+    if (!result.ok) {
+      setError(passkeyMessage(result));
+      // A spent or expired challenge can't be retried; the password step starts over.
+      if (result.message) setPasskeyOptions(null);
+      return;
+    }
+    router.push(redirectTo);
+    router.refresh();
+  }
 
   const badgeCls =
     tone === "danger" ? "bg-danger-soft text-danger" : "bg-accent-soft text-accent-text";
@@ -85,6 +115,12 @@ export function SignInForm({
       if (!response.ok) {
         setError(data.error ?? te("loginFailed"));
         if (data.code === "email-unverified") setUnverifiedEmail(email);
+        return;
+      }
+
+      if (data.status === "passkey-required") {
+        setPassword("");
+        await completeWithPasskey(data.options);
         return;
       }
 
@@ -128,7 +164,42 @@ export function SignInForm({
         </Link>
 
         <div className="rounded-2xl border border-border bg-surface p-10">
-          {googleSignup ? (
+          {passkeyOptions ? (
+            <div>
+              <span
+                className={`mb-4 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold ${badgeCls}`}
+              >
+                <KeyRound size={15} />
+                {badge}
+              </span>
+              <h1 className="text-2xl font-bold text-ink">{tp("signInTitle")}</h1>
+              <p className="mt-1.5 text-base text-ink-muted">{tp("signInDescription")}</p>
+              {error && (
+                <p role="alert" className="mt-5 rounded-lg bg-danger-soft px-4 py-2.5 text-sm text-danger">
+                  {error}
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={passkeyBusy}
+                onClick={() => completeWithPasskey(passkeyOptions)}
+                className={`mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-lg text-base font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${buttonCls}`}
+              >
+                <KeyRound size={18} />
+                {passkeyBusy ? tp("waiting") : tp("signInButton")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasskeyOptions(null);
+                  setError(null);
+                }}
+                className="mt-4 w-full text-center text-sm font-medium text-ink-muted hover:text-ink"
+              >
+                {tp("backToPassword")}
+              </button>
+            </div>
+          ) : googleSignup ? (
             <GoogleCompleteSignupForm
               credential={googleSignup.credential}
               email={googleSignup.email}
@@ -214,6 +285,7 @@ export function SignInForm({
                       onSuccess={handleGoogleSuccess}
                       onPending={handleGooglePending}
                       onNeedsCompanyInfo={handleGoogleNeedsCompanyInfo}
+                      onPasskeyRequired={completeWithPasskey}
                     />
                   </div>
                 </>

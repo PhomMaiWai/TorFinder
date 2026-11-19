@@ -24,7 +24,12 @@ export type SecurityEvent =
   | "auth.email.verify"
   | "access.denied"
   | "rate.limited"
-  | "line.webhook.bad_signature";
+  | "line.webhook.bad_signature"
+  | "auth.passkey.login"
+  | "auth.passkey.register"
+  | "auth.passkey.remove"
+  | "auth.passkey.reset"
+  | "auth.step_up";
 
 export type SecurityEventFields = {
   outcome: "success" | "failure";

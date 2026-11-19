@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Optional } from "@nestjs/common";
 
-import { Role } from "./roles";
+import { env } from "../config/env";
+import { Role, isStaffRole } from "./roles";
 import { SessionRevocationService } from "./session-revocation.service";
 import { AuthenticatedRequest, logDenied } from "./session.guard";
 import { verifySessionToken } from "./token";
@@ -51,6 +52,18 @@ export abstract class RoleGuard implements CanActivate {
     if (!session || !this.roles.includes(session.role)) {
       logDenied(request, !session ? (token ? "invalid_token" : "no_token") : "wrong_role", session?.sub, session?.role);
       throw new ForbiddenException(this.refusal);
+    }
+
+    // While passkeys are required, a staff session that didn't use one can
+    // only add one (on SessionGuard routes) — not reach the staff console
+    // (ASVS 6.3.3). The code tells the frontend where to send them.
+    if (env.passkeys.required && isStaffRole(session.role) && !session.amr?.includes("passkey")) {
+      logDenied(request, "passkey_setup_required", session.sub, session.role);
+      throw new ForbiddenException({
+        statusCode: 403,
+        code: "passkey-setup-required",
+        message: "บัญชีเจ้าหน้าที่ต้องเพิ่มพาสคีย์ก่อนใช้งาน กรุณาไปที่หน้าบัญชีของฉัน",
+      });
     }
 
     if (!this.revocation) {

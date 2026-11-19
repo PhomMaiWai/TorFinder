@@ -4,16 +4,18 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 34 Pass, 13 Partial, 18 Not done, 23 N/A, 4 not reviewed** (92 items). Of the 69 that apply, 34 pass (49%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is N/A, 1 is set by hosting and 3 are not done.
+**Result: 36 Pass, 15 Partial, 16 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 36 pass (51%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+
+**Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 34 | Control exists, with evidence in code or in this file |
-| Partial | 13 | Control exists with a gap; the gap is named |
-| Not done | 18 | Not implemented |
-| N/A | 23 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
+| Pass | 36 | Control exists, with evidence in code or in this file |
+| Partial | 15 | Control exists with a gap; the gap is named |
+| Not done | 16 | Not implemented |
+| N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
 
 | Chapter | L3 items | Pass | Partial | Not done | N/A | Not reviewed |
@@ -23,9 +25,9 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V3 Web Frontend Security | 12 | 9 | 1 | 2 | 0 | 0 |
 | V4 API and Web Service | 6 | 2 | 1 | 0 | 1 | 2 |
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
-| V6 Authentication | 12 | 3 | 0 | 2 | 7 | 0 |
-| V7 Session Management | 1 | 0 | 0 | 1 | 0 | 0 |
-| V8 Authorization | 6 | 3 | 1 | 2 | 0 | 0 |
+| V6 Authentication | 12 | 5 | 0 | 2 | 5 | 0 |
+| V7 Session Management | 1 | 0 | 1 | 0 | 0 | 0 |
+| V8 Authorization | 6 | 3 | 2 | 1 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
 | V11 Cryptography | 10 | 3 | 1 | 3 | 3 | 0 |
@@ -35,7 +37,7 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V15 Secure Coding and Architecture | 8 | 6 | 1 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **34** | **13** | **18** | **23** | **4** |
+| **Total** | **92** | **36** | **15** | **16** | **21** | **4** |
 
 ## Done on this branch
 
@@ -186,18 +188,18 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 | 6.3.8 | Valid users can't be deduced from failed authentication, registration or forgot-password | Pass | Login: same message and the same scrypt cost for unknown addresses; "unverified" and "pending" are only told after the right password. Signup: the same answer for a registered address (this branch). Forgot-password and resend-verification: always the same answer. Google sign-up still says an address is taken, but only after Google proved the caller owns it |
 | 6.4.5 | Renewal reminders before an authentication mechanism expires | N/A | Nothing expires (no certificates or tokens issued to users) |
 | 6.4.6 | Admins can start a reset without choosing the user's password | **Not done** | Admins can suspend, not start a reset |
-| 6.5.6 | Any authentication factor can be revoked | N/A | No MFA factors; a password is replaced by reset, a Google link stays (see 6.3.3) |
+| 6.5.6 | Any authentication factor can be revoked | Pass | A staff member removes their own passkeys (after a passkey check); another admin can clear them all, which ends every session; a password is replaced by reset |
 | 6.5.7 | Biometrics only as a secondary factor | N/A | No biometrics |
 | 6.5.8 | TOTPs checked against a trusted time source | N/A | No TOTP |
 | 6.6.4 | Push-notification MFA rate limited | N/A | No push MFA |
-| 6.7.1 | Certificates for cryptographic authentication protected from modification | N/A | No cryptographic authenticators |
-| 6.7.2 | Challenge nonce at least 64 bits | N/A | No cryptographic authenticators |
+| 6.7.1 | Certificates for cryptographic authentication protected from modification | N/A | Passkeys are registered with attestation `none`; no certificate is relied on to verify them |
+| 6.7.2 | Challenge nonce at least 64 bits | Pass | Passkey challenges are 32 random bytes (256 bits), single use, tied to one account and purpose, 5-minute lifetime |
 
 ### V7 Session Management
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 7.5.3 | Further authentication before highly sensitive operations | **Not done** | Admin role changes, suspensions and TOR deletes need only the session |
+| 7.5.3 | Further authentication before highly sensitive operations | Partial | Approving or rejecting a company, editing a role, suspending, deleting an announcement and clearing passkeys need a passkey check from the last 10 minutes (`StepUpGuard`). Assigning an announcement's owner doesn't yet ([passkeys.md](./passkeys.md#known-limits)) |
 
 ### V8 Authorization
 
@@ -208,7 +210,7 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 | 8.2.4 | Adaptive controls on environmental attributes, at sign-in and during a session | **Not done** | Rate limits and lockout only; nothing reacts to location, device or time |
 | 8.3.2 | Authorization changes apply immediately | Partial | Role change and suspension revoke every session; each backend process may keep accepting a revoked token for up to 30 s (revocation cache). One process today, so this is the whole delay |
 | 8.3.3 | Access is based on the originating user's permissions, not an intermediary's | Pass | The frontend calls the backend with the user's own session token; there is no service account acting for users |
-| 8.4.2 | Administrative interfaces have multiple layers of security | **Not done** | The admin area relies on the `admin` role in the session alone |
+| 8.4.2 | Administrative interfaces have multiple layers of security | Partial | Admin role, a phishing-resistant passkey at sign-in, and step-up for sensitive actions. No device-posture or contextual risk checks |
 
 ### V10 OAuth and OIDC
 
@@ -301,7 +303,7 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 | ID | Level 3 condition | Status | Evidence |
 | --- | --- | --- | --- |
 | 3.4.3 | Per-response CSP with nonces or hashes | Pass | A fresh nonce per page request in `proxy.ts` |
-| 6.3.3 | One factor is hardware-based and phishing-resistant (FIDO, passkey) | **Not done** | No MFA for password accounts yet (L2 gap too) |
+| 6.3.3 | One factor is hardware-based and phishing-resistant (FIDO, passkey) | Partial | Staff use a passkey (WebAuthn, origin-bound, user presence required) after their password or Google; companies and public viewers have no second factor |
 | 6.6.1 | No phone or SMS factor | N/A | None offered |
 | 12.1.2 | Only forward-secret cipher suites | Not reviewed | Set by the hosting proxy |
 | 13.3.1 | Secrets in a hardware-backed store (HSM) | **Not done** | Environment variables |
@@ -309,7 +311,7 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 
 ## Suggested order for the rest
 
-1. **6.3.3 / 7.5.3:** passkeys (WebAuthn) for admin, owner and auditor accounts first, then step-up re-authentication before admin actions.
+1. ~~**6.3.3 / 7.5.3:** passkeys for staff and step-up before admin actions~~ — done on `feat/staff-passkeys`. Left: step-up on owner assignment, and a second factor for company accounts.
 2. **6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action.
 3. **2.3.5, 8.4.2:** a second admin's approval to grant the admin role.
 4. **14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on.

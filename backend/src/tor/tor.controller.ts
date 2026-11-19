@@ -16,6 +16,7 @@ import {
 import type { Response } from "express";
 
 import { AdminGuard } from "../common/admin.guard";
+import { StepUpGuard } from "../common/step-up.guard";
 import { AuditorGuard } from "../common/auditor.guard";
 import { AuthenticatedRequest } from "../common/session.guard";
 import { CreateTorDto } from "./dto/create-tor.dto";
@@ -148,7 +149,7 @@ export class TorController {
    * vendors are reading.
    */
   @Delete(":id")
-  @UseGuards(AdminGuard)
+  @UseGuards(AdminGuard, StepUpGuard)
   remove(@Param("id") id: string, @Req() request: AuthenticatedRequest) {
     return this.torService.softDelete(id, request.session.email);
   }

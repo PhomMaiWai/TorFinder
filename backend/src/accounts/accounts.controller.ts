@@ -1,13 +1,18 @@
-import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 
 import { AdminGuard } from "../common/admin.guard";
 import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
+import { StepUpGuard } from "../common/step-up.guard";
 import { AccountsService } from "./accounts.service";
 import { AccountQueryDto } from "./dto/account-query.dto";
 import { ReviewAccountDto } from "./dto/review-account.dto";
 import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 
+/**
+ * Decisions about who may do what — approval, role, suspension, passkey
+ * reset — also need a recent passkey check (StepUpGuard, ASVS 7.5.3).
+ */
 @Controller("accounts")
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
@@ -39,28 +44,36 @@ export class AccountsController {
   }
 
   @Patch(":id")
-  @UseGuards(AdminGuard)
+  @UseGuards(AdminGuard, StepUpGuard)
   review(@Param("id") id: string, @Body() dto: ReviewAccountDto, @Req() request: AuthenticatedRequest) {
     return this.accountsService.review(id, dto, request.session.email);
   }
 
   /** Rename an account or move it between roles; see AccountsService.updateUser. */
   @Patch(":id/details")
-  @UseGuards(AdminGuard)
+  @UseGuards(AdminGuard, StepUpGuard)
   updateUser(@Param("id") id: string, @Body() dto: UpdateUserDto, @Req() request: AuthenticatedRequest) {
     return this.accountsService.updateUser(id, dto, request.session.email);
   }
 
   /** Blocks sign-in on an already-approved account, without reversing its approval. */
   @Patch(":id/suspend")
-  @UseGuards(AdminGuard)
+  @UseGuards(AdminGuard, StepUpGuard)
   suspend(@Param("id") id: string, @Req() request: AuthenticatedRequest) {
     return this.accountsService.setSuspended(id, true, request.session.email);
   }
 
   @Patch(":id/reactivate")
-  @UseGuards(AdminGuard)
+  @UseGuards(AdminGuard, StepUpGuard)
   reactivate(@Param("id") id: string, @Req() request: AuthenticatedRequest) {
     return this.accountsService.setSuspended(id, false, request.session.email);
+  }
+
+  /** A staff member lost their passkey: clear them all, end their sessions, and they add a new one at sign-in. */
+  @Post(":id/passkeys/reset")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AdminGuard, StepUpGuard)
+  resetPasskeys(@Param("id") id: string, @Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    return this.accountsService.resetPasskeys(id, request.session, ip);
   }
 }

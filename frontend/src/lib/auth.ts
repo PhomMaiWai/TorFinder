@@ -12,7 +12,29 @@ export type SessionPayload = {
   /** Last activity, epoch seconds (see refreshSessionToken). */
   act?: number;
   exp: number;
+  /** How the session was authenticated (backend common/token.ts). */
+  amr?: ("pwd" | "google" | "passkey")[];
+  /** When a passkey was last checked, epoch seconds (step-up). */
+  pkt?: number;
 };
+
+/** The agency's own accounts, which sign in with a passkey too (backend common/roles.ts STAFF_ROLES). */
+export const STAFF_ROLES: readonly Role[] = ["admin", "owner", "auditor"];
+export const isStaffRole = (role: Role | undefined) => role !== undefined && STAFF_ROLES.includes(role);
+
+/**
+ * Must match the backend's STAFF_PASSKEYS_REQUIRED (on by default in
+ * production): staff then can't use their console until they add a passkey.
+ */
+export const STAFF_PASSKEYS_REQUIRED =
+  (process.env.STAFF_PASSKEYS_REQUIRED ?? String(process.env.NODE_ENV === "production")) === "true";
+
+/** A staff session that hasn't used a passkey while passkeys are required: it may only add one. */
+export function needsPasskeySetup(session: SessionPayload | null): boolean {
+  return Boolean(
+    session && STAFF_PASSKEYS_REQUIRED && isStaffRole(session.role) && !session.amr?.includes("passkey"),
+  );
+}
 
 /**
  * A session unused this long must sign in again (ASVS 7.3.1), within the

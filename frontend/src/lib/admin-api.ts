@@ -4,6 +4,7 @@ import { idPath } from "@/lib/backend-path";
 import { fetchJson, orEmptyWhenAnswered } from "@/lib/fetch-json";
 import type { ReportReason } from "@/lib/report-reasons";
 import { authHeaders } from "@/lib/session-headers";
+import { type ActionResult, actionResultFrom } from "@/lib/action-result";
 
 export type SyncRunStatus = "success" | "partial" | "failed";
 
@@ -101,7 +102,7 @@ export function fetchAuditFeed(query: AuditFeedQuery = {}): Promise<AuditFeedPag
 export const fetchUserDirectory = () =>
   readAsAdmin<DirectoryUser[]>("/api/accounts/directory", []);
 
-async function setSuspended(id: string, suspended: boolean): Promise<void> {
+async function setSuspended(id: string, suspended: boolean): Promise<ActionResult> {
   const res = await fetch(
     `${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/${suspended ? "suspend" : "reactivate"}`,
     {
@@ -111,7 +112,19 @@ async function setSuspended(id: string, suspended: boolean): Promise<void> {
       signal: AbortSignal.timeout(8000),
     },
   );
-  if (!res.ok) throw new Error(suspended ? "ระงับบัญชีไม่สำเร็จ" : "เปิดใช้งานบัญชีไม่สำเร็จ");
+  return actionResultFrom(res, suspended ? "ระงับบัญชีไม่สำเร็จ" : "เปิดใช้งานบัญชีไม่สำเร็จ");
+}
+
+/** Clears a staff member's passkeys after they lose a device; they add a new one at their next sign-in. */
+export async function resetUserPasskeys(id: string): Promise<ActionResult> {
+  const te = await getTranslations("Errors");
+  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/passkeys/reset`, {
+    method: "POST",
+    headers: await authHeaders(),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  return actionResultFrom(res, te("saveFailed"));
 }
 
 export const suspendUser = (id: string) => setSuspended(id, true);
@@ -121,7 +134,7 @@ export const reactivateUser = (id: string) => setSuspended(id, false);
 export type UserEdit = { name?: string; role?: Exclude<Role, "org"> };
 
 /** The backend's own message on a refusal (e.g. demoting the last admin), so the admin sees why. */
-export async function updateUser(id: string, edit: UserEdit): Promise<{ error?: string }> {
+export async function updateUser(id: string, edit: UserEdit): Promise<ActionResult> {
   const te = await getTranslations("Errors");
   const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/details`, {
     method: "PATCH",
@@ -130,10 +143,7 @@ export async function updateUser(id: string, edit: UserEdit): Promise<{ error?: 
     cache: "no-store",
     signal: AbortSignal.timeout(8000),
   });
-  if (res.ok) return {};
-  const body = (await res.json().catch(() => null)) as { message?: string | string[] } | null;
-  const message = Array.isArray(body?.message) ? body.message[0] : body?.message;
-  return { error: message ?? te("saveFailed") };
+  return actionResultFrom(res, te("saveFailed"));
 }
 
 export type ReportStatus = "open" | "resolved";

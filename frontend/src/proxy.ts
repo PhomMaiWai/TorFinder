@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   type SessionPayload,
   SESSION_COOKIE,
+  needsPasskeySetup,
   refreshSessionToken,
   sessionCookieOptions,
   sessionNeedsRefresh,
@@ -33,6 +34,8 @@ const ADMIN_ONLY_PREFIXES = ["/admin"];
 const ORG_ONLY_PREFIXES = ["/matches", "/profile", "/library", "/growth", "/notifications"];
 /** The project owner's own announcements; the data behind it is owner-only too. */
 const OWNER_ONLY_PREFIXES = ["/owner"];
+/** The staff consoles a passkey guards. */
+const STAFF_CONSOLE_PREFIXES = ["/admin", "/owner", "/auditor"];
 /** Pages only the Auditor Office may see. */
 const AUDITOR_ONLY_PREFIXES = ["/auditor"];
 /** The one protected page a public viewer has: their own saved list. */
@@ -53,6 +56,8 @@ const PUBLIC_API_ROUTES = [
   "/api/auth/google/complete",
   // Called by LINE's servers, not a browser; the backend checks its signature.
   "/api/line/webhook",
+  // Step two of a staff sign-in: no session exists until the passkey answers.
+  "/api/auth/passkey/login",
   // Browsers post CSP violation reports without the session cookie.
   "/api/csp-report",
 ];
@@ -196,6 +201,12 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
   // has nothing there, so send them back to search instead of a half-empty shell.
   if (session.role === "viewer" && !matches(pathname, VIEWER_PREFIXES)) {
     return NextResponse.redirect(new URL(homeFor(session.role), request.url));
+  }
+
+  // Staff who haven't added a passkey yet, while one is required, can only
+  // reach /account to add it; the backend refuses their console's data too.
+  if (needsPasskeySetup(session) && matches(pathname, STAFF_CONSOLE_PREFIXES)) {
+    return NextResponse.redirect(new URL("/account?passkey=setup", request.url));
   }
 
   if (matches(pathname, ADMIN_ONLY_PREFIXES) && session.role !== "admin") {

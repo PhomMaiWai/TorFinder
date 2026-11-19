@@ -12,7 +12,7 @@ import { MongoServerError, ObjectId, WithId } from "mongodb";
 import { hashPassword, passwordProblem, spendPasswordCheck, verifyPassword } from "../common/password";
 import { logSecurityEvent, SecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
-import { createSessionToken } from "../common/token";
+import { AuthMethod, createSessionToken } from "../common/token";
 import { env } from "../config/env";
 import { DatabaseService, UserDoc } from "../database/database.service";
 import { AccountLinksService } from "./account-links.service";
@@ -23,6 +23,7 @@ import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
 import { LoginAttempts } from "./login-attempts";
+import { PasskeysService } from "./passkeys.service";
 
 const DUPLICATE_KEY = 11000;
 
@@ -45,6 +46,7 @@ export class AuthService {
     private readonly db: DatabaseService,
     private readonly links: AccountLinksService,
     private readonly revocation: SessionRevocationService,
+    private readonly passkeys: PasskeysService,
   ) {}
 
   async signup({ email, password, ...company }: SignupDto, ip?: string) {
@@ -129,7 +131,7 @@ export class AuthService {
       });
     }
 
-    return this.issueSession(user, "auth.login", ip);
+    return this.issueSession(user, "auth.login", ip, "pwd");
   }
 
   /**
@@ -271,7 +273,7 @@ export class AuthService {
     // An existing account always signs in as itself, whichever button was
     // pressed — a company owner using the public button still lands as org.
     if (!user && as === "viewer") {
-      return this.issueSession(await this.createViewer(googleId, email, name ?? email), "auth.google", ip);
+      return this.issueSession(await this.createViewer(googleId, email, name ?? email), "auth.google", ip, "google");
     }
 
     if (!user) {
@@ -286,7 +288,7 @@ export class AuthService {
       return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
     }
 
-    return this.issueSession(user, "auth.google", ip);
+    return this.issueSession(user, "auth.google", ip, "google");
   }
 
   /**
@@ -306,7 +308,7 @@ export class AuthService {
       if (user.status === "pending") {
         return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
       }
-      return this.issueSession(user, "auth.google", ip);
+      return this.issueSession(user, "auth.google", ip, "google");
     }
 
     const newUser: UserDoc = {
@@ -408,7 +410,36 @@ export class AuthService {
     }
   }
 
-  private async issueSession(user: WithId<UserDoc>, event: SecurityEvent, ip?: string) {
+  /**
+   * The first factor passed. Staff with a passkey are handed its challenge
+   * instead of a session (ASVS 6.3.3); everyone else gets their session now.
+   */
+  private async issueSession(user: WithId<UserDoc>, event: SecurityEvent, ip: string | undefined, factor: "pwd" | "google") {
+    this.assertCanSignIn(user, event, ip);
+    if (PasskeysService.needsPasskey(user)) {
+      logSecurityEvent(event, {
+        outcome: "success",
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        ip,
+        reason: "passkey_pending",
+      });
+      return { status: "passkey-required" as const, options: await this.passkeys.startLogin(user, factor) };
+    }
+    return this.createSession(user, event, ip, [factor]);
+  }
+
+  /** Step two of a staff sign-in: the passkey signed the challenge from issueSession. */
+  async completePasskeyLogin(response: Parameters<PasskeysService["finishLogin"]>[0], ip?: string) {
+    const { user, amr } = await this.passkeys.finishLogin(response, ip);
+    // Checked again: the account may have been suspended in the minutes between the two steps.
+    this.assertCanSignIn(user, "auth.passkey.login", ip);
+    return this.createSession(user, "auth.passkey.login", ip, amr, Math.floor(Date.now() / 1000));
+  }
+
+  /** Throws when the account may not sign in at all, whatever the credentials. */
+  private assertCanSignIn(user: WithId<UserDoc>, event: SecurityEvent, ip?: string): void {
     const refuse = (reason: string) =>
       logSecurityEvent(event, { outcome: "failure", userId: user._id.toString(), email: user.email, ip, reason });
     // Checked only after identity is established, so the response can't be
@@ -429,7 +460,15 @@ export class AuthService {
       refuse("account_suspended");
       throw new ForbiddenException("บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ");
     }
+  }
 
+  private async createSession(
+    user: WithId<UserDoc>,
+    event: SecurityEvent,
+    ip: string | undefined,
+    amr: AuthMethod[],
+    pkt?: number,
+  ) {
     // Best-effort: a write hiccup here must never block a real sign-in, same
     // posture as EgpService's sync-run recording and AuditService.record.
     try {
@@ -443,6 +482,8 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.role,
+      amr,
+      ...(pkt !== undefined && { pkt }),
     });
 
     logSecurityEvent(event, {

@@ -15,6 +15,8 @@ services:
       # No fallback on purpose: the image runs with NODE_ENV=production and
       # refuses a missing or published secret. Set it in .env (see .env.example).
       - SESSION_SECRET=${SESSION_SECRET:-}
+      # Must match the backend's value (docs/security/passkeys.md).
+      - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
     depends_on:
       - backend
     # A crashed process comes back by itself (ASVS 16.5.4; see backend main.ts).
@@ -28,7 +30,8 @@ services:
     environment:
       - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-torr}:${MONGO_ROOT_PASSWORD:-torr}@db:27017/torr?authSource=admin
       - SESSION_SECRET=${SESSION_SECRET:-}
-      - FRONTEND_ORIGIN=http://localhost:3000
+      # The site's public address; on a server, https://<your domain> (CORS and passkeys use it).
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:3000}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       # Notification channels; each stays off while its keys are empty.
       - RESEND_API_KEY=${RESEND_API_KEY:-}
@@ -39,6 +42,12 @@ services:
       # Off unless .env opts in: the demo accounts' passwords are published in
       # the README, so they must never appear on a reachable server (ASVS 6.3.2).
       - SEED_DEMO_DATA=${SEED_DEMO_DATA:-false}
+      # Staff passkeys (docs/security/passkeys.md). Bound to FRONTEND_ORIGIN's
+      # host, which on a server must be the public https:// address. Optional
+      # unless .env opts in, so a local stack or demo works without a passkey;
+      # a real deployment sets STAFF_PASSKEYS_REQUIRED=true (rollout in passkeys.md).
+      - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
+      - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
     depends_on:
       db:
         condition: service_healthy

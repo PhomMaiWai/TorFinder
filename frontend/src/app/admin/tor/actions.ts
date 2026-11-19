@@ -50,9 +50,12 @@ export async function syncFromDataGov() {
 
 /** Hides an announcement from every listing; the owner's own page follows. */
 export async function hideTor(id: string) {
-  await deleteTor(id);
-  revalidatePath("/admin/tor");
-  revalidatePath("/owner");
+  const result = await deleteTor(id);
+  if (!result.error) {
+    revalidatePath("/admin/tor");
+    revalidatePath("/owner");
+  }
+  return result;
 }
 
 export async function unhideTor(id: string) {

@@ -2,20 +2,27 @@
 
 import { revalidatePath } from "next/cache";
 
-import { reactivateUser, suspendUser, updateUser, type UserEdit } from "@/lib/admin-api";
+import type { ActionResult } from "@/lib/action-result";
+import { reactivateUser, resetUserPasskeys, suspendUser, updateUser, type UserEdit } from "@/lib/admin-api";
+
+/** Each returns the backend's refusal (or a step-up request) rather than throwing; see ActionResult. */
+async function done(result: ActionResult): Promise<ActionResult> {
+  if (!result.error) revalidatePath("/admin/users");
+  return result;
+}
 
 export async function suspendAccount(id: string) {
-  await suspendUser(id);
-  revalidatePath("/admin/users");
+  return done(await suspendUser(id));
 }
 
 export async function reactivateAccount(id: string) {
-  await reactivateUser(id);
-  revalidatePath("/admin/users");
+  return done(await reactivateUser(id));
 }
 
 export async function editAccount(id: string, edit: UserEdit) {
-  const result = await updateUser(id, edit);
-  if (!result.error) revalidatePath("/admin/users");
-  return result;
+  return done(await updateUser(id, edit));
+}
+
+export async function resetAccountPasskeys(id: string) {
+  return done(await resetUserPasskeys(id));
 }

@@ -28,6 +28,13 @@ export async function POST(request: Request) {
   }
 
   const data = await backendRes.json().catch(() => null);
+
+  // A staff account with a passkey: the password was right, and the browser
+  // now signs this challenge (POST /api/auth/passkey/login). No session yet.
+  if (backendRes.ok && data?.status === "passkey-required") {
+    return jsonResponse({ status: "passkey-required", options: data.options });
+  }
+
   if (!backendRes.ok || !data?.token) {
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
     return jsonResponse(

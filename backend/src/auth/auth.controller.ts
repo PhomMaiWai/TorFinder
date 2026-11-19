@@ -1,4 +1,8 @@
-import { Body, Controller, HttpCode, HttpStatus, Ip, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Ip, Param, Post, Req, UseGuards } from "@nestjs/common";
+import type {
+  AuthenticationResponseJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/server";
 import { Throttle } from "@nestjs/throttler";
 
 import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
@@ -9,11 +13,16 @@ import { ChangePasswordDto } from "./dto/change-password.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
 import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
 import { LoginDto } from "./dto/login.dto";
+import { AddPasskeyDto, PasskeyResponseDto } from "./dto/passkey.dto";
+import { PasskeysService } from "./passkeys.service";
 import { SignupDto } from "./dto/signup.dto";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly passkeys: PasskeysService,
+  ) {}
 
   @Post("signup")
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
@@ -86,5 +95,71 @@ export class AuthController {
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
   googleCompleteSignup(@Body() dto: GoogleCompleteSignupDto, @Ip() ip: string) {
     return this.authService.googleCompleteSignup(dto, ip);
+  }
+
+  // ---- passkeys (staff; see PasskeysService) ----------------------------
+
+  /** Step two of a staff sign-in: the passkey's answer to the challenge /auth/login or /auth/google returned. */
+  @Post("passkey/login")
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  passkeyLogin(@Body() dto: PasskeyResponseDto, @Ip() ip: string) {
+    return this.authService.completePasskeyLogin(dto.response as unknown as AuthenticationResponseJSON, ip);
+  }
+
+  @Get("passkeys")
+  @UseGuards(SessionGuard)
+  listPasskeys(@Req() request: AuthenticatedRequest) {
+    return this.passkeys.list(request.session.sub);
+  }
+
+  @Post("passkeys/options")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SessionGuard)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  passkeyRegistrationOptions(@Req() request: AuthenticatedRequest) {
+    return this.passkeys.registrationOptions(request.session);
+  }
+
+  /** Saves a new passkey; answers with the list and the session re-signed as passkey-verified. */
+  @Post("passkeys")
+  @UseGuards(SessionGuard)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  addPasskey(@Req() request: AuthenticatedRequest, @Body() dto: AddPasskeyDto, @Ip() ip: string) {
+    return this.passkeys.finishRegistration(
+      request.session,
+      dto.name,
+      dto.response as unknown as RegistrationResponseJSON,
+      ip,
+    );
+  }
+
+  @Delete("passkeys/:id")
+  @UseGuards(SessionGuard)
+  removePasskey(@Req() request: AuthenticatedRequest, @Param("id") id: string, @Ip() ip: string) {
+    return this.passkeys.remove(request.session, id.slice(0, 1024), ip);
+  }
+
+  /** A fresh passkey check for a sensitive action (ASVS 7.5.3): first the challenge… */
+  @Post("step-up/options")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SessionGuard)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  stepUpOptions(@Req() request: AuthenticatedRequest) {
+    return this.passkeys.stepUpOptions(request.session);
+  }
+
+  /** …then the answer, for the session re-signed with the check's time. */
+  @Post("step-up")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SessionGuard)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  async stepUp(@Req() request: AuthenticatedRequest, @Body() dto: PasskeyResponseDto, @Ip() ip: string) {
+    const token = await this.passkeys.finishStepUp(
+      request.session,
+      dto.response as unknown as AuthenticationResponseJSON,
+      ip,
+    );
+    return { token };
   }
 }

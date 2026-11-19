@@ -50,6 +50,8 @@ function optionalNumber(name: string, fallback: number): number {
   return parsed;
 }
 
+const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
+
 export const env = {
   isProduction,
   port: optionalNumber("PORT", 4000),
@@ -63,7 +65,25 @@ export const env = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   // Demo data is for local and staging; production starts from a clean database.
   seedDemoData: (process.env.SEED_DEMO_DATA ?? String(!isProduction)) === "true",
-  frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
+  frontendOrigin,
+  /**
+   * Passkeys (WebAuthn) for staff accounts — admin, owner, auditor (ASVS 6.3.3
+   * at Level 3, 7.5.3). See docs/security/passkeys.md.
+   */
+  passkeys: {
+    /**
+     * Staff must have a passkey: until they add one, they can sign in only to
+     * add it. On by default in production. Off, passkeys are opt-in, but
+     * anyone who has added one must always use it.
+     */
+    required: (process.env.STAFF_PASSKEYS_REQUIRED ?? String(isProduction)) === "true",
+    /** The site's domain as WebAuthn knows it; passkeys only work on this domain and its subdomains. */
+    rpId: process.env.WEBAUTHN_RP_ID ?? new URL(frontendOrigin).hostname,
+    /** The exact origin a browser must report; a look-alike phishing site can't produce it. */
+    origin: frontendOrigin,
+    /** How long a passkey check counts for sensitive admin actions (step-up, ASVS 7.5.3). */
+    stepUpMinutes: optionalNumber("STEP_UP_MINUTES", 10),
+  },
   /**
    * A session unused for this long must sign in again (ASVS 7.3.1), even
    * within its 7-day absolute lifetime. Must match the frontend's value.
