@@ -20,6 +20,11 @@ COPY --from=builder --chown=node:node /app/public ./public
 COPY --from=builder --chown=node:node /app/.next ./.next
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/package.json ./package.json
+# `next start` reads next.config.ts again at runtime. Without it the server
+# runs on Next's defaults, so `poweredByHeader: false` was lost and every page
+# sent `X-Powered-By: Next.js` (found in the evidence screenshots, #376). The
+# header rules are compiled into .next, which is why only this one leaked.
+COPY --from=builder --chown=node:node /app/next.config.ts ./next.config.ts
 
 # Run as the image's unprivileged `node` user, not root (Semgrep dockerfile.missing-user).
 USER node

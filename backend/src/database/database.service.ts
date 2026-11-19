@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { Collection, GridFSBucket, MongoClient, ObjectId } from "mongodb";
+import { Collection, Document, GridFSBucket, MongoClient, ObjectId } from "mongodb";
 
 import { StoredExtraction } from "../ai/ai.types";
 import { CertificateRecord } from "../certificates/certificate.types";
@@ -429,7 +429,11 @@ export type TorEmbeddingDoc = {
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
-  private readonly client = new MongoClient(env.mongodbUri);
+  private readonly client = new MongoClient(env.mongodbUri, {
+    maxPoolSize: env.database.maxPoolSize,
+    waitQueueTimeoutMS: env.database.waitQueueTimeoutMs,
+    serverSelectionTimeoutMS: env.database.serverSelectionTimeoutMs,
+  });
 
   users!: Collection<UserDoc>;
   tors!: Collection<TorDoc>;
@@ -504,6 +508,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // Doubles as the guard: two runs racing on one project can't both alert.
     await this.matchAlerts.createIndex({ userId: 1, projectKey: 1, phase: 1 }, { unique: true });
     await this.torEmbeddings.createIndex({ torId: 1, model: 1 }, { unique: true });
+    await this.applyRetention();
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
     await this.seed();
@@ -516,6 +521,52 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Accounts created before approvals existed were already in use, so they count as approved. */
+  /**
+   * ASVS 14.2.7: data with no further use is deleted on a schedule, by MongoDB
+   * itself (TTL indexes, checked about once a minute), so nothing depends on a
+   * job remembering to run. The periods are in env.retention and the reasons in
+   * docs/operations/limits-and-retention.md. Emailed links already expire the
+   * same way (authTokens above).
+   */
+  private async applyRetention(): Promise<void> {
+    const r = env.retention;
+    await this.ensureTtlIndex(this.notifications, "createdAt", r.notificationsDays, "retention_notifications");
+    await this.ensureTtlIndex(this.syncRuns, "startedAt", r.syncRunsDays, "retention_sync_runs");
+    await this.ensureTtlIndex(this.auditLogEntries, "createdAt", r.auditLogDays, "retention_audit_log");
+    // A company that signed up but never confirmed its address can't sign in
+    // and was never reviewed: after the period it is deleted, freeing the
+    // address. An approved or rejected account never matches.
+    await this.ensureTtlIndex(this.users, "createdAt", r.unverifiedSignupDays, "retention_unverified_signups", {
+      emailVerified: false,
+      status: "pending",
+    });
+  }
+
+  /**
+   * Creates the named TTL index, or brings an existing one to the configured
+   * period (collMod, so the index isn't rebuilt), or drops it when the period
+   * is 0 ("keep forever").
+   */
+  private async ensureTtlIndex<T extends Document>(
+    collection: Collection<T>,
+    field: string,
+    days: number,
+    name: string,
+    partialFilterExpression?: Document,
+  ): Promise<void> {
+    const existing = (await collection.listIndexes().toArray()).find((index) => index.name === name);
+    if (days <= 0) {
+      if (existing) await collection.dropIndex(name);
+      return;
+    }
+    const expireAfterSeconds = Math.round(days * 24 * 60 * 60);
+    if (!existing) {
+      await collection.createIndex({ [field]: 1 }, { name, expireAfterSeconds, ...(partialFilterExpression && { partialFilterExpression }) });
+    } else if (existing.expireAfterSeconds !== expireAfterSeconds) {
+      await this.client.db().command({ collMod: collection.collectionName, index: { name, expireAfterSeconds } });
+    }
+  }
+
   private async backfillAccountStatus(): Promise<void> {
     const { modifiedCount } = await this.users.updateMany(
       { status: { $exists: false } },

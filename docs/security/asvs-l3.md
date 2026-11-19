@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 38 Pass, 15 Partial, 14 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 38 pass (54%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+**Result: 43 Pass, 12 Partial, 12 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 43 pass (61%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -12,13 +12,15 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 19 Nov 2026 (branch `feat/asvs-l3-lockout-reset`):** the owner is emailed when their account is locked after too many wrong passwords (6.3.5 moves to Partial: sign-ins from a new device are not reported yet), and admins can send an account's owner a password-reset link from Manage Users (6.4.6 passes).
 
+**Update 19 Nov 2026 (branch `docs-asvs-l3-policies`):** [limits-and-retention.md](../operations/limits-and-retention.md) documents connection limits, timeouts and retries, data retention and the secret rotation schedule. The MongoDB pool limits are now set in code, MongoDB deletes expired notifications, import runs, audit entries and abandoned sign-ups through TTL indexes, and container logs are capped. 13.1.2, 13.1.3, 13.1.4, 13.2.6 and 14.2.7 pass.
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 38 | Control exists, with evidence in code or in this file |
-| Partial | 15 | Control exists with a gap; the gap is named |
-| Not done | 14 | Not implemented |
+| Pass | 43 | Control exists, with evidence in code or in this file |
+| Partial | 12 | Control exists with a gap; the gap is named |
+| Not done | 12 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
 
@@ -36,12 +38,12 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
 | V11 Cryptography | 10 | 3 | 1 | 3 | 3 | 0 |
 | V12 Secure Communication | 3 | 0 | 0 | 1 | 0 | 2 |
-| V13 Configuration | 8 | 1 | 4 | 3 | 0 | 0 |
-| V14 Data Protection | 4 | 1 | 2 | 1 | 0 | 0 |
+| V13 Configuration | 8 | 5 | 1 | 2 | 0 | 0 |
+| V14 Data Protection | 4 | 2 | 2 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 8 | 6 | 1 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **38** | **15** | **14** | **21** | **4** |
+| **Total** | **92** | **43** | **12** | **12** | **21** | **4** |
 
 ## Done on this branch
 
@@ -115,16 +117,7 @@ These run in the same process as the rest of the backend; sandboxing them (15.2.
 
 (V13.1.4, V13.3.4)
 
-| Secret | Held in | Proposed rotation |
-| --- | --- | --- |
-| `SESSION_SECRET` | Frontend and backend environment | Yearly, and at once if exposed (signs everyone out) |
-| MongoDB credentials | `.env` / database | Yearly, and when anyone with access leaves |
-| `RESEND_API_KEY` | Backend environment | Yearly, and if exposed |
-| `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET` | Backend environment | Yearly; the secret at once if exposed (forged webhooks) |
-| Vertex AI service account | Host's Application Default Credentials | Per Google Cloud key policy |
-| Companies' Slack webhook URLs | User records | Owned by each company; they replace them in settings |
-
-The schedule is a **proposal**: nothing expires automatically, and the team has not yet agreed on it. That is why 13.1.4 is Partial and 13.3.4 is Not done.
+The secrets, where each is held, and when and how each is rotated are in [limits-and-retention.md](../operations/limits-and-retention.md#secrets-and-rotation) (13.1.4 passes). Rotation is by hand: nothing expires by itself, and the app can't hold an old and a new session secret at once, so 13.3.4 is Not done.
 
 ---
 
@@ -255,13 +248,13 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 13.1.2 | Documented maximum concurrent connections per service and behaviour at the limit | **Not done** | MongoDB driver default pool (100); e-GP concurrency 5 (`EGP_CONCURRENCY`); not written down as a policy |
-| 13.1.3 | Documented resource management: timeouts, retries, back-off | Partial | In code: 8 s timeout for notifications, per-request timeouts and retries with backoff for imports, wall-clock budgets. Not gathered into one document |
-| 13.1.4 | Critical secrets and their rotation schedule documented | Partial | [Secrets and rotation](#secrets-and-rotation): listed, schedule proposed, not yet agreed |
-| 13.2.6 | Connections follow the documented configuration | Partial | Follows the code's limits, which are not yet a document (13.1.2) |
+| 13.1.2 | Documented maximum concurrent connections per service and behaviour at the limit | Pass | [Connections to other systems](../operations/limits-and-retention.md#connections-to-other-systems): MongoDB pool 50 with a 10 s wait, then a generic 500; per-portal concurrency; incoming rate limits |
+| 13.1.3 | Documented resource management: timeouts, retries, back-off | Pass | [Timeouts, retries and back-off](../operations/limits-and-retention.md#timeouts-retries-and-back-off): every outbound call's timeout, retry count, back-off and budget |
+| 13.1.4 | Critical secrets and their rotation schedule documented | Pass | [Secrets and rotation](../operations/limits-and-retention.md#secrets-and-rotation): each secret, where it is held, when and how it is rotated |
+| 13.2.6 | Connections follow the documented configuration | Pass | The MongoDB client is built from the documented settings (`env.database`, `DatabaseService`); portal clients use the documented timeouts, retries and concurrency |
 | 13.3.3 | Cryptographic operations in an isolated security module | **Not done** | Keys are in process memory |
 | 13.3.4 | Secrets expire and are rotated as documented | **Not done** | No automatic expiry; rotation is manual |
-| 13.4.6 | No detailed backend version information exposed | Pass | `poweredByHeader: false`, helmet removes `X-Powered-By`, `/health` returns status only, errors are generic |
+| 13.4.6 | No detailed backend version information exposed | Pass | `poweredByHeader: false` (now also in the Docker image, which had left `next.config.ts` out of its final stage until 19 Nov), helmet removes `X-Powered-By`, `/health` returns status only, errors are generic |
 | 13.4.7 | The web tier serves only expected file types | Partial | Next.js serves only its build output and `public/`, which is now empty (sample SVGs deleted on this branch); there is no explicit extension allowlist |
 
 ### V14 Data Protection
@@ -270,7 +263,7 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 | --- | --- | --- | --- |
 | 14.2.5 | Caches store only expected content; no web cache deception | Pass | No shared cache in front of the app; every API and page answer is `no-store` except immutable public documents, and unknown paths get 404 |
 | 14.2.6 | Only the minimum sensitive data is returned | Partial | Hashes never leave the server; admin lists return full contact details |
-| 14.2.7 | Sensitive data deleted on a retention schedule | **Not done** | No retention schedule for logs, closed accounts or uploaded files |
+| 14.2.7 | Sensitive data deleted on a retention schedule | Pass | [How long data is kept](../operations/limits-and-retention.md#how-long-data-is-kept): TTL indexes delete notifications (180 days), import runs (90), audit entries (365) and unconfirmed pending sign-ups (30); links expire on their own; container logs are capped at 5 × 10 MB. `DatabaseService.applyRetention`, `test/retention.e2e.test.mjs`. An account's own data is deleted by an admin on request (no self-service) |
 | 14.2.8 | Metadata removed from user-submitted files | Partial | PNG and JPEG metadata removed on upload (this branch); PDF and Word metadata (author, software) is kept |
 
 ### V15 Secure Coding and Architecture
@@ -318,6 +311,6 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 1. ~~**6.3.3 / 7.5.3:** passkeys for staff and step-up before admin actions~~ — done on `feat/staff-passkeys`, and step-up on owner assignment on `fix/step-up-tor-owner`. Left: a second factor for company accounts.
 2. ~~**6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action~~ — done on `feat/asvs-l3-lockout-reset`. Left: an email for a sign-in from a new device.
 3. **2.3.5, 8.4.2:** a second admin's approval to grant the admin role.
-4. **14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on.
+4. ~~**14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on~~ — done on `docs-asvs-l3-policies`. Left: 13.3.4, secrets that expire by themselves (a vault, and a session secret that can be rolled without signing everyone out).
 5. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.
 6. **16.3.2, 11.1.3, 12.3.5, 13.3.x:** need logging, network and hosting infrastructure beyond the repository.
