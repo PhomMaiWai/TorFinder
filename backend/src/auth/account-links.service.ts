@@ -34,6 +34,37 @@ const MAIL: Record<AuthTokenPurpose, { subject: string; intro: string; action: s
   },
 };
 
+/** Account notices: no link to act on, just telling the address's owner what happened. */
+export type AccountNotice = "password-changed" | "google-linked" | "signup-existing";
+
+const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) => string[] }> = {
+  // ASVS 6.3.7
+  "password-changed": {
+    subject: "รหัสผ่านของคุณถูกเปลี่ยนแล้ว — TOR Finder",
+    body: (origin) => [
+      "รหัสผ่านของบัญชี TOR Finder ที่ใช้อีเมลนี้เพิ่งถูกเปลี่ยน และทุกอุปกรณ์ที่เข้าสู่ระบบอยู่ถูกออกจากระบบแล้ว",
+      `ถ้าคุณไม่ได้เปลี่ยนเอง กรุณาตั้งรหัสผ่านใหม่ทันทีที่ ${origin}/forgot-password และแจ้งผู้ดูแลระบบ`,
+    ],
+  },
+  // ASVS 6.3.7
+  "google-linked": {
+    subject: "บัญชี Google ถูกเชื่อมกับบัญชีของคุณ — TOR Finder",
+    body: (origin) => [
+      "บัญชี TOR Finder ที่ใช้อีเมลนี้เพิ่งถูกเข้าสู่ระบบด้วย Google เป็นครั้งแรก ต่อจากนี้จะเข้าสู่ระบบด้วย Google ได้ด้วย",
+      `ถ้าคุณไม่ได้ทำเอง กรุณาเปลี่ยนรหัสผ่านบัญชี Google ของคุณ ตั้งรหัสผ่าน TOR Finder ใหม่ที่ ${origin}/forgot-password และแจ้งผู้ดูแลระบบ`,
+    ],
+  },
+  // ASVS 6.3.8: the signup form answers as if it worked, so the owner is told here instead.
+  "signup-existing": {
+    subject: "มีการสมัครด้วยอีเมลของคุณ — TOR Finder",
+    body: (origin) => [
+      "มีคนพยายามสมัครบัญชี TOR Finder ด้วยอีเมลนี้ แต่อีเมลนี้มีบัญชีอยู่แล้ว จึงไม่มีการสร้างบัญชีใหม่",
+      `ถ้าเป็นคุณ เข้าสู่ระบบได้ที่ ${origin}/login หรือถ้าลืมรหัสผ่าน ตั้งใหม่ได้ที่ ${origin}/forgot-password`,
+      "ถ้าไม่ใช่คุณ ไม่ต้องทำอะไร บัญชีของคุณไม่มีการเปลี่ยนแปลง",
+    ],
+  },
+};
+
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
 /**
@@ -79,6 +110,26 @@ export class AccountLinksService {
       });
     } catch (error) {
       this.logger.warn(`${purpose} email to ${user.email} failed: ${String(error)}`);
+    }
+  }
+
+  /** Mails a notice to the address. Like send(), failures are logged and never change the caller's answer. */
+  async notify(email: string, notice: AccountNotice): Promise<void> {
+    if (!canSendEmail()) {
+      if (env.isProduction) this.logger.warn(`No RESEND_API_KEY: ${notice} notice to ${email} not sent`);
+      return;
+    }
+    const { subject, body } = NOTICES[notice];
+    const paragraphs = body(env.frontendOrigin);
+    try {
+      await sendEmail({
+        to: email,
+        subject,
+        text: paragraphs.join("\n\n"),
+        html: paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join(""),
+      });
+    } catch (error) {
+      this.logger.warn(`${notice} notice to ${email} failed: ${String(error)}`);
     }
   }
 

@@ -78,13 +78,20 @@ describe("POST /api/auth/signup", () => {
     assert.equal(res.body.companyName, org.companyName);
   });
 
-  it("rejects a duplicate email with 409", async () => {
-    const res = await api("/auth/signup", {
-      method: "POST",
-      body: newOrg({ email: SEED.approvedOrg.email }),
-    });
+  // ASVS 6.3.8: a registered address gets the same answer as a new one, so the
+  // form can't be used to find out who has an account. Nothing is created.
+  it("answers a duplicate email exactly like a new signup, without creating an account", async () => {
+    const org = newOrg({ email: SEED.approvedOrg.email });
+    const res = await api("/auth/signup", { method: "POST", body: org });
 
-    assert.equal(res.status, 409);
+    assert.equal(res.status, 201);
+    assert.deepEqual(res.body, { status: "pending", companyName: org.companyName });
+
+    // The existing account is untouched: its own password still signs in.
+    const existing = await login(SEED.approvedOrg);
+    assert.equal(existing.status, 200);
+    const signupPassword = await login({ email: SEED.approvedOrg.email, password: org.password });
+    assert.equal(signupPassword.status, 401);
   });
 
   it("rejects a malformed email", async () => {

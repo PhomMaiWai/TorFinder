@@ -87,6 +87,20 @@ export async function hashPassword(password: string): Promise<{ hash: string; sa
   return { hash: derivedKey.toString("hex"), salt };
 }
 
+/** A fixed salt for {@link spendPasswordCheck}; nothing is ever compared against its output. */
+const TIMING_SALT = "00000000000000000000000000000000";
+
+/**
+ * Does the same scrypt work as verifyPassword and answers false. Login calls it
+ * when the address has no account (or no password), so the response takes as
+ * long as a wrong password would and its timing can't tell which addresses
+ * are registered (ASVS 6.3.8).
+ */
+export async function spendPasswordCheck(password: string): Promise<false> {
+  await scrypt(password, TIMING_SALT, KEY_LENGTH);
+  return false;
+}
+
 export async function verifyPassword(
   password: string,
   salt: string,
