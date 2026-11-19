@@ -261,7 +261,7 @@ The schedule is a **proposal**: nothing expires automatically, and the team has 
 | 13.2.6 | Connections follow the documented configuration | Partial | Follows the code's limits, which are not yet a document (13.1.2) |
 | 13.3.3 | Cryptographic operations in an isolated security module | **Not done** | Keys are in process memory |
 | 13.3.4 | Secrets expire and are rotated as documented | **Not done** | No automatic expiry; rotation is manual |
-| 13.4.6 | No detailed backend version information exposed | Pass | `poweredByHeader: false`, helmet removes `X-Powered-By`, `/health` returns status only, errors are generic |
+| 13.4.6 | No detailed backend version information exposed | Pass | `poweredByHeader: false` (now also in the Docker image, which had left `next.config.ts` out of its final stage until 19 Nov), helmet removes `X-Powered-By`, `/health` returns status only, errors are generic |
 | 13.4.7 | The web tier serves only expected file types | Partial | Next.js serves only its build output and `public/`, which is now empty (sample SVGs deleted on this branch); there is no explicit extension allowlist |
 
 ### V14 Data Protection

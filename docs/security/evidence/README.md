@@ -37,7 +37,9 @@ Chrome received, shown as a table rather than the DevTools panel.
 ## Observed while collecting
 
 - `/search` still sends `x-powered-by: Next.js` (visible in 01), even though `next.config.ts`
-  sets `poweredByHeader: false`. This is low risk, but it is the header that setting was meant
-  to remove.
+  sets `poweredByHeader: false`. **Fixed afterwards:** the Docker image didn't copy
+  `next.config.ts` into its final stage, so `next start` ran on Next's defaults. The header
+  rules are compiled into `.next`, so only this setting was lost. Retake 01 from a rebuilt
+  image to show the header gone.
 - `hello@datacraft.co.th` (README, "Demo accounts") is not in a freshly seeded database. Shot 05
   locked that address anyway, which shows the lock works for unknown emails.
