@@ -2,7 +2,9 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 95 Pass, 21 Partial, 6 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 95 pass (76%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 104 Pass, 13 Partial, 5 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 104 pass (83%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+
+**Update 19 Nov 2026 (branch `feat/asvs-l2-batch`):** nine items move to Pass. Announcement files are fetched only from the allowlisted portal hosts, and redirects are checked hop by hop (1.3.6, 13.2.4, 15.3.2; threat E3). Google sign-in is bound to the browser with a nonce (10.1.2, 10.5.1). Password hashes use stronger scrypt settings and store them, and old hashes are upgraded at sign-in (11.4.2, 11.2.2). The backend connects to MongoDB as a least-privilege account (13.2.2). Input refused by validation is logged (16.3.3).
 
 **Update 19 Nov 2026 (staff passkeys, branch `feat/staff-passkeys`):** admin, owner and auditor accounts now finish every sign-in with a passkey ([passkeys.md](./passkeys.md)). 6.3.3 moves from Not done to Partial (companies and public viewers still have no second factor), and 6.4.3 and 6.4.4 now apply and pass.
 
@@ -14,15 +16,15 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 95 | Control exists, with evidence in code or in this file |
-| Partial | 21 | Control exists with a gap; the gap is named |
-| Not done | 6 | Not implemented; out of scope for this deadline (below) |
+| Pass | 104 | Control exists, with evidence in code or in this file |
+| Partial | 13 | Control exists with a gap; the gap is named |
+| Not done | 5 | Not implemented; out of scope for this deadline (below) |
 | N/A | 58 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 3 | Set by the hosting proxy, outside the repository |
 
 | Chapter | L2 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
-| V1 Encoding and Sanitization | 19 | 7 | 1 | 0 | 11 | 0 |
+| V1 Encoding and Sanitization | 19 | 8 | 0 | 0 | 11 | 0 |
 | V2 Validation and Business Logic | 7 | 5 | 1 | 0 | 1 | 0 |
 | V3 Web Frontend Security | 11 | 9 | 1 | 0 | 1 | 0 |
 | V4 API and Web Service | 8 | 0 | 1 | 0 | 5 | 2 |
@@ -31,15 +33,15 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V7 Session Management | 12 | 10 | 2 | 0 | 0 | 0 |
 | V8 Authorization | 3 | 3 | 0 | 0 | 0 | 0 |
 | V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 1 | 0 |
-| V10 OAuth and OIDC | 24 | 4 | 2 | 0 | 18 | 0 |
-| V11 Cryptography | 11 | 6 | 3 | 0 | 2 | 0 |
+| V10 OAuth and OIDC | 24 | 6 | 0 | 0 | 18 | 0 |
+| V11 Cryptography | 11 | 8 | 1 | 0 | 2 | 0 |
 | V12 Secure Communication | 6 | 1 | 2 | 0 | 2 | 1 |
-| V13 Configuration | 12 | 6 | 3 | 3 | 0 | 0 |
+| V13 Configuration | 12 | 8 | 2 | 2 | 0 | 0 |
 | V14 Data Protection | 7 | 6 | 1 | 0 | 0 | 0 |
-| V15 Secure Coding and Architecture | 10 | 8 | 2 | 0 | 0 | 0 |
-| V16 Security Logging and Error Handling | 16 | 13 | 1 | 2 | 0 | 0 |
+| V15 Secure Coding and Architecture | 10 | 9 | 1 | 0 | 0 | 0 |
+| V16 Security Logging and Error Handling | 16 | 14 | 0 | 2 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **95** | **21** | **6** | **58** | **3** |
+| **Total** | **183** | **104** | **13** | **5** | **58** | **3** |
 
 ## Fixed after the triage (PR #343)
 
@@ -60,7 +62,6 @@ The triage marked these as Planned; all are now implemented and tested:
 | ID | Gap | Why not now |
 | --- | --- | --- |
 | V5.4.3 | Relayed portal files are not virus-scanned | Needs a scanning service; files are limited to PDF/JPEG/PNG with magic-byte checks |
-| V13.2.2 | Backend uses MongoDB's root account | Needs a database init script for a least-privilege user; listed for the next iteration |
 | V13.2.5 | No network-level egress allowlist | Set at the host or firewall, not in the app |
 | V13.3.1 | No secrets vault | Environment variables are the accepted setup for the course deployment |
 | V16.4.2 | Logs are not write-once | Needs log storage outside the host |
@@ -220,7 +221,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 1.3.3 | Data being passed to a potentially dangerous context is sanitized beforehand to enforce safety measures, such as… | Pass | `@MaxLength` on every text field; "find similar" text is cut to 5,000 characters before it is sent for embedding |
 | 1.3.4 | User-supplied Scalable Vector Graphics (SVG) scriptable content is validated or sanitized to contain only tags and… | Pass | SVG is never accepted: uploads are typed by their bytes and limited to PDF, PNG, JPEG and Word (`common/stored-files.ts` `sniffFileType`); relayed portal files to PDF, JPEG and PNG (#354, #355) |
 | 1.3.5 | The application sanitizes or disables user-supplied scriptable or expression template language content, such as… | N/A | No user-supplied Markdown, templates or stylesheets; feedback is shown as plain text |
-| 1.3.6 | The application protects against Server-side Request Forgery (SSRF) attacks, by validating untrusted data against an… | Partial | The backend only fetches URLs stored on TOR records, and only document paths; there is no host allowlist (threat E3). The one user-supplied URL, a Slack webhook, is pinned to `https://hooks.slack.com/services/` |
+| 1.3.6 | The application protects against Server-side Request Forgery (SSRF) attacks, by validating untrusted data against an… | Pass | Announcement files are fetched only from an allowlist of portal hosts (`egp2.bangkok.go.th`, `procurement.mea.or.th`), over HTTPS, on the default port, with no credentials in the URL (`common/portal-fetch.ts`); every other stored link is shown to the reader as a plain link but never fetched. The one user-supplied URL, a Slack webhook, is pinned to `hooks.slack.com`. Threat E3 closed; `test/portal-fetch.test.mjs` |
 | 1.3.7 | The application protects against template injection attacks by not allowing templates to be built based on untrusted… | N/A | No server-side templates built from input |
 | 1.3.8 | The application appropriately sanitizes untrusted input before use in Java Naming and Directory Interface (JNDI)… | N/A | No JNDI |
 | 1.3.9 | The application sanitizes content before it is sent to memcache to prevent injection attacks | N/A | No memcache |
@@ -347,7 +348,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 10.1.1 | Tokens are only sent to components that strictly need them | Pass | The session token lives in an httpOnly cookie and goes only to the backend; the Google ID token is used once at sign-in |
-| 10.1.2 | The client only accepts values from the authorization server (such as the authorization code or ID Token) if these… | Partial | The Google ID token is not bound to the browser session with a `nonce` |
+| 10.1.2 | The client only accepts values from the authorization server (such as the authorization code or ID Token) if these… | Pass | Google sign-in carries a nonce: the frontend issues 32 random bytes per sign-in page, keeps them in an HttpOnly `__Host-` cookie and passes them to Google; the backend refuses a token whose `nonce` claim differs (`auth/google-claims.ts`, `test/google-claims.test.mjs`) |
 | 10.2.1 | Verify that, if the code flow is used, the OAuth client has protection against browser-based request forgery… | N/A | No authorization-code flow (Google Identity Services ID-token flow) |
 | 10.2.2 | Verify that, if the OAuth client can interact with more than one authorization server, it has a defense against… | N/A | One identity provider |
 | 10.3.1 | The resource server only accepts access tokens that are intended for use with that service (audience) | N/A | Not an OAuth resource server |
@@ -360,7 +361,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 10.4.9 | Refresh tokens and reference access tokens can be revoked by an authorized user using the authorization server user… | N/A | Not an authorization server |
 | 10.4.10 | Confidential client is authenticated for client-to-authorized server backchannel requests such as token requests,… | N/A | Not an authorization server |
 | 10.4.11 | The authorization server configuration only assigns the required scopes to the OAuth client | N/A | Not an authorization server |
-| 10.5.1 | The client (as the relying party) mitigates ID Token replay attacks | Partial | No `nonce` check on the ID token (as V10.1.2); replay is limited by the token's 1-hour expiry |
+| 10.5.1 | The client (as the relying party) mitigates ID Token replay attacks | Pass | The ID token's `nonce` must match this browser's cookie (as V10.1.2), so a token captured elsewhere can't be replayed here; the token's 1-hour expiry still applies |
 | 10.5.2 | The client uniquely identifies the user from ID Token claims, usually the 'sub' claim, which cannot be reassigned to… | Pass | Users are identified by the ID token's `sub` |
 | 10.5.3 | The client rejects attempts by a malicious authorization server to impersonate another authorization server through… | Pass | `google-auth-library` uses Google's fixed endpoints and checks the issuer |
 | 10.5.4 | The client validates that the ID Token is intended to be used for that client (audience) by checking that the 'aud'… | Pass | `aud` must equal our `GOOGLE_CLIENT_ID` |
@@ -378,10 +379,10 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 11.1.1 | There is a documented policy for management of cryptographic keys and a cryptographic key lifecycle that follows a… | Partial | Basic key handling is written in [Cryptography](#cryptography); not a full NIST SP 800-57 policy |
 | 11.1.2 | A cryptographic inventory is performed, maintained, regularly updated, and includes all cryptographic keys,… | Pass | Crypto inventory in [Cryptography](#cryptography) |
 | 11.2.1 | Industry-validated implementations (including libraries and hardware-accelerated implementations) are used for… | Pass | Node.js `crypto` (OpenSSL) and `google-auth-library` only; no home-made crypto |
-| 11.2.2 | The application is designed with crypto agility such that random number, authenticated encryption, MAC, or hashing… | Partial | Algorithms and parameters are fixed in code and not stored with each hash, so changing them needs a migration |
+| 11.2.2 | The application is designed with crypto agility such that random number, authenticated encryption, MAC, or hashing… | Pass | Each password hash stores the algorithm and settings it was made with (`passwordParams`); a hash is checked with its own settings and redone with the current ones at the owner's next sign-in, so settings change without a migration (`common/password.ts`) |
 | 11.2.3 | All cryptographic primitives utilize a minimum of 128-bits of security based on the algorithm, key size, and… | Pass | HMAC-SHA256 with a ≥ 32-character random key; 32-byte random link tokens |
 | 11.3.3 | Encrypted data is protected against unauthorized modification preferably by using an approved authenticated… | N/A | No encryption in the application |
-| 11.4.2 | Passwords are stored using an approved, computationally intensive, key derivation function (also known as a… | Partial | scrypt with Node's defaults (N = 16384, r = 8, p = 1), below OWASP's current minimum (N = 2^17); raising it needs rehash-on-login |
+| 11.4.2 | Passwords are stored using an approved, computationally intensive, key derivation function (also known as a… | Pass | scrypt with N = 2^14, r = 8, p = 5, one of OWASP's listed equivalents of the N = 2^17 minimum at 16 MiB per hash; older hashes (p = 1) are upgraded at the next correct sign-in (`test/password-rehash.e2e.test.mjs`) |
 | 11.4.3 | Hash functions used in digital signatures, as part of data authentication or data integrity are collision resistant… | Pass | SHA-256 for link-token hashes, HMAC-SHA256 for sessions; SHA-1 only as a non-security cache key |
 | 11.4.4 | The application uses approved key derivation functions with key stretching parameters when deriving secret keys from… | N/A | No keys derived from passwords |
 | 11.5.1 | All random numbers and strings which are intended to be non-guessable must be generated using a cryptographically… | Pass | `randomBytes(32)` for link tokens and salts; the errorId UUID is not a secret |
@@ -404,9 +405,9 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | --- | --- | --- | --- |
 | 13.1.1 | All communication needs for the application are documented | Pass | Communication needs are written in [External communication](#external-communication), including the user-supplied Slack webhook and the inbound LINE webhook (added on re-check, 19 Nov) |
 | 13.2.1 | Communications between backend application components that don't support the application's standard user session… | Pass | MongoDB requires credentials; every frontend→backend call carries the user's own session token; no unauthenticated internal API |
-| 13.2.2 | Communications between backend application components, including local or operating system services, APIs,… | **Not done** | The backend connects to MongoDB as the root account; it should use a `readWrite` user for its own database |
+| 13.2.2 | Communications between backend application components, including local or operating system services, APIs,… | Pass | The backend connects as `torr_app`, which has `readWrite` and `collMod` on its own database only; root is used only by the one-shot `db-users` service that creates or updates that account on every `docker compose up` (`docker/mongo-users/app-user.js`). Checked: the account can't read `admin`, write another database or drop its own |
 | 13.2.3 | If a credential has to be used for service authentication, the credential being used by the consumer is not a… | Partial | Compose defaults to `torr`/`torr`, overridable in `.env`; the deployment checklist says to set real credentials |
-| 13.2.4 | An allowlist is used to define the external resources or systems with which the application is permitted to… | Partial | Import and notification hosts are fixed in code; document relay follows stored URLs without a host allowlist (E3) |
+| 13.2.4 | An allowlist is used to define the external resources or systems with which the application is permitted to… | Pass | Import and notification hosts are fixed in code; announcement files are fetched only from the allowlisted portal hosts (as V1.3.6) |
 | 13.2.5 | The web or application server is configured with an allowlist of resources or systems to which the server can send… | **Not done** | No network-level egress allowlist |
 | 13.3.1 | A secrets management solution, such as a key vault, is used to securely create, store, control access to, and… | **Not done** | Secrets come from environment variables and `.env`, not a vault (accepted for the course deployment) |
 | 13.3.2 | Access to secret assets adheres to the principle of least privilege | Partial | Secrets exist only in server environments, but anyone with access to the host can read them |
@@ -435,7 +436,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 15.1.3 | The application documentation identifies functionality which is time-consuming or resource-demanding | Pass | Costly functions are written in [Resource-heavy functions](#resource-heavy-functions) |
 | 15.2.2 | The application has implemented defenses against loss of availability due to functionality which is time-consuming… | Pass | Rate limits, timeouts, size caps, batch limits and off-by-default AI runs, as documented |
 | 15.2.3 | The production environment only includes functionality that is required for the application to function, and does… | Pass | Debug route removed; demo data opt-in; no test code in the images |
-| 15.3.2 | Where the application backend makes calls to external URLs, it is configured to not follow redirects unless it is… | Partial | Portal fetches follow redirects (portals redirect to their file servers); not limited to the same host |
+| 15.3.2 | Where the application backend makes calls to external URLs, it is configured to not follow redirects unless it is… | Pass | Portal file fetches follow redirects by hand (`redirect: "manual"`), at most 3, and every hop must be an allowlisted host (`fetchPortalFile`); the portals' own files don't redirect today |
 | 15.3.3 | The application has countermeasures to protect against mass assignment attacks by limiting allowed fields per… | Pass | ValidationPipe `whitelist: true` drops fields a route doesn't declare |
 | 15.3.4 | All proxying and middleware components transfer the user's original IP address correctly using trusted data fields… | Partial | Same as V4.1.3 |
 | 15.3.5 | The application explicitly ensures that variables are of the correct type and performs strict equality and… | Pass | TypeScript, `===` throughout, DTO `transform` gives each field its declared type |
@@ -454,7 +455,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 16.2.5 | When logging sensitive data, the application enforces logging based on the data's protection level | Pass | Passwords, tokens and links are never logged; emails are logged for investigation |
 | 16.3.1 | All authentication operations are logged, including successful and unsuccessful attempts | Pass | Every sign-in success and failure, Google sign-in, lockout, logout and password change is logged |
 | 16.3.2 | Failed authorization attempts are logged | Pass | `access.denied` for every refused guard check |
-| 16.3.3 | The application logs the security events that are defined in the documentation and also logs attempts to bypass the… | Partial | Rate limits and lockouts are logged; rejected input (400 validation errors) is not |
+| 16.3.3 | The application logs the security events that are defined in the documentation and also logs attempts to bypass the… | Pass | Rate limits and lockouts are logged, and so is input refused by validation: `input.rejected` with the path, client address, user and the names of the refused fields, never their values (`LoggingValidationPipe`, `test/input-rejected.test.mjs`) |
 | 16.3.4 | The application logs unexpected errors and security control failures such as backend TLS failures | Pass | Every 5xx is logged with an errorId by `AllExceptionsFilter` |
 | 16.4.1 | All logging components appropriately encode data to prevent log injection | Pass | JSON encoding and a 254-character cap per field |
 | 16.4.2 | Logs are protected from unauthorized access and cannot be modified | **Not done** | Logs sit in the host's container log; no write-once storage |
