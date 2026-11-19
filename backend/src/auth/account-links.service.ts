@@ -19,7 +19,9 @@ const PAGES: Record<EmailLinkPurpose, string> = {
   "email-verify": "/verify-email",
 };
 
-const MAIL: Record<EmailLinkPurpose, { subject: string; intro: string; action: string; expiry: string }> = {
+type LinkMail = { subject: string; intro: string; action: string; expiry: string };
+
+const MAIL: Record<EmailLinkPurpose, LinkMail> = {
   "password-reset": {
     subject: "ตั้งรหัสผ่านใหม่ — TOR Finder",
     intro: "มีคำขอตั้งรหัสผ่านใหม่สำหรับบัญชีนี้ กดลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่",
@@ -34,9 +36,18 @@ const MAIL: Record<EmailLinkPurpose, { subject: string; intro: string; action: s
   },
 };
 
+/** The reset mail when an admin started it (ASVS 6.4.6): same link, but says who asked. */
+const ADMIN_RESET_MAIL: LinkMail = {
+  ...MAIL["password-reset"],
+  intro:
+    "ผู้ดูแลระบบส่งลิงก์ตั้งรหัสผ่านใหม่ให้บัญชีนี้ กดลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่ด้วยตัวเอง ผู้ดูแลระบบไม่เห็นและไม่ได้กำหนดรหัสผ่านของคุณ",
+  expiry: "ลิงก์นี้ใช้ได้ครั้งเดียว ภายใน 1 ชั่วโมง รหัสผ่านเดิมยังใช้ได้จนกว่าคุณจะตั้งใหม่ ถ้าคุณไม่ได้ติดต่อผู้ดูแลระบบ กรุณาแจ้งผู้ดูแลระบบ",
+};
+
 /** Account notices: no link to act on, just telling the address's owner what happened. */
 export type AccountNotice =
   | "password-changed"
+  | "login-locked"
   | "google-linked"
   | "signup-existing"
   | "passkey-added"
@@ -50,6 +61,15 @@ const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) =
     body: (origin) => [
       "รหัสผ่านของบัญชี TOR Finder ที่ใช้อีเมลนี้เพิ่งถูกเปลี่ยน และทุกอุปกรณ์ที่เข้าสู่ระบบอยู่ถูกออกจากระบบแล้ว",
       `ถ้าคุณไม่ได้เปลี่ยนเอง กรุณาตั้งรหัสผ่านใหม่ทันทีที่ ${origin}/forgot-password และแจ้งผู้ดูแลระบบ`,
+    ],
+  },
+  // ASVS 6.3.5: sent once, when the address reaches the limit of failed sign-ins.
+  "login-locked": {
+    subject: "มีการพยายามเข้าสู่ระบบบัญชีของคุณหลายครั้ง — TOR Finder",
+    body: (origin) => [
+      `มีการกรอกรหัสผ่านผิด ${env.throttle.loginFailureLimit} ครั้งติดกันสำหรับบัญชี TOR Finder ที่ใช้อีเมลนี้ การเข้าสู่ระบบด้วยรหัสผ่านจึงถูกพักไว้ ${Math.round(env.throttle.loginFailureWindowMs / 60_000)} นาที`,
+      `ถ้าเป็นคุณเอง รอสักครู่แล้วลองใหม่ หรือตั้งรหัสผ่านใหม่ที่ ${origin}/forgot-password`,
+      "ถ้าไม่ใช่คุณ แปลว่ามีคนพยายามเดารหัสผ่านของคุณ แนะนำให้ตั้งรหัสผ่านใหม่ที่ไม่ซ้ำกับเว็บไซต์อื่น และแจ้งผู้ดูแลระบบ",
     ],
   },
   // ASVS 6.3.7
@@ -107,8 +127,16 @@ export class AccountLinksService {
 
   constructor(private readonly db: DatabaseService) {}
 
-  /** Issues a link and mails it. Mail failures are logged, never thrown: the caller's answer can't depend on them. */
-  async send(user: { _id: ObjectId; email: string }, purpose: EmailLinkPurpose): Promise<void> {
+  /**
+   * Issues a link and mails it. Mail failures are logged, never thrown: the
+   * caller's answer can't depend on them. `byAdmin` words a reset mail as
+   * started by an admin; the link and its rules are the same.
+   */
+  async send(
+    user: { _id: ObjectId; email: string },
+    purpose: EmailLinkPurpose,
+    { byAdmin = false }: { byAdmin?: boolean } = {},
+  ): Promise<void> {
     const token = randomBytes(32).toString("base64url");
     const now = new Date();
     await this.db.authTokens.deleteMany({ userId: user._id, purpose });
@@ -128,7 +156,7 @@ export class AccountLinksService {
       return;
     }
 
-    const mail = MAIL[purpose];
+    const mail = byAdmin && purpose === "password-reset" ? ADMIN_RESET_MAIL : MAIL[purpose];
     try {
       await sendEmail({
         to: user.email,

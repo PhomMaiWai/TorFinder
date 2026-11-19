@@ -4,7 +4,13 @@ import { UserList } from "@/components/admin/user-list";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { fetchUserDirectory } from "@/lib/admin-api";
 
-import { editAccount, reactivateAccount, resetAccountPasskeys, suspendAccount } from "./actions";
+import {
+  editAccount,
+  reactivateAccount,
+  resetAccountPasskeys,
+  sendAccountResetLink,
+  suspendAccount,
+} from "./actions";
 
 export default async function AdminUsersPage() {
   const [users, t] = await Promise.all([fetchUserDirectory(), getTranslations("AdminUsersPage")]);
@@ -17,6 +23,7 @@ export default async function AdminUsersPage() {
         onReactivate={reactivateAccount}
         onEdit={editAccount}
         onResetPasskeys={resetAccountPasskeys}
+        onSendResetLink={sendAccountResetLink}
       />
     </AdminPageShell>
   );

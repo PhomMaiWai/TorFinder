@@ -32,8 +32,14 @@ export class LoginAttempts {
     }
   }
 
-  recordFailure(email: string): void {
-    this.failures.set(email, (this.failures.get(email) ?? 0) + 1);
+  /**
+   * Counts one failure. True only for the failure that locks the address, so
+   * the owner is told once per lockout (ASVS 6.3.5), not once per guess.
+   */
+  recordFailure(email: string): boolean {
+    const count = (this.failures.get(email) ?? 0) + 1;
+    this.failures.set(email, count);
+    return count === env.throttle.loginFailureLimit;
   }
 
   /** A correct password clears the count, so the owner isn't punished for an attacker's guesses after signing in. */

@@ -20,7 +20,7 @@ Code: `backend/src/common/security-log.ts` (`logSecurityEvent`).
 | `auth.logout` | Logout (all sessions revoked) | — |
 | `auth.signup` | Organization sign-up | — |
 | `auth.password.change` | Signed-in password change | `wrong_current_password` |
-| `auth.password.reset.request` | Forgot-password form (logged for every address; the response never differs) | `unknown_account`, `suspended_no_mail` |
+| `auth.password.reset.request` | Forgot-password form (logged for every address; the response never differs), or an admin's **Send reset link** | `unknown_account`, `suspended_no_mail`, `by_admin_<admin id>` |
 | `auth.password.reset` | Reset link used | `invalid_or_expired_link` |
 | `auth.email.verify` | Email verification link used | `invalid_or_expired_link` |
 | `access.denied` | A session or role guard refuses a request | `no_token`, `invalid_token`, `revoked_token`, `wrong_role` |

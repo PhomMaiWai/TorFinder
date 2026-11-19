@@ -127,6 +127,18 @@ export async function resetUserPasskeys(id: string): Promise<ActionResult> {
   return actionResultFrom(res, te("saveFailed"));
 }
 
+/** Mails the account's owner a password-reset link (ASVS 6.4.6); the admin never sees it or picks the password. */
+export async function sendUserResetLink(id: string): Promise<ActionResult> {
+  const te = await getTranslations("Errors");
+  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/password/reset-link`, {
+    method: "POST",
+    headers: await authHeaders(),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  return actionResultFrom(res, te("saveFailed"));
+}
+
 export const suspendUser = (id: string) => setSuspended(id, true);
 export const reactivateUser = (id: string) => setSuspended(id, false);
 

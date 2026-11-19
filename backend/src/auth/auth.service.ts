@@ -105,7 +105,8 @@ export class AuthService {
         ? await verifyPassword(password, user.passwordSalt, user.passwordHash)
         : await spendPasswordCheck(password);
     if (!user || !valid) {
-      this.loginAttempts.recordFailure(address);
+      const locked = this.loginAttempts.recordFailure(address);
+      if (user && locked) this.notifyLocked(user.email);
       logSecurityEvent("auth.login", {
         outcome: "failure",
         email: address,
@@ -205,7 +206,7 @@ export class AuthService {
 
     this.assertNotLocked(user.email, ip);
     if (!(await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash))) {
-      this.loginAttempts.recordFailure(user.email);
+      if (this.loginAttempts.recordFailure(user.email)) this.notifyLocked(user.email);
       logSecurityEvent("auth.password.change", {
         outcome: "failure",
         userId,
@@ -398,6 +399,16 @@ export class AuthService {
     // A new way into the account (ASVS 6.3.7): tell the owner, in case it wasn't them.
     await this.links.notify(existing.email, "google-linked");
     return { ...existing, googleId, emailVerified: true };
+  }
+
+  /**
+   * Tells an account's owner its sign-in was just locked (ASVS 6.3.5). Not
+   * awaited: an unknown address sends nothing, so waiting for the mail would
+   * let the response time say which addresses have accounts (ASVS 6.3.8).
+   * notify() logs its own failures and never throws.
+   */
+  private notifyLocked(email: string): void {
+    void this.links.notify(email, "login-locked");
   }
 
   /** The per-address lock, logged when it refuses (ASVS 6.3.1, 16.3.1). */

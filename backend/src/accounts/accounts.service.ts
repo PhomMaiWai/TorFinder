@@ -2,7 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
+import { AccountLinksService } from "../auth/account-links.service";
 import { PasskeysService } from "../auth/passkeys.service";
+import { logSecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { SessionPayload } from "../common/token";
 import { Role } from "../common/roles";
@@ -49,6 +51,7 @@ export class AccountsService {
     private readonly audit: AuditService,
     private readonly revocation: SessionRevocationService,
     private readonly passkeys: PasskeysService,
+    private readonly links: AccountLinksService,
   ) {}
 
   async findAll(status?: AccountStatus) {
@@ -82,6 +85,32 @@ export class AccountsService {
   async resetPasskeys(id: string, actor: SessionPayload, ip?: string) {
     const user = await this.passkeys.resetFor(id, actor, ip);
     await this.audit.record(actor.email, "ล้างพาสคีย์ของบัญชี", `${user.name} (${user.email})`);
+    return { ok: true as const };
+  }
+
+  /**
+   * An admin starts a password reset for someone (ASVS 6.4.6): the usual
+   * one-hour, single-use link goes to the account's own address. The admin
+   * never sees the link and never picks the password, and the current
+   * password keeps working until the owner sets a new one.
+   */
+  async sendPasswordResetLink(id: string, actor: SessionPayload, ip?: string) {
+    const user = ObjectId.isValid(id)
+      ? await this.db.users.findOne({ _id: new ObjectId(id) }, { projection: { email: 1, name: 1, suspended: 1 } })
+      : null;
+    if (!user) throw new NotFoundException("ไม่พบบัญชีนี้");
+    // The forgot-password form doesn't mail a suspended account either; reactivate it first.
+    if (user.suspended) throw new BadRequestException("บัญชีนี้ถูกระงับอยู่ กรุณาเปิดใช้งานก่อนส่งลิงก์ตั้งรหัสผ่านใหม่");
+
+    await this.links.send(user, "password-reset", { byAdmin: true });
+    logSecurityEvent("auth.password.reset.request", {
+      outcome: "success",
+      userId: id,
+      email: user.email,
+      ip,
+      reason: `by_admin_${actor.sub}`,
+    });
+    await this.audit.record(actor.email, "ส่งลิงก์ตั้งรหัสผ่านใหม่", `${user.name} (${user.email})`);
     return { ok: true as const };
   }
 

@@ -997,6 +997,8 @@
     "roleFilterAll": "All types",
     "roleFilterStaff": "Staff",
     "editAction": "Edit",
+    "sendResetLinkAction": "Send reset link",
+    "resetLinkSent": "Password-reset link sent to {email}. It works once, within 1 hour, and only the account owner receives it.",
     "nameLabel": "Name",
     "roleLabel": "Role",
     "roleLockedOrg": "A company account's role can't be changed",

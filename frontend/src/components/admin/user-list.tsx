@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle2, KeyRound, Pencil, Search } from "lucide-react";
+import { Ban, CheckCircle2, KeyRound, Mail, Pencil, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
@@ -44,6 +44,8 @@ type Props = {
   onEdit: (id: string, edit: UserEdit) => Promise<ActionResult>;
   /** Clears a staff member's passkeys (a lost device). */
   onResetPasskeys: (id: string) => Promise<ActionResult>;
+  /** Mails the owner a password-reset link; the admin never sees it (ASVS 6.4.6). */
+  onSendResetLink: (id: string) => Promise<ActionResult>;
 };
 
 /** The words for a passkey check that didn't happen, so the admin knows nothing changed. */
@@ -168,7 +170,7 @@ function UserEditor({
  * suspension first — that is the state an admin is here to change — and falls
  * back to the approval status when the account is free to use.
  */
-export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasskeys }: Props) {
+export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasskeys, onSendResetLink }: Props) {
   const t = useTranslations("AdminUsersPage");
   const tp = useTranslations("Passkeys");
   const stepUpMessage = useStepUpMessage();
@@ -300,6 +302,33 @@ export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasske
                     <Pencil size={14} />
                     {t("editAction")}
                   </button>
+
+                  {/* The backend won't mail a suspended account; reactivate it first. */}
+                  {!suspended && (
+                    <button
+                      onClick={() => {
+                        setBusyId(user.id);
+                        setRowMessage(null);
+                        startTransition(async () => {
+                          try {
+                            const result = await onSendResetLink(user.id);
+                            setRowMessage({
+                              id: user.id,
+                              text: result.error ?? t("resetLinkSent", { email: user.email }),
+                              ok: !result.error,
+                            });
+                          } finally {
+                            setBusyId(null);
+                          }
+                        });
+                      }}
+                      disabled={busyId === user.id}
+                      className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink disabled:opacity-50"
+                    >
+                      <Mail size={14} />
+                      {t("sendResetLinkAction")}
+                    </button>
+                  )}
 
                   {/* Only an organization has a sign-in this can block — the
                     route that does the blocking accepts nothing else. */}

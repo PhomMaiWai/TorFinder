@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 
 import type { ActionResult } from "@/lib/action-result";
-import { reactivateUser, resetUserPasskeys, suspendUser, updateUser, type UserEdit } from "@/lib/admin-api";
+import {
+  reactivateUser,
+  resetUserPasskeys,
+  sendUserResetLink,
+  suspendUser,
+  updateUser,
+  type UserEdit,
+} from "@/lib/admin-api";
 
 /** Each returns the backend's refusal (or a step-up request) rather than throwing; see ActionResult. */
 async function done(result: ActionResult): Promise<ActionResult> {
@@ -25,4 +32,9 @@ export async function editAccount(id: string, edit: UserEdit) {
 
 export async function resetAccountPasskeys(id: string) {
   return done(await resetUserPasskeys(id));
+}
+
+/** Changes nothing on the page, so there is nothing to revalidate. */
+export async function sendAccountResetLink(id: string) {
+  return sendUserResetLink(id);
 }

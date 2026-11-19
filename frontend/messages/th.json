@@ -997,6 +997,8 @@
     "roleFilterAll": "ทุกประเภท",
     "roleFilterStaff": "เจ้าหน้าที่",
     "editAction": "แก้ไข",
+    "sendResetLinkAction": "ส่งลิงก์ตั้งรหัสผ่านใหม่",
+    "resetLinkSent": "ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่ {email} แล้ว ใช้ได้ครั้งเดียวภายใน 1 ชั่วโมง ผู้ดูแลระบบไม่เห็นลิงก์นี้",
     "nameLabel": "ชื่อ",
     "roleLabel": "บทบาท",
     "roleLockedOrg": "บัญชีบริษัทเปลี่ยนบทบาทไม่ได้",

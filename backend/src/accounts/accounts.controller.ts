@@ -69,6 +69,17 @@ export class AccountsController {
     return this.accountsService.setSuspended(id, false, request.session.email);
   }
 
+  /**
+   * Mails the account's owner a password-reset link (ASVS 6.4.6). No step-up:
+   * the link goes to their inbox, so the admin gains no way into the account.
+   */
+  @Post(":id/password/reset-link")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AdminGuard)
+  sendPasswordResetLink(@Param("id") id: string, @Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    return this.accountsService.sendPasswordResetLink(id, request.session, ip);
+  }
+
   /** A staff member lost their passkey: clear them all, end their sessions, and they add a new one at sign-in. */
   @Post(":id/passkeys/reset")
   @HttpCode(HttpStatus.OK)
