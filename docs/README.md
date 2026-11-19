@@ -66,6 +66,7 @@ change must keep.
 | [sync-and-poll.md](./operations/sync-and-poll.md) | Older Thai notes on e-GP sync (pipeline.md says where they drifted) |
 | [deployment-checklist.md](./operations/deployment-checklist.md) | What to check before, during and after a deploy |
 | [maintenance.md](./operations/maintenance.md) | Keeping it running after release: monitoring, backups, updates, bug reports |
+| [limits-and-retention.md](./operations/limits-and-retention.md) | Connection limits, timeouts and retries, how long each kind of data is kept, secret rotation |
 
 ## Research
 

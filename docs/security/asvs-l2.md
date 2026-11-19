@@ -2,7 +2,7 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 95 Pass, 21 Partial, 6 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 95 pass (76%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 96 Pass, 20 Partial, 6 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 96 pass (77%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
 
 **Update 19 Nov 2026 (staff passkeys, branch `feat/staff-passkeys`):** admin, owner and auditor accounts now finish every sign-in with a passkey ([passkeys.md](./passkeys.md)). 6.3.3 moves from Not done to Partial (companies and public viewers still have no second factor), and 6.4.3 and 6.4.4 now apply and pass.
 
@@ -14,8 +14,8 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 95 | Control exists, with evidence in code or in this file |
-| Partial | 21 | Control exists with a gap; the gap is named |
+| Pass | 96 | Control exists, with evidence in code or in this file |
+| Partial | 20 | Control exists with a gap; the gap is named |
 | Not done | 6 | Not implemented; out of scope for this deadline (below) |
 | N/A | 58 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 3 | Set by the hosting proxy, outside the repository |
@@ -35,11 +35,11 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V11 Cryptography | 11 | 6 | 3 | 0 | 2 | 0 |
 | V12 Secure Communication | 6 | 1 | 2 | 0 | 2 | 1 |
 | V13 Configuration | 12 | 6 | 3 | 3 | 0 | 0 |
-| V14 Data Protection | 7 | 6 | 1 | 0 | 0 | 0 |
+| V14 Data Protection | 7 | 7 | 0 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 10 | 8 | 2 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 16 | 13 | 1 | 2 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **95** | **21** | **6** | **58** | **3** |
+| **Total** | **183** | **96** | **20** | **6** | **58** | **3** |
 
 ## Fixed after the triage (PR #343)
 
@@ -423,7 +423,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 14.1.2 | All sensitive data protection levels have a documented set of protection requirements | Pass | Protection requirements per class in [Data protection](#data-protection) |
 | 14.2.2 | The application prevents sensitive data from being cached in server components, such as load balancers and… | Pass | Public documents are cached on purpose; every other backend and frontend API answer is `no-store` (PR #343) |
 | 14.2.3 | Defined sensitive data is not sent to untrusted parties (e.g., user trackers) to prevent unwanted collection of data… | Pass | No analytics or trackers; fonts are self-hosted; the only third-party script is Google sign-in |
-| 14.2.4 | Controls around sensitive data related to encryption, integrity verification, retention, how the data is to be… | Partial | Controls follow the classification, but there is no retention policy for logs or closed accounts |
+| 14.2.4 | Controls around sensitive data related to encryption, integrity verification, retention, how the data is to be… | Pass | Controls follow the classification; retention periods for each kind of data, enforced by TTL indexes and capped container logs, are in [limits-and-retention.md](../operations/limits-and-retention.md#how-long-data-is-kept) (updated 19 Nov 2026; was Partial) |
 | 14.3.2 | The application sets sufficient anti-caching HTTP response header fields (i.e., Cache-Control: no-store) so that… | Pass | `Cache-Control: no-store` on every API answer; pages already send `private, no-cache, no-store` (PR #343) |
 | 14.3.3 | Data stored in browser storage (such as localStorage, sessionStorage, IndexedDB, or cookies) does not contain… | Pass | Browser storage holds only the theme and a guest's saved TOR ids |
 
