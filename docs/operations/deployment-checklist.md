@@ -12,6 +12,24 @@ still an open decision**, not something this checklist can verify for you.
 
 ---
 
+## Staff passkeys only work on the real address
+
+Staff (admin, owner, auditor) sign in with a password **and a passkey**
+([passkeys.md](../security/passkeys.md)). A passkey is bound to the site's
+origin, which the backend takes from `FRONTEND_ORIGIN`. If that is still
+`http://localhost:3000` on a server, every passkey ceremony fails, and with
+`STAFF_PASSKEYS_REQUIRED=true` (the production default) no staff member can
+reach their console.
+
+- Set `FRONTEND_ORIGIN=https://<the address users type>` in `.env`.
+- `STAFF_PASSKEYS_REQUIRED` must be the same on the frontend and backend
+  (compose passes the one value to both).
+- Tell staff they will add a passkey at their next sign-in, and that a second
+  device is worth adding. The break-glass steps for a lost last-admin passkey
+  are in passkeys.md.
+
+---
+
 ## The one that logs everyone out without an error anywhere
 
 The backend issues a session token signed with its own `SESSION_SECRET`.

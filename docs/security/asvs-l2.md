@@ -2,7 +2,9 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 93 Pass, 20 Partial, 7 Not done, 60 N/A, 3 not reviewed.** Of the 123 items that apply to TorFinder (excluding N/A), 93 pass (76%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 95 Pass, 21 Partial, 6 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 95 pass (76%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+
+**Update 19 Nov 2026 (staff passkeys, branch `feat/staff-passkeys`):** admin, owner and auditor accounts now finish every sign-in with a passkey ([passkeys.md](./passkeys.md)). 6.3.3 moves from Not done to Partial (companies and public viewers still have no second factor), and 6.4.3 and 6.4.4 now apply and pass.
 
 **Update 18 Nov 2026:** company file uploads (certificates in #354, the proposal library in #355) made V1.3.4 apply. It passes, since SVG is not an accepted type. The File handling rules and V5.4.1 and V5.4.3 now cover uploads too. The threats these features add are in [threat-model.md](./threat-model.md).
 
@@ -12,10 +14,10 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 93 | Control exists, with evidence in code or in this file |
-| Partial | 20 | Control exists with a gap; the gap is named |
-| Not done | 7 | Not implemented; out of scope for this deadline (below) |
-| N/A | 60 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
+| Pass | 95 | Control exists, with evidence in code or in this file |
+| Partial | 21 | Control exists with a gap; the gap is named |
+| Not done | 6 | Not implemented; out of scope for this deadline (below) |
+| N/A | 58 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 3 | Set by the hosting proxy, outside the repository |
 
 | Chapter | L2 items | Pass | Partial | Not done | N/A | Not reviewed |
@@ -25,7 +27,7 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V3 Web Frontend Security | 11 | 9 | 1 | 0 | 1 | 0 |
 | V4 API and Web Service | 8 | 0 | 1 | 0 | 5 | 2 |
 | V5 File Handling | 5 | 4 | 0 | 1 | 0 | 0 |
-| V6 Authentication | 22 | 9 | 0 | 1 | 12 | 0 |
+| V6 Authentication | 22 | 11 | 1 | 0 | 10 | 0 |
 | V7 Session Management | 12 | 10 | 2 | 0 | 0 | 0 |
 | V8 Authorization | 3 | 3 | 0 | 0 | 0 | 0 |
 | V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 1 | 0 |
@@ -37,7 +39,7 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V15 Secure Coding and Architecture | 10 | 8 | 2 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 16 | 13 | 1 | 2 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **93** | **20** | **7** | **60** | **3** |
+| **Total** | **183** | **95** | **21** | **6** | **58** | **3** |
 
 ## Fixed after the triage (PR #343)
 
@@ -57,7 +59,6 @@ The triage marked these as Planned; all are now implemented and tested:
 
 | ID | Gap | Why not now |
 | --- | --- | --- |
-| V6.3.3 | No multi-factor authentication for password accounts | A real feature (TOTP enrolment, recovery); Google accounts already have Google's MFA |
 | V5.4.3 | Relayed portal files are not virus-scanned | Needs a scanning service; files are limited to PDF/JPEG/PNG with magic-byte checks |
 | V13.2.2 | Backend uses MongoDB's root account | Needs a database init script for a least-privilege user; listed for the next iteration |
 | V13.2.5 | No network-level egress allowlist | Set at the host or firewall, not in the app |
@@ -73,10 +74,10 @@ The triage marked these as Planned; all are now implemented and tested:
 
 | Pathway | Who | Proof | Then |
 | --- | --- | --- | --- |
-| Email + password (`POST /auth/login`) | Organizations, staff | scrypt-hashed password; email must be verified | Per-IP and per-email rate limits; account must be approved and not suspended |
+| Email + password (`POST /auth/login`) | Organizations, staff | scrypt-hashed password; email must be verified | Per-IP and per-email rate limits; account must be approved and not suspended. Staff with a passkey then get a challenge instead of a session |
 | Google sign-in (`POST /auth/google`, `/auth/google/complete`) | Public viewers, organizations | Google ID token: signature, audience, expiry, `email_verified` | Same approval and suspension checks |
 
-Both end in `AuthService.issueSession`, which applies the same status checks and issues the same session token.
+Both end in `AuthService.issueSession`, which applies the same status checks and issues the same session token. For a staff account with a passkey, both stop there with a passkey challenge, and the session is issued only by `POST /auth/passkey/login` once the passkey signs it (status checks run again). So a staff member can't skip the passkey by choosing Google; see [passkeys.md](./passkeys.md).
 
 **New passwords** (signup, reset, change) must be 8–128 characters and must not be one of the 10,000 most common breached passwords, or be built mostly on a **context-specific word**: `torfinder`, `torr`, `bma`, `bangkok`, `krungthep`, `กรุงเทพ`, `กรุงเทพมหานคร`, `กทม`, `egp`, `procurement`, `จัดซื้อจัดจ้าง`, `admin`, `administrator`, `auditor`, `owner`, `viewer`, `organization`, or the account's own email name, email domain or company-name words. "Built mostly on" means fewer than 8 other letters or digits remain once the word is removed, so `TorFinder2026!` is refused but a long passphrase containing `bangkok` is not. Password reset and email verification use single-use, hashed, expiring links; they never create a session by themselves. There are no other ways in.
 
@@ -291,10 +292,10 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 6.2.10 | A user's password stays valid until it is discovered to be compromised or the user rotates it | Pass | No forced periodic password change |
 | 6.2.11 | The documented list of context specific words is used to prevent easy to guess passwords being created | Pass | `passwordProblem()` refuses passwords built on those words or the account's own email or company name, at signup, reset and change (PR #343) |
 | 6.2.12 | Passwords submitted during account registration or password changes are checked against a set of breached passwords | Pass | Checked against the 10,000 most common breached passwords (NCSC / Have I Been Pwned list) on signup, reset and change |
-| 6.3.3 | Either a multi-factor authentication mechanism or a combination of single-factor authentication mechanisms, must be… | **Not done** | No multi-factor authentication for password accounts; Google accounts carry Google's own MFA. Email verification is not a second factor |
+| 6.3.3 | Either a multi-factor authentication mechanism or a combination of single-factor authentication mechanisms, must be… | Partial | Staff (admin, owner, auditor) must add a passkey and use it after their password or Google sign-in ([passkeys.md](./passkeys.md)). Companies and public viewers have no second factor of their own; Google accounts carry Google's. Email verification is not a second factor |
 | 6.3.4 | Verify that, if the application includes multiple authentication pathways, there are no undocumented pathways and… | Pass | Only the two documented pathways exist, and both end in the same `issueSession` checks |
-| 6.4.3 | A secure process for resetting a forgotten password is implemented, that does not bypass any enabled multi-factor… | N/A | No MFA to bypass; a reset needs the inbox and ends every session |
-| 6.4.4 | If a multi-factor authentication factor is lost, evidence of identity proofing is performed at the same level as… | N/A | No MFA |
+| 6.4.3 | A secure process for resetting a forgotten password is implemented, that does not bypass any enabled multi-factor… | Pass | A reset sets the password only: a staff account still needs its passkey at the next sign-in. The reset link needs the inbox, is single use, and ends every session |
+| 6.4.4 | If a multi-factor authentication factor is lost, evidence of identity proofing is performed at the same level as… | Pass | A lost passkey is cleared by another admin, who must pass a passkey check first; the owner is emailed, every session ends, and they add a new passkey after signing in with their password, the same proof as the first time |
 | 6.5.1 | Lookup secrets, out-of-band authentication requests or codes, and time-based one-time passwords (TOTPs) are only… | N/A | No OTP, lookup secrets or out-of-band authentication codes (the emailed reset links are still single-use, hashed and random) |
 | 6.5.2 | Verify that, when being stored in the application's backend, lookup secrets with less than 112 bits of entropy (19… | N/A | No lookup secrets |
 | 6.5.3 | Lookup secrets, out-of-band authentication code, and time-based one-time password seeds, are generated using a… | N/A | No OTP or lookup secrets |
@@ -320,7 +321,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 7.4.3 | The application gives the option to terminate all other active sessions after a successful change or removal of any… | Pass | A password change or reset ends every session automatically |
 | 7.4.4 | All pages that require authentication have easy and visible access to logout functionality | Pass | Sign out is in the sidebar and the navbar on every signed-in page |
 | 7.4.5 | Application administrators are able to terminate active sessions for an individual user or for all users | Partial | Admins end a user's sessions by suspending them or changing their role; there is no "sign out this user" without suspending, and no all-users switch except rotating `SESSION_SECRET` |
-| 7.5.1 | The application requires full re-authentication before allowing modifications to sensitive account attributes which… | Pass | The email address can't be changed; a password change needs the current password; there is no MFA setting |
+| 7.5.1 | The application requires full re-authentication before allowing modifications to sensitive account attributes which… | Pass | The email address can't be changed; a password change needs the current password; adding a second passkey or removing one needs a passkey check from the last 10 minutes |
 | 7.5.2 | Users are able to view and (having authenticated again with at least one factor) terminate any or all currently… | Partial | Tokens are stateless, so there is no list of active sessions; a user can end all of them by logging out |
 | 7.6.1 | Session lifetime and termination between Relying Parties (RPs) and Identity Providers (IdPs) behave as documented,… | Pass | Written in [Sessions](#sessions) |
 | 7.6.2 | Creation of a session requires either the user's consent or an explicit action, preventing the creation of new… | Pass | Google sign-in starts only from a click on the button (no One Tap, no auto-select) |
