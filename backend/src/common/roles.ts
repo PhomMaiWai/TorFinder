@@ -7,3 +7,8 @@
  */
 export const ROLES = ["admin", "org", "owner", "auditor", "viewer"] as const;
 export type Role = (typeof ROLES)[number];
+
+/** The agency's own people: their accounts reach every company's data or the procurement record, so they sign in with a passkey too. */
+export const STAFF_ROLES = ["admin", "owner", "auditor"] as const satisfies readonly Role[];
+export const isStaffRole = (role: Role | undefined): boolean =>
+  role !== undefined && (STAFF_ROLES as readonly Role[]).includes(role);

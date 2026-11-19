@@ -5,21 +5,21 @@ import { ObjectId } from "mongodb";
 
 import { canSendEmail, escapeHtml, sendEmail } from "../common/email";
 import { env } from "../config/env";
-import { AuthTokenPurpose, DatabaseService } from "../database/database.service";
+import { DatabaseService, EmailLinkPurpose } from "../database/database.service";
 
 /** How long each kind of link works for. */
-export const LINK_TTL_MS: Record<AuthTokenPurpose, number> = {
+export const LINK_TTL_MS: Record<EmailLinkPurpose, number> = {
   // Short: a reset link in an inbox is a key to the account.
   "password-reset": 60 * 60 * 1000,
   "email-verify": 24 * 60 * 60 * 1000,
 };
 
-const PAGES: Record<AuthTokenPurpose, string> = {
+const PAGES: Record<EmailLinkPurpose, string> = {
   "password-reset": "/reset-password",
   "email-verify": "/verify-email",
 };
 
-const MAIL: Record<AuthTokenPurpose, { subject: string; intro: string; action: string; expiry: string }> = {
+const MAIL: Record<EmailLinkPurpose, { subject: string; intro: string; action: string; expiry: string }> = {
   "password-reset": {
     subject: "ตั้งรหัสผ่านใหม่ — TOR Finder",
     intro: "มีคำขอตั้งรหัสผ่านใหม่สำหรับบัญชีนี้ กดลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่",
@@ -35,7 +35,13 @@ const MAIL: Record<AuthTokenPurpose, { subject: string; intro: string; action: s
 };
 
 /** Account notices: no link to act on, just telling the address's owner what happened. */
-export type AccountNotice = "password-changed" | "google-linked" | "signup-existing";
+export type AccountNotice =
+  | "password-changed"
+  | "google-linked"
+  | "signup-existing"
+  | "passkey-added"
+  | "passkey-removed"
+  | "passkeys-reset";
 
 const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) => string[] }> = {
   // ASVS 6.3.7
@@ -52,6 +58,28 @@ const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) =
     body: (origin) => [
       "บัญชี TOR Finder ที่ใช้อีเมลนี้เพิ่งถูกเข้าสู่ระบบด้วย Google เป็นครั้งแรก ต่อจากนี้จะเข้าสู่ระบบด้วย Google ได้ด้วย",
       `ถ้าคุณไม่ได้ทำเอง กรุณาเปลี่ยนรหัสผ่านบัญชี Google ของคุณ ตั้งรหัสผ่าน TOR Finder ใหม่ที่ ${origin}/forgot-password และแจ้งผู้ดูแลระบบ`,
+    ],
+  },
+  // ASVS 6.3.7: a passkey is a way into the account, like a password.
+  "passkey-added": {
+    subject: "มีการเพิ่มพาสคีย์ในบัญชีของคุณ — TOR Finder",
+    body: (origin) => [
+      "มีการเพิ่มพาสคีย์ใหม่ในบัญชี TOR Finder ที่ใช้อีเมลนี้ ต่อจากนี้พาสคีย์นี้ใช้ยืนยันตัวตนตอนเข้าสู่ระบบได้",
+      `ถ้าคุณไม่ได้เพิ่มเอง กรุณาแจ้งผู้ดูแลระบบทันทีเพื่อล้างพาสคีย์ และตั้งรหัสผ่านใหม่ที่ ${origin}/forgot-password`,
+    ],
+  },
+  "passkey-removed": {
+    subject: "มีการลบพาสคีย์ออกจากบัญชีของคุณ — TOR Finder",
+    body: (origin) => [
+      "มีการลบพาสคีย์ออกจากบัญชี TOR Finder ที่ใช้อีเมลนี้",
+      `ถ้าคุณไม่ได้ลบเอง กรุณาแจ้งผู้ดูแลระบบทันที และตั้งรหัสผ่านใหม่ที่ ${origin}/forgot-password`,
+    ],
+  },
+  "passkeys-reset": {
+    subject: "ผู้ดูแลระบบล้างพาสคีย์ของคุณแล้ว — TOR Finder",
+    body: (origin) => [
+      "ผู้ดูแลระบบได้ล้างพาสคีย์ทั้งหมดของบัญชี TOR Finder ที่ใช้อีเมลนี้ และออกจากระบบทุกอุปกรณ์แล้ว",
+      `เข้าสู่ระบบที่ ${origin}/login แล้วเพิ่มพาสคีย์ใหม่ ถ้าคุณไม่ได้ขอให้ล้าง กรุณาติดต่อผู้ดูแลระบบ`,
     ],
   },
   // ASVS 6.3.8: the signup form answers as if it worked, so the owner is told here instead.
@@ -80,7 +108,7 @@ export class AccountLinksService {
   constructor(private readonly db: DatabaseService) {}
 
   /** Issues a link and mails it. Mail failures are logged, never thrown: the caller's answer can't depend on them. */
-  async send(user: { _id: ObjectId; email: string }, purpose: AuthTokenPurpose): Promise<void> {
+  async send(user: { _id: ObjectId; email: string }, purpose: EmailLinkPurpose): Promise<void> {
     const token = randomBytes(32).toString("base64url");
     const now = new Date();
     await this.db.authTokens.deleteMany({ userId: user._id, purpose });
@@ -134,7 +162,7 @@ export class AccountLinksService {
   }
 
   /** The account a live link belongs to, without using it up — to check a new password before the link is spent. */
-  async peek(token: string, purpose: AuthTokenPurpose): Promise<ObjectId | null> {
+  async peek(token: string, purpose: EmailLinkPurpose): Promise<ObjectId | null> {
     const doc = await this.db.authTokens.findOne(
       { tokenHash: hashToken(token), purpose, expiresAt: { $gt: new Date() } },
       { projection: { userId: 1 } },
@@ -143,7 +171,7 @@ export class AccountLinksService {
   }
 
   /** The account a live link belongs to, deleting the link as it is read; null when unknown, used or expired. */
-  async consume(token: string, purpose: AuthTokenPurpose): Promise<ObjectId | null> {
+  async consume(token: string, purpose: EmailLinkPurpose): Promise<ObjectId | null> {
     const doc = await this.db.authTokens.findOneAndDelete({
       tokenHash: hashToken(token),
       purpose,

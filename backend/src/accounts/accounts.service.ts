@@ -2,7 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
+import { PasskeysService } from "../auth/passkeys.service";
 import { SessionRevocationService } from "../common/session-revocation.service";
+import { SessionPayload } from "../common/token";
 import { Role } from "../common/roles";
 import { AccountStatus, DatabaseService, UserDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -46,6 +48,7 @@ export class AccountsService {
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
     private readonly revocation: SessionRevocationService,
+    private readonly passkeys: PasskeysService,
   ) {}
 
   async findAll(status?: AccountStatus) {
@@ -75,6 +78,13 @@ export class AccountsService {
    * without touching its approval status — see AuthService.issueSession,
    * which is what actually enforces this.
    */
+  /** See PasskeysService.resetFor; recorded in the audit log like the other account decisions. */
+  async resetPasskeys(id: string, actor: SessionPayload, ip?: string) {
+    const user = await this.passkeys.resetFor(id, actor, ip);
+    await this.audit.record(actor.email, "ล้างพาสคีย์ของบัญชี", `${user.name} (${user.email})`);
+    return { ok: true as const };
+  }
+
   async setSuspended(id: string, suspended: boolean, actor: string) {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
 
