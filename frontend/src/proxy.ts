@@ -53,6 +53,8 @@ const PUBLIC_API_ROUTES = [
   "/api/auth/google/complete",
   // Called by LINE's servers, not a browser; the backend checks its signature.
   "/api/line/webhook",
+  // Browsers post CSP violation reports without the session cookie.
+  "/api/csp-report",
 ];
 
 /**
@@ -91,9 +93,13 @@ function contentSecurityPolicy(nonce: string): string {
     `connect-src 'self' https://accounts.google.com/gsi/${isDev ? " ws: wss:" : ""}`,
     "frame-src 'self' https://accounts.google.com/gsi/",
     "object-src 'none'",
-    "base-uri 'self'",
+    // ASVS 3.4.3 asks for 'none': nothing here uses a <base> element.
+    "base-uri 'none'",
     "form-action 'self'",
     "frame-ancestors 'self'",
+    // ASVS 3.4.7: violations go to app/api/csp-report (Reporting-Endpoints in next.config.ts).
+    "report-uri /api/csp-report",
+    "report-to csp",
   ].join("; ");
 }
 

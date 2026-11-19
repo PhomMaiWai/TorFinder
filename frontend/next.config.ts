@@ -24,8 +24,18 @@ const SECURITY_HEADERS = [
     key: "Content-Security-Policy",
     value:
       "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-      "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'; " +
+      "report-uri /api/csp-report; report-to csp",
   },
+  // ASVS 3.4.7: where `report-to csp` sends violation reports.
+  { key: "Reporting-Endpoints", value: 'csp="/api/csp-report"' },
+  // ASVS 3.4.8: no other window keeps a handle on ours (tabnabbing, frame
+  // counting). "allow-popups" because the Google sign-in pop-up reports back
+  // to the window that opened it.
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+  // ASVS 3.5.8: other sites can't embed our responses — including a signed-in
+  // user's certificate and library files — as images, scripts or media.
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
 ];
 
 const nextConfig: NextConfig = {
