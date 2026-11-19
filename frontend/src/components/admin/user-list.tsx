@@ -1,13 +1,15 @@
 "use client";
 
-import { Ban, CheckCircle2, Pencil, Search } from "lucide-react";
+import { Ban, CheckCircle2, KeyRound, Pencil, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
+import type { ActionResult } from "@/lib/action-result";
 import type { DirectoryUser, UserEdit } from "@/lib/admin-api";
-import type { Role } from "@/lib/auth";
+import { type Role, isStaffRole } from "@/lib/auth";
 import { formatDate, timeAgo } from "@/lib/datetime";
 import type { Locale } from "@/i18n/config";
+import { type PasskeyFailureResult, withStepUp } from "@/lib/passkeys-client";
 
 /** Exhaustive on purpose: a new role that has no label here is a compile error. */
 const ROLE_LABEL = {
@@ -37,10 +39,20 @@ function matchesRole(role: Role, filter: RoleFilter): boolean {
 
 type Props = {
   users: DirectoryUser[];
-  onSuspend: (id: string) => Promise<void>;
-  onReactivate: (id: string) => Promise<void>;
-  onEdit: (id: string, edit: UserEdit) => Promise<{ error?: string }>;
+  onSuspend: (id: string) => Promise<ActionResult>;
+  onReactivate: (id: string) => Promise<ActionResult>;
+  onEdit: (id: string, edit: UserEdit) => Promise<ActionResult>;
+  /** Clears a staff member's passkeys (a lost device). */
+  onResetPasskeys: (id: string) => Promise<ActionResult>;
 };
+
+/** The words for a passkey check that didn't happen, so the admin knows nothing changed. */
+function useStepUpMessage() {
+  const t = useTranslations("Passkeys");
+  return (result: PasskeyFailureResult) =>
+    result.message ??
+    (result.reason === "cancelled" ? t("cancelled") : result.reason === "unsupported" ? t("unsupported") : t("stepUpFailed"));
+}
 
 /** Mirrors the backend's EDITABLE_ROLES (backend/src/accounts/dto/update-user.dto.ts). */
 const EDITABLE_ROLES = [
@@ -64,7 +76,7 @@ function UserEditor({
   onClose,
 }: {
   user: DirectoryUser;
-  onSave: (edit: UserEdit) => Promise<{ error?: string }>;
+  onSave: (edit: UserEdit) => Promise<ActionResult>;
   onClose: () => void;
 }) {
   const t = useTranslations("AdminUsersPage");
@@ -156,8 +168,13 @@ function UserEditor({
  * suspension first — that is the state an admin is here to change — and falls
  * back to the approval status when the account is free to use.
  */
-export function UserList({ users, onSuspend, onReactivate, onEdit }: Props) {
+export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasskeys }: Props) {
   const t = useTranslations("AdminUsersPage");
+  const tp = useTranslations("Passkeys");
+  const stepUpMessage = useStepUpMessage();
+  /** One line under a row: why an action was refused, or that a reset went through. */
+  const [rowMessage, setRowMessage] = useState<{ id: string; text: string; ok: boolean } | null>(null);
+  const [confirmingResetId, setConfirmingResetId] = useState<string | null>(null);
   const locale = useLocale() as Locale;
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
@@ -290,11 +307,14 @@ export function UserList({ users, onSuspend, onReactivate, onEdit }: Props) {
                     <button
                       onClick={() => {
                         setBusyId(user.id);
+                        setRowMessage(null);
                         startTransition(async () => {
                           try {
-                            await (suspended
-                              ? onReactivate(user.id)
-                              : onSuspend(user.id));
+                            const result = await withStepUp(
+                              () => (suspended ? onReactivate(user.id) : onSuspend(user.id)),
+                              stepUpMessage,
+                            );
+                            if (result.error) setRowMessage({ id: user.id, text: result.error, ok: false });
                           } finally {
                             setBusyId(null);
                           }
@@ -316,11 +336,59 @@ export function UserList({ users, onSuspend, onReactivate, onEdit }: Props) {
                       )}
                     </button>
                   )}
+
+                  {isStaffRole(user.role) &&
+                    (confirmingResetId === user.id ? (
+                      <span className="flex shrink-0 items-center gap-2 text-sm">
+                        <button
+                          disabled={busyId === user.id}
+                          onClick={() => {
+                            setConfirmingResetId(null);
+                            setBusyId(user.id);
+                            setRowMessage(null);
+                            startTransition(async () => {
+                              try {
+                                const result = await withStepUp(() => onResetPasskeys(user.id), stepUpMessage);
+                                setRowMessage({ id: user.id, text: result.error ?? tp("resetDone"), ok: !result.error });
+                              } finally {
+                                setBusyId(null);
+                              }
+                            });
+                          }}
+                          className="font-semibold text-danger transition-opacity hover:opacity-80 disabled:opacity-50"
+                        >
+                          {tp("resetConfirm")}
+                        </button>
+                        <button
+                          onClick={() => setConfirmingResetId(null)}
+                          className="font-medium text-ink-muted transition-colors hover:text-ink"
+                        >
+                          {tp("resetCancel")}
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmingResetId(user.id)}
+                        disabled={busyId === user.id}
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink disabled:opacity-50"
+                      >
+                        <KeyRound size={14} />
+                        {tp("resetAction")}
+                      </button>
+                    ))}
                 </div>
+                {rowMessage?.id === user.id && (
+                  <p
+                    role={rowMessage.ok ? "status" : "alert"}
+                    className={`px-5 pb-3 text-xs font-medium ${rowMessage.ok ? "text-success" : "text-danger"}`}
+                  >
+                    {rowMessage.text}
+                  </p>
+                )}
                 {editingId === user.id && (
                   <UserEditor
                     user={user}
-                    onSave={(edit) => onEdit(user.id, edit)}
+                    onSave={(edit) => withStepUp(() => onEdit(user.id, edit), stepUpMessage)}
                     onClose={() => setEditingId(null)}
                   />
                 )}

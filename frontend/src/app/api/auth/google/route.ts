@@ -39,6 +39,11 @@ export async function POST(request: Request) {
   // A Google identity we've never seen before, with nothing to link to —
   // Google verified who they are but never collected a company, so the
   // caller still needs to fill that in via /api/auth/google/complete.
+  // A staff account with a passkey: Google proved who it is; the passkey still has to answer.
+  if (backendRes.ok && data?.status === "passkey-required") {
+    return jsonResponse({ status: "passkey-required", options: data.options });
+  }
+
   if (backendRes.ok && data?.status === "needs-company-info") {
     return jsonResponse({
       status: "needs-company-info",

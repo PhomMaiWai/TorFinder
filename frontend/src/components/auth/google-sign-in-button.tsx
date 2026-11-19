@@ -3,6 +3,7 @@
 import Script from "next/script";
 import { useTranslations } from "next-intl";
 import { useRef } from "react";
+import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser";
 
 import type { SessionUser } from "@/lib/use-session";
 
@@ -54,6 +55,8 @@ type GoogleSignInButtonProps = {
   onPending: (companyName: string) => void;
   /** A Google identity we've never seen, with no account to link to — needs a company profile before it can go pending. */
   onNeedsCompanyInfo: (info: { credential: string; email: string; name: string }) => void;
+  /** A staff account with a passkey: Google proved who it is, and the passkey still has to answer this challenge. */
+  onPasskeyRequired?: (options: PublicKeyCredentialRequestOptionsJSON) => void;
 };
 
 export function GoogleSignInButton({
@@ -62,6 +65,7 @@ export function GoogleSignInButton({
   onSuccess,
   onPending,
   onNeedsCompanyInfo,
+  onPasskeyRequired,
 }: GoogleSignInButtonProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
   const te = useTranslations("Errors");
@@ -83,6 +87,11 @@ export function GoogleSignInButton({
       }
       if (data.status === "pending") {
         onPending(data.companyName ?? te("yourCompany"));
+        return;
+      }
+      if (data.status === "passkey-required") {
+        if (onPasskeyRequired) onPasskeyRequired(data.options);
+        else onError(te("passkeyRequiredHere"));
         return;
       }
       if (data.status === "needs-company-info") {

@@ -1653,7 +1653,8 @@
     "reportFailed": "Couldn't send the report. Please try again.",
     "tooManyRequests": "Too many requests. Please wait a moment and try again.",
     "actionFailed": "Something went wrong. Please try again.",
-    "yourCompany": "your company"
+    "yourCompany": "your company",
+    "passkeyRequiredHere": "This account signs in with a passkey. Use the staff or company sign-in page."
   },
   "Loading": {
     "saved": "Loading your saved TORs",
@@ -1664,5 +1665,32 @@
     "dashboard": "Building the overview of all TORs",
     "public": "Loading TORs",
     "torDetail": "Loading TOR details"
+  },
+  "Passkeys": {
+    "sectionTitle": "Passkeys",
+    "description": "Staff accounts confirm sign-in with a passkey on a phone, laptop or security key, and again before sensitive admin actions. A passkey only works on this site, so it can't be phished.",
+    "setupRequired": "Add a passkey to continue. Staff accounts need one before they can use the console.",
+    "unsupported": "This browser can't use passkeys. Use a current version of Chrome, Edge, Firefox or Safari.",
+    "nameLabel": "Name for this passkey",
+    "namePlaceholder": "Work laptop",
+    "addButton": "Add a passkey",
+    "waiting": "Waiting for your device…",
+    "empty": "No passkeys yet.",
+    "addedInfo": "Added {date}",
+    "lastUsedInfo": "last used {date}",
+    "removeButton": "Remove",
+    "addedConfirmation": "Passkey added.",
+    "cancelled": "The passkey prompt was closed. Try again when you're ready.",
+    "alreadyRegistered": "This device already has a passkey for your account.",
+    "failed": "That didn't work. Please try again.",
+    "stepUpFailed": "Couldn't confirm it's you with your passkey, so nothing was changed.",
+    "signInTitle": "Confirm with your passkey",
+    "signInDescription": "Your password is correct. Use the passkey on your phone, laptop or security key to finish signing in.",
+    "signInButton": "Use passkey",
+    "backToPassword": "Back",
+    "resetAction": "Reset passkeys",
+    "resetConfirm": "Clear all passkeys?",
+    "resetCancel": "Cancel",
+    "resetDone": "Passkeys cleared. They'll add a new one the next time they sign in."
   }
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { RotateCcw, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { hideTor, unhideTor } from "@/app/admin/tor/actions";
+import { withStepUp } from "@/lib/passkeys-client";
 
 /**
  * Delete and restore for one row. Asks once in place rather than opening a
@@ -20,7 +22,9 @@ export function DeleteTorButton({
   deleted?: boolean;
   labels: { delete: string; confirm: string; cancel: string; restore: string };
 }) {
+  const tp = useTranslations("Passkeys");
   const [confirming, setConfirming] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   if (deleted) {
@@ -43,7 +47,17 @@ export function DeleteTorButton({
           disabled={isPending}
           onClick={() => {
             setConfirming(false);
-            startTransition(() => void hideTor(torId));
+            setRefusal(null);
+            // Deleting a public notice may first ask for a fresh passkey check (ASVS 7.5.3).
+            startTransition(async () => {
+              const result = await withStepUp(
+                () => hideTor(torId),
+                (failed) =>
+                  failed.message ??
+                  (failed.reason === "cancelled" ? tp("cancelled") : failed.reason === "unsupported" ? tp("unsupported") : tp("stepUpFailed")),
+              );
+              if (result.error) setRefusal(result.error);
+            });
           }}
           className="font-semibold text-danger transition-opacity hover:opacity-80 disabled:opacity-50"
         >
@@ -60,6 +74,7 @@ export function DeleteTorButton({
   }
 
   return (
+    <span className="inline-flex flex-col items-start gap-1">
     <button
       onClick={() => setConfirming(true)}
       className="inline-flex items-center gap-1 font-medium text-ink-muted transition-colors hover:text-danger"
@@ -67,5 +82,11 @@ export function DeleteTorButton({
       <Trash2 size={14} />
       {labels.delete}
     </button>
+    {refusal && (
+      <span role="alert" className="text-xs font-medium text-danger">
+        {refusal}
+      </span>
+    )}
+    </span>
   );
 }

@@ -11,6 +11,7 @@
     "test:e2e": "node --test --test-concurrency=1 \"test/**/*.test.{mjs,mts}\""
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
     "jose": "^6.2.17",
     "lucide-react": "^1.72.0",
     "next": "16.4.6",
