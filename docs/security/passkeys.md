@@ -18,10 +18,11 @@ A passkey is a key pair made by a phone, laptop (Touch ID, Windows Hello) or sec
 | Rename an account or change its role | `PATCH /accounts/:id/details` |
 | Suspend or reactivate an account | `PATCH /accounts/:id/suspend`, `/reactivate` |
 | Delete an announcement | `DELETE /tor/:id` |
+| Assign or change an announcement's owner | `PUT /tor/:id/owner` |
 | Clear someone's passkeys | `POST /accounts/:id/passkeys/reset` |
 | Add a second passkey, or remove one | `POST /auth/passkeys/options`, `DELETE /auth/passkeys/:id` |
 
-If the check is too old, the action is refused with `step-up-required`. The page then asks for the passkey and tries once more; the admin just touches their key. The re-signed session keeps its original `iat` and `exp`, so a check can't extend the 7-day absolute lifetime.
+If the check is too old, the action is refused with `step-up-required`. The page then asks for the passkey and tries once more; the admin just touches their key. The TOR edit form sets the owner before it saves the other fields, so a cancelled check leaves the whole record unchanged. The re-signed session keeps its original `iat` and `exp`, so a check can't extend the 7-day absolute lifetime.
 
 **Lost device.** Another admin opens **Manage Users**, chooses **Reset passkeys** on the account and confirms with their own passkey. Every passkey on the account is cleared and every session ends, and the owner is emailed. At their next sign-in they add a new passkey with their password, the same proof as their first one. Nobody can reset their own passkeys.
 
@@ -58,7 +59,6 @@ Record who did it and why. The admin then signs in with their password and adds 
 ## Known limits
 
 - **First enrolment trusts the password.** Someone who learns a staff password before the owner adds a passkey could add theirs first. The owner is emailed when it happens, and an admin can reset it. Rolling out soon after accounts are created keeps this window short.
-- **Assigning an announcement's owner** (`PUT /tor/:id/owner`) is not behind step-up yet. It runs inside the TOR edit form's full-page save, which can't pause for the passkey prompt; it needs that form moved to a client-side submit first.
 - **Company and public accounts** still have no second factor of their own (L2 6.3.3 stays Partial). Google accounts carry Google's.
 - **User verification is preferred, not required** (`requireUserVerification: false`). Every passkey check needs the user present (a touch or tap), but a security key without a PIN or biometric is accepted. That is enough for a second factor: the password is the first, and the passkey proves possession of the device. It is why the 6.3.3 claim rests on password plus passkey, not on the passkey alone as a single multi-factor step.
 - **Attestation is `none`.** Any standards-compliant authenticator is accepted; the app doesn't restrict to particular makes of security key.
