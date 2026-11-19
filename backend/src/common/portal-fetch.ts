@@ -33,7 +33,7 @@ export function isAllowedPortalUrl(url: string | URL): boolean {
 }
 
 /** The allowlist as a Mongo pattern prefix, for queries that must select only what isAllowedPortalUrl accepts. */
-export const PORTAL_FILE_URL_PREFIX = `^https://(?:${PORTAL_FILE_HOSTS.map((host) => host.replace(/\./g, "\\.")).join("|")})`;
+export const PORTAL_FILE_URL_PREFIX = `^https://(?:${PORTAL_FILE_HOSTS.map((host) => host.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`;
 
 /**
  * fetch() for a portal file. Redirects are followed by hand, at most
