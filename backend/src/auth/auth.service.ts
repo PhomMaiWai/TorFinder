@@ -9,7 +9,7 @@ import {
 import { OAuth2Client } from "google-auth-library";
 import { MongoServerError, ObjectId, WithId } from "mongodb";
 
-import { hashPassword, passwordProblem, verifyPassword } from "../common/password";
+import { hashPassword, passwordProblem, spendPasswordCheck, verifyPassword } from "../common/password";
 import { logSecurityEvent, SecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { createSessionToken } from "../common/token";
@@ -73,8 +73,13 @@ export class AuthService {
     } catch (error) {
       // The unique index on email is what actually guards against duplicates —
       // checking first would still race between two concurrent signups.
+      // The answer is the same as a new signup, so the form can't be used to
+      // find out who has an account (ASVS 6.3.8); the address's owner gets an
+      // email saying someone tried, and how to sign in or reset instead.
       if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) {
-        throw new ConflictException("อีเมลนี้ถูกใช้สมัครแล้ว");
+        logSecurityEvent("auth.signup", { outcome: "failure", email: address, ip, reason: "duplicate_email" });
+        await this.links.notify(address, "signup-existing");
+        return { status: "pending" as const, companyName: company.companyName };
       }
       throw error;
     }
@@ -91,12 +96,13 @@ export class AuthService {
 
     // No passwordHash means the account was created via Google and never set
     // one — verifyPassword can't run against nothing, so it's a mismatch too.
-    if (
-      !user ||
-      !user.passwordHash ||
-      !user.passwordSalt ||
-      !(await verifyPassword(password, user.passwordSalt, user.passwordHash))
-    ) {
+    // Every path pays for one scrypt, so the response time doesn't reveal
+    // whether the address has an account (ASVS 6.3.8).
+    const valid =
+      user?.passwordHash && user.passwordSalt
+        ? await verifyPassword(password, user.passwordSalt, user.passwordHash)
+        : await spendPasswordCheck(password);
+    if (!user || !valid) {
       this.loginAttempts.recordFailure(address);
       logSecurityEvent("auth.login", {
         outcome: "failure",
@@ -175,6 +181,8 @@ export class AuthService {
     // stops working (ASVS 7.4.3).
     await this.revocation.revoke(userId.toString());
     logSecurityEvent("auth.password.reset", { outcome: "success", userId: userId.toString(), ip });
+    // ASVS 6.3.7: the owner hears about it even if someone else used the link.
+    if (account?.email) await this.links.notify(account.email, "password-changed");
     return { ok: true as const };
   }
 
@@ -218,6 +226,8 @@ export class AuthService {
     await this.db.users.updateOne({ _id: user._id }, { $set: { passwordHash: hash, passwordSalt: salt } });
     await this.revocation.revoke(userId);
     logSecurityEvent("auth.password.change", { outcome: "success", userId, email: user.email, ip });
+    // ASVS 6.3.7: a stolen session plus a guessed password would otherwise go unnoticed.
+    await this.links.notify(user.email, "password-changed");
     return { ok: true as const };
   }
 
@@ -383,6 +393,8 @@ export class AuthService {
 
     // Google has just proven this inbox, which settles any pending address check too.
     await this.db.users.updateOne({ _id: existing._id }, { $set: { googleId, emailVerified: true } });
+    // A new way into the account (ASVS 6.3.7): tell the owner, in case it wasn't them.
+    await this.links.notify(existing.email, "google-linked");
     return { ...existing, googleId, emailVerified: true };
   }
 

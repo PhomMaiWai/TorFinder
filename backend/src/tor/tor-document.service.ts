@@ -64,11 +64,16 @@ export class TorDocumentService {
       throw new PayloadTooLargeException("เอกสารใหญ่เกินกว่าจะแสดงบนเว็บ");
     }
 
+    // fetch hands over the body already decompressed, while Content-Length
+    // counts the compressed bytes. Passing that number on would announce a
+    // length that doesn't match what is sent (ASVS 4.2.2), so it is only kept
+    // for a body the portal sent as is.
+    const encoding = (res.headers.get("content-encoding") ?? "identity").trim().toLowerCase();
     return {
       body: Readable.fromWeb(res.body as ReadableStream<Uint8Array>),
       contentType,
       filename: decodeURIComponent(file.url.split("?")[0].split("/").pop() || "document.pdf"),
-      length: declared,
+      length: encoding === "identity" ? declared : undefined,
     };
   }
 }

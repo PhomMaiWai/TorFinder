@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 
+import { cleanUpload } from "../common/image-uploads";
 import { DatabaseService } from "../database/database.service";
 import {
   CERTIFICATE_LIMITS,
@@ -126,12 +127,14 @@ export class CertificatesService {
     const type = sniffCertificateFile(upload.buffer);
     if (!type) throw new UnsupportedMediaTypeException("รับเฉพาะไฟล์ PDF, PNG หรือ JPG");
 
+    // Images: pixel-size cap and metadata stripped (ASVS 5.2.6, 14.2.8).
+    const content = cleanUpload(upload.buffer, type);
     const current = await this.recordOf(userId, id);
     const name = safeFileName(upload.originalname, type);
 
     const fileId = new ObjectId();
     await new Promise<void>((resolve, reject) => {
-      Readable.from(upload.buffer)
+      Readable.from(content)
         .pipe(
           this.db.certificateFiles.openUploadStreamWithId(fileId, name, {
             metadata: { userId: this.idOf(userId), certificateId: id, contentType: type },
@@ -141,7 +144,7 @@ export class CertificatesService {
         .on("error", reject);
     });
 
-    const file: CertificateFile = { id: fileId.toHexString(), name, contentType: type, size: upload.size, uploadedAt: new Date() };
+    const file: CertificateFile = { id: fileId.toHexString(), name, contentType: type, size: content.length, uploadedAt: new Date() };
     const next: CertificateRecord = { ...current, file, updatedAt: new Date() };
     try {
       await this.replace(userId, id, next);

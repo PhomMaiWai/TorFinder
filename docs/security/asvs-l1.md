@@ -6,6 +6,8 @@ Source-review results against all 70 [OWASP ASVS 5.0](https://github.com/OWASP/A
 
 **Update 18 Nov 2026:** company file uploads (#354, #355) made V5.3.1 apply. It passes, because uploads are stored in GridFS and never written to disk. See [threat-model.md](./threat-model.md).
 
+**Re-check 19 Nov 2026** (branch `fix/asvs-l3-quick-wins`): still 0 Fail in code. The [access rules](#access-rules-asvs-811) table had fallen behind the routes added for certificates, the proposal library, growth path, e-GP metrics and LINE (8.1.1 was briefly a documentation gap); it now lists every guarded route. Also on this branch: signup no longer reveals whether an address is registered, login takes the same time for unknown addresses, and password changes are emailed to the owner (Level 3 items, see [asvs-l3.md](./asvs-l3.md)).
+
 Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 failing and 10 partial items. All 17 are fixed on branch `fix/asvs-l1-critical-high`. The tables below describe the code on that branch.
 
 ## Summary
@@ -222,14 +224,17 @@ Roles: `viewer` (public Google sign-in), `org` (company), `admin`, `owner` (proj
 
 | Access | Routes |
 | --- | --- |
-| Public | `POST /auth/*` except logout and password change; `GET /tor`, `GET /tor/:id` and its documents; `GET /tor/:torId/feedback` (approved only); `GET /feedback/counts`; `POST /tor/:torId/feedback`; `POST /tor/:torId/reports`; `POST /tor/similar`; `GET /insights/market`; `GET /matching/tor/:id/budget`, `/bid-insight`; `POST /matching/tor/:id/score`; `GET /ai/status`; `GET /health` |
-| Any signed-in account (own data only) | `POST /auth/logout`, `POST /auth/password`, `GET/PATCH /accounts/me`, `GET /matching/opportunities`, `/notifications/*`, `/saved-searches/*`, `/saved-tors/*` |
-| `org` | `POST /ai/proposal-draft/:torId` |
+| Public | `POST /auth/*` except logout and password change; `GET /tor`, `GET /tor/:id`, its documents (`/tor/:id/documents/*`) and its e-GP documents (`/tor/:id/egp-documents/*`); `GET /tor/:torId/feedback` (approved only); `GET /feedback/counts`; `POST /tor/:torId/feedback`; `POST /tor/:torId/reports`; `POST /tor/similar`; `GET /insights/market`; `GET /matching/tor/:id/budget`, `/bid-insight`; `POST /matching/tor/:id/score`; `GET /ai/status`; `GET /health` |
+| Public, signed by the caller | `POST /line/webhook`: no session, but refused unless `X-Line-Signature` is LINE's HMAC of the raw body with the channel secret; 300/min per client IP |
+| Any signed-in account (own data only) | `POST /auth/logout`, `POST /auth/password`, `GET/PATCH /accounts/me`, `GET /matching/opportunities`, `/notifications/*` (including LINE link/unlink and channel settings), `/saved-searches/*`, `/saved-tors/*` |
+| `org` (own company's records only) | `POST /ai/proposal-draft/:torId`; `GET /insights/growth`; `/certificates/*` (records and their files); `/library/*` (team, references, past projects, their files, coverage and the starter-pack ZIP) |
 | `owner` | `GET /owner/tors` |
 | `auditor` | `GET /tor/flagged` |
-| `admin` | `/accounts` (list, directory, edit, suspend, reactivate), `GET /audit`, `POST /tor`, `PATCH/DELETE /tor/:id`, `PUT /tor/:id/owner`, `POST /tor/:id/restore`, `GET /tor/deleted`, `/tor/not-software`, `GET /feedback`, `PATCH /feedback/:id`, `GET/PATCH /reports*`, `GET /matching/tor/:id/companies`, `POST /matching/budget/refresh`, `POST /ai/extract*`, `/egp/*`, `/mea/sync`, `/datagov/sync`, `/gproc/*` |
+| `admin` | `/accounts` (list, directory, edit, suspend, reactivate), `GET /audit`, `POST /tor`, `PATCH/DELETE /tor/:id`, `PUT /tor/:id/owner`, `POST /tor/:id/restore`, `GET /tor/deleted`, `/tor/not-software`, `GET /feedback`, `PATCH /feedback/:id`, `GET/PATCH /reports*`, `PATCH /accounts/:id/details`, `GET /matching/tor/:id/companies`, `POST /matching/budget/refresh`, `POST /ai/extract*`, `/egp/*` (sync, near-misses, metrics), `/mea/sync`, `/datagov/sync`, `/gproc/*` |
 
-Data-level rule: a route that serves a caller's own data takes the user id from the session token, never from the request.
+Data-level rule: a route that serves a caller's own data takes the user id from the session token, never from the request. Certificate and library records and files are looked up inside the signed-in company's own profile, so another company's record id is simply not found.
+
+The frontend also serves `POST /api/csp-report` without a session: browsers post Content-Security-Policy violation reports there (ASVS 3.4.7). It only writes a capped log line.
 
 ## Level 2
 
