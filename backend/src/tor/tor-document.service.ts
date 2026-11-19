@@ -4,6 +4,7 @@ import { Readable } from "node:stream";
 import type { ReadableStream } from "node:stream/web";
 
 import { USER_AGENT } from "../common/http-client";
+import { fetchPortalFile } from "../common/portal-fetch";
 import { DatabaseService } from "../database/database.service";
 import { isViewableDocument, VIEWABLE_CONTENT_TYPES } from "./tor-documents";
 
@@ -41,11 +42,10 @@ export class TorDocumentService {
     const file = tor?.documents?.[index];
     if (!file || !isViewableDocument(file.url)) throw new NotFoundException("เอกสารนี้เปิดบนเว็บไม่ได้");
 
-    const res = await fetch(file.url, {
+    // Allowlisted host, redirects checked hop by hop (ASVS 1.3.6, 15.3.2).
+    const res = await fetchPortalFile(file.url, {
       headers: { "User-Agent": USER_AGENT, Accept: VIEWABLE_CONTENT_TYPES.join(", ") },
       signal: AbortSignal.any([signal, AbortSignal.timeout(TRANSFER_TIMEOUT_MS)]),
-    }).catch(() => {
-      throw new BadGatewayException("เชื่อมต่อเว็บต้นทางไม่สำเร็จ");
     });
 
     if (!res.ok || !res.body) throw new BadGatewayException(`เว็บต้นทางตอบกลับ ${res.status}`);

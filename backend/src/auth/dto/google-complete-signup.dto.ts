@@ -12,6 +12,12 @@ export class GoogleCompleteSignupDto {
   @MinLength(1, { message: "credential is required" })
   credential!: string;
 
+  /** Same nonce as GoogleAuthDto: the credential must come from this browser's sign-in (ASVS 10.1.2). */
+  @IsString()
+  @MinLength(22, { message: "nonce is required" })
+  @MaxLength(128)
+  nonce!: string;
+
   @IsString()
   @MinLength(1, { message: "กรุณากรอกชื่อบริษัท" })
   @MaxLength(200)

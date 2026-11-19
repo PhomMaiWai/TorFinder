@@ -4,6 +4,7 @@ import { Filter, ObjectId } from "mongodb";
 import { AuditService } from "../audit/audit.service";
 import { mapWithLimit } from "../common/concurrency";
 import { USER_AGENT } from "../common/http-client";
+import { fetchPortalFile } from "../common/portal-fetch";
 import { env } from "../config/env";
 import { DatabaseService, TorDoc } from "../database/database.service";
 import { GprocClient } from "../gproc/gproc.client";
@@ -360,7 +361,8 @@ export class ExtractionService {
   }
 
   private async fetchPdf(url: string): Promise<Buffer> {
-    const res = await fetch(url, {
+    // Allowlisted host, redirects checked hop by hop (ASVS 1.3.6, 15.3.2).
+    const res = await fetchPortalFile(url, {
       headers: { "User-Agent": USER_AGENT, Accept: PDF_MIME },
       signal: AbortSignal.timeout(AI_REQUEST.timeoutMs),
     });

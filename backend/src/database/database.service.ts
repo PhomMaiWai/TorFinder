@@ -8,7 +8,7 @@ import { CERTIFICATIONS, Certification } from "../matching/requirements";
 import { WorkType } from "../matching/work-types";
 import { FeedbackStatus } from "../feedback/feedback.constants";
 import { ReportReason, ReportStatus } from "../reports/reports.constants";
-import { hashPassword } from "../common/password";
+import { PasswordParams, passwordFields } from "../common/password";
 import { Role } from "../common/roles";
 import { env } from "../config/env";
 import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES, TorClassification } from "../tor/tor.constants";
@@ -77,6 +77,8 @@ export type UserDoc = {
   /** Absent for accounts created via Google sign-in that never set a password. */
   passwordHash?: string;
   passwordSalt?: string;
+  /** The settings the hash was made with; absent on hashes from before they were stored (ASVS 11.2.2). */
+  passwordParams?: PasswordParams;
   /** Set once a Google account is created or linked; unique when present. */
   googleId?: string;
   createdAt: Date;
@@ -588,8 +590,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     const docs = await Promise.all(
       SEED_USERS.map(async ({ password, ...user }) => {
-        const { hash, salt } = await hashPassword(password);
-        return { ...user, passwordHash: hash, passwordSalt: salt, createdAt: new Date() };
+        return { ...user, ...(await passwordFields(password)), createdAt: new Date() };
       }),
     );
 

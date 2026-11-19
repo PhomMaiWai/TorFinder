@@ -28,7 +28,9 @@ services:
     ports:
       - "127.0.0.1:4000:4000"
     environment:
-      - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-torr}:${MONGO_ROOT_PASSWORD:-torr}@db:27017/torr?authSource=admin
+      # The app's own account (readWrite on `torr` only, made by db-users below),
+      # not root (ASVS 13.2.2). On a server, set MONGO_APP_PASSWORD in .env.
+      - MONGODB_URI=mongodb://${MONGO_APP_USERNAME:-torr_app}:${MONGO_APP_PASSWORD:-torr_app}@db:27017/torr?authSource=torr
       - SESSION_SECRET=${SESSION_SECRET:-}
       # The site's public address; on a server, https://<your domain> (CORS and passkeys use it).
       - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:3000}
@@ -49,9 +51,29 @@ services:
       - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
     depends_on:
+      db-users:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # One-shot: creates or updates the backend's database account, then exits.
+  # Runs on every `up` (as root), so an existing volume gets the account too.
+  db-users:
+    image: mongo:7
+    environment:
+      - MONGO_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-torr}
+      - MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-torr}
+      - MONGO_APP_USERNAME=${MONGO_APP_USERNAME:-torr_app}
+      - MONGO_APP_PASSWORD=${MONGO_APP_PASSWORD:-torr_app}
+    volumes:
+      - ./docker/mongo-users:/scripts:ro
+    entrypoint:
+      - sh
+      - -c
+      - mongosh --quiet --host db -u "$$MONGO_ROOT_USERNAME" -p "$$MONGO_ROOT_PASSWORD" --authenticationDatabase admin /scripts/app-user.js
+    depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
+    restart: "no"
 
   db:
     image: mongo:7

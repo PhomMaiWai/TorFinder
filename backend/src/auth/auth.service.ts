@@ -9,7 +9,7 @@ import {
 import { OAuth2Client } from "google-auth-library";
 import { MongoServerError, ObjectId, WithId } from "mongodb";
 
-import { hashPassword, passwordProblem, spendPasswordCheck, verifyPassword } from "../common/password";
+import { needsRehash, passwordFields, passwordProblem, spendPasswordCheck, verifyPassword } from "../common/password";
 import { logSecurityEvent, SecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { AuthMethod, createSessionToken } from "../common/token";
@@ -20,6 +20,7 @@ import { EmailOnlyDto, ResetPasswordDto, VerifyEmailDto } from "./dto/account-li
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
 import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
+import { googleClaimsProblem } from "./google-claims";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
 import { LoginAttempts } from "./login-attempts";
@@ -55,7 +56,7 @@ export class AuthService {
     // before they're ever hashed.
     const problem = passwordProblem(password, { email, companyName: company.companyName });
     if (problem) throw new BadRequestException(problem);
-    const { hash, salt } = await hashPassword(password);
+    const hashed = await passwordFields(password);
     const address = email.trim().toLowerCase();
 
     let userId: ObjectId;
@@ -66,8 +67,7 @@ export class AuthService {
         role: "org",
         // Every organization starts pending; an admin decides from /admin/accounts.
         status: "pending",
-        passwordHash: hash,
-        passwordSalt: salt,
+        ...hashed,
         createdAt: new Date(),
         company,
         emailVerified: false,
@@ -102,7 +102,7 @@ export class AuthService {
     // whether the address has an account (ASVS 6.3.8).
     const valid =
       user?.passwordHash && user.passwordSalt
-        ? await verifyPassword(password, user.passwordSalt, user.passwordHash)
+        ? await verifyPassword(password, user.passwordSalt, user.passwordHash, user.passwordParams)
         : await spendPasswordCheck(password);
     if (!user || !valid) {
       this.recordPasswordFailure(address, user, ip);
@@ -115,6 +115,11 @@ export class AuthService {
       throw new UnauthorizedException("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     }
     this.loginAttempts.recordSuccess(address);
+    // ASVS 11.4.2: a hash made with older, weaker settings is redone now, while
+    // the plain password is in hand; it can't be upgraded any other way.
+    if (needsRehash(user.passwordParams)) {
+      await this.db.users.updateOne({ _id: user._id }, { $set: await passwordFields(password) });
+    }
     // After the password, so only the account's owner learns its address is unconfirmed.
     if (user.emailVerified === false) {
       logSecurityEvent("auth.login", {
@@ -173,10 +178,9 @@ export class AuthService {
     const userId = await this.links.consume(token, "password-reset");
     if (!userId) throw invalidLink();
 
-    const { hash, salt } = await hashPassword(password);
     await this.db.users.updateOne(
       { _id: userId },
-      { $set: { passwordHash: hash, passwordSalt: salt, emailVerified: true } },
+      { $set: { ...(await passwordFields(password)), emailVerified: true } },
     );
     // Proves the account's owner is back in control, so any token issued
     // before now — including one an attacker who triggered this might hold —
@@ -204,7 +208,7 @@ export class AuthService {
     }
 
     this.assertNotLocked(user.email, ip);
-    if (!(await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash))) {
+    if (!(await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash, user.passwordParams))) {
       this.recordPasswordFailure(user.email, user, ip);
       logSecurityEvent("auth.password.change", {
         outcome: "failure",
@@ -224,8 +228,7 @@ export class AuthService {
     const problem = passwordProblem(newPassword, { email: user.email, companyName: user.company?.companyName });
     if (problem) throw new BadRequestException(problem);
 
-    const { hash, salt } = await hashPassword(newPassword);
-    await this.db.users.updateOne({ _id: user._id }, { $set: { passwordHash: hash, passwordSalt: salt } });
+    await this.db.users.updateOne({ _id: user._id }, { $set: await passwordFields(newPassword) });
     await this.revocation.revoke(userId);
     logSecurityEvent("auth.password.change", { outcome: "success", userId, email: user.email, ip });
     // ASVS 6.3.7: a stolen session plus a guessed password would otherwise go unnoticed.
@@ -266,8 +269,8 @@ export class AuthService {
     return LINK_SENT;
   }
 
-  async googleAuth({ credential, as }: GoogleAuthDto, ip?: string) {
-    const { email, googleId, name } = await this.verifyGoogleCredential(credential, ip);
+  async googleAuth({ credential, nonce, as }: GoogleAuthDto, ip?: string) {
+    const { email, googleId, name } = await this.verifyGoogleCredential(credential, nonce, ip);
     const user = await this.findOrLinkGoogleUser(googleId, email);
 
     // An existing account always signs in as itself, whichever button was
@@ -297,8 +300,8 @@ export class AuthService {
    * never had. Re-verifies the credential rather than trusting a client-held
    * claim of who they are.
    */
-  async googleCompleteSignup({ credential, ...company }: GoogleCompleteSignupDto, ip?: string) {
-    const { email, googleId, name } = await this.verifyGoogleCredential(credential, ip);
+  async googleCompleteSignup({ credential, nonce, ...company }: GoogleCompleteSignupDto, ip?: string) {
+    const { email, googleId, name } = await this.verifyGoogleCredential(credential, nonce, ip);
     const user = await this.findOrLinkGoogleUser(googleId, email);
 
     if (user) {
@@ -337,20 +340,17 @@ export class AuthService {
   }
 
   /** A malformed or expired token throws — any rejection here means "not verified". */
-  private async verifyGoogleCredential(credential: string, ip?: string) {
+  private async verifyGoogleCredential(credential: string, nonce: string, ip?: string) {
     const payload = await googleClient
       .verifyIdToken({ idToken: credential, audience: env.googleClientId })
       .then((ticket) => ticket.getPayload())
       .catch(() => null);
 
-    // findOrLinkGoogleUser links by email, so an address Google hasn't proven
-    // the caller owns would let them take over the account registered to it.
-    if (!payload?.email || payload.email_verified !== true) {
-      logSecurityEvent("auth.google", {
-        outcome: "failure",
-        ip,
-        reason: payload?.email ? "email_not_verified_by_google" : "invalid_google_token",
-      });
+    // Signature, audience and expiry were checked above; the claims here
+    // (nonce bound to this browser, Google-verified email) see google-claims.ts.
+    const problem = googleClaimsProblem(payload, nonce);
+    if (problem || !payload?.email) {
+      logSecurityEvent("auth.google", { outcome: "failure", ip, reason: problem ?? "invalid_google_token" });
       throw new UnauthorizedException("ยืนยันบัญชี Google ไม่สำเร็จ");
     }
 

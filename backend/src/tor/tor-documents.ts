@@ -8,11 +8,18 @@
  * the records it describes, rather than inside whatever happens to need it.
  */
 
+import { isAllowedPortalUrl, PORTAL_FILE_URL_PREFIX } from "../common/portal-fetch";
+
 /** The upload path each portal serves its files from. */
 const FILE_PATH_MARKERS = ["/api/file/", "/files_procurement/"] as const;
 
+/**
+ * A file on one of the allowlisted portal hosts (ASVS 1.3.6). A link anywhere
+ * else is still shown to the reader as a plain link, but the server never
+ * fetches it: not to view, unpack or extract.
+ */
 export function isDocumentFile(url: string): boolean {
-  return FILE_PATH_MARKERS.some((marker) => url.includes(marker));
+  return isAllowedPortalUrl(url) && FILE_PATH_MARKERS.some((marker) => url.includes(marker));
 }
 
 /**
@@ -52,4 +59,4 @@ export function isViewableDocument(url: string): boolean {
  * that selects more than the code accepts hands the extractor records it then
  * refuses, and every one of those is a wasted place in the run's budget.
  */
-export const READABLE_DOCUMENT_PATTERN = `(${FILE_PATH_MARKERS.join("|")}).*\\.pdf$`;
+export const READABLE_DOCUMENT_PATTERN = `${PORTAL_FILE_URL_PREFIX}(?:/.*)?(?:${FILE_PATH_MARKERS.join("|")}).*\\.pdf$`;

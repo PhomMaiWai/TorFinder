@@ -48,8 +48,12 @@ async function api(path, { method = "GET", body, token } = {}) {
   return { status: res.status, body: parsed, headers: res.headers };
 }
 
+// The frontend sends the nonce it gave Google for this browser (ASVS 10.1.2);
+// every request below carries one unless the test is about its absence.
+const NONCE = "ci-nonce-0123456789abcdefghij";
+
 function googleAuth(body) {
-  return api("/auth/google", { method: "POST", body });
+  return api("/auth/google", { method: "POST", body: { nonce: NONCE, ...body } });
 }
 
 function message(body) {
@@ -91,6 +95,21 @@ describe("POST /api/auth/google — request validation", () => {
 
   it("rejects a non-string credential (400)", async () => {
     const res = await googleAuth({ credential: 1234567890 });
+    assert.equal(res.status, 400);
+  });
+
+  it("rejects a credential sent without this browser's nonce (400)", async () => {
+    const res = await api("/auth/google", { method: "POST", body: { credential: forgedGoogleJwt() } });
+    assert.equal(res.status, 400);
+  });
+
+  it("rejects a nonce too short to be the one the frontend issued (400)", async () => {
+    const res = await googleAuth({ credential: forgedGoogleJwt(), nonce: "short" });
+    assert.equal(res.status, 400);
+  });
+
+  it("asks the company sign-up completion for the nonce too (400)", async () => {
+    const res = await api("/auth/google/complete", { method: "POST", body: { credential: forgedGoogleJwt() } });
     assert.equal(res.status, 400);
   });
 });

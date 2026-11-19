@@ -54,6 +54,8 @@ const PUBLIC_API_ROUTES = [
   "/api/auth/me",
   "/api/auth/google",
   "/api/auth/google/complete",
+  // Issues the Google sign-in nonce, before any session exists.
+  "/api/auth/google/nonce",
   // Called by LINE's servers, not a browser; the backend checks its signature.
   "/api/line/webhook",
   // Step two of a staff sign-in: no session exists until the passkey answers.
