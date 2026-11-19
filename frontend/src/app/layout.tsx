@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import localFont from "next/font/local";
 import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
@@ -105,6 +106,11 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   const allMessages = await getMessages();
+  // The CSP nonce proxy.ts made for this request. Next.js stamps it on the
+  // script below on the server anyway; passing it as a prop too keeps the
+  // client render identical, since browsers blank the nonce attribute after
+  // load and React then compares the element's .nonce property instead.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const messages = Object.fromEntries(
     CLIENT_NAMESPACES.filter((ns) => ns in allMessages).map((ns) => [ns, allMessages[ns]]),
   );
@@ -116,7 +122,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body>
-        <Script id="theme-init" strategy="beforeInteractive">
+        <Script id="theme-init" strategy="beforeInteractive" nonce={nonce}>
           {THEME_INIT_SCRIPT}
         </Script>
         <NextIntlClientProvider messages={messages}>
