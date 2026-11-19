@@ -14,7 +14,7 @@ import { after, before, describe, it } from "node:test";
 
 import { MongoClient, ObjectId } from "mongodb";
 
-import { hashPassword } from "../dist/common/password.js";
+import { passwordFields } from "../dist/common/password.js";
 import { SoftwareAuthenticator } from "./helpers/software-authenticator.mjs";
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:4000";
@@ -66,15 +66,15 @@ function mintToken(fields) {
 let serial = 0;
 async function insertUser(role) {
   serial += 1;
-  const { hash, salt } = await hashPassword(PASSWORD);
+  // passwordFields, not hashPassword: the stored hash must carry the settings it was made with.
+  const hashed = await passwordFields(PASSWORD);
   const doc = {
     email: `ci+passkey-${Date.now()}-${serial}@example.com`,
     name: `CI Passkey ${serial}`,
     role,
     status: "approved",
     emailVerified: true,
-    passwordHash: hash,
-    passwordSalt: salt,
+    ...hashed,
     createdAt: new Date(),
   };
   const { insertedId } = await users().insertOne(doc);

@@ -4,6 +4,9 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logge
 import { Request, Response } from "express";
 
 import { env } from "../config/env";
+import { isRejectedInput } from "./logging-validation.pipe";
+import { logSecurityEvent } from "./security-log";
+import { AuthenticatedRequest } from "./session.guard";
 
 /**
  * Every error the API answers with (ASVS 16.5.1 / 16.5.2):
@@ -25,6 +28,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const errorId = randomUUID();
 
     const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    // ASVS 16.3.3: input refused by validation is a security event (field names only, never values).
+    if (isRejectedInput(exception)) {
+      logSecurityEvent("input.rejected", {
+        outcome: "failure",
+        userId: (request as Partial<AuthenticatedRequest>).session?.sub,
+        ip: request.ip,
+        method: request.method,
+        path: request.path,
+        reason: `invalid_fields:${exception.rejectedFields.join(",")}`,
+      });
+    }
     if (status >= 500) {
       const error = exception instanceof Error ? exception : new Error(String(exception));
       const record = {

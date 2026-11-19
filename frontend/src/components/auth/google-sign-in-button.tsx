@@ -17,6 +17,8 @@ declare global {
         id: {
           initialize: (config: {
             client_id: string;
+            /** Copied by Google into the ID token's `nonce` claim. */
+            nonce?: string;
             callback: (response: { credential: string }) => void;
           }) => void;
           renderButton: (
@@ -39,11 +41,10 @@ declare global {
 type CredentialHandler = (response: { credential: string }) => void;
 
 /**
- * Google allows one initialize() per page load; calling it again on every
- * mount only replaces the last one (and logs a warning). So it runs once, and
- * its callback forwards to whichever button is mounted right now.
+ * initialize() runs on every mount with a fresh nonce; calling it again
+ * replaces the earlier setup (Google logs a warning). Its callback forwards to
+ * whichever button is mounted right now.
  */
-let isInitialized = false;
 let activeHandler: CredentialHandler | null = null;
 
 type GoogleSignInButtonProps = {
@@ -111,16 +112,26 @@ export function GoogleSignInButton({
   // `onReady` (unlike `onLoad`) fires on every mount, not just the first
   // script load — so navigating back to a login page re-renders the button
   // even though the <script> tag itself is only fetched once.
-  function handleScriptReady() {
+  async function handleScriptReady() {
     if (!window.google || !buttonRef.current) return;
     activeHandler = handleCredential;
-    if (!isInitialized) {
-      window.google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        callback: (response) => activeHandler?.(response),
-      });
-      isInitialized = true;
+    // A fresh nonce for every sign-in page (ASVS 10.1.2): the server keeps it in
+    // an HttpOnly cookie and only accepts a Google token that carries it. So
+    // initialize() runs on each mount, replacing the last setup, rather than
+    // once per page load: after a sign-out without a reload the old nonce is gone.
+    const nonce = await fetch("/api/auth/google/nonce", { method: "POST" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { nonce?: string } | null) => data?.nonce)
+      .catch(() => undefined);
+    if (!nonce || !window.google || !buttonRef.current) {
+      onError(te("googleLoginFailed"));
+      return;
     }
+    window.google.accounts.id.initialize({
+      client_id: CLIENT_ID,
+      nonce,
+      callback: (response) => activeHandler?.(response),
+    });
     // Google caps the width at 400px; narrower screens get the space they have.
     const width = Math.min(400, buttonRef.current.parentElement?.clientWidth ?? 400);
     window.google.accounts.id.renderButton(buttonRef.current, {
@@ -138,7 +149,7 @@ export function GoogleSignInButton({
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
-        onReady={handleScriptReady}
+        onReady={() => void handleScriptReady()}
       />
       <div ref={buttonRef} />
     </>

@@ -61,10 +61,10 @@ We reviewed TorFinder against **OWASP ASVS 5.0**, all of Level 1 and all of Leve
 | Level | Requirements | Pass | Partial | Fail / Not done | N/A | Not reviewed | Report |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Level 1 | 70 | 56 | 0 | 0 | 12 | 2 (TLS, set by hosting) | [asvs-l1.md](./asvs-l1.md) |
-| Level 2 | 183 | 96 | 20 | 6 | 58 | 3 (hosting proxy) | [asvs-l2.md](./asvs-l2.md) |
+| Level 2 | 183 | 105 | 12 | 5 | 58 | 3 (hosting proxy) | [asvs-l2.md](./asvs-l2.md) |
 | Level 3 (triage, not claimed) | 92 | 43 | 12 | 12 | 21 | 4 (hosting proxy) | [asvs-l3.md](./asvs-l3.md) |
 
-Level 1 has no Fail and no Partial. At Level 2, 96 of the 125 requirements that apply pass (77%). Level 3 is not a target; the triage on 19 Nov records which of its controls fit TorFinder, and 43 of the 71 that apply pass, including passkeys for staff ([passkeys.md](./passkeys.md)), a lockout email to the account's owner, an admin "send reset link" action, and documented limits, data retention and secret rotation ([limits-and-retention.md](../operations/limits-and-retention.md)). Every Partial and Not done item names its gap in the report.
+Level 1 has no Fail and no Partial. At Level 2, 105 of the 125 requirements that apply pass (84%). Level 3 is not a target; the triage on 19 Nov records which of its controls fit TorFinder, and 43 of the 71 that apply pass, including passkeys for staff ([passkeys.md](./passkeys.md)), a lockout email to the account's owner, an admin "send reset link" action, and documented limits, data retention and secret rotation ([limits-and-retention.md](../operations/limits-and-retention.md)). Every Partial and Not done item names its gap in the report.
 
 ### 3.1 Graded security features
 
@@ -112,7 +112,7 @@ Full model: [threat-model.md](./threat-model.md) **[C2]**.
 | 3–4 | Medium |
 | 1–2 | Low |
 
-**Result: 36 threats. 35 are mitigated, 1 is partly mitigated (Low), and none is open.**
+**Result: 36 threats. All 36 are mitigated, and none is open.**
 
 | Priority | Threats | Mitigated | Partial |
 | --- | --- | --- | --- |
@@ -140,7 +140,7 @@ Full model: [threat-model.md](./threat-model.md) **[C2]**.
    - security logging and error messages (R1, I3)
    - request-forgery path checks found by SAST (T5)
    - upload size limits (D5)
-4. **Low:** all but one are done, including the LINE webhook rate limit (D6, PR #363). The one left is **E3**, a host allowlist for document fetches (issue #345).
+4. **Low:** all are done, including the LINE webhook rate limit (D6, PR #363) and the host allowlist for document fetches (E3, issue #345).
 
 ### Mitigation checklist [C16]
 
@@ -169,8 +169,8 @@ Each principle is mapped to where the code applies it **[C3]**. The full table i
 
 | Step | Tool | When | Result | Report |
 | --- | --- | --- | --- | --- |
-| Source review against ASVS | Manual, by requirement | 16–18 Nov | L1: 0 Fail; L2: 77% Pass | [asvs-l1.md](./asvs-l1.md), [asvs-l2.md](./asvs-l2.md) |
-| Threat modeling | STRIDE | 16 Nov, revised 18 Nov | 36 threats, 35 mitigated | [threat-model.md](./threat-model.md) |
+| Source review against ASVS | Manual, by requirement | 16–18 Nov | L1: 0 Fail; L2: 84% Pass | [asvs-l1.md](./asvs-l1.md), [asvs-l2.md](./asvs-l2.md) |
+| Threat modeling | STRIDE | 16 Nov, revised 18 Nov | 36 threats, 36 mitigated | [threat-model.md](./threat-model.md) |
 | SAST **[C14]** | CodeQL 2.27.4 (on every PR), Semgrep 1.185.0 | 17 Nov | 44 findings: 34 real and fixed, 10 false positives explained; 0 open after the fixes | [sast-report.md](./sast-report.md) |
 | DAST **[C15]** | OWASP ZAP 2.16.1, baseline and signed-in active scan (5,573 requests) | 17 Nov | No working injection, XSS or traversal; 1 real finding (missing script CSP on some 404s), fixed | [dast-report.md](./dast-report.md) |
 | Dependency audit | `npm audit` in CI; Dependabot | Every PR | CI fails on high or critical advisories; the one exception is reasoned and expires 2026-12-31 | `.github/scripts/npm-audit.mjs` |

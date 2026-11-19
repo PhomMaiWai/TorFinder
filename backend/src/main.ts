@@ -1,12 +1,13 @@
 import "reflect-metadata";
 
-import { ConsoleLogger, Logger, ValidationPipe } from "@nestjs/common";
+import { ConsoleLogger, Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import compression from "compression";
 import helmet from "helmet";
 
 import { AppModule } from "./app.module";
+import { LoggingValidationPipe } from "./common/logging-validation.pipe";
 import { env } from "./config/env";
 
 /**
@@ -53,7 +54,8 @@ async function bootstrap() {
   });
   app.use(compression());
   app.enableCors({ origin: env.frontendOrigin });
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  // Same options as before; failures are also logged as `input.rejected` (ASVS 16.3.3).
+  app.useGlobalPipes(new LoggingValidationPipe({ whitelist: true, transform: true }));
   app.setGlobalPrefix("api", { exclude: ["health"] });
   app.enableShutdownHooks();
 

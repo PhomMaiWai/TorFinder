@@ -1,11 +1,9 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
 
 import { COMMON_PASSWORDS } from "./common-passwords";
 
-// Async scrypt so hashing a password doesn't block the event loop for the
-// ~100ms it takes — matters once login requests are concurrent.
-const scrypt = promisify(scryptCallback);
+// Async scrypt (see derive()) so hashing doesn't block the event loop for the
+// time it takes — matters once login requests are concurrent.
 const KEY_LENGTH = 64;
 
 /**
@@ -81,10 +79,48 @@ export function passwordProblem(password: string, context: PasswordContext = {})
   return null;
 }
 
-export async function hashPassword(password: string): Promise<{ hash: string; salt: string }> {
+/**
+ * How a password hash was made, stored next to it (ASVS 11.2.2): the settings
+ * can change without a migration, and an old hash is still checked with the
+ * settings it was made with.
+ */
+export type PasswordParams = { alg: "scrypt"; N: number; r: number; p: number };
+
+/**
+ * ASVS 11.4.2: OWASP's scrypt minimum is N=2^17, r=8, p=1, or an equal-cost
+ * setting. N=2^14, r=8, p=5 is one of OWASP's listed equivalents: the same
+ * work, but 16 MiB of memory per hash instead of 128 MiB, so a burst of
+ * sign-ins can't exhaust the server's memory.
+ */
+export const CURRENT_PASSWORD_PARAMS: PasswordParams = { alg: "scrypt", N: 16384, r: 8, p: 5 };
+
+/** What every hash made before parameters were stored used: Node's scrypt defaults. */
+export const LEGACY_PASSWORD_PARAMS: PasswordParams = { alg: "scrypt", N: 16384, r: 8, p: 1 };
+
+function derive(password: string, salt: string, { N, r, p }: PasswordParams): Promise<Buffer> {
+  // Wrapped by hand: promisify() drops scrypt's options overload from the type.
+  return new Promise((resolve, reject) =>
+    scryptCallback(password, salt, KEY_LENGTH, { N, r, p }, (error, key) => (error ? reject(error) : resolve(key))),
+  );
+}
+
+export async function hashPassword(password: string): Promise<{ hash: string; salt: string; params: PasswordParams }> {
   const salt = randomBytes(16).toString("hex");
-  const derivedKey = (await scrypt(password, salt, KEY_LENGTH)) as Buffer;
-  return { hash: derivedKey.toString("hex"), salt };
+  const derivedKey = await derive(password, salt, CURRENT_PASSWORD_PARAMS);
+  return { hash: derivedKey.toString("hex"), salt, params: CURRENT_PASSWORD_PARAMS };
+}
+
+/** The user-document fields for a new password: hash, salt and the settings used. */
+export async function passwordFields(password: string) {
+  const { hash, salt, params } = await hashPassword(password);
+  return { passwordHash: hash, passwordSalt: salt, passwordParams: params };
+}
+
+/** True when a stored hash was made with older settings and should be redone at the next correct sign-in. */
+export function needsRehash(params: PasswordParams | undefined): boolean {
+  const used = params ?? LEGACY_PASSWORD_PARAMS;
+  const current = CURRENT_PASSWORD_PARAMS;
+  return used.alg !== current.alg || used.N !== current.N || used.r !== current.r || used.p !== current.p;
 }
 
 /** A fixed salt for {@link spendPasswordCheck}; nothing is ever compared against its output. */
@@ -97,16 +133,19 @@ const TIMING_SALT = "00000000000000000000000000000000";
  * are registered (ASVS 6.3.8).
  */
 export async function spendPasswordCheck(password: string): Promise<false> {
-  await scrypt(password, TIMING_SALT, KEY_LENGTH);
+  await derive(password, TIMING_SALT, CURRENT_PASSWORD_PARAMS);
   return false;
 }
 
+/** Checks a password against a stored hash, with the settings that hash was made with (legacy when none are stored). */
 export async function verifyPassword(
   password: string,
   salt: string,
   expectedHash: string,
+  params: PasswordParams = LEGACY_PASSWORD_PARAMS,
 ): Promise<boolean> {
-  const derivedKey = (await scrypt(password, salt, KEY_LENGTH)) as Buffer;
+  if (params.alg !== "scrypt") return false;
+  const derivedKey = await derive(password, salt, params);
   const expected = Buffer.from(expectedHash, "hex");
   return derivedKey.length === expected.length && timingSafeEqual(derivedKey, expected);
 }

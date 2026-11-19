@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 
 import { ArchiveFile, ArchiveFileData, readShowableFile, showableFiles } from "../common/archive-files";
 import { USER_AGENT } from "../common/http-client";
+import { fetchPortalFile } from "../common/portal-fetch";
 import { TtlCache } from "../common/ttl-cache";
 import { readZip, ZipEntry } from "../common/zip";
 import { DatabaseService } from "../database/database.service";
@@ -46,11 +47,10 @@ export class TorArchiveService {
   }
 
   private async download(url: string): Promise<ZipEntry[]> {
-    const res = await fetch(url, {
+    // Allowlisted host, redirects checked hop by hop (ASVS 1.3.6, 15.3.2).
+    const res = await fetchPortalFile(url, {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
-    }).catch(() => {
-      throw new BadGatewayException("เชื่อมต่อเว็บต้นทางไม่สำเร็จ");
     });
     if (!res.ok) throw new BadGatewayException(`เว็บต้นทางตอบกลับ ${res.status}`);
     if (Number(res.headers.get("content-length")) > MAX_ARCHIVE_BYTES) {

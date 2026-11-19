@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { clientIpHeaders } from "@/lib/client-ip";
+import { GOOGLE_NONCE_COOKIE, googleNonceCookieOptions, googleNonceFrom } from "@/lib/google-nonce";
 import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
@@ -15,7 +16,8 @@ export async function POST(request: Request) {
     backendRes = await fetch(`${BACKEND_URL}/api/auth/google/complete`, {
       method: "POST",
       headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      // The nonce comes from this browser's cookie, never from the request body (ASVS 10.1.2).
+      body: JSON.stringify({ ...(body && typeof body === "object" ? body : {}), nonce: googleNonceFrom(request) }),
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });
@@ -42,5 +44,6 @@ export async function POST(request: Request) {
 
   const response = jsonResponse({ user: data.user });
   response.cookies.set(SESSION_COOKIE, data.token, sessionCookieOptions());
+  response.cookies.set(GOOGLE_NONCE_COOKIE, "", googleNonceCookieOptions(0));
   return response;
 }

@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { clientIpHeaders } from "@/lib/client-ip";
+import { GOOGLE_NONCE_COOKIE, googleNonceCookieOptions, googleNonceFrom } from "@/lib/google-nonce";
 import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
@@ -21,7 +22,8 @@ export async function POST(request: Request) {
     backendRes = await fetch(`${BACKEND_URL}/api/auth/google`, {
       method: "POST",
       headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
-      body: JSON.stringify({ credential, as }),
+      // The nonce this browser gave Google; the backend refuses a token carrying any other (ASVS 10.1.2).
+      body: JSON.stringify({ credential, as, nonce: googleNonceFrom(request) }),
     });
   } catch {
     return jsonResponse({ error: te("connectionFailed") }, { status: 502 });
@@ -62,5 +64,7 @@ export async function POST(request: Request) {
 
   const response = jsonResponse({ user: data.user });
   response.cookies.set(SESSION_COOKIE, data.token, sessionCookieOptions());
+  // Used up: the next Google sign-in in this browser gets a new nonce.
+  response.cookies.set(GOOGLE_NONCE_COOKIE, "", googleNonceCookieOptions(0));
   return response;
 }
