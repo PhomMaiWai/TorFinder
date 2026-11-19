@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { TorCorrectionInfo } from "@/components/admin/tor-correction-info";
+import { TorEditForm } from "@/components/admin/tor-edit-form";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
 import { fetchReport, fetchUserDirectory } from "@/lib/admin-api";
@@ -71,10 +72,7 @@ export default async function AdminEditTorPage({
           </section>
         )}
         <TorCorrectionInfo tor={tor} />
-        <form
-          action={updateWithId}
-          className="space-y-5 rounded-xl border border-border bg-surface p-6"
-        >
+        <TorEditForm action={updateWithId} className="rounded-xl border border-border bg-surface p-6">
           {report && <input type="hidden" name="reportId" value={report.id} />}
           <Field label={tv("field.classification")}>
             <select
@@ -218,7 +216,7 @@ export default async function AdminEditTorPage({
           <p className="text-xs text-ink-muted">
             {t("lockOnSave")}
           </p>
-        </form>
+        </TorEditForm>
       </div>
     </AdminPageShell>
   );

@@ -61,10 +61,10 @@ We reviewed TorFinder against **OWASP ASVS 5.0**, all of Level 1 and all of Leve
 | Level | Requirements | Pass | Partial | Fail / Not done | N/A | Not reviewed | Report |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Level 1 | 70 | 56 | 0 | 0 | 12 | 2 (TLS, set by hosting) | [asvs-l1.md](./asvs-l1.md) |
-| Level 2 | 183 | 95 | 21 | 6 | 58 | 3 (hosting proxy) | [asvs-l2.md](./asvs-l2.md) |
-| Level 3 (triage, not claimed) | 92 | 36 | 15 | 16 | 21 | 4 (hosting proxy) | [asvs-l3.md](./asvs-l3.md) |
+| Level 2 | 183 | 96 | 20 | 6 | 58 | 3 (hosting proxy) | [asvs-l2.md](./asvs-l2.md) |
+| Level 3 (triage, not claimed) | 92 | 43 | 12 | 12 | 21 | 4 (hosting proxy) | [asvs-l3.md](./asvs-l3.md) |
 
-Level 1 has no Fail and no Partial. At Level 2, 96 of the 125 requirements that apply pass (77%). Level 3 is not a target; the triage on 19 Nov records which of its controls fit TorFinder, and 42 of the 71 that apply pass, including passkeys for staff ([passkeys.md](./passkeys.md)), a lockout email to the account's owner, an admin "send reset link" action, and documented limits, data retention and secret rotation ([limits-and-retention.md](../operations/limits-and-retention.md)). Every Partial and Not done item names its gap in the report.
+Level 1 has no Fail and no Partial. At Level 2, 96 of the 125 requirements that apply pass (77%). Level 3 is not a target; the triage on 19 Nov records which of its controls fit TorFinder, and 43 of the 71 that apply pass, including passkeys for staff ([passkeys.md](./passkeys.md)), a lockout email to the account's owner, an admin "send reset link" action, and documented limits, data retention and secret rotation ([limits-and-retention.md](../operations/limits-and-retention.md)). Every Partial and Not done item names its gap in the report.
 
 ### 3.1 Graded security features
 

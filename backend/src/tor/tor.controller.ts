@@ -136,9 +136,13 @@ export class TorController {
     return this.torService.update(id, dto, request.session);
   }
 
-  /** Links the announcement to an owner account, or unlinks it with `{ ownerId: null }`. */
+  /**
+   * Links the announcement to an owner account, or unlinks it with `{ ownerId: null }`.
+   * It decides whose dashboard the record appears on, so it takes a fresh
+   * passkey check like the other sensitive admin actions (ASVS 7.5.3).
+   */
   @Put(":id/owner")
-  @UseGuards(AdminGuard)
+  @UseGuards(AdminGuard, StepUpGuard)
   setOwner(@Param("id") id: string, @Body() dto: SetTorOwnerDto, @Req() request: AuthenticatedRequest) {
     return this.torService.setOwner(id, dto.ownerId, request.session.email);
   }

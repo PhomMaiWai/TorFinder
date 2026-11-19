@@ -281,6 +281,45 @@ describe("step-up on sensitive admin actions", () => {
   });
 });
 
+describe("step-up on assigning an announcement's owner", () => {
+  const tors = () => mongo.db().collection("tors");
+  let torId;
+  let owner;
+
+  before(async () => {
+    owner = await insertUser("owner");
+    const { insertedId } = await tors().insertOne({
+      title: "CI step-up owner TOR",
+      agency: "CI",
+      budget: "1",
+      deadline: "-",
+      stage: "ประกาศ",
+      tags: [],
+      summary: "-",
+      createdAt: new Date(),
+    });
+    torId = insertedId;
+  });
+  after(() => tors().deleteOne({ _id: torId }));
+
+  it("refuses a passkey admin whose last check is too old, and changes nothing", async () => {
+    const token = mintToken({ amr: ["pwd", "passkey"], pkt: Math.floor(Date.now() / 1000) - 3600 });
+    const res = await api(`/tor/${torId}/owner`, { method: "PUT", token, body: { ownerId: owner.id } });
+    assert.equal(res.status, 403);
+    assert.equal(res.body.code, "step-up-required");
+    assert.equal((await tors().findOne({ _id: torId })).ownerId, undefined);
+  });
+
+  it("assigns and unassigns right after a passkey check", async () => {
+    const token = mintToken({ amr: ["pwd", "passkey"], pkt: Math.floor(Date.now() / 1000) });
+    const set = await api(`/tor/${torId}/owner`, { method: "PUT", token, body: { ownerId: owner.id } });
+    assert.equal(set.status, 200, JSON.stringify(set.body));
+    assert.equal((await tors().findOne({ _id: torId })).ownerId.toString(), owner.id);
+    const unset = await api(`/tor/${torId}/owner`, { method: "PUT", token, body: { ownerId: null } });
+    assert.equal(unset.status, 200, JSON.stringify(unset.body));
+  });
+});
+
 describe("admin passkey reset", () => {
   it("clears the passkeys and ends the staff member's sessions", async () => {
     const auditor = await insertUser("auditor");
