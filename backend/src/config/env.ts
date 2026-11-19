@@ -59,6 +59,28 @@ export const env = {
   // too old to be anyone's opportunity or a useful price reference.
   torListedSince: new Date(process.env.TOR_LISTED_SINCE ?? "2022-01-01"),
   mongodbUri: required("MONGODB_URI", "mongodb://localhost:27017/torfinder"),
+  /**
+   * The database connection's limits (ASVS 13.1.2, 13.2.6; written up in
+   * docs/operations/limits-and-retention.md). At the pool limit a query waits
+   * for a free connection; after waitQueueTimeoutMs it fails and the caller
+   * gets the generic 500.
+   */
+  database: {
+    maxPoolSize: optionalNumber("MONGO_MAX_POOL_SIZE", 50),
+    waitQueueTimeoutMs: optionalNumber("MONGO_WAIT_QUEUE_TIMEOUT_MS", 10_000),
+    serverSelectionTimeoutMs: optionalNumber("MONGO_SERVER_SELECTION_TIMEOUT_MS", 10_000),
+  },
+  /**
+   * How long data with no further use is kept before MongoDB deletes it
+   * (ASVS 14.2.7; see docs/operations/limits-and-retention.md). 0 keeps that
+   * kind of data forever.
+   */
+  retention: {
+    notificationsDays: optionalNumber("RETENTION_NOTIFICATIONS_DAYS", 180),
+    syncRunsDays: optionalNumber("RETENTION_SYNC_RUNS_DAYS", 90),
+    auditLogDays: optionalNumber("RETENTION_AUDIT_LOG_DAYS", 365),
+    unverifiedSignupDays: optionalNumber("RETENTION_UNVERIFIED_SIGNUP_DAYS", 30),
+  },
   sessionSecret: sessionSecret(),
   // Google Identity Services ID tokens are verified against this audience.
   // Empty in dev disables Google sign-in rather than throwing on every request.

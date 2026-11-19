@@ -1,5 +1,15 @@
+# Container logs (which hold the JSON security events) are kept to 5 files of
+# 10 MB per service, oldest dropped first (ASVS 14.2.7; see
+# docs/operations/limits-and-retention.md). Ship them elsewhere to keep longer.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   frontend:
+    logging: *logging
     build:
       context: ./frontend
       args:
@@ -24,6 +34,7 @@ services:
 
   backend:
     build: ./backend
+    logging: *logging
     # Browsers never call the backend; the frontend reaches it as backend:4000.
     ports:
       - "127.0.0.1:4000:4000"
@@ -55,6 +66,7 @@ services:
 
   db:
     image: mongo:7
+    logging: *logging
     # Exposed on this machine only, so the app can also be run straight from
     # the shell (npm run dev) with only the database in Docker.
     ports:
