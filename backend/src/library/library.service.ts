@@ -22,6 +22,7 @@ import {
   sniffFileType,
   storeFile,
 } from "../common/stored-files";
+import { cleanUpload } from "../common/image-uploads";
 import { writeZip } from "../common/zip-writer";
 import { CompanyProfile, DatabaseService } from "../database/database.service";
 import { Coverage, coverageOf } from "./coverage";
@@ -115,16 +116,18 @@ export class LibraryService {
     const type = sniffFileType(upload.buffer, LIBRARY_FILE_TYPES);
     if (!type) throw new UnsupportedMediaTypeException("รับเฉพาะไฟล์ PDF, Word (.docx), PNG หรือ JPG");
 
+    // Images: pixel-size cap and metadata stripped (ASVS 5.2.6, 14.2.8).
+    const content = cleanUpload(upload.buffer, type);
     const current = await this.recordOf(userId, kind, id);
     const name = safeFileName(upload.originalname, type, kind === "team" ? "cv" : "reference");
-    const fileId = await storeFile(this.db.libraryFiles, upload.buffer, name, {
+    const fileId = await storeFile(this.db.libraryFiles, content, name, {
       userId: this.idOf(userId),
       kind,
       recordId: id,
       contentType: type,
     });
 
-    const file: StoredFile = { id: fileId.toHexString(), name, contentType: type, size: upload.size, uploadedAt: new Date() };
+    const file: StoredFile = { id: fileId.toHexString(), name, contentType: type, size: content.length, uploadedAt: new Date() };
     const next = { ...current, file, updatedAt: new Date() } as LibraryRecord;
     try {
       await this.replace(userId, kind, next);
