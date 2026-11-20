@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 
+import { scanForViruses } from "../common/virus-scan";
 import { ArchiveFile, ArchiveFileData, readShowableFile, showableFiles } from "../common/archive-files";
 import { TtlCache } from "../common/ttl-cache";
 import { readZip, ZipEntry } from "../common/zip";
@@ -91,6 +92,7 @@ export class EgpDocumentsService {
       this.gproc.renderTemplate(invitationTemplate),
     );
     if (!pdf) throw new NotFoundException("ไม่พบเอกสารนี้บน e-GP");
+    await scanForViruses(pdf, { source: "egp-invitation" });
     return { pdf, filename: `${projectNumber}-${kind}.pdf` };
   }
 
@@ -99,7 +101,9 @@ export class EgpDocumentsService {
   }
 
   async bundleFile(torId: string, kind: EgpBundleKind, position: number): Promise<ArchiveFileData> {
-    return readShowableFile(await this.bundle(torId, kind), position);
+    const file = await readShowableFile(await this.bundle(torId, kind), position);
+    await scanForViruses(file.data, { source: "egp-bundle" });
+    return file;
   }
 
   private async bundle(torId: string, kind: EgpBundleKind): Promise<ZipEntry[]> {

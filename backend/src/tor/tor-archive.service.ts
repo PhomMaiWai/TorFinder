@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 
 import { ArchiveFile, ArchiveFileData, readShowableFile, showableFiles } from "../common/archive-files";
 import { USER_AGENT } from "../common/http-client";
+import { scanForViruses } from "../common/virus-scan";
 import { fetchPortalFile } from "../common/portal-fetch";
 import { TtlCache } from "../common/ttl-cache";
 import { readZip, ZipEntry } from "../common/zip";
@@ -33,7 +34,9 @@ export class TorArchiveService {
   }
 
   async file(torId: string, index: number, position: number): Promise<ArchiveFileData> {
-    return readShowableFile(await this.open(torId, index), position);
+    const file = await readShowableFile(await this.open(torId, index), position);
+    await scanForViruses(file.data, { source: "tor-archive" });
+    return file;
   }
 
   private async open(torId: string, index: number): Promise<ZipEntry[]> {

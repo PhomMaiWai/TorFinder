@@ -11,6 +11,7 @@ import {
 import { ObjectId } from "mongodb";
 
 import { cleanUploadIsolated } from "../common/parse-worker";
+import { scanForViruses } from "../common/virus-scan";
 import { DatabaseService } from "../database/database.service";
 import {
   CERTIFICATE_LIMITS,
@@ -126,6 +127,7 @@ export class CertificatesService {
 
     const type = sniffCertificateFile(upload.buffer);
     if (!type) throw new UnsupportedMediaTypeException("รับเฉพาะไฟล์ PDF, PNG หรือ JPG");
+    await scanForViruses(upload.buffer, { source: "certificate", userId });
 
     // Images: pixel-size cap and metadata stripped (ASVS 5.2.6, 14.2.8).
     const content = await cleanUploadIsolated(upload.buffer, type);

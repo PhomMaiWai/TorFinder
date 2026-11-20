@@ -209,6 +209,16 @@ export const env = {
     loginFailureWindowMs: optionalNumber("LOGIN_FAILURE_WINDOW_MS", 15 * 60_000),
   },
   /**
+   * Virus scanning of every file from outside (ASVS 5.4.3): company uploads
+   * and portal documents, by a ClamAV daemon (common/virus-scan.ts). Off while
+   * CLAMAV_HOST is empty; docker-compose.hardening.yml runs one.
+   */
+  virusScan: {
+    host: process.env.CLAMAV_HOST ?? "",
+    port: optionalNumber("CLAMAV_PORT", 3310),
+    timeoutMs: optionalNumber("CLAMAV_TIMEOUT_MS", 60_000),
+  },
+  /**
    * Where notifications go besides the in-app list. Each channel switches
    * itself off while its credential is empty, so nothing here is required.
    */
