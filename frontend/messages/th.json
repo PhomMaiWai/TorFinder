@@ -26,6 +26,9 @@
     "logout": "ออกจากระบบ",
     "navInsights": "ข้อมูลเชิงลึกตลาด"
   },
+  "BrowserSupport": {
+    "warning": "เบราว์เซอร์ของคุณไม่รองรับคุณสมบัติด้านความปลอดภัยบางอย่างที่ TorFinder ใช้ การป้องกันบางส่วนจึงไม่ทำงาน กรุณาอัปเดตเป็น Chrome, Edge, Firefox หรือ Safari รุ่นปัจจุบัน และเข้าใช้งานผ่าน HTTPS"
+  },
   "Footer": {
     "productsHeading": "ผลิตภัณฑ์",
     "productsLinks": [

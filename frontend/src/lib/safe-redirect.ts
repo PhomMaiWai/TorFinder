@@ -8,5 +8,15 @@
 export function safeNextPath(next: string | null | undefined, fallback: string): string {
   if (!next || !next.startsWith("/")) return fallback;
   if (next.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(next)) return fallback;
-  return next;
+  // ASVS 1.5.3: the browser will resolve this with the WHATWG URL parser, so
+  // the decision is checked with that same parser too: it must stay on this
+  // origin, whatever the string rules above missed.
+  const BASE = "https://torfinder.invalid";
+  let resolved: URL;
+  try {
+    resolved = new URL(next, BASE);
+  } catch {
+    return fallback;
+  }
+  return resolved.origin === BASE ? next : fallback;
 }

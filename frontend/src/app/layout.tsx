@@ -7,6 +7,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 
 import "./globals.css";
 
+import { BrowserSupportNotice } from "@/components/layout/browser-support-notice";
 import { ThemeProvider } from "@/lib/theme-context";
 
 /**
@@ -55,6 +56,8 @@ const CLIENT_NAMESPACES = [
   "AdminUsersPage",
   "AppShell",
   "Bidding",
+  // Warning shown when the browser lacks expected security features (ASVS 3.7.5).
+  "BrowserSupport",
   "Certificates",
   "Common",
   "CompanyProfileOptions",
@@ -128,6 +131,7 @@ export default async function RootLayout({
           {THEME_INIT_SCRIPT}
         </Script>
         <NextIntlClientProvider messages={messages}>
+          <BrowserSupportNotice />
           <ThemeProvider>{children}</ThemeProvider>
         </NextIntlClientProvider>
       </body>

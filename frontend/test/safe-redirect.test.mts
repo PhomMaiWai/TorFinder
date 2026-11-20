@@ -31,4 +31,13 @@ describe("safeNextPath", () => {
       assert.equal(safeNextPath(next, "/home"), "/home", JSON.stringify(next));
     }
   });
+
+  it("decides with the same URL parser the browser uses (ASVS 1.5.3)", () => {
+    // Whatever the WHATWG parser resolves off this origin is refused, and every
+    // path the check keeps resolves to this origin.
+    for (const next of ["/saved", "/tor/abc?x=//evil.com", "/a/../b", "/%2F%2Fevil.com", "/@evil.com", "/.%2e/x"]) {
+      const kept = safeNextPath(next, "/home");
+      assert.equal(new URL(kept, "https://torfinder.invalid").origin, "https://torfinder.invalid", next);
+    }
+  });
 });
