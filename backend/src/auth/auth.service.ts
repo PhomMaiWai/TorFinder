@@ -26,6 +26,7 @@ import { SignupDto } from "./dto/signup.dto";
 import { LoginAttempts } from "./login-attempts";
 import { ClientDevice, KnownDevice, MAX_KNOWN_DEVICES, deviceHash, deviceLabel } from "./known-devices";
 import { PasskeysService } from "./passkeys.service";
+import { SIGN_IN_FIELDS } from "./sign-in-fields";
 
 const DUPLICATE_KEY = 11000;
 
@@ -95,7 +96,7 @@ export class AuthService {
   async login({ email, password }: LoginDto, ip?: string, device: ClientDevice = {}) {
     const address = email.trim().toLowerCase();
     this.assertNotLocked(address, ip);
-    const user = await this.db.users.findOne({ email: address });
+    const user = await this.db.users.findOne({ email: address }, { projection: SIGN_IN_FIELDS });
 
     // No passwordHash means the account was created via Google and never set
     // one — verifyPassword can't run against nothing, so it's a mismatch too.
@@ -201,7 +202,7 @@ export class AuthService {
    * may hold stops working and the caller signs in again with the new password.
    */
   async changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordDto, ip?: string) {
-    const user = ObjectId.isValid(userId) ? await this.db.users.findOne({ _id: new ObjectId(userId) }) : null;
+    const user = ObjectId.isValid(userId) ? await this.db.users.findOne({ _id: new ObjectId(userId) }, { projection: SIGN_IN_FIELDS }) : null;
     if (!user) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
     if (!user.passwordHash || !user.passwordSalt) {
       // A Google-only account has no current password to prove; the emailed reset link sets a first one.
@@ -386,7 +387,7 @@ export class AuthService {
       // Two tabs finishing sign-in at once: the unique index let one insert
       // through, so sign in as the account the other one created.
       if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) {
-        const existing = await this.db.users.findOne({ googleId });
+        const existing = await this.db.users.findOne({ googleId }, { projection: SIGN_IN_FIELDS });
         if (existing) return existing;
       }
       throw error;
@@ -395,10 +396,10 @@ export class AuthService {
 
   /** Finds the account for this Google identity, linking it to a matching email/password account if one exists. */
   private async findOrLinkGoogleUser(googleId: string, email: string) {
-    const user = await this.db.users.findOne({ googleId });
+    const user = await this.db.users.findOne({ googleId }, { projection: SIGN_IN_FIELDS });
     if (user) return user;
 
-    const existing = await this.db.users.findOne({ email });
+    const existing = await this.db.users.findOne({ email }, { projection: SIGN_IN_FIELDS });
     if (!existing) return null;
 
     // Google has just proven this inbox, which settles any pending address check too.

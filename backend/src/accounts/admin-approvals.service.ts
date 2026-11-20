@@ -8,7 +8,7 @@ import { SessionPayload } from "../common/token";
 import { env } from "../config/env";
 import { AdminApprovalDoc, DatabaseService } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
-import { PUBLIC_FIELDS, ROLE_LABELS, RoleChangeTarget, RoleChangesService } from "./role-changes.service";
+import { DIRECTORY_FIELDS, ROLE_LABELS, RoleChangeTarget, RoleChangesService } from "./role-changes.service";
 
 const NOT_FOUND = "ไม่พบคำขอนี้ หรือคำขอหมดอายุแล้ว";
 const OWN_REQUEST = "อนุมัติคำขอของตัวเองไม่ได้ ต้องให้ผู้ดูแลระบบคนอื่นเป็นผู้อนุมัติ";
@@ -168,7 +168,7 @@ export class AdminApprovalsService {
     if ((await this.db.users.countDocuments({ _id: claimed.requestedBy.id, role: "admin" })) === 0) {
       throw await fail(REQUESTER_GONE, "requester_not_admin");
     }
-    const current = await this.db.users.findOne({ _id: claimed.targetId }, { projection: PUBLIC_FIELDS });
+    const current = await this.db.users.findOne({ _id: claimed.targetId }, { projection: DIRECTORY_FIELDS });
     if (!current || current.role !== claimed.fromRole) throw await fail(ROLE_MOVED, "role_changed");
 
     const result = await this.roles.apply(current, claimed.toRole, actor.email, {
