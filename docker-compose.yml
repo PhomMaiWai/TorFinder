@@ -62,6 +62,7 @@ services:
       - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
       - ADMIN_APPROVAL_EXPIRY_HOURS=${ADMIN_APPROVAL_EXPIRY_HOURS:-48}
+      - FORM_MIN_SECONDS=${FORM_MIN_SECONDS:-2}
     depends_on:
       db-users:
         condition: service_completed_successfully
