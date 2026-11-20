@@ -28,6 +28,7 @@ import { TorRecordFacts } from "@/components/public/tor-record-facts";
 import { TorTimeline } from "@/components/public/tor-timeline";
 import { TOR_DETAILS } from "@/data/tor-details";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { issueFormToken } from "@/lib/form-timing";
 import { formatDate, formatDateTime } from "@/lib/datetime";
 import type { Locale } from "@/i18n/config";
 import { displayValue, valueLabel } from "@/lib/value-labels";
@@ -42,6 +43,7 @@ import {
   stageBadgeCls,
   torAmount,
 } from "@/lib/tor-ui";
+import { OffsiteLink } from "@/components/ui/offsite-link";
 
 const CARD = "rounded-xl border border-border bg-surface p-6 shadow-sm";
 const HEADING = "mb-4 flex items-center gap-2 text-lg font-bold text-ink";
@@ -142,7 +144,7 @@ export default async function TorDetailPage({
           </div>
           <div className="flex shrink-0 gap-2 lg:flex-col">
             {sourceUrl && (
-              <a
+              <OffsiteLink
                 href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -150,7 +152,7 @@ export default async function TorDetailPage({
               >
                 <ExternalLink size={15} />
                 {t("viewOriginalEgp")}
-              </a>
+              </OffsiteLink>
             )}
             <SaveTorButton torId={tor.id} saveLabel={t("saveButton")} savedLabel={t("savedButton")} />
             {/* Showcase records aren't in the database the ranking reads. */}
@@ -225,14 +227,14 @@ export default async function TorDetailPage({
               {sourceUrl && (
                 <p className="mt-4 border-t border-border pt-4 text-sm text-ink-muted">
                   {t("fullDocumentNote")}{" "}
-                  <a
+                  <OffsiteLink
                     href={sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-medium text-accent hover:text-accent-dark"
                   >
                     {t("openDocument")}
-                  </a>
+                  </OffsiteLink>
                 </p>
               )}
             </section>
@@ -286,6 +288,7 @@ export default async function TorDetailPage({
           {tor.sourceRef && feedback.open && (
             <FeedbackForm
               torId={tor.id}
+              formToken={issueFormToken("feedback")}
               labels={{
                 heading: t("shareFeedback"),
                 until: feedback.until

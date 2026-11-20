@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import type { TorRecord } from "@/types/tor";
+import { OffsiteLink } from "@/components/ui/offsite-link";
 
 /** Dated on the server, so the label can't differ between server and browser time zones. */
 type TorDocument = NonNullable<TorRecord["documents"]>[number] & { dateLabel: string };
@@ -173,7 +174,7 @@ export function TorDocumentList({
                   </a>
                 </div>
               ) : (
-                <a
+                <OffsiteLink
                   href={entry.sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -181,7 +182,7 @@ export function TorDocumentList({
                 >
                   <ExternalLink size={14} />
                   {t("openSource")}
-                </a>
+                </OffsiteLink>
               )}
             </li>
           ),
@@ -255,13 +256,13 @@ function ArchiveRow({
           {files === "failed" && (
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-sm text-ink-muted">
               {t("archiveFailed")}
-              <a
+              <OffsiteLink
                 href={entry.sourceUrl}
                 className="inline-flex items-center gap-1 font-medium text-accent hover:text-accent-dark"
               >
                 <Download size={14} />
                 {t("downloadZip")}
-              </a>
+              </OffsiteLink>
             </p>
           )}
           {Array.isArray(files) && files.length === 0 && (
@@ -366,7 +367,7 @@ function DocumentViewer({ entry, src, onClose }: { entry: Entry; src: string; on
             </h2>
             <p className="text-xs text-ink-muted">{entry.meta}</p>
           </div>
-          <a
+          <OffsiteLink
             href={src}
             target="_blank"
             rel="noopener"
@@ -374,7 +375,7 @@ function DocumentViewer({ entry, src, onClose }: { entry: Entry; src: string; on
           >
             <ExternalLink size={14} />
             {t("newTab")}
-          </a>
+          </OffsiteLink>
           <a
             href={withDownload(src)}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
@@ -411,7 +412,7 @@ function DocumentViewer({ entry, src, onClose }: { entry: Entry; src: string; on
               <div>
                 <AlertCircle size={28} className="mx-auto mb-3 text-ink-subtle" />
                 <p className="text-sm font-medium text-ink">{t("failed")}</p>
-                <a
+                <OffsiteLink
                   href={entry.sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -419,7 +420,7 @@ function DocumentViewer({ entry, src, onClose }: { entry: Entry; src: string; on
                 >
                   <ExternalLink size={14} />
                   {t("openSource")}
-                </a>
+                </OffsiteLink>
               </div>
             </div>
           )}

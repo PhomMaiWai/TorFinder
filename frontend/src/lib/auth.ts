@@ -75,7 +75,7 @@ const DEV_SESSION_SECRET = "dev-only-insecure-secret-change-me";
 const MIN_SESSION_SECRET_LENGTH = 32;
 
 /** Same rule as the backend's env.ts: production refuses a missing, published or short secret (ASVS 9.1.3). */
-function readSessionSecret() {
+export function readSessionSecret() {
   const value = process.env.SESSION_SECRET;
   if (process.env.NODE_ENV !== "production") return value || DEV_SESSION_SECRET;
   if (!value || value === DEV_SESSION_SECRET || value.length < MIN_SESSION_SECRET_LENGTH) {

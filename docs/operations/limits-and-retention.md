@@ -45,6 +45,7 @@ MongoDB deletes these by itself through TTL indexes, about once a minute after t
 | --- | --- | --- | --- |
 | Password-reset and email-check links | 1 h / 24 h, deleted on use | A live link is a key to the account | Fixed (`authTokens`) |
 | Passkey challenges | 5 min, deleted on use | Single use | Fixed (`authTokens`) |
+| Browsers an account signed in from (hash of the device cookie, browser name, first and last seen) | The last 20 per account; the cookie itself 400 days in the browser | Enough to recognise someone's own devices; the oldest falls off | Fixed (`users.knownDevices`) |
 | Requests to grant or remove the admin role | 48 h, deleted when approved, rejected or cancelled | An old request shouldn't be approvable long after anyone remembers why it was made | `ADMIN_APPROVAL_EXPIRY_HOURS` (`adminApprovals`) |
 | Notifications | 180 days | Old alerts are about closed tenders | `RETENTION_NOTIFICATIONS_DAYS` |
 | Import run history | 90 days | The dashboard shows 7 days; 90 covers an investigation | `RETENTION_SYNC_RUNS_DAYS` |

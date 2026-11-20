@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 44 Pass, 12 Partial, 11 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 44 pass (62%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+**Result: 48 Pass, 10 Partial, 9 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 48 pass (68%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -16,24 +16,26 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 20 Nov 2026 (branch `feat/asvs-l3-admin-approval`):** granting or removing the admin role needs a second admin. The first admin's edit files a request; a different admin approves it behind step-up, the requester can only cancel, and an unapproved request lapses after 48 hours. Every step is in the audit log and the security log. 2.3.5 passes; 8.4.2 gains a layer but stays Partial.
 
+**Update 20 Nov 2026 (branch `feat/asvs-l3-quick-wins`):** four items move to Pass. The saved-search cap is claimed atomically (15.4.2); a sign-in from a browser the account hasn't used before emails its owner (6.3.5); links out of TorFinder go through a "you're leaving" page with a way back (3.7.3); and sign-up and comment forms are refused when sent back sooner than a person could fill them in (2.4.2).
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 44 | Control exists, with evidence in code or in this file |
-| Partial | 12 | Control exists with a gap; the gap is named |
-| Not done | 11 | Not implemented |
+| Pass | 48 | Control exists, with evidence in code or in this file |
+| Partial | 10 | Control exists with a gap; the gap is named |
+| Not done | 9 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
 
 | Chapter | L3 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
 | V1 Encoding and Sanitization | 3 | 0 | 2 | 0 | 1 | 0 |
-| V2 Validation and Business Logic | 2 | 1 | 0 | 1 | 0 | 0 |
-| V3 Web Frontend Security | 12 | 9 | 1 | 2 | 0 | 0 |
+| V2 Validation and Business Logic | 2 | 2 | 0 | 0 | 0 | 0 |
+| V3 Web Frontend Security | 12 | 10 | 1 | 1 | 0 | 0 |
 | V4 API and Web Service | 6 | 2 | 1 | 0 | 1 | 2 |
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
-| V6 Authentication | 12 | 6 | 1 | 0 | 5 | 0 |
+| V6 Authentication | 12 | 7 | 0 | 0 | 5 | 0 |
 | V7 Session Management | 1 | 1 | 0 | 0 | 0 | 0 |
 | V8 Authorization | 6 | 3 | 2 | 1 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
@@ -42,10 +44,10 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V12 Secure Communication | 3 | 0 | 0 | 1 | 0 | 2 |
 | V13 Configuration | 8 | 5 | 1 | 2 | 0 | 0 |
 | V14 Data Protection | 4 | 2 | 2 | 0 | 0 | 0 |
-| V15 Secure Coding and Architecture | 8 | 6 | 1 | 1 | 0 | 0 |
+| V15 Secure Coding and Architecture | 8 | 7 | 0 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **44** | **12** | **11** | **21** | **4** |
+| **Total** | **92** | **48** | **10** | **9** | **21** | **4** |
 
 ## Done on this branch
 
@@ -92,10 +94,12 @@ Every current version of Chrome, Edge, Firefox and Safari supports all of them. 
 | Client IP | Sign-in, signup, password and email-link routes, feedback, reports | 5 / 60 s | 429 |
 | Client IP | LINE webhook | 300 / 60 s | 429 |
 | Email address | Failed logins and wrong current passwords | 10 per 15 min | Refused until 15 quiet minutes pass, `auth.login.locked` logged |
+| Device cookie (random, HttpOnly, hashed on the server) | Every successful sign-in | Not among the account's last 20 browsers | Owner emailed (`new-device`), `auth.login.new_device` logged; the sign-in itself is not blocked |
+| Time since the form was served | Sign-up and comment submissions | Under 2 s, or over 24 h | 400, `input.rejected` logged (`form_too_fast` / `form_token_invalid`) |
 | Time since last activity | Every signed-in request | 30 min idle, 7 days absolute | Session refused; sign in again |
 | Comment window of a TOR | Feedback | Outside the window | Refused |
 
-No other attribute (location, device, time of day) affects authentication or authorization. Adaptive controls built on them (8.2.4) are not done.
+No other attribute (location, time of day) affects authentication or authorization, and the device cookie only decides whether the owner is told. Adaptive controls built on them (8.2.4) are not done.
 
 ## Risky components and dangerous functionality
 
@@ -138,7 +142,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 2.3.5 | High-value flows need approval by more than one user | Pass | Granting or removing the admin role files a request (`PATCH /accounts/:id/details` answers 202) that a different admin must approve, behind step-up (`AdminApprovalsService`, `test/admin-approvals.e2e.test.mjs`). The requester can't approve their own request, only cancel it; a request is void if its requester stopped being an admin or the account's role moved; at most one is open per account, and it lapses after 48 h (TTL). The one exception: a lone admin may name the first extra admin directly, since no one else could approve. Admins can't be suspended at all (only companies and public viewers can). Deleting a TOR and suspending a company still take one admin: they are reversible or don't hand out power |
-| 2.4.2 | Business flows require realistic human timing | **Not done** | Only rate limits; no minimum time between steps (e.g. signup form filled in under a second) |
+| 2.4.2 | Business flows require realistic human timing | Pass | Sign-up and comment forms carry a token, signed with the session secret, saying when the page was served (`frontend/src/lib/form-timing.ts`). `FormTimingGuard` refuses a submission sent back sooner than 2 s (`FORM_MIN_SECONDS`), or with no genuine token for that form, or one over a day old (`test/form-timing.e2e.test.mjs`). The token can be resent, so a form refused for a typo can be fixed; how often is bounded by the 5-a-minute limit on both routes. Google sign-up completion is not timed: it needs a fresh Google credential first |
 
 ### V3 Web Frontend Security
 
@@ -153,7 +157,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 3.5.7 | No authorized data in script resources | Pass | Scripts are the static Next.js bundle; per-user data comes only in HTML and JSON responses |
 | 3.5.8 | Authenticated resources can't be embedded cross-origin | Pass | `Cross-Origin-Resource-Policy: same-origin` on every frontend response (this branch) and backend response (helmet); company files are also `attachment` |
 | 3.6.1 | External assets use SRI, or a documented decision | Pass | Google Identity Services can't use SRI; decision recorded in [Required browser features](#required-browser-features) |
-| 3.7.3 | Notify the user before redirecting outside the application, with a way to cancel | **Not done** | Links to e-GP, MEA and LINE open directly |
+| 3.7.3 | Notify the user before redirecting outside the application, with a way to cancel | Pass | Every link out (e-GP and MEA source pages and documents, LINE, a certificate's verification page, the admin e-GP search) goes through `/leaving`, which names the destination host and offers **Continue** or **Stay on TorFinder** (`OffsiteLink`, `frontend/src/app/leaving`). Nothing redirects by itself, and only http(s) destinations are offered (`test/leaving-link.test.mts`) |
 | 3.7.4 | Top-level domain on the HSTS preload list | **Not done** | Needs `preload` in the HSTS header and a submission for the production domain, once every subdomain is HTTPS |
 | 3.7.5 | Behaves as documented when the browser lacks a security feature | Partial | The documented behaviour is to allow without warning; there is no detection |
 
@@ -181,7 +185,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 6.3.5 | Users notified of suspicious authentication attempts | Partial | The wrong password that locks an account emails its owner, once per lock (`login-locked` notice, `auth.login.lockout` event; `AuthService.recordPasswordFailure`, `test/lockout-notice.test.mjs`). An unknown address locks the same way but sends nothing, and the mail is not awaited, so neither reveals which addresses exist. Gap: a successful sign-in from a new device or place is logged, not emailed |
+| 6.3.5 | Users notified of suspicious authentication attempts | Pass | The wrong password that locks an account emails its owner, once per lock (`login-locked` notice). A successful sign-in from a browser the account hasn't used before emails the owner with the time, browser and IP (`new-device` notice, `auth.login.new_device` event; `AuthService.noteDevice`, `test/new-device-notice.test.mjs`). A browser is known by a random HttpOnly device cookie, stored only as a hash, the last 20 per account. The account's first recorded browser is not reported (sign-up, or the first sign-in after this shipped); a sign-in with no device id counts as new |
 | 6.3.6 | Email not used as an authentication factor | Pass | Email links verify an address or reset a password; neither creates a session, and there is no email OTP sign-in |
 | 6.3.7 | Users notified after changes to authentication details | Pass | Email after a password change, a password reset and a new Google link (this branch); the email address itself can't be changed |
 | 6.3.8 | Valid users can't be deduced from failed authentication, registration or forgot-password | Pass | Login: same message and the same scrypt cost for unknown addresses; "unverified" and "pending" are only told after the right password. Signup: the same answer for a registered address (this branch). Forgot-password and resend-verification: always the same answer. Google sign-up still says an address is taken, but only after Google proved the caller owns it |
@@ -277,7 +281,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 15.2.4 | Dependencies come from the expected repository; no dependency confusion | Pass | Only public npm packages, no private or scoped internal names to impersonate; `npm ci` from lockfiles with integrity hashes; Dependabot with a cooldown |
 | 15.2.5 | Extra protection (sandboxing, isolation) around dangerous functionality | **Not done** | Parsing and AI calls run in the main backend process |
 | 15.4.1 | Thread-safe access to shared objects | Pass | Node.js runs request code on one thread; in-memory caches are only touched there |
-| 15.4.2 | Check and action are atomic (no TOCTOU) | Partial | Certificate and library caps, link-code use and email uniqueness are atomic database operations; the saved-search cap counts first and then inserts, so two parallel requests can pass it by one |
+| 15.4.2 | Check and action are atomic (no TOCTOU) | Pass | Certificate and library caps, link-code use and email uniqueness are atomic database operations. The saved-search cap reserves a slot with a conditional `$inc` on a per-account counter (`savedSearchCounts`) before inserting, recounted from the real documents at startup (`test/saved-searches.e2e.test.mjs`: five parallel saves for the last slot, one succeeds) |
 | 15.4.3 | Locks used consistently, no deadlocks | Pass | No locks; MongoDB single-document updates only |
 | 15.4.4 | No thread starvation | Pass | Long work is async with timeouts and concurrency caps; CPU-heavy scrypt runs on libuv's pool |
 
@@ -311,8 +315,9 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 ## Suggested order for the rest
 
 1. ~~**6.3.3 / 7.5.3:** passkeys for staff and step-up before admin actions~~ — done on `feat/staff-passkeys`, and step-up on owner assignment on `fix/step-up-tor-owner`. Left: a second factor for company accounts.
-2. ~~**6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action~~ — done on `feat/asvs-l3-lockout-reset`. Left: an email for a sign-in from a new device.
+2. ~~**6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action~~ — done on `feat/asvs-l3-lockout-reset`, and the new-device email on `feat/asvs-l3-quick-wins`.
 3. ~~**2.3.5, 8.4.2:** a second admin's approval to grant the admin role~~ — done on `feat/asvs-l3-admin-approval`, for removing it too.
 4. ~~**14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on~~ — done on `docs-asvs-l3-policies`. Left: 13.3.4, secrets that expire by themselves (a vault, and a session secret that can be rolled without signing everyone out).
-5. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.
-6. **16.3.2, 11.1.3, 12.3.5, 13.3.x:** need logging, network and hosting infrastructure beyond the repository.
+5. ~~**15.4.2, 3.7.3, 2.4.2:** atomic saved-search cap, leaving-site notice, human timing on forms~~ — done on `feat/asvs-l3-quick-wins`.
+6. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.
+7. **16.3.2, 11.1.3, 12.3.5, 13.3.x:** need logging, network and hosting infrastructure beyond the repository.

@@ -8,6 +8,7 @@ import { AdminPageShell } from "@/components/layout/admin-page";
 import { fetchTor } from "@/lib/tor-api";
 import { displayValue, valueLabel } from "@/lib/value-labels";
 import { stageBadgeCls } from "@/lib/tor-ui";
+import { OffsiteLink } from "@/components/ui/offsite-link";
 
 export default async function AdminTorDetailPage({
   params,
@@ -78,7 +79,7 @@ export default async function AdminTorDetailPage({
             <p className="text-sm leading-relaxed text-ink-muted">{tor.summary}</p>
 
             {tor.sourceUrl && (
-              <a
+              <OffsiteLink
                 href={tor.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -86,7 +87,7 @@ export default async function AdminTorDetailPage({
               >
                 <ExternalLink size={14} />
                 {t("openFullNotice")}
-              </a>
+              </OffsiteLink>
             )}
           </div>
         </div>

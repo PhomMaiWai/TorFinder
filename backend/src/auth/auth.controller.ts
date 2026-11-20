@@ -1,13 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Ip, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Ip, Param, Post, Req, UseGuards } from "@nestjs/common";
 import type {
   AuthenticationResponseJSON,
   RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 import { Throttle } from "@nestjs/throttler";
 
+import { FormTiming, FormTimingGuard } from "../common/form-timing.guard";
 import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
 import { env } from "../config/env";
 import { AuthService } from "./auth.service";
+import { ClientDevice } from "./known-devices";
 import { EmailOnlyDto, ResetPasswordDto, VerifyEmailDto } from "./dto/account-links.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
@@ -16,6 +18,15 @@ import { LoginDto } from "./dto/login.dto";
 import { AddPasskeyDto, PasskeyResponseDto } from "./dto/passkey.dto";
 import { PasskeysService } from "./passkeys.service";
 import { SignupDto } from "./dto/signup.dto";
+
+/**
+ * The browser a sign-in came from, as the frontend relays it (ASVS 6.3.5):
+ * its device cookie and its own user agent (the frontend's fetch has another).
+ */
+const clientDevice = (id: string | undefined, userAgent: string | undefined): ClientDevice => ({
+  id,
+  userAgent: userAgent?.slice(0, 512),
+});
 
 @Controller("auth")
 export class AuthController {
@@ -26,6 +37,8 @@ export class AuthController {
 
   @Post("signup")
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  @FormTiming("signup")
+  @UseGuards(FormTimingGuard)
   signup(@Body() dto: SignupDto, @Ip() ip: string) {
     return this.authService.signup(dto, ip);
   }
@@ -33,8 +46,13 @@ export class AuthController {
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  login(@Body() dto: LoginDto, @Ip() ip: string) {
-    return this.authService.login(dto, ip);
+  login(
+    @Body() dto: LoginDto,
+    @Ip() ip: string,
+    @Headers("x-device-id") deviceId?: string,
+    @Headers("x-client-user-agent") userAgent?: string,
+  ) {
+    return this.authService.login(dto, ip, clientDevice(deviceId, userAgent));
   }
 
   /** Revokes the caller's session token so it can't be replayed after logout (ASVS 7.4.1). */
@@ -58,8 +76,13 @@ export class AuthController {
   @Post("google")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  googleAuth(@Body() dto: GoogleAuthDto, @Ip() ip: string) {
-    return this.authService.googleAuth(dto, ip);
+  googleAuth(
+    @Body() dto: GoogleAuthDto,
+    @Ip() ip: string,
+    @Headers("x-device-id") deviceId?: string,
+    @Headers("x-client-user-agent") userAgent?: string,
+  ) {
+    return this.authService.googleAuth(dto, ip, clientDevice(deviceId, userAgent));
   }
 
   @Post("password/forgot")
@@ -93,8 +116,13 @@ export class AuthController {
   @Post("google/complete")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  googleCompleteSignup(@Body() dto: GoogleCompleteSignupDto, @Ip() ip: string) {
-    return this.authService.googleCompleteSignup(dto, ip);
+  googleCompleteSignup(
+    @Body() dto: GoogleCompleteSignupDto,
+    @Ip() ip: string,
+    @Headers("x-device-id") deviceId?: string,
+    @Headers("x-client-user-agent") userAgent?: string,
+  ) {
+    return this.authService.googleCompleteSignup(dto, ip, clientDevice(deviceId, userAgent));
   }
 
   // ---- passkeys (staff; see PasskeysService) ----------------------------
@@ -103,8 +131,17 @@ export class AuthController {
   @Post("passkey/login")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
-  passkeyLogin(@Body() dto: PasskeyResponseDto, @Ip() ip: string) {
-    return this.authService.completePasskeyLogin(dto.response as unknown as AuthenticationResponseJSON, ip);
+  passkeyLogin(
+    @Body() dto: PasskeyResponseDto,
+    @Ip() ip: string,
+    @Headers("x-device-id") deviceId?: string,
+    @Headers("x-client-user-agent") userAgent?: string,
+  ) {
+    return this.authService.completePasskeyLogin(
+      dto.response as unknown as AuthenticationResponseJSON,
+      ip,
+      clientDevice(deviceId, userAgent),
+    );
   }
 
   @Get("passkeys")

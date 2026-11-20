@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 
 import { evaluationMethodOf, groupQualifications, QUALIFICATION_GROUPS } from "@/lib/tor-qualifications";
 import type { CheckedField, ExtractionAssessment, TorExtraction } from "@/types/tor";
+import { OffsiteLink } from "@/components/ui/offsite-link";
 
 const BAHT = new Intl.NumberFormat("th-TH", {
   style: "currency",
@@ -189,7 +190,7 @@ export function TorDocumentDetails({
             {t("lowConfidenceNote")}
           </p>
           {extraction.documentUrl && (
-            <a
+            <OffsiteLink
               href={extraction.documentUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -197,7 +198,7 @@ export function TorDocumentDetails({
             >
               {t("openSourceDocument")}
               <ExternalLink size={12} />
-            </a>
+            </OffsiteLink>
           )}
         </div>
       )}

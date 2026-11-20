@@ -4,6 +4,7 @@ import { Download, ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { OffsiteLink } from "@/components/ui/offsite-link";
 
 type Run = {
   id: string;
@@ -82,14 +83,14 @@ export function GprocCapture() {
     <section className="rounded-xl border border-border bg-surface p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-ink">{t("heading")}</h2>
-        <a
+        <OffsiteLink
           href={SEARCH_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-dark"
         >
           {t("openSearch")} <ExternalLink size={12} />
-        </a>
+        </OffsiteLink>
       </div>
       <p className="mb-3 text-xs leading-relaxed text-ink-muted">
         {t("help")}

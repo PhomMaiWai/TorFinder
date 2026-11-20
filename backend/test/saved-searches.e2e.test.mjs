@@ -28,6 +28,8 @@ function makeToken(role, sub) {
   return `${data}.${createHmac("sha256", SESSION_SECRET).update(data).digest("base64url")}`;
 }
 
+const counts = () => mongo.db().collection("savedSearchCounts");
+
 const ALICE = new ObjectId();
 const BOB = new ObjectId();
 const aliceToken = makeToken("org", ALICE.toString());
@@ -178,6 +180,9 @@ describe("saved searches", () => {
             createdAt: new Date(),
           })),
         );
+      // Written straight to the database, so the counter the backend checks
+      // (savedSearchCounts, recounted at startup) is set to match.
+      await counts().updateOne({ _id: new ObjectId(owner) }, { $set: { count: 50 } }, { upsert: true });
       const res = await save({ name: "ใบที่ 51", filters: {} }, carol);
       assert.equal(res.status, 409);
       assert.match(res.body.message, /50/);
@@ -186,6 +191,37 @@ describe("saved searches", () => {
         .db()
         .collection("savedSearches")
         .deleteMany({ userId: new ObjectId(owner) });
+      await counts().deleteOne({ _id: new ObjectId(owner) });
+    }
+  });
+
+  // ASVS 15.4.2: the check and the insert are one step, so requests racing
+  // for the last free slot can't all get in.
+  it("lets only one of several parallel saves take the last slot", async () => {
+    const dave = new ObjectId();
+    const token = makeToken("viewer", dave.toString());
+    try {
+      await mongo
+        .db()
+        .collection("savedSearches")
+        .insertMany(
+          Array.from({ length: 49 }, (_, i) => ({ userId: dave, name: `เก่า ${i}`, filters: {}, createdAt: new Date() })),
+        );
+      await counts().updateOne({ _id: dave }, { $set: { count: 49 } }, { upsert: true });
+
+      const results = await Promise.all(
+        Array.from({ length: 5 }, (_, i) => save({ name: `พร้อมกัน ${i}`, filters: {} }, token)),
+      );
+      assert.deepEqual(results.map((r) => r.status).sort(), [201, 409, 409, 409, 409]);
+      assert.equal(await mongo.db().collection("savedSearches").countDocuments({ userId: dave }), 50);
+
+      // Deleting one frees exactly one slot again.
+      const [kept] = (await list(token)).body;
+      assert.equal((await remove(kept.id, token)).status, 204);
+      assert.equal((await save({ name: "หลังลบ", filters: {} }, token)).status, 201);
+    } finally {
+      await mongo.db().collection("savedSearches").deleteMany({ userId: dave });
+      await counts().deleteOne({ _id: dave });
     }
   });
 });

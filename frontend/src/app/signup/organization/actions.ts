@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { clientIpHeaders } from "@/lib/client-ip";
+import { formTokenHeader } from "@/lib/form-timing";
 import { SIGNUP_EMAIL_COOKIE, signupEmailCookieOptions } from "@/lib/signup-email";
 
 export type SignupState = { error?: string };
@@ -29,7 +30,7 @@ export async function signupOrganization(
   try {
     res = await fetch(`${process.env.BACKEND_URL}/api/auth/signup`, {
       method: "POST",
-      headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
+      headers: { ...(await clientIpHeaders()), ...formTokenHeader(formData), "Content-Type": "application/json" },
       body: JSON.stringify(payload),
       cache: "no-store",
       signal: AbortSignal.timeout(8000),

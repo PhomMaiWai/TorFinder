@@ -12,6 +12,7 @@ import { createHmac } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 
 import { MongoClient } from "mongodb";
+import { formTimingHeaders } from "./helpers/form-token.mjs";
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:4000";
 const API = `${BASE_URL}/api`;
@@ -32,6 +33,7 @@ async function api(path, { method = "GET", body, bearer } = {}) {
   const headers = { "x-forwarded-for": IP };
   if (body !== undefined) headers["content-type"] = "application/json";
   if (bearer) headers.authorization = `Bearer ${bearer}`;
+  Object.assign(headers, formTimingHeaders(path, method));
   const res = await fetch(`${API}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   const text = await res.text();
   let parsed;

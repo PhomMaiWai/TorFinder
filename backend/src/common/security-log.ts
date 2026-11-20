@@ -16,6 +16,7 @@ export type SecurityEvent =
   | "auth.login"
   | "auth.login.locked"
   | "auth.login.lockout"
+  | "auth.login.new_device"
   | "auth.google"
   | "auth.logout"
   | "auth.signup"

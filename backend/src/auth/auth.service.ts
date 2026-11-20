@@ -24,6 +24,7 @@ import { googleClaimsProblem } from "./google-claims";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
 import { LoginAttempts } from "./login-attempts";
+import { ClientDevice, KnownDevice, MAX_KNOWN_DEVICES, deviceHash, deviceLabel } from "./known-devices";
 import { PasskeysService } from "./passkeys.service";
 
 const DUPLICATE_KEY = 11000;
@@ -91,7 +92,7 @@ export class AuthService {
     return { status: "pending" as const, companyName: company.companyName };
   }
 
-  async login({ email, password }: LoginDto, ip?: string) {
+  async login({ email, password }: LoginDto, ip?: string, device: ClientDevice = {}) {
     const address = email.trim().toLowerCase();
     this.assertNotLocked(address, ip);
     const user = await this.db.users.findOne({ email: address });
@@ -136,7 +137,7 @@ export class AuthService {
       });
     }
 
-    return this.issueSession(user, "auth.login", ip, "pwd");
+    return this.issueSession(user, "auth.login", ip, "pwd", device);
   }
 
   /**
@@ -269,14 +270,14 @@ export class AuthService {
     return LINK_SENT;
   }
 
-  async googleAuth({ credential, nonce, as }: GoogleAuthDto, ip?: string) {
+  async googleAuth({ credential, nonce, as }: GoogleAuthDto, ip?: string, device: ClientDevice = {}) {
     const { email, googleId, name } = await this.verifyGoogleCredential(credential, nonce, ip);
     const user = await this.findOrLinkGoogleUser(googleId, email);
 
     // An existing account always signs in as itself, whichever button was
     // pressed — a company owner using the public button still lands as org.
     if (!user && as === "viewer") {
-      return this.issueSession(await this.createViewer(googleId, email, name ?? email), "auth.google", ip, "google");
+      return this.issueSession(await this.createViewer(googleId, email, name ?? email), "auth.google", ip, "google", device);
     }
 
     if (!user) {
@@ -291,7 +292,7 @@ export class AuthService {
       return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
     }
 
-    return this.issueSession(user, "auth.google", ip, "google");
+    return this.issueSession(user, "auth.google", ip, "google", device);
   }
 
   /**
@@ -300,7 +301,7 @@ export class AuthService {
    * never had. Re-verifies the credential rather than trusting a client-held
    * claim of who they are.
    */
-  async googleCompleteSignup({ credential, nonce, ...company }: GoogleCompleteSignupDto, ip?: string) {
+  async googleCompleteSignup({ credential, nonce, ...company }: GoogleCompleteSignupDto, ip?: string, device: ClientDevice = {}) {
     const { email, googleId, name } = await this.verifyGoogleCredential(credential, nonce, ip);
     const user = await this.findOrLinkGoogleUser(googleId, email);
 
@@ -311,7 +312,7 @@ export class AuthService {
       if (user.status === "pending") {
         return { status: "pending" as const, companyName: user.company?.companyName ?? user.name };
       }
-      return this.issueSession(user, "auth.google", ip, "google");
+      return this.issueSession(user, "auth.google", ip, "google", device);
     }
 
     const newUser: UserDoc = {
@@ -427,7 +428,13 @@ export class AuthService {
    * The first factor passed. Staff with a passkey are handed its challenge
    * instead of a session (ASVS 6.3.3); everyone else gets their session now.
    */
-  private async issueSession(user: WithId<UserDoc>, event: SecurityEvent, ip: string | undefined, factor: "pwd" | "google") {
+  private async issueSession(
+    user: WithId<UserDoc>,
+    event: SecurityEvent,
+    ip: string | undefined,
+    factor: "pwd" | "google",
+    device: ClientDevice = {},
+  ) {
     this.assertCanSignIn(user, event, ip);
     if (PasskeysService.needsPasskey(user)) {
       logSecurityEvent(event, {
@@ -440,15 +447,15 @@ export class AuthService {
       });
       return { status: "passkey-required" as const, options: await this.passkeys.startLogin(user, factor) };
     }
-    return this.createSession(user, event, ip, [factor]);
+    return this.createSession(user, event, ip, [factor], undefined, device);
   }
 
   /** Step two of a staff sign-in: the passkey signed the challenge from issueSession. */
-  async completePasskeyLogin(response: Parameters<PasskeysService["finishLogin"]>[0], ip?: string) {
+  async completePasskeyLogin(response: Parameters<PasskeysService["finishLogin"]>[0], ip?: string, device: ClientDevice = {}) {
     const { user, amr } = await this.passkeys.finishLogin(response, ip);
     // Checked again: the account may have been suspended in the minutes between the two steps.
     this.assertCanSignIn(user, "auth.passkey.login", ip);
-    return this.createSession(user, "auth.passkey.login", ip, amr, Math.floor(Date.now() / 1000));
+    return this.createSession(user, "auth.passkey.login", ip, amr, Math.floor(Date.now() / 1000), device);
   }
 
   /** Throws when the account may not sign in at all, whatever the credentials. */
@@ -481,13 +488,15 @@ export class AuthService {
     ip: string | undefined,
     amr: AuthMethod[],
     pkt?: number,
+    device: ClientDevice = {},
   ) {
     // Best-effort: a write hiccup here must never block a real sign-in, same
     // posture as EgpService's sync-run recording and AuditService.record.
     try {
       await this.db.users.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
+      await this.noteDevice(user, device, ip);
     } catch (error) {
-      this.logger.warn(`Failed to stamp lastLoginAt for ${user.email}: ${String(error)}`);
+      this.logger.warn(`Failed to record sign-in for ${user.email}: ${String(error)}`);
     }
 
     const token = createSessionToken({
@@ -510,5 +519,55 @@ export class AuthService {
       user: { id: user._id.toString(), email: user.email, name: user.name, role: user.role },
       token,
     };
+  }
+
+  /**
+   * ASVS 6.3.5: a successful sign-in from a browser this account hasn't used
+   * before emails its owner, with when, which browser and from where, so a
+   * sign-in they didn't make doesn't go unnoticed. Called only after every
+   * factor passed, so it says nothing about failed tries (the lockout email
+   * covers those).
+   *
+   * A browser is known by the random device cookie the frontend keeps, stored
+   * here only as a hash, the last MAX_KNOWN_DEVICES of them per account. The
+   * account's very first recorded browser sends nothing: that is its owner
+   * signing up, or every existing account's first sign-in after this shipped,
+   * and an email for each would teach people to ignore them. A sign-in with no
+   * device id at all (a script calling the API) counts as new every time.
+   */
+  private async noteDevice(user: WithId<UserDoc>, device: ClientDevice, ip?: string): Promise<void> {
+    const hash = deviceHash(device.id);
+    const known = user.knownDevices ?? [];
+    const now = new Date();
+
+    if (hash && known.some((d) => d.hash === hash)) {
+      await this.db.users.updateOne({ _id: user._id, "knownDevices.hash": hash }, { $set: { "knownDevices.$.lastSeenAt": now } });
+      return;
+    }
+
+    const label = deviceLabel(device.userAgent);
+    if (hash) {
+      const entry: KnownDevice = { hash, label, firstSeenAt: now, lastSeenAt: now };
+      await this.db.users.updateOne(
+        { _id: user._id },
+        { $push: { knownDevices: { $each: [entry], $slice: -MAX_KNOWN_DEVICES } } },
+      );
+    }
+    if (known.length === 0) return;
+
+    logSecurityEvent("auth.login.new_device", {
+      outcome: "success",
+      userId: user._id.toString(),
+      email: user.email,
+      ip,
+      reason: hash ? "owner_notified" : "no_device_id",
+    });
+    const when = now.toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "long", timeStyle: "short" });
+    // Not awaited: the email must never hold up (or fail) the sign-in itself.
+    void this.links.notify(user.email, "new-device", [
+      `เวลา: ${when} (เวลาประเทศไทย)`,
+      `เบราว์เซอร์: ${label}`,
+      ...(ip ? [`IP: ${ip}`] : []),
+    ]);
   }
 }

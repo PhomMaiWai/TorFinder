@@ -16,7 +16,11 @@ const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
  */
 export async function relayPasskey(
   path: string,
-  { method = "POST", body }: { method?: "GET" | "POST" | "DELETE"; body?: unknown } = {},
+  {
+    method = "POST",
+    body,
+    headers: extraHeaders,
+  }: { method?: "GET" | "POST" | "DELETE"; body?: unknown; headers?: Record<string, string> } = {},
 ) {
   let res: Response;
   try {
@@ -25,6 +29,7 @@ export async function relayPasskey(
       headers: {
         ...(await authHeaders()),
         ...(await clientIpHeaders()),
+        ...extraHeaders,
         ...(body !== undefined && { "Content-Type": "application/json" }),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
