@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { submitFeedback, type FeedbackState } from "@/app/tor/[id]/actions";
+import { FORM_TOKEN_FIELD } from "@/lib/form-timing-field";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -22,9 +23,12 @@ function SubmitButton({ label }: { label: string }) {
 
 export function FeedbackForm({
   torId,
+  formToken,
   labels,
 }: {
   torId: string;
+  /** When the page was served (ASVS 2.4.2); issued by the server page. */
+  formToken: string;
   labels: {
     heading: string;
     /** "Open for comments until …", when the date is known. */
@@ -52,6 +56,7 @@ export function FeedbackForm({
 
   return (
     <form action={formAction} className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+      <input type="hidden" name={FORM_TOKEN_FIELD} value={formToken} />
       <h2 className={`flex items-center gap-2 text-lg font-bold text-ink ${labels.until ? "mb-1" : "mb-4"}`}>
         <MessageSquare size={18} className="text-ink-subtle" />
         {labels.heading}

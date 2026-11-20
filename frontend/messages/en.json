@@ -1707,5 +1707,15 @@
     "resetConfirm": "Clear all passkeys?",
     "resetCancel": "Cancel",
     "resetDone": "Passkeys cleared. They'll add a new one the next time they sign in."
+  },
+  "LeavingPage": {
+    "title": "You're leaving TorFinder",
+    "description": "This link goes to a website TorFinder doesn't run. Check the address before you continue; TorFinder will never ask for your password there.",
+    "destination": "Destination",
+    "continue": "Continue to {host}",
+    "stay": "Stay on TorFinder",
+    "insecure": "This site doesn't use a secure (HTTPS) connection. Don't enter personal information there.",
+    "invalidTitle": "This link can't be opened",
+    "invalidDescription": "The address is missing or isn't a web address."
   }
 }

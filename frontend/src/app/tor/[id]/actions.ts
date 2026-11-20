@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { idPath } from "@/lib/backend-path";
 import { clientIpHeaders } from "@/lib/client-ip";
+import { formTokenHeader } from "@/lib/form-timing";
 import { isReportReason } from "@/lib/report-reasons";
 import { authHeaders } from "@/lib/session-headers";
 
@@ -30,7 +31,7 @@ export async function submitFeedback(
 
   const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(torId)}/feedback`, {
     method: "POST",
-    headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
+    headers: { ...(await clientIpHeaders()), ...formTokenHeader(formData), "Content-Type": "application/json" },
     body: JSON.stringify({ text, author: author || undefined }),
     cache: "no-store",
   });

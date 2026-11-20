@@ -3,6 +3,7 @@
 import { CheckCircle2, Hash, Mail, MessageCircle, Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { OffsiteLink } from "@/components/ui/offsite-link";
 
 type Channel = "email" | "slack" | "line";
 
@@ -189,25 +190,25 @@ export function ChannelSettings() {
               <p className="rounded-lg bg-surface-alt py-2 text-center font-mono text-lg font-bold tracking-widest text-ink select-all">
                 {lineLink.code}
               </p>
-              <a
+              <OffsiteLink
                 href={lineLink.messageUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 items-center justify-center rounded-lg bg-[#06C755] px-4 text-sm font-semibold text-white hover:opacity-90"
               >
                 {t("lineOpenChat")}
-              </a>
+              </OffsiteLink>
               <p className="text-xs text-ink-muted">
                 {t.rich("lineAddFriendFirst", {
                   link: (chunks) => (
-                    <a
+                    <OffsiteLink
                       href={lineLink.addFriendUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-accent underline underline-offset-2"
                     >
                       {chunks}
-                    </a>
+                    </OffsiteLink>
                   ),
                 })}
               </p>

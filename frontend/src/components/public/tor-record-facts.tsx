@@ -6,6 +6,7 @@ import type { Locale } from "@/i18n/config";
 import { formatDate } from "@/lib/datetime";
 import { biddingOf } from "@/lib/tor-ui";
 import type { TorRecord } from "@/types/tor";
+import { OffsiteLink } from "@/components/ui/offsite-link";
 
 const BAHT = new Intl.NumberFormat("th-TH", {
   style: "currency",
@@ -111,7 +112,7 @@ export function TorRecordFacts({ tor }: { tor: TorRecord }) {
       ? {
           label: t("sourcePdfLabel"),
           value: (
-            <a
+            <OffsiteLink
               href={pdf}
               target="_blank"
               rel="noopener noreferrer"
@@ -119,7 +120,7 @@ export function TorRecordFacts({ tor }: { tor: TorRecord }) {
             >
               {t("openPdf")}
               <ExternalLink size={13} />
-            </a>
+            </OffsiteLink>
           ),
         }
       : null,

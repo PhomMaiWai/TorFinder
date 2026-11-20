@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { clientIpHeaders } from "@/lib/client-ip";
+import { clientDevice, rememberDevice } from "@/lib/device-cookie";
 import { jsonResponse } from "@/lib/json-response";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
@@ -16,11 +17,12 @@ export async function POST(request: Request) {
     return jsonResponse({ error: te("emailPasswordRequired") }, { status: 400 });
   }
 
+  const device = await clientDevice();
   let backendRes: Response;
   try {
     backendRes = await fetch(`${BACKEND_URL}/api/auth/login`, {
       method: "POST",
-      headers: { ...(await clientIpHeaders()), "Content-Type": "application/json" },
+      headers: { ...(await clientIpHeaders()), ...device.headers, "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
   } catch {
@@ -32,7 +34,7 @@ export async function POST(request: Request) {
   // A staff account with a passkey: the password was right, and the browser
   // now signs this challenge (POST /api/auth/passkey/login). No session yet.
   if (backendRes.ok && data?.status === "passkey-required") {
-    return jsonResponse({ status: "passkey-required", options: data.options });
+    return rememberDevice(jsonResponse({ status: "passkey-required", options: data.options }), device);
   }
 
   if (!backendRes.ok || !data?.token) {
@@ -45,5 +47,5 @@ export async function POST(request: Request) {
 
   const response = jsonResponse({ user: data.user });
   response.cookies.set(SESSION_COOKIE, data.token, sessionCookieOptions());
-  return response;
+  return rememberDevice(response, device);
 }

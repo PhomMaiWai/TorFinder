@@ -61,6 +61,7 @@ import { AgencyFilter } from "./agency-filter";
 import { FindSimilarPanel } from "./find-similar-panel";
 import { FilterCheckbox } from "./filter-checkbox";
 import { FilterRadio } from "./filter-radio";
+import { OffsiteLink } from "@/components/ui/offsite-link";
 
 /** Everything a reader can still act on: bid now, or comment on what is coming. */
 const OPEN_STATUSES: readonly TorStatus[] = ["bidding", "comment"];
@@ -463,7 +464,7 @@ function PublicTorCard({
             </button>
             {/* A few records carry no link at all, so only offer one that opens. */}
             {originalUrl && (
-              <a
+              <OffsiteLink
                 href={originalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -471,7 +472,7 @@ function PublicTorCard({
               >
                 <ExternalLink size={14} />
                 {t("viewOriginal")}
-              </a>
+              </OffsiteLink>
             )}
           </div>
         </div>
