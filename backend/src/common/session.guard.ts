@@ -24,6 +24,24 @@ export function logDenied(request: Request, reason: string, userId?: string, rol
   });
 }
 
+/**
+ * One `access.granted` line per admitted request to a protected route (ASVS
+ * 16.3.2 at Level 3: every authorization decision, allowed ones too, so access
+ * to sensitive data is on record). Who, with which role, which method and
+ * path; never the query string or any of the data.
+ */
+export function logGranted(request: Request, guard: string, userId: string, role: string): void {
+  logSecurityEvent("access.granted", {
+    outcome: "success",
+    reason: guard,
+    userId,
+    role,
+    ip: request.ip,
+    method: request.method,
+    path: request.path,
+  });
+}
+
 /** The route's own view of who is calling. */
 export type AuthenticatedRequest = Request & { session: SessionPayload };
 
@@ -56,6 +74,7 @@ export class SessionGuard implements CanActivate {
 
     if (!this.revocation) {
       request.session = session;
+      logGranted(request, "session", session.sub, session.role);
       return true;
     }
 
@@ -68,6 +87,7 @@ export class SessionGuard implements CanActivate {
         throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
       }
       request.session = session;
+      logGranted(request, "session", session.sub, session.role);
       return true;
     });
   }
