@@ -19,6 +19,15 @@ export const SEED_USERS: SeedUser[] = [
     status: "approved",
     password: "Admin1234!",
   },
+  // A second admin, so the two-admin approval for granting or removing the
+  // admin role (ASVS 2.3.5) can be tried locally: one asks, the other approves.
+  {
+    email: "admin2@bma.go.th",
+    name: "ผู้ดูแลระบบ 2",
+    role: "admin",
+    status: "approved",
+    password: "Admin2345!",
+  },
   {
     email: "owner@bma.go.th",
     name: "เจ้าของโครงการ",

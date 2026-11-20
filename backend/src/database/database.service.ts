@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { Collection, Document, GridFSBucket, MongoClient, ObjectId } from "mongodb";
+import { Collection, Document, GridFSBucket, MongoBulkWriteError, MongoClient, ObjectId } from "mongodb";
 
 import { StoredExtraction } from "../ai/ai.types";
 import { CertificateRecord } from "../certificates/certificate.types";
@@ -661,16 +661,34 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.seedUsers();
   }
 
+  /**
+   * Adds whichever demo accounts are missing, by email, so a demo account
+   * added later (e.g. the second admin) reaches an existing local database
+   * too. One that already exists is left exactly as it is: its password,
+   * role and approval may have been changed on purpose.
+   */
   private async seedUsers(): Promise<void> {
-    if ((await this.users.countDocuments()) > 0) return;
+    const existing = new Set(
+      (await this.users.find({ email: { $in: SEED_USERS.map((u) => u.email) } }, { projection: { email: 1 } }).toArray()).map(
+        (u) => u.email,
+      ),
+    );
+    const missing = SEED_USERS.filter((u) => !existing.has(u.email));
+    if (missing.length === 0) return;
 
     const docs = await Promise.all(
-      SEED_USERS.map(async ({ password, ...user }) => {
+      missing.map(async ({ password, ...user }) => {
         return { ...user, ...(await passwordFields(password)), createdAt: new Date() };
       }),
     );
 
-    await this.users.insertMany(docs);
+    // ordered: false — another backend booting at the same moment may insert
+    // the same account first; its duplicate-key error is the expected outcome.
+    try {
+      await this.users.insertMany(docs, { ordered: false });
+    } catch (error) {
+      if (!(error instanceof MongoBulkWriteError && error.code === 11000)) throw error;
+    }
     this.logger.log(`Seeded ${docs.length} demo users`);
     if (env.isProduction) {
       // Their passwords are in the README, so anyone can sign in as admin here.
