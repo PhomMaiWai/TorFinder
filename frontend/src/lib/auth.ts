@@ -29,11 +29,19 @@ export const isStaffRole = (role: Role | undefined) => role !== undefined && STA
 export const STAFF_PASSKEYS_REQUIRED =
   (process.env.STAFF_PASSKEYS_REQUIRED ?? String(process.env.NODE_ENV === "production")) === "true";
 
-/** A staff session that hasn't used a passkey while passkeys are required: it may only add one. */
+/** Must match the backend's COMPANY_PASSKEYS_REQUIRED: companies need a passkey too (ASVS 6.3.3). */
+export const COMPANY_PASSKEYS_REQUIRED =
+  (process.env.COMPANY_PASSKEYS_REQUIRED ?? String(process.env.NODE_ENV === "production")) === "true";
+
+/** Whether this kind of account must sign in with a passkey (backend common/passkey-policy.ts). */
+export function passkeyRequiredFor(role: Role | undefined): boolean {
+  if (isStaffRole(role)) return STAFF_PASSKEYS_REQUIRED;
+  return role === "org" && COMPANY_PASSKEYS_REQUIRED;
+}
+
+/** A session that hasn't used a passkey although its account must: it may only add one. */
 export function needsPasskeySetup(session: SessionPayload | null): boolean {
-  return Boolean(
-    session && STAFF_PASSKEYS_REQUIRED && isStaffRole(session.role) && !session.amr?.includes("passkey"),
-  );
+  return Boolean(session && passkeyRequiredFor(session.role) && !session.amr?.includes("passkey"));
 }
 
 /**

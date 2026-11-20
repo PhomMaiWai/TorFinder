@@ -92,7 +92,7 @@ export function PasskeySection({ setupRequired, forCompany = false }: { setupReq
 
         {setupRequired && (
           <p role="status" className="rounded-lg bg-accent-soft px-4 py-2.5 text-sm font-medium text-accent-text">
-            {t("setupRequired")}
+            {forCompany ? t("setupRequiredCompany") : t("setupRequired")}
           </p>
         )}
         {!supported && (

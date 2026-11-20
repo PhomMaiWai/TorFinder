@@ -21,6 +21,7 @@ import {
 } from "@simplewebauthn/server";
 import { ObjectId, WithId } from "mongodb";
 
+import { passkeyRequiredFor } from "../common/passkey-policy";
 import { Role, isStaffRole } from "../common/roles";
 import { logSecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
@@ -323,8 +324,8 @@ export class PasskeysService {
     const user = await this.userOf(session.sub);
     const existing = user.passkeys ?? [];
     if (!existing.some((passkey) => passkey.id === id)) throw new NotFoundException("ไม่พบพาสคีย์นี้");
-    if (env.passkeys.required && existing.length === 1) {
-      throw new ConflictException("บัญชีเจ้าหน้าที่ต้องมีพาสคีย์อย่างน้อยหนึ่งอัน กรุณาเพิ่มอันใหม่ก่อนลบอันนี้");
+    if (passkeyRequiredFor(user.role) && existing.length === 1) {
+      throw new ConflictException("บัญชีนี้ต้องมีพาสคีย์อย่างน้อยหนึ่งอัน กรุณาเพิ่มอันใหม่ก่อนลบอันนี้");
     }
     // Conditional on the count read above, so two parallel removals can't take the last one.
     const result = await this.db.users.updateOne(

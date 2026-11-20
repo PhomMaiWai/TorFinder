@@ -144,6 +144,11 @@ export const env = {
      * anyone who has added one must always use it.
      */
     required: (process.env.STAFF_PASSKEYS_REQUIRED ?? String(isProduction)) === "true",
+    /**
+     * Companies must have a passkey too (ASVS 6.3.3), on the same terms as
+     * staff: on by default in production, off for a local stack.
+     */
+    companiesRequired: (process.env.COMPANY_PASSKEYS_REQUIRED ?? String(isProduction)) === "true",
     /** The site's domain as WebAuthn knows it; passkeys only work on this domain and its subdomains. */
     rpId: process.env.WEBAUTHN_RP_ID ?? new URL(frontendOrigin).hostname,
     /** The exact origin a browser must report; a look-alike phishing site can't produce it. */

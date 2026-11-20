@@ -38,8 +38,6 @@ const ADMIN_ONLY_PREFIXES = ["/admin"];
 const ORG_ONLY_PREFIXES = ["/matches", "/profile", "/library", "/growth", "/notifications"];
 /** The project owner's own announcements; the data behind it is owner-only too. */
 const OWNER_ONLY_PREFIXES = ["/owner"];
-/** The staff consoles a passkey guards. */
-const STAFF_CONSOLE_PREFIXES = ["/admin", "/owner", "/auditor"];
 /** Pages only the Auditor Office may see. */
 const AUDITOR_ONLY_PREFIXES = ["/auditor"];
 /** The protected pages a public viewer has: their own saved list, and their signed-in devices on /account. */
@@ -195,9 +193,10 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
     return NextResponse.redirect(new URL(homeFor(session.role), request.url));
   }
 
-  // Staff who haven't added a passkey yet, while one is required, can only
-  // reach /account to add it; the backend refuses their console's data too.
-  if (needsPasskeySetup(session) && matches(pathname, STAFF_CONSOLE_PREFIXES)) {
+  // An account that must use a passkey but hasn't added one yet (staff, and
+  // companies when required) can only reach /account to add it; the backend
+  // refuses its data too (ASVS 6.3.3).
+  if (needsPasskeySetup(session) && !matches(pathname, ["/account"])) {
     return NextResponse.redirect(new URL("/account?passkey=setup", request.url));
   }
 
