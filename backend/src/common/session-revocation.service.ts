@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { ObjectId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
 
 import { DatabaseService } from "../database/database.service";
 
@@ -39,12 +39,20 @@ export class SessionRevocationService {
     return !!session && session.userId.equals(new ObjectId(userId)) && !session.revokedAt;
   }
 
-  /** Invalidates every token already issued to this user — logout, a password reset, a suspension, a lost approval. */
-  async revoke(userId: string): Promise<void> {
+  /**
+   * Invalidates every token already issued to this user — logout, a password
+   * reset, a suspension, a lost approval. Pass the operation's `session` to
+   * make it part of that transaction (DatabaseService.transaction).
+   */
+  async revoke(userId: string, session?: ClientSession): Promise<void> {
     if (!ObjectId.isValid(userId)) return;
     const now = new Date();
-    await this.db.users.updateOne({ _id: new ObjectId(userId) }, { $set: { sessionMinIssuedAt: now } });
-    await this.db.sessions.updateMany({ userId: new ObjectId(userId), revokedAt: { $exists: false } }, { $set: { revokedAt: now } });
+    await this.db.users.updateOne({ _id: new ObjectId(userId) }, { $set: { sessionMinIssuedAt: now } }, { session });
+    await this.db.sessions.updateMany(
+      { userId: new ObjectId(userId), revokedAt: { $exists: false } },
+      { $set: { revokedAt: now } },
+      { session },
+    );
   }
 
   /** Ends one session of this user (ASVS 7.5.2); false when there is no such live session. */

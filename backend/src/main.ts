@@ -78,6 +78,9 @@ async function bootstrap() {
   if (env.isProduction && !httpsOptions) {
     logSecurityEvent("config.internal_tls_off", { outcome: "failure", reason: "backend_serves_plain_http" });
   }
+  if (env.isProduction && !env.virusScan.host) {
+    logSecurityEvent("config.virus_scan_off", { outcome: "failure", reason: "clamav_host_unset" });
+  }
 }
 
 bootstrap();

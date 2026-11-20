@@ -39,6 +39,8 @@ export type SecurityEvent =
   | "admin.sessions.revoke"
   | "config.secret_rotation_due"
   | "config.internal_tls_off"
+  | "config.virus_scan_off"
+  | "file.malware"
   | "admin.approval.request"
   | "admin.approval.approve"
   | "admin.approval.reject";

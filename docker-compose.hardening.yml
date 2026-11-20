@@ -1,0 +1,174 @@
+# Production hardening that needs extra services (ASVS 5.4.3, 13.2.5, 13.3.1,
+# 16.4.2, 16.4.3). Opt-in, like the HTTPS edge:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.hardening.yml up -d --build
+#
+# A plain `docker compose up` (and the demo) doesn't use this file. What each
+# service does, and how to check it: docs/operations/hardening.md.
+x-logging: &shipped
+  # Every line goes to the separate log store; Docker keeps a local copy too,
+  # so `docker compose logs` still works.
+  driver: fluentd
+  options:
+    fluentd-address: "127.0.0.1:24224"
+    fluentd-async: "true"
+    tag: "{{.Name}}"
+
+services:
+  backend:
+    # ASVS 13.2.5: on the internal network only, which has no route out; the
+    # egress proxy below is its one way to the internet.
+    networks: !override [internal]
+    ports: !reset []
+    logging: *shipped
+    environment:
+      - HTTPS_PROXY=http://egress:3128
+      - HTTP_PROXY=http://egress:3128
+      - NO_PROXY=db,clamav,localhost,127.0.0.1
+      # Node's own fetch and https follow the proxy variables only with this.
+      - NODE_USE_ENV_PROXY=1
+      # ASVS 5.4.3: every upload and portal document is scanned.
+      - CLAMAV_HOST=clamav
+      # ASVS 13.3.1: emptied here, so the vault's file below is the only source.
+      - SESSION_SECRET=
+      - SESSION_SECRET_PREVIOUS=
+      - SESSION_SECRET_PREVIOUS_UNTIL=
+      - RESEND_API_KEY=
+      - LINE_CHANNEL_ACCESS_TOKEN=
+      - LINE_CHANNEL_SECRET=
+    # ASVS 13.3.1: its secrets come from the vault (vault-init), not from .env.
+    command: ["sh", "-c", "set -a && . /run/app-secrets/app.env && set +a && exec npm start"]
+    volumes:
+      - app_secrets_backend:/run/app-secrets:ro
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+      egress:
+        condition: service_started
+      log-store:
+        condition: service_started
+
+  frontend:
+    networks: !override [default, internal]
+    logging: *shipped
+    environment:
+      - SESSION_SECRET=
+      - SESSION_SECRET_PREVIOUS=
+      - SESSION_SECRET_PREVIOUS_UNTIL=
+    command: ["sh", "-c", "set -a && . /run/app-secrets/app.env && set +a && exec npm start"]
+    volumes:
+      - app_secrets_frontend:/run/app-secrets:ro
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+      log-store:
+        condition: service_started
+
+  db:
+    networks: !override [internal]
+    ports: !reset []
+  db-users:
+    networks: !override [internal]
+  db-secrets:
+    networks: !override [internal]
+
+  certs:
+    volumes:
+      # Makes the vault's server certificate too (docker/certs/generate.sh).
+      - certs_vault:/certs/vault-volume
+
+  # ASVS 13.3.1: the secrets vault (docker/hardening/vault.hcl), internal
+  # network and TLS only.
+  vault:
+    image: hashicorp/vault:1.18.5
+    networks: [internal]
+    command: ["vault", "server", "-config=/vault/config/vault.hcl"]
+    cap_add: [IPC_LOCK]
+    volumes:
+      - ./docker/hardening/vault.hcl:/vault/config/vault.hcl:ro
+      - vault_data:/vault/file
+      - certs_vault:/certs:ro
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # One-shot: unseals the vault and gives each service its own secrets
+  # (docker/hardening/vault-init.sh). The first run loads them from .env.
+  vault-init:
+    image: hashicorp/vault:1.18.5
+    networks: [internal]
+    entrypoint: ["sh", "/scripts/vault-init.sh"]
+    environment:
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - SESSION_SECRET_PREVIOUS=${SESSION_SECRET_PREVIOUS:-}
+      - SESSION_SECRET_PREVIOUS_UNTIL=${SESSION_SECRET_PREVIOUS_UNTIL:-}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN:-}
+      - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET:-}
+    volumes:
+      - ./docker/hardening:/scripts:ro
+      - certs_vault:/certs:ro
+      - vault_keys:/keys
+      - app_secrets_backend:/out/backend
+      - app_secrets_frontend:/out/frontend
+    depends_on:
+      - vault
+    restart: "no"
+
+  # ASVS 13.2.5: the allowlist proxy (docker/hardening/squid.conf).
+  egress:
+    image: ubuntu/squid:6.6-24.04_beta
+    networks: [internal, default]
+    volumes:
+      - ./docker/hardening/squid.conf:/etc/squid/squid.conf:ro
+    restart: unless-stopped
+
+  # ASVS 5.4.3: the virus scanner. It updates its signatures itself, so it
+  # needs the internet too, but nothing else talks to it except the backend.
+  clamav:
+    image: clamav/clamav-debian:1.4.3
+    networks: [internal, default]
+    # Portal documents can be up to 40 MB; clamd takes 25 MB unless told otherwise.
+    entrypoint:
+      - sh
+      - -c
+      - sed -i 's/^#*StreamMaxLength .*/StreamMaxLength 64M/' /etc/clamav/clamd.conf && exec /init
+    volumes:
+      - clamav_signatures:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "clamdcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      start_period: 300s
+      retries: 30
+    restart: unless-stopped
+
+  # ASVS 16.4.2, 16.4.3: the separate log store (docker/hardening/log-store.conf).
+  # Its port is on this machine only: Docker itself delivers the logs to it.
+  log-store:
+    image: fluent/fluent-bit:3.2.10
+    ports:
+      - "127.0.0.1:24224:24224"
+    volumes:
+      - ./docker/hardening/log-store.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - security_logs:/logs
+    restart: unless-stopped
+
+networks:
+  # No gateway: containers only on this network can't reach the internet.
+  internal:
+    internal: true
+
+volumes:
+  clamav_signatures:
+  security_logs:
+  certs_vault:
+  vault_data:
+  # The vault's unseal key and root token; only vault-init mounts it.
+  vault_keys:
+  # Each service's secrets, written by vault-init and mounted by that service only.
+  app_secrets_backend:
+  app_secrets_frontend:

@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from "@nestjs/common";
-import { ObjectId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
 import { Role } from "../common/roles";
@@ -111,39 +111,62 @@ export class RoleChangesService {
    * the write, so two admins demoted at the same moment can't both go through.
    * `detailSuffix` is appended to the audit entry, e.g. who asked and approved.
    */
-  async apply(current: RoleChangeTarget, role: Role, actor: string, options: { name?: string; detailSuffix?: string } = {}) {
-    const demotesAdmin = current.role === "admin" && role !== "admin";
-    if (demotesAdmin && (await this.otherAdmins(current._id)) === 0) throw new ConflictException(LAST_ADMIN);
+  async apply(
+    current: RoleChangeTarget,
+    role: Role,
+    actor: string,
+    options: { name?: string; detailSuffix?: string; session?: ClientSession; notify?: boolean } = {},
+  ) {
+    // The role, the sign-out and the audit entry land together or not at all
+    // (ASVS 2.3.3); a caller that already runs a transaction passes its session.
+    const run = async (session: ClientSession | undefined) => {
+      const demotesAdmin = current.role === "admin" && role !== "admin";
+      // In a transaction each demotion reads a snapshot, so two at once could
+      // each see the other admin still there and both commit. Writing the same
+      // document makes them collide; the retry then sees the first one's change.
+      if (demotesAdmin && session) {
+        await this.db.locks.updateOne({ _id: "admin-demotion" }, { $set: { at: new Date() } }, { upsert: true, session });
+      }
+      if (demotesAdmin && (await this.db.users.countDocuments({ role: "admin", _id: { $ne: current._id } }, { session })) === 0) {
+        throw new ConflictException(LAST_ADMIN);
+      }
 
-    const result = await this.db.users.findOneAndUpdate(
-      { _id: current._id, role: current.role },
-      { $set: { role, ...(options.name !== undefined && { name: options.name }) } },
-      { returnDocument: "after", projection: DIRECTORY_FIELDS },
-    );
-    // The role moved under us between the read and the write.
-    if (!result) throw new ConflictException(CHANGED_MEANWHILE);
+      const result = await this.db.users.findOneAndUpdate(
+        { _id: current._id, role: current.role },
+        { $set: { role, ...(options.name !== undefined && { name: options.name }) } },
+        { returnDocument: "after", projection: DIRECTORY_FIELDS, session },
+      );
+      // The role moved under us between the read and the write.
+      if (!result) throw new ConflictException(CHANGED_MEANWHILE);
 
-    if (demotesAdmin && (await this.db.users.countDocuments({ role: "admin" })) === 0) {
-      await this.db.users.updateOne({ _id: current._id }, { $set: { role: "admin" } });
-      throw new ConflictException(LAST_ADMIN);
-    }
+      // Without a transaction (a single-server database), the write is undone by hand.
+      if (demotesAdmin && (await this.db.users.countDocuments({ role: "admin" }, { session })) === 0) {
+        await this.db.users.updateOne({ _id: current._id }, { $set: { role: "admin" } }, { session });
+        throw new ConflictException(LAST_ADMIN);
+      }
 
-    await this.revocation.revoke(current._id.toString());
-
-    await Promise.all([
-      this.audit.record(
+      await this.revocation.revoke(current._id.toString(), session);
+      await this.audit.record(
         actor,
         "เปลี่ยนบทบาทผู้ใช้",
         `${current.email}: ${ROLE_LABELS[current.role]} → ${ROLE_LABELS[role]}${options.detailSuffix ?? ""}`,
-      ),
-      this.notifications.create(
-        current._id,
-        "system",
-        "บทบาทของบัญชีคุณเปลี่ยนแล้ว",
-        `ผู้ดูแลระบบเปลี่ยนบทบาทของคุณเป็น${ROLE_LABELS[role]} กรุณาเข้าสู่ระบบอีกครั้ง`,
-      ),
-    ]);
+        session,
+      );
+      return result;
+    };
 
+    const result = options.session ? await run(options.session) : await this.db.transaction(run);
+    if (!options.session && options.notify !== false) await this.notifyRoleChanged(current._id, role);
     return result;
+  }
+
+  /** After the change has committed; a caller with its own transaction calls this once it has. */
+  notifyRoleChanged(userId: ObjectId, role: Role) {
+    return this.notifications.create(
+      userId,
+      "system",
+      "บทบาทของบัญชีคุณเปลี่ยนแล้ว",
+      `ผู้ดูแลระบบเปลี่ยนบทบาทของคุณเป็น${ROLE_LABELS[role]} กรุณาเข้าสู่ระบบอีกครั้ง`,
+    );
   }
 }

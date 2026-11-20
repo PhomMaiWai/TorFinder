@@ -11,6 +11,7 @@ import {
 import { ObjectId } from "mongodb";
 
 import { cleanUploadIsolated } from "../common/parse-worker";
+import { scanForViruses } from "../common/virus-scan";
 import { DatabaseService } from "../database/database.service";
 import {
   CERTIFICATE_LIMITS,
@@ -124,6 +125,8 @@ export class CertificatesService {
     // Multer already refuses anything larger; this keeps the rule true without it.
     if (upload.size > CERTIFICATE_LIMITS.fileBytes) throw new BadRequestException("ไฟล์ใหญ่เกิน 5 MB");
 
+    // Every file from outside is scanned first, whatever it claims to be (ASVS 5.4.3).
+    await scanForViruses(upload.buffer, { source: "certificate", userId });
     const type = sniffCertificateFile(upload.buffer);
     if (!type) throw new UnsupportedMediaTypeException("รับเฉพาะไฟล์ PDF, PNG หรือ JPG");
 

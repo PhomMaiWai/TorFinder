@@ -175,6 +175,18 @@ The frontend, backend and MongoDB authenticate each other with certificates from
 - [ ] `db-users` logs `created` or `updated CN=torr_app,OU=backend,O=TorFinder`: the backend's database login is its certificate. The old password account (`MONGO_APP_PASSWORD`) is removed and the variable is no longer read
 - [ ] To start over with a new CA (e.g. after a key was exposed): `docker compose down`, `docker volume rm <project>_certs_ca`, `docker compose up -d`. Every certificate is reissued
 
+## Hardening services
+
+`docker-compose.hardening.yml` adds the virus scanner, the egress allowlist, the secrets vault and the separate log store (ASVS 5.4.3, 13.2.5, 13.3.1, 16.4.2, 16.4.3). How each works and how to check it: [hardening.md](./hardening.md).
+
+- [ ] Start with all three files: `docker compose -f docker-compose.yml -f docker-compose.edge.yml -f docker-compose.hardening.yml up -d --build`
+- [ ] `vault-init` logs `gave backend its secrets` and `gave frontend its secrets`; then remove the secrets from `.env`
+- [ ] The backend's log has no `config.virus_scan_off`, and the EICAR probe (`docs/security/evidence/virus-probe.js`) is refused with 422
+- [ ] From the backend, a portal answers and `https://example.com` is refused; a new outside service is added to `docker/hardening/squid.conf` first
+- [ ] Run the log store on another host and point the `fluentd-address` at it
+- [ ] Switch the vault to auto-unseal with the cloud provider's key service, and revoke the root token
+- [ ] `COMPANY_PASSKEYS_REQUIRED` and `STAFF_PASSKEYS_REQUIRED` are on (their production default)
+
 ## Confirm it actually works, not just that it booted
 
 - [ ] `curl -sf <backend>/health` returns `{"ok":true}`

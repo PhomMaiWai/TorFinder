@@ -171,8 +171,20 @@ export class AdminApprovalsService {
     const current = await this.db.users.findOne({ _id: claimed.targetId }, { projection: DIRECTORY_FIELDS });
     if (!current || current.role !== claimed.fromRole) throw await fail(ROLE_MOVED, "role_changed");
 
-    const result = await this.roles.apply(current, claimed.toRole, actor.email, {
-      detailSuffix: ` (ขอโดย ${claimed.requestedBy.email}, อนุมัติโดย ${actor.email})`,
+    // The role change and the approval's audit entry land together (ASVS 2.3.3).
+    const result = await this.db.transaction(async (session) => {
+      const changed = await this.roles.apply(current, claimed.toRole, actor.email, {
+        detailSuffix: ` (ขอโดย ${claimed.requestedBy.email}, อนุมัติโดย ${actor.email})`,
+        session,
+        notify: false,
+      });
+      await this.audit.record(
+        actor.email,
+        "อนุมัติคำขอเปลี่ยนบทบาทผู้ดูแลระบบ",
+        `${describe(claimed)} (ขอโดย ${claimed.requestedBy.email})`,
+        session,
+      );
+      return changed;
     });
 
     logSecurityEvent("admin.approval.approve", {
@@ -184,7 +196,7 @@ export class AdminApprovalsService {
       reason: `by_${actor.sub}`,
     });
     await Promise.all([
-      this.audit.record(actor.email, "อนุมัติคำขอเปลี่ยนบทบาทผู้ดูแลระบบ", `${describe(claimed)} (ขอโดย ${claimed.requestedBy.email})`),
+      this.roles.notifyRoleChanged(claimed.targetId, claimed.toRole),
       this.notifications.create(
         claimed.requestedBy.id,
         "system",

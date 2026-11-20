@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { Request } from "express";
 
+import { PASSKEY_SETUP_PATHS, needsPasskeySetup, passkeySetupRequired } from "./passkey-policy";
 import { logSecurityEvent } from "./security-log";
 import { SessionRevocationService } from "./session-revocation.service";
 import { SessionPayload, verifySessionToken } from "./token";
@@ -42,6 +43,16 @@ export function logGranted(request: Request, guard: string, userId: string, role
   });
 }
 
+/**
+ * ASVS 6.3.3: a session whose account must use a passkey but didn't may only
+ * reach the sign-in routes (to add one), not the account's data.
+ */
+export function assertPasskeySetupDone(request: Request, session: SessionPayload): void {
+  if (!needsPasskeySetup(session) || PASSKEY_SETUP_PATHS.test(request.path)) return;
+  logDenied(request, "passkey_setup_required", session.sub, session.role);
+  throw passkeySetupRequired(session);
+}
+
 /** The route's own view of who is calling. */
 export type AuthenticatedRequest = Request & { session: SessionPayload };
 
@@ -73,6 +84,7 @@ export class SessionGuard implements CanActivate {
     }
 
     if (!this.revocation) {
+      assertPasskeySetupDone(request, session);
       request.session = session;
       logGranted(request, "session", session.sub, session.role);
       return true;
@@ -86,6 +98,7 @@ export class SessionGuard implements CanActivate {
         logDenied(request, "revoked_token", session.sub, session.role);
         throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
       }
+      assertPasskeySetupDone(request, session);
       request.session = session;
       logGranted(request, "session", session.sub, session.role);
       return true;

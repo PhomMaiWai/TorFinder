@@ -19,3 +19,13 @@ fi
 # mongod reads it as the `mongodb` user, uid 999 in the mongo image.
 chown 999 "$file"
 chmod 0400 "$file"
+
+# The replica set's member key (ASVS 2.3.3: transactions need a replica set,
+# and one with accounts needs this key). Made once; mongod reads it only.
+key=/secrets/replica-set-key
+if [ ! -s "$key" ]; then
+  head -c 756 /dev/urandom | base64 | tr -d '\n' > "$key"
+  echo "generated replica-set-key"
+fi
+chown 999 "$key"
+chmod 0400 "$key"

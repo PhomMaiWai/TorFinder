@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
 import { Injectable, Logger } from "@nestjs/common";
-import { ObjectId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
 
 import { canSendEmail, escapeHtml, sendEmail } from "../common/email";
 import { env } from "../config/env";
@@ -207,13 +207,16 @@ export class AccountLinksService {
   }
 
   /** The account a live link belongs to, deleting the link as it is read; null when unknown, used or expired. */
-  async consume(token: string, purpose: EmailLinkPurpose): Promise<ObjectId | null> {
-    const doc = await this.db.authTokens.findOneAndDelete({
-      tokenHash: hashToken(token),
-      purpose,
-      // The TTL sweep runs once a minute; an expired link must fail before it.
-      expiresAt: { $gt: new Date() },
-    });
+  async consume(token: string, purpose: EmailLinkPurpose, session?: ClientSession): Promise<ObjectId | null> {
+    const doc = await this.db.authTokens.findOneAndDelete(
+      {
+        tokenHash: hashToken(token),
+        purpose,
+        // The TTL sweep runs once a minute; an expired link must fail before it.
+        expiresAt: { $gt: new Date() },
+      },
+      { session },
+    );
     return doc?.userId ?? null;
   }
 }

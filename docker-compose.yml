@@ -35,6 +35,7 @@ services:
       - SESSION_SECRET_PREVIOUS_UNTIL=${SESSION_SECRET_PREVIOUS_UNTIL:-}
       # Must match the backend's value (docs/security/passkeys.md).
       - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
+      - COMPANY_PASSKEYS_REQUIRED=${COMPANY_PASSKEYS_REQUIRED:-false}
     volumes:
       - certs_frontend:/certs:ro
     depends_on:
@@ -52,7 +53,7 @@ services:
       # The app's own account (readWrite on `torr` only, made by db-users below),
       # not root (ASVS 13.2.2), logged in with the backend's TLS client
       # certificate instead of a password (MONGODB-X509, ASVS 12.3.5).
-      - MONGODB_URI=mongodb://db:27017/torr?tls=true&tlsCAFile=/certs/ca.crt&tlsCertificateKeyFile=/certs/mongo-client.pem&authMechanism=MONGODB-X509&authSource=%24external
+      - MONGODB_URI=mongodb://db:27017/torr?tls=true&tlsCAFile=/certs/ca.crt&tlsCertificateKeyFile=/certs/mongo-client.pem&authMechanism=MONGODB-X509&authSource=%24external&replicaSet=rs0
       # The API is served over HTTPS and requires the frontend's client certificate.
       - INTERNAL_TLS_CERT_FILE=/certs/server.crt
       - INTERNAL_TLS_KEY_FILE=/certs/server.key
@@ -78,6 +79,7 @@ services:
       # unless .env opts in, so a local stack or demo works without a passkey;
       # a real deployment sets STAFF_PASSKEYS_REQUIRED=true (rollout in passkeys.md).
       - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
+      - COMPANY_PASSKEYS_REQUIRED=${COMPANY_PASSKEYS_REQUIRED:-false}
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
       - ADMIN_APPROVAL_EXPIRY_HOURS=${ADMIN_APPROVAL_EXPIRY_HOURS:-48}
       - FORM_MIN_SECONDS=${FORM_MIN_SECONDS:-2}
@@ -169,6 +171,11 @@ services:
       - --tlsDisabledProtocols=TLS1_0,TLS1_1,TLS1_2
       - --tlsCertificateKeyFile=/certs/db.pem
       - --tlsCAFile=/certs/ca.crt
+      # ASVS 2.3.3: a one-member replica set, so a business operation's writes
+      # run in one transaction (DatabaseService.transaction). db-users starts
+      # it. A replica set with accounts needs a member key: db-secrets makes it.
+      - --replSet=rs0
+      - --keyFile=/secrets/replica-set-key
     volumes:
       - torr_db_data:/data/db
       - certs_db:/certs:ro

@@ -19,8 +19,9 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import { ObjectId, WithId } from "mongodb";
+import { ClientSession, ObjectId, WithId } from "mongodb";
 
+import { passkeyRequiredFor } from "../common/passkey-policy";
 import { Role, isStaffRole } from "../common/roles";
 import { logSecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
@@ -323,8 +324,8 @@ export class PasskeysService {
     const user = await this.userOf(session.sub);
     const existing = user.passkeys ?? [];
     if (!existing.some((passkey) => passkey.id === id)) throw new NotFoundException("ไม่พบพาสคีย์นี้");
-    if (env.passkeys.required && existing.length === 1) {
-      throw new ConflictException("บัญชีเจ้าหน้าที่ต้องมีพาสคีย์อย่างน้อยหนึ่งอัน กรุณาเพิ่มอันใหม่ก่อนลบอันนี้");
+    if (passkeyRequiredFor(user.role) && existing.length === 1) {
+      throw new ConflictException("บัญชีนี้ต้องมีพาสคีย์อย่างน้อยหนึ่งอัน กรุณาเพิ่มอันใหม่ก่อนลบอันนี้");
     }
     // Conditional on the count read above, so two parallel removals can't take the last one.
     const result = await this.db.users.updateOne(
@@ -370,21 +371,21 @@ export class PasskeysService {
    * session of theirs ends, and they add a new passkey at their next sign-in.
    * The caller has passed step-up; nobody can reset their own.
    */
-  async resetFor(targetId: string, actor: SessionPayload, ip?: string): Promise<WithId<UserDoc>> {
+  async resetFor(targetId: string, actor: SessionPayload, ip?: string, session?: ClientSession): Promise<WithId<UserDoc>> {
     if (targetId === actor.sub) throw new BadRequestException("ล้างพาสคีย์ของบัญชีตัวเองไม่ได้ ให้ผู้ดูแลระบบคนอื่นเป็นผู้ล้าง");
     const user = ObjectId.isValid(targetId)
       ? await this.db.users.findOneAndUpdate(
           { _id: new ObjectId(targetId) },
           { $unset: { passkeys: "" } },
-          { returnDocument: "before" },
+          { returnDocument: "before", session },
         )
       : null;
     if (!user) throw new NotFoundException("ไม่พบบัญชีนี้");
-    await this.revocation.revoke(targetId);
-    await this.db.authTokens.deleteMany({
-      userId: user._id,
-      purpose: { $in: ["passkey-login", "passkey-register", "passkey-step-up"] },
-    });
+    await this.revocation.revoke(targetId, session);
+    await this.db.authTokens.deleteMany(
+      { userId: user._id, purpose: { $in: ["passkey-login", "passkey-register", "passkey-step-up"] } },
+      { session },
+    );
     logSecurityEvent("auth.passkey.reset", {
       outcome: "success",
       userId: targetId,
@@ -392,7 +393,11 @@ export class PasskeysService {
       reason: `by_${actor.sub}`,
       ip,
     });
-    if (user.passkeys?.length) await this.links.notify(user.email, "passkeys-reset");
     return user;
+  }
+
+  /** After the reset has committed: the owner hears about it (ASVS 6.3.7). */
+  async notifyReset(user: Pick<UserDoc, "email" | "passkeys">): Promise<void> {
+    if (user.passkeys?.length) await this.links.notify(user.email, "passkeys-reset");
   }
 }
