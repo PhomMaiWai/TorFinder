@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/action-result";
 import {
   decideAdminApproval,
+  endAllSessions,
+  endUserSessions,
   reactivateUser,
   resetUserPasskeys,
   sendUserPasswordReset,
@@ -46,4 +48,13 @@ export async function approveAdminChange(id: string) {
 
 export async function rejectAdminChange(id: string) {
   return done(await decideAdminApproval(id, "reject"));
+}
+
+/** Nothing on the page changes: the account just has to sign in again. */
+export async function endAccountSessions(id: string) {
+  return endUserSessions(id);
+}
+
+export async function endEveryonesSessions() {
+  return endAllSessions();
 }

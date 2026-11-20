@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle2, KeyRound, Mail, Pencil, Search } from "lucide-react";
+import { Ban, CheckCircle2, KeyRound, LogOut, Mail, Pencil, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
@@ -46,6 +46,10 @@ type Props = {
   onResetPasskeys: (id: string) => Promise<ActionResult>;
   /** Emails the owner a password-reset link (ASVS 6.4.6); not for viewers, who have no password. */
   onSendPasswordReset: (id: string) => Promise<ActionResult>;
+  /** Ends every session of one account (ASVS 7.4.5). */
+  onEndSessions: (id: string) => Promise<ActionResult>;
+  /** Signs every account out; the admin keeps the session they did it from. */
+  onEndAllSessions: () => Promise<ActionResult>;
 };
 
 /** The words for a passkey check that didn't happen, so the admin knows nothing changed. */
@@ -173,13 +177,24 @@ function UserEditor({
  * suspension first — that is the state an admin is here to change — and falls
  * back to the approval status when the account is free to use.
  */
-export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasskeys, onSendPasswordReset }: Props) {
+export function UserList({
+  users,
+  onSuspend,
+  onReactivate,
+  onEdit,
+  onResetPasskeys,
+  onSendPasswordReset,
+  onEndSessions,
+  onEndAllSessions,
+}: Props) {
   const t = useTranslations("AdminUsersPage");
   const tp = useTranslations("Passkeys");
   const stepUpMessage = useStepUpMessage();
   /** One line under a row: why an action was refused, or that a reset went through. */
   const [rowMessage, setRowMessage] = useState<{ id: string; text: string; ok: boolean } | null>(null);
   const [confirmingResetId, setConfirmingResetId] = useState<string | null>(null);
+  const [confirmingEndAll, setConfirmingEndAll] = useState(false);
+  const [endAllMessage, setEndAllMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const locale = useLocale() as Locale;
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
@@ -224,7 +239,55 @@ export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasske
             </option>
           ))}
         </select>
+
+        <div className="ml-auto flex items-center gap-2 text-sm">
+          {confirmingEndAll ? (
+            <>
+              <span className="text-ink-muted">{t("endAllConfirmPrompt")}</span>
+              <button
+                disabled={busyId === "all"}
+                onClick={() => {
+                  setConfirmingEndAll(false);
+                  setBusyId("all");
+                  setEndAllMessage(null);
+                  startTransition(async () => {
+                    try {
+                      const result = await withStepUp(onEndAllSessions, stepUpMessage);
+                      setEndAllMessage({ text: result.error ?? t("endAllDone"), ok: !result.error });
+                    } finally {
+                      setBusyId(null);
+                    }
+                  });
+                }}
+                className="font-semibold text-danger transition-opacity hover:opacity-80 disabled:opacity-50"
+              >
+                {t("endAllConfirm")}
+              </button>
+              <button
+                onClick={() => setConfirmingEndAll(false)}
+                className="font-medium text-ink-muted transition-colors hover:text-ink"
+              >
+                {t("cancelAction")}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmingEndAll(true)}
+              disabled={busyId === "all"}
+              title={t("endAllHint")}
+              className="flex h-10 items-center gap-1.5 rounded-lg border border-border px-3 font-medium text-ink-muted transition-colors hover:text-danger disabled:opacity-50"
+            >
+              <LogOut size={14} />
+              {t("endAllAction")}
+            </button>
+          )}
+        </div>
       </div>
+      {endAllMessage && (
+        <p role="status" className={`-mt-3 mb-4 text-sm ${endAllMessage.ok ? "text-success" : "text-danger"}`}>
+          {endAllMessage.text}
+        </p>
+      )}
 
       <div className="overflow-hidden rounded-xl border border-border bg-surface divide-y divide-border">
         {filtered.length === 0 ? (
@@ -295,6 +358,8 @@ export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasske
                     </p>
                   </div>
 
+                  {/* The row's actions wrap as a group, so the name and email keep their width. */}
+                  <div className="flex max-w-[60%] shrink-0 flex-wrap items-center justify-end gap-2 max-sm:max-w-none max-sm:justify-start">
                   <button
                     onClick={() =>
                       setEditingId(editingId === user.id ? null : user.id)
@@ -369,6 +434,27 @@ export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasske
                     </button>
                   )}
 
+                  <button
+                    onClick={() => {
+                      setBusyId(user.id);
+                      setRowMessage(null);
+                      startTransition(async () => {
+                        try {
+                          const result = await withStepUp(() => onEndSessions(user.id), stepUpMessage);
+                          setRowMessage({ id: user.id, text: result.error ?? t("endSessionsDone", { name: user.name }), ok: !result.error });
+                        } finally {
+                          setBusyId(null);
+                        }
+                      });
+                    }}
+                    disabled={busyId === user.id}
+                    title={t("endSessionsHint")}
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink disabled:opacity-50"
+                  >
+                    <LogOut size={14} />
+                    {t("endSessionsAction")}
+                  </button>
+
                   {isStaffRole(user.role) &&
                     (confirmingResetId === user.id ? (
                       <span className="flex shrink-0 items-center gap-2 text-sm">
@@ -408,6 +494,7 @@ export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasske
                         {tp("resetAction")}
                       </button>
                     ))}
+                  </div>
                 </div>
                 {rowMessage?.id === user.id && (
                   <p

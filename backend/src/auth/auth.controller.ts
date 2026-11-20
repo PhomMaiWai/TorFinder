@@ -12,6 +12,7 @@ import { AuthService } from "./auth.service";
 import { ClientDevice } from "./known-devices";
 import { EmailOnlyDto, ResetPasswordDto, VerifyEmailDto } from "./dto/account-links.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
+import { EndSessionsDto } from "./dto/end-sessions.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
 import { GoogleCompleteSignupDto } from "./dto/google-complete-signup.dto";
 import { LoginDto } from "./dto/login.dto";
@@ -142,6 +143,31 @@ export class AuthController {
       ip,
       clientDevice(deviceId, userAgent),
     );
+  }
+
+  // ---- the account's own sessions (ASVS 7.5.2) ------------------------------
+
+  @Get("sessions")
+  @UseGuards(SessionGuard)
+  listSessions(@Req() request: AuthenticatedRequest) {
+    return this.authService.listSessions(request.session);
+  }
+
+  /** Ends all of this account's sessions except the one asking. */
+  @Post("sessions/end-others")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SessionGuard)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  endOtherSessions(@Body() dto: EndSessionsDto, @Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    return this.authService.endSessions(request.session, "others", dto.password, ip);
+  }
+
+  @Post("sessions/:id/end")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SessionGuard)
+  @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  endSession(@Param("id") id: string, @Body() dto: EndSessionsDto, @Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    return this.authService.endSessions(request.session, { sid: id }, dto.password, ip);
   }
 
   @Get("passkeys")

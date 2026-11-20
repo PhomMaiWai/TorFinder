@@ -40,8 +40,10 @@ services:
       - "127.0.0.1:4000:4000"
     environment:
       # The app's own account (readWrite on `torr` only, made by db-users below),
-      # not root (ASVS 13.2.2). On a server, set MONGO_APP_PASSWORD in .env.
-      - MONGODB_URI=mongodb://${MONGO_APP_USERNAME:-torr_app}:${MONGO_APP_PASSWORD:-torr_app}@db:27017/torr?authSource=torr
+      # not root (ASVS 13.2.2). No password in the URI: it is the generated one
+      # in the secrets volume (ASVS 13.2.3), read at start.
+      - MONGODB_URI=mongodb://${MONGO_APP_USERNAME:-torr_app}@db:27017/torr?authSource=torr
+      - MONGODB_PASSWORD_FILE=/secrets/app-password
       - SESSION_SECRET=${SESSION_SECRET:-}
       # The site's public address; on a server, https://<your domain> (CORS and passkeys use it).
       - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:3000}
@@ -63,10 +65,25 @@ services:
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
       - ADMIN_APPROVAL_EXPIRY_HOURS=${ADMIN_APPROVAL_EXPIRY_HOURS:-48}
       - FORM_MIN_SECONDS=${FORM_MIN_SECONDS:-2}
+    volumes:
+      - torr_db_secrets:/secrets:ro
     depends_on:
       db-users:
         condition: service_completed_successfully
     restart: unless-stopped
+
+  # One-shot: makes the database passwords on the first `up` and keeps them in
+  # the torr_db_secrets volume (ASVS 13.2.3; docker/db-secrets/init.sh).
+  db-secrets:
+    image: mongo:7
+    environment:
+      - MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-}
+      - MONGO_APP_PASSWORD=${MONGO_APP_PASSWORD:-}
+    volumes:
+      - torr_db_secrets:/secrets
+      - ./docker/db-secrets:/scripts:ro
+    entrypoint: ["sh", "/scripts/init.sh"]
+    restart: "no"
 
   # One-shot: creates or updates the backend's database account, then exits.
   # Runs on every `up` (as root), so an existing volume gets the account too.
@@ -74,15 +91,11 @@ services:
     image: mongo:7
     environment:
       - MONGO_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-torr}
-      - MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-torr}
       - MONGO_APP_USERNAME=${MONGO_APP_USERNAME:-torr_app}
-      - MONGO_APP_PASSWORD=${MONGO_APP_PASSWORD:-torr_app}
     volumes:
+      - torr_db_secrets:/secrets:ro
       - ./docker/mongo-users:/scripts:ro
-    entrypoint:
-      - sh
-      - -c
-      - mongosh --quiet --host db -u "$$MONGO_ROOT_USERNAME" -p "$$MONGO_ROOT_PASSWORD" --authenticationDatabase admin /scripts/app-user.js
+    entrypoint: ["sh", "/scripts/run.sh"]
     depends_on:
       db:
         condition: service_healthy
@@ -95,15 +108,19 @@ services:
     # the shell (npm run dev) with only the database in Docker.
     ports:
       - "127.0.0.1:27017:27017"
-    # torr/torr is for a local machine; any server sets its own in .env. Only
-    # read when the volume is first created.
+    # The root password is the generated one (ASVS 13.2.3), or MONGO_ROOT_PASSWORD
+    # from .env. Only read when the data volume is first created.
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-torr}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-torr}
+      - MONGO_INITDB_ROOT_PASSWORD_FILE=/secrets/root-password
     volumes:
       - torr_db_data:/data/db
+      - torr_db_secrets:/secrets:ro
       # Fills an empty database with a snapshot of real TOR records on first start.
       - ./docker/mongo-seed:/docker-entrypoint-initdb.d:ro
+    depends_on:
+      db-secrets:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 2s
@@ -113,3 +130,4 @@ services:
 
 volumes:
   torr_db_data:
+  torr_db_secrets:

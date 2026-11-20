@@ -453,7 +453,20 @@
   },
   "AccountPage": {
     "pageTitle": "Account settings",
-    "pageDescription": "Sign-in settings for your staff or company account."
+    "pageDescription": "Sign-in settings for your staff or company account.",
+    "sessionsSectionTitle": "Signed-in devices",
+    "sessionsDescription": "Every browser where this account is signed in. Sign out any you don't recognise.",
+    "sessionsThisDevice": "This device",
+    "sessionsSignedIn": "Signed in {date}",
+    "sessionsUnknownDevice": "Unknown browser",
+    "sessionsEnd": "Sign out",
+    "sessionsEndOthers": "Sign out all other devices",
+    "sessionsPasswordLabel": "Confirm with your current password",
+    "sessionsCancel": "Cancel",
+    "sessionsEnded": "Signed out.",
+    "sessionsEndFailed": "Couldn't sign that device out. Please try again.",
+    "sessionsLoadFailed": "Couldn't load your signed-in devices.",
+    "sessionsEmpty": "No devices to show. Sessions started before this list existed appear after you next sign in."
   },
   "NotificationsPage": {
     "pageTitle": "Notifications",
@@ -1021,7 +1034,15 @@
     "approvalWaiting": "Waiting for another administrator",
     "approvalApprove": "Approve",
     "approvalReject": "Reject",
-    "approvalCancel": "Cancel request"
+    "approvalCancel": "Cancel request",
+    "endSessionsAction": "Sign out",
+    "endSessionsHint": "End every session of this account on every device",
+    "endSessionsDone": "{name} is signed out everywhere.",
+    "endAllAction": "Sign out everyone",
+    "endAllHint": "End every session of every account except this one",
+    "endAllConfirmPrompt": "Sign out every account?",
+    "endAllConfirm": "Sign everyone out",
+    "endAllDone": "Every other account is signed out."
   },
   "OpportunityCard": {
     "newBadge": "New",

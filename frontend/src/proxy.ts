@@ -9,6 +9,7 @@ import {
   sessionNeedsRefresh,
   verifySessionToken,
 } from "@/lib/auth";
+import { LOCALE_COOKIE } from "@/i18n/config";
 import { jsonResponse } from "@/lib/json-response";
 import { type Role, homeFor } from "@/lib/roles";
 
@@ -24,8 +25,8 @@ const PROTECTED_PREFIXES = [
   "/growth",
   "/saved",
   "/notifications",
-  // Every password account's own sign-in settings (change password); a viewer
-  // is sent home below, as they sign in with Google only.
+  // The account's own sign-in settings: signed-in devices for everyone, and
+  // change password for every account that has one.
   "/account",
 ];
 /** Pages only an admin may see. */
@@ -38,8 +39,8 @@ const OWNER_ONLY_PREFIXES = ["/owner"];
 const STAFF_CONSOLE_PREFIXES = ["/admin", "/owner", "/auditor"];
 /** Pages only the Auditor Office may see. */
 const AUDITOR_ONLY_PREFIXES = ["/auditor"];
-/** The one protected page a public viewer has: their own saved list. */
-const VIEWER_PREFIXES = ["/saved"];
+/** The protected pages a public viewer has: their own saved list, and their signed-in devices on /account. */
+const VIEWER_PREFIXES = ["/saved", "/account"];
 /** Pages that make no sense once you are signed in. */
 const GUEST_ONLY_PREFIXES = ["/login", "/signup"];
 
@@ -172,7 +173,7 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
       return null;
     }
     // The proxy runs before next-intl's request config, so it reads the language cookie itself.
-    const signIn = request.cookies.get("NEXT_LOCALE")?.value === "en" ? "Please sign in." : "กรุณาเข้าสู่ระบบ";
+    const signIn = request.cookies.get(LOCALE_COOKIE)?.value === "en" ? "Please sign in." : "กรุณาเข้าสู่ระบบ";
     return session ? null : jsonResponse({ error: signIn }, { status: 401 });
   }
 

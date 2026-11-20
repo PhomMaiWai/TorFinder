@@ -9,7 +9,9 @@
 
 const dbName = process.env.MONGO_APP_DB || "torr";
 const user = process.env.MONGO_APP_USERNAME || "torr_app";
-const pwd = process.env.MONGO_APP_PASSWORD || "torr_app";
+// No default (ASVS 13.2.3): docker/db-secrets/init.sh generates it.
+const pwd = process.env.MONGO_APP_PASSWORD;
+if (!pwd) throw new Error("MONGO_APP_PASSWORD is empty: run through docker/mongo-users/run.sh");
 const roleName = "torrSchemaChanges";
 
 const appDb = db.getSiblingDB(dbName);

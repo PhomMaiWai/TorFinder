@@ -62,6 +62,6 @@ export class ReportsController {
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
     const session = scheme === "Bearer" ? verifySessionToken(token) : null;
     if (!session || !ObjectId.isValid(session.sub)) return null;
-    return (await this.revocation.isValid(session.sub, session.iat)) ? session : null;
+    return (await this.revocation.isValid(session.sub, session.iat, session.sid)) ? session : null;
   }
 }

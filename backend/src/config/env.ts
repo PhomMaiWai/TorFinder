@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 // Local runs read backend/.env; in Docker the values come from the service's
 // `environment:` instead and there is no file to load.
 try {
@@ -50,6 +52,22 @@ function optionalNumber(name: string, fallback: number): number {
   return parsed;
 }
 
+/**
+ * The connection string, with the password from MONGODB_PASSWORD_FILE when
+ * that is set: Docker Compose keeps the generated database password in a
+ * secrets volume instead of the environment (ASVS 13.2.3).
+ */
+function mongodbUri(): string {
+  const uri = required("MONGODB_URI", "mongodb://localhost:27017/torfinder");
+  const passwordFile = process.env.MONGODB_PASSWORD_FILE;
+  if (!passwordFile) return uri;
+  const password = readFileSync(passwordFile, "utf8").trim();
+  if (!password) throw new Error(`MONGODB_PASSWORD_FILE (${passwordFile}) is empty`);
+  const url = new URL(uri);
+  url.password = encodeURIComponent(password);
+  return url.toString();
+}
+
 const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 
 export const env = {
@@ -58,7 +76,7 @@ export const env = {
   // Announcements published before this are kept but not listed: they are
   // too old to be anyone's opportunity or a useful price reference.
   torListedSince: new Date(process.env.TOR_LISTED_SINCE ?? "2022-01-01"),
-  mongodbUri: required("MONGODB_URI", "mongodb://localhost:27017/torfinder"),
+  mongodbUri: mongodbUri(),
   /**
    * The database connection's limits (ASVS 13.1.2, 13.2.6; written up in
    * docs/operations/limits-and-retention.md). At the pool limit a query waits

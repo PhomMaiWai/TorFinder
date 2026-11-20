@@ -21,12 +21,14 @@ import { after, before, describe, it } from "node:test";
 
 import { MongoClient, ObjectId } from "mongodb";
 
+const LOCALE_COOKIE = process.env.E2E_LOCALE_COOKIE ?? "__Host-torr_locale";
+
 const FRONTEND_URL = process.env.E2E_FRONTEND_URL ?? "http://localhost:3000";
 const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://torr:torr@localhost:27017/torr?authSource=admin";
 
 /** Renders a TOR detail page in English, for stable heading assertions. */
 async function renderPage(path) {
-  const res = await fetch(`${FRONTEND_URL}${path}`, { headers: { cookie: "NEXT_LOCALE=en" } });
+  const res = await fetch(`${FRONTEND_URL}${path}`, { headers: { cookie: `${LOCALE_COOKIE}=en` } });
   assert.equal(res.status, 200, `${path} should render, got ${res.status}`);
   return res.text();
 }

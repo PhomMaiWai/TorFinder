@@ -49,6 +49,8 @@ const notoSansThai = localFont({
  */
 const CLIENT_NAMESPACES = [
   "AccountLinks",
+  // Signed-in devices on /account (client component).
+  "AccountPage",
   // Admin TOR form and e-GP import box (client components).
   "AdminTor",
   "AdminAccountsPage",

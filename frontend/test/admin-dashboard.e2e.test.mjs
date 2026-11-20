@@ -12,7 +12,7 @@
 // src/lib/auth.ts implements (HMAC-SHA256, base64url, "<payload>.<sig>") —
 // identical to backend/src/common/token.ts — so one token works both as the
 // frontend's `torr_session` cookie and, forwarded verbatim by
-// src/lib/session-headers.ts, as the backend's bearer token. NEXT_LOCALE=en
+// src/lib/session-headers.ts, as the backend's bearer token. The locale cookie (=en)
 // is set alongside it purely so assertions can pin exact English copy instead
 // of Thai.
 //
@@ -41,6 +41,7 @@ const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://torr:torr@localhost:27
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-insecure-secret-change-me";
 /** `next start` runs in production, where the session cookie carries the __Host- prefix (src/lib/auth.ts); set E2E_SESSION_COOKIE=torr_session against `next dev`. */
 const SESSION_COOKIE = process.env.E2E_SESSION_COOKIE ?? "__Host-torr_session";
+const LOCALE_COOKIE = process.env.E2E_LOCALE_COOKIE ?? "__Host-torr_locale";
 
 function makeToken(role, email) {
   const payload = {
@@ -73,7 +74,7 @@ async function backendApi(path, { method = "GET", body, token = ADMIN_TOKEN } = 
 /** Renders a page as the seeded admin would see it, in English for stable assertions. */
 async function renderPage(path) {
   const res = await fetch(`${FRONTEND_URL}${path}`, {
-    headers: { cookie: `${SESSION_COOKIE}=${ADMIN_TOKEN}; NEXT_LOCALE=en` },
+    headers: { cookie: `${SESSION_COOKIE}=${ADMIN_TOKEN}; ${LOCALE_COOKIE}=en` },
     redirect: "manual",
   });
   assert.equal(res.status, 200, `${path} should render for an admin session, got ${res.status}`);
@@ -233,7 +234,7 @@ describe("admin dashboard — renders real data", () => {
 
     // Audit entries carry the backend's own Thai copy verbatim — they are
     // data, not translation keys — so these assertions are Thai regardless
-    // of the NEXT_LOCALE cookie.
+    // of the locale cookie.
     assert.ok(html.includes("อนุมัติบัญชีบริษัท"), "the approval should be logged");
     assert.ok(html.includes("ระงับบัญชีบริษัท"), "the suspension should be logged");
     assert.ok(html.includes(approvedThenSuspended.companyName), "the entry should name the actual company");

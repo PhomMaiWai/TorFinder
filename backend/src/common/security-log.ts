@@ -35,6 +35,8 @@ export type SecurityEvent =
   | "auth.passkey.remove"
   | "auth.passkey.reset"
   | "auth.step_up"
+  | "auth.session.revoke"
+  | "admin.sessions.revoke"
   | "admin.approval.request"
   | "admin.approval.approve"
   | "admin.approval.reject";

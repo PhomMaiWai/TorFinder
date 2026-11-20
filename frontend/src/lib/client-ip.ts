@@ -7,11 +7,14 @@ import { headers } from "next/headers";
  * everyone out for a minute.
  *
  * Only the right-most `X-Forwarded-For` entry is sent: it was written by the
- * nearest hop — Next.js itself from the socket when the browser connects
- * directly, or a trusted reverse proxy that appends the real address. Earlier
- * entries are whatever the client claimed. A client talking to Next.js
- * directly can still spoof this one value, which is why the backend also
- * limits failed logins per account rather than trusting the address alone.
+ * nearest hop, the reverse proxy in front of Next.js, which appends the
+ * address it saw (ASVS 4.1.3, 15.3.4). Earlier entries are whatever the client
+ * claimed. Next.js itself fills the header from the socket only when it is
+ * missing (`??=` in next/dist/server/base-server.js), so a client that reached
+ * Next.js directly could name any address. That is why docker-compose.yml
+ * binds Next.js to 127.0.0.1: the proxy is the only way in, and the deployment
+ * checklist requires it to append the address. The backend also limits
+ * failed logins per account, so a wrong address can't skip that limit.
  *
  * Server-side only (route handlers and server actions).
  */

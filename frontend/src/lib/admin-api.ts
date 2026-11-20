@@ -128,6 +128,30 @@ export async function resetUserPasskeys(id: string): Promise<ActionResult> {
 }
 
 /** Emails the owner a password-reset link; the admin never sees or sets the password (ASVS 6.4.6). */
+/** Ends every session of one account (ASVS 7.4.5). */
+export async function endUserSessions(id: string): Promise<ActionResult> {
+  const te = await getTranslations("Errors");
+  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/sessions/end`, {
+    method: "POST",
+    headers: await authHeaders(),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  return actionResultFrom(res, te("actionFailed"));
+}
+
+/** Signs every account out except the admin's own session (ASVS 7.4.5). */
+export async function endAllSessions(): Promise<ActionResult> {
+  const te = await getTranslations("Errors");
+  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/sessions/end-all`, {
+    method: "POST",
+    headers: await authHeaders(),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  return actionResultFrom(res, te("actionFailed"));
+}
+
 export async function sendUserPasswordReset(id: string): Promise<ActionResult> {
   const te = await getTranslations("Errors");
   const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/${idPath(id)}/password-reset`, {

@@ -6,13 +6,15 @@ import {
   Logger,
   UnauthorizedException,
 } from "@nestjs/common";
+import { randomBytes } from "node:crypto";
+
 import { OAuth2Client } from "google-auth-library";
 import { MongoServerError, ObjectId, WithId } from "mongodb";
 
 import { needsRehash, passwordFields, passwordProblem, spendPasswordCheck, verifyPassword } from "../common/password";
 import { logSecurityEvent, SecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
-import { AuthMethod, createSessionToken } from "../common/token";
+import { AuthMethod, createSessionToken, SESSION_MAX_AGE_SECONDS, SessionPayload } from "../common/token";
 import { env } from "../config/env";
 import { DatabaseService, UserDoc } from "../database/database.service";
 import { AccountLinksService } from "./account-links.service";
@@ -38,6 +40,9 @@ const LINK_SENT = { ok: true as const };
 // A dedicated client per request would re-fetch Google's signing keys every
 // time; the library caches them internally, so one shared instance is correct.
 const googleClient = new OAuth2Client(env.googleClientId);
+
+/** How recent a sign-in (or passkey check) must be to end sessions without a password (ASVS 7.5.2). */
+const REAUTH_MINUTES = 10;
 
 @Injectable()
 export class AuthService {
@@ -200,6 +205,76 @@ export class AuthService {
    * Every session ends afterwards, this one included, so a token someone else
    * may hold stops working and the caller signs in again with the new password.
    */
+  // ---- the account's own sessions (ASVS 7.5.2) ------------------------------
+
+  /** This account's live sessions, newest first; `current` marks the one asking. */
+  async listSessions(session: SessionPayload) {
+    if (!ObjectId.isValid(session.sub)) return { needsPassword: false, sessions: [] };
+    const user = await this.db.users.findOne(
+      { _id: new ObjectId(session.sub) },
+      { projection: { sessionMinIssuedAt: 1, passwordHash: 1 } },
+    );
+    const floor = user?.sessionMinIssuedAt ?? new Date(0);
+    const docs = await this.db.sessions
+      .find({ userId: new ObjectId(session.sub), revokedAt: { $exists: false }, expiresAt: { $gt: new Date() }, createdAt: { $gte: floor } })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .toArray();
+    return {
+      // Whether ending a session asks for the password (see assertReauthenticated).
+      needsPassword: !!user?.passwordHash,
+      sessions: docs.map((doc) => ({
+        id: doc._id,
+        device: doc.device ?? null,
+        // An IPv4 client reaches Node as "::ffff:a.b.c.d"; show the address people know.
+        ip: doc.ip?.replace(/^::ffff:(?=\d+\.)/, "") ?? null,
+        createdAt: doc.createdAt.toISOString(),
+        current: doc._id === session.sid,
+      })),
+    };
+  }
+
+  /**
+   * Ends one of this account's sessions, or all the others. ASVS 7.5.2 asks
+   * for authentication again first: the current password when the account has
+   * one, otherwise a sign-in or passkey check in the last REAUTH_MINUTES.
+   */
+  async endSessions(session: SessionPayload, target: { sid: string } | "others", password: string | undefined, ip?: string) {
+    await this.assertReauthenticated(session, password, ip);
+    if (target === "others") {
+      const result = await this.db.sessions.updateMany(
+        { userId: new ObjectId(session.sub), _id: { $ne: session.sid ?? "" }, revokedAt: { $exists: false } },
+        { $set: { revokedAt: new Date() } },
+      );
+      // A token from before session ids existed carries no sid; the floor ends those, and re-signs nothing else.
+      logSecurityEvent("auth.session.revoke", { outcome: "success", userId: session.sub, ip, reason: `others:${result.modifiedCount}` });
+      return { ok: true as const, ended: result.modifiedCount };
+    }
+    const ended = await this.revocation.revokeSession(session.sub, target.sid);
+    if (!ended) throw new BadRequestException("ไม่พบอุปกรณ์นี้ หรืออุปกรณ์นี้ออกจากระบบแล้ว");
+    logSecurityEvent("auth.session.revoke", { outcome: "success", userId: session.sub, ip, reason: target.sid === session.sid ? "current" : "one" });
+    return { ok: true as const, ended: 1 };
+  }
+
+  private async assertReauthenticated(session: SessionPayload, password: string | undefined, ip?: string) {
+    const user = ObjectId.isValid(session.sub) ? await this.db.users.findOne({ _id: new ObjectId(session.sub) }) : null;
+    if (!user) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
+    if (user.passwordHash && user.passwordSalt) {
+      this.assertNotLocked(user.email, ip);
+      if (typeof password === "string" && password && (await verifyPassword(password, user.passwordSalt, user.passwordHash, user.passwordParams))) {
+        return;
+      }
+      if (password) this.recordPasswordFailure(user.email, user, ip);
+      logSecurityEvent("auth.session.revoke", { outcome: "failure", userId: session.sub, ip, reason: password ? "wrong_password" : "reauth_required" });
+      throw new ForbiddenException({ statusCode: 403, code: "reauth-required", message: "กรุณายืนยันรหัสผ่านปัจจุบันก่อนออกจากระบบอุปกรณ์อื่น" });
+    }
+    const now = Math.floor(Date.now() / 1000);
+    const recent = now - session.iat <= REAUTH_MINUTES * 60 || (typeof session.pkt === "number" && now - session.pkt <= REAUTH_MINUTES * 60);
+    if (recent) return;
+    logSecurityEvent("auth.session.revoke", { outcome: "failure", userId: session.sub, ip, reason: "reauth_required" });
+    throw new ForbiddenException({ statusCode: 403, code: "reauth-required", message: "กรุณาเข้าสู่ระบบอีกครั้งก่อนออกจากระบบอุปกรณ์อื่น" });
+  }
+
   async changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordDto, ip?: string) {
     const user = ObjectId.isValid(userId) ? await this.db.users.findOne({ _id: new ObjectId(userId) }) : null;
     if (!user) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
@@ -506,6 +581,27 @@ export class AuthService {
       this.logger.warn(`Failed to record sign-in for ${user.email}: ${String(error)}`);
     }
 
+    // ASVS 7.5.2: each session is recorded, so its owner can see it and end it
+    // on its own. If the record can't be written the sign-in still works, as
+    // a session without an id (ended only with all the account's others).
+    const sid = randomBytes(16).toString("base64url");
+    let recorded = true;
+    try {
+      const now = new Date();
+      await this.db.sessions.insertOne({
+        _id: sid,
+        userId: user._id,
+        createdAt: now,
+        expiresAt: new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000),
+        device: deviceLabel(device.userAgent),
+        ...(ip && { ip }),
+        amr,
+      });
+    } catch (error) {
+      recorded = false;
+      this.logger.warn(`Failed to record session for ${user.email}: ${String(error)}`);
+    }
+
     const token = createSessionToken({
       sub: user._id.toString(),
       email: user.email,
@@ -513,6 +609,7 @@ export class AuthService {
       role: user.role,
       amr,
       ...(pkt !== undefined && { pkt }),
+      ...(recorded && { sid }),
     });
 
     logSecurityEvent(event, {

@@ -429,6 +429,24 @@ export type SavedSearchCountDoc = { _id: ObjectId; count: number };
  * than the one who asked approves it. MongoDB deletes a request at
  * `expiresAt` (TTL index), and there is at most one open request per account.
  */
+/**
+ * One signed-in session (ASVS 7.5.2): created at sign-in, its id carried in
+ * the session token as `sid`. Ending it (revokedAt) refuses that token on its
+ * next request; the owner can list and end their own, an admin all of an
+ * account's. Kept only until the token itself would have expired (TTL index).
+ */
+export type SessionDoc = {
+  _id: string;
+  userId: ObjectId;
+  createdAt: Date;
+  expiresAt: Date;
+  /** e.g. "Chrome on macOS", so the owner can recognise it; never the raw user agent string. */
+  device?: string;
+  ip?: string;
+  amr?: string[];
+  revokedAt?: Date;
+};
+
 export type AdminApprovalDoc = {
   targetId: ObjectId;
   /** Copied at request time, so the list and audit log read without a join. */
@@ -478,6 +496,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   matchAlerts!: Collection<MatchAlertDoc>;
   torEmbeddings!: Collection<TorEmbeddingDoc>;
   adminApprovals!: Collection<AdminApprovalDoc>;
+  sessions!: Collection<SessionDoc>;
   savedSearchCounts!: Collection<SavedSearchCountDoc>;
   /** Scans companies attach to their certificates; only ever read by their owner. */
   certificateFiles!: GridFSBucket;
@@ -499,6 +518,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
     this.torEmbeddings = this.client.db().collection<TorEmbeddingDoc>("torEmbeddings");
     this.adminApprovals = this.client.db().collection<AdminApprovalDoc>("adminApprovals");
+    this.sessions = this.client.db().collection<SessionDoc>("sessions");
     this.savedSearchCounts = this.client.db().collection<SavedSearchCountDoc>("savedSearchCounts");
     this.certificateFiles = new GridFSBucket(this.client.db(), { bucketName: "certificateFiles" });
     this.libraryFiles = new GridFSBucket(this.client.db(), { bucketName: "libraryFiles" });
@@ -544,6 +564,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.torEmbeddings.createIndex({ torId: 1, model: 1 }, { unique: true });
     // One open admin-role request per account; a second ask gets a duplicate-key error.
     await this.adminApprovals.createIndex({ targetId: 1 }, { unique: true });
+    // An account's sessions, newest first; each one deleted once its token could no longer be valid.
+    await this.sessions.createIndex({ userId: 1, createdAt: -1 });
+    await this.sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     // An unapproved request lapses on its own (env.adminApproval.expiryHours).
     await this.adminApprovals.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     await this.applyRetention();

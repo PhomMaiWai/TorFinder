@@ -25,17 +25,54 @@ import { DatabaseService } from "../database/database.service";
 export class SessionRevocationService {
   constructor(private readonly db: DatabaseService) {}
 
-  /** Whether a token issued at `iatSeconds` is still accepted for this user. */
-  async isValid(userId: string, iatSeconds: number): Promise<boolean> {
+  /**
+   * Whether a token issued at `iatSeconds` is still accepted for this user.
+   * A token that names its session (`sid`, ASVS 7.5.2) is also refused once
+   * that one session has been ended, or if it never belonged to this user.
+   */
+  async isValid(userId: string, iatSeconds: number, sid?: string): Promise<boolean> {
     const minIssuedAt = await this.loadMinIssuedAt(userId);
-    if (!minIssuedAt) return true;
-    return iatSeconds * 1000 >= minIssuedAt.getTime();
+    if (minIssuedAt && !(iatSeconds * 1000 >= minIssuedAt.getTime())) return false;
+    if (sid === undefined) return true;
+    if (typeof sid !== "string" || !ObjectId.isValid(userId)) return false;
+    const session = await this.db.sessions.findOne({ _id: sid }, { projection: { userId: 1, revokedAt: 1 } });
+    return !!session && session.userId.equals(new ObjectId(userId)) && !session.revokedAt;
   }
 
   /** Invalidates every token already issued to this user — logout, a password reset, a suspension, a lost approval. */
   async revoke(userId: string): Promise<void> {
     if (!ObjectId.isValid(userId)) return;
-    await this.db.users.updateOne({ _id: new ObjectId(userId) }, { $set: { sessionMinIssuedAt: new Date() } });
+    const now = new Date();
+    await this.db.users.updateOne({ _id: new ObjectId(userId) }, { $set: { sessionMinIssuedAt: now } });
+    await this.db.sessions.updateMany({ userId: new ObjectId(userId), revokedAt: { $exists: false } }, { $set: { revokedAt: now } });
+  }
+
+  /** Ends one session of this user (ASVS 7.5.2); false when there is no such live session. */
+  async revokeSession(userId: string, sid: string): Promise<boolean> {
+    if (!ObjectId.isValid(userId) || typeof sid !== "string") return false;
+    const result = await this.db.sessions.updateOne(
+      { _id: sid, userId: new ObjectId(userId), revokedAt: { $exists: false } },
+      { $set: { revokedAt: new Date() } },
+    );
+    return result.modifiedCount === 1;
+  }
+
+  /**
+   * Signs every account out at once (ASVS 7.4.5's "all users"), without
+   * rotating SESSION_SECRET. The admin doing it keeps only the session they
+   * did it from (`keep`), so they can see the result; their other sessions
+   * end too. Returns how many other accounts were signed out.
+   */
+  async revokeEveryone(keep: { userId: string; sid?: string }): Promise<number> {
+    if (!ObjectId.isValid(keep.userId)) throw new Error("Invalid user id");
+    const now = new Date();
+    const actor = new ObjectId(keep.userId);
+    const result = await this.db.users.updateMany({ _id: { $ne: actor } }, { $set: { sessionMinIssuedAt: now } });
+    await this.db.sessions.updateMany(
+      { revokedAt: { $exists: false }, ...(keep.sid ? { _id: { $ne: keep.sid } } : { userId: { $ne: actor } }) },
+      { $set: { revokedAt: now } },
+    );
+    return result.modifiedCount;
   }
 
   private async loadMinIssuedAt(userId: string): Promise<Date | null> {
