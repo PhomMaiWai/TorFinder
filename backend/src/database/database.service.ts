@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { Collection, Document, GridFSBucket, MongoClient, ObjectId } from "mongodb";
+import { Collection, Document, GridFSBucket, MongoBulkWriteError, MongoClient, ObjectId } from "mongodb";
 
 import { StoredExtraction } from "../ai/ai.types";
 import { CertificateRecord } from "../certificates/certificate.types";
@@ -413,6 +413,25 @@ export type AuditLogEntryDoc = {
 };
 
 /**
+ * A change to who holds the admin role, waiting for a second admin (ASVS
+ * 2.3.5). Granting or removing the role only takes effect once an admin other
+ * than the one who asked approves it. MongoDB deletes a request at
+ * `expiresAt` (TTL index), and there is at most one open request per account.
+ */
+export type AdminApprovalDoc = {
+  targetId: ObjectId;
+  /** Copied at request time, so the list and audit log read without a join. */
+  targetEmail: string;
+  targetName: string;
+  /** The role when asked; approval is refused if it changed in the meantime. */
+  fromRole: Role;
+  toRole: Role;
+  requestedBy: { id: ObjectId; email: string };
+  createdAt: Date;
+  expiresAt: Date;
+};
+
+/**
  * One TOR's embedding for "find similar". Kept out of `tors` on purpose: a
  * vector is ~6 KB of numbers no listing reads, and every listing would carry
  * it. `textHash` is of the text that was embedded, so an edited title or a new
@@ -447,6 +466,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   authTokens!: Collection<AuthTokenDoc>;
   matchAlerts!: Collection<MatchAlertDoc>;
   torEmbeddings!: Collection<TorEmbeddingDoc>;
+  adminApprovals!: Collection<AdminApprovalDoc>;
   /** Scans companies attach to their certificates; only ever read by their owner. */
   certificateFiles!: GridFSBucket;
   /** Reference letters and CVs from the proposal library; only ever read by their owner. */
@@ -466,6 +486,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.authTokens = this.client.db().collection<AuthTokenDoc>("authTokens");
     this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
     this.torEmbeddings = this.client.db().collection<TorEmbeddingDoc>("torEmbeddings");
+    this.adminApprovals = this.client.db().collection<AdminApprovalDoc>("adminApprovals");
     this.certificateFiles = new GridFSBucket(this.client.db(), { bucketName: "certificateFiles" });
     this.libraryFiles = new GridFSBucket(this.client.db(), { bucketName: "libraryFiles" });
     await this.users.createIndex({ email: 1 }, { unique: true });
@@ -508,6 +529,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // Doubles as the guard: two runs racing on one project can't both alert.
     await this.matchAlerts.createIndex({ userId: 1, projectKey: 1, phase: 1 }, { unique: true });
     await this.torEmbeddings.createIndex({ torId: 1, model: 1 }, { unique: true });
+    // One open admin-role request per account; a second ask gets a duplicate-key error.
+    await this.adminApprovals.createIndex({ targetId: 1 }, { unique: true });
+    // An unapproved request lapses on its own (env.adminApproval.expiryHours).
+    await this.adminApprovals.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     await this.applyRetention();
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
@@ -636,16 +661,34 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.seedUsers();
   }
 
+  /**
+   * Adds whichever demo accounts are missing, by email, so a demo account
+   * added later (e.g. the second admin) reaches an existing local database
+   * too. One that already exists is left exactly as it is: its password,
+   * role and approval may have been changed on purpose.
+   */
   private async seedUsers(): Promise<void> {
-    if ((await this.users.countDocuments()) > 0) return;
+    const existing = new Set(
+      (await this.users.find({ email: { $in: SEED_USERS.map((u) => u.email) } }, { projection: { email: 1 } }).toArray()).map(
+        (u) => u.email,
+      ),
+    );
+    const missing = SEED_USERS.filter((u) => !existing.has(u.email));
+    if (missing.length === 0) return;
 
     const docs = await Promise.all(
-      SEED_USERS.map(async ({ password, ...user }) => {
+      missing.map(async ({ password, ...user }) => {
         return { ...user, ...(await passwordFields(password)), createdAt: new Date() };
       }),
     );
 
-    await this.users.insertMany(docs);
+    // ordered: false — another backend booting at the same moment may insert
+    // the same account first; its duplicate-key error is the expected outcome.
+    try {
+      await this.users.insertMany(docs, { ordered: false });
+    } catch (error) {
+      if (!(error instanceof MongoBulkWriteError && error.code === 11000)) throw error;
+    }
     this.logger.log(`Seeded ${docs.length} demo users`);
     if (env.isProduction) {
       // Their passwords are in the README, so anyone can sign in as admin here.

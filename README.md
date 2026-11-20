@@ -98,11 +98,12 @@ import buttons on `/admin/tor`, or wait for the scheduled imports, to fill it.
 
 ## Demo accounts
 
-Seeded automatically the first time the `users` collection is empty.
+Seeded automatically on startup: any demo account that doesn't exist yet is added.
 
 | Role                            | Email                       | Password       | Signs in at           | Lands on   |
 | ------------------------------- | --------------------------- | -------------- | --------------------- | ---------- |
 | Administrator                   | `admin@bma.go.th`           | `Admin1234!`   | `/login/admin`        | `/admin`   |
+| Administrator (second)          | `admin2@bma.go.th`          | `Admin2345!`   | `/login/admin`        | `/admin`   |
 | Project owner                   | `owner@bma.go.th`           | `Owner1234!`   | `/login/admin`        | `/owner`   |
 | Auditor                         | `auditor@bma.go.th`         | `Auditor1234!` | `/login/admin`        | `/auditor` |
 | Organization (approved)         | `contact@arundigital.co.th` | `Org12345!`    | `/login/organization` | `/dashboard` |
@@ -127,9 +128,11 @@ What each role can do is described in
 
 ## Seeding rules
 
-Seeding runs on backend startup and is **idempotent**: demo accounts are inserted only
-when the `users` collection is empty, so restarting never duplicates anything and
-accounts you create by hand are never touched. TOR records are never seeded by the
+Seeding runs on backend startup and is **idempotent**: a demo account is inserted only
+when no account has its email yet, so restarting never duplicates anything, a demo
+account you changed (password, role) is left as it is, and accounts you create by
+hand are never touched. A demo account added to `seed-data.ts` later also reaches an
+existing database on the next start. TOR records are never seeded by the
 backend; in Docker they come from the snapshot in `docker/mongo-seed/`, otherwise from
 the importers.
 

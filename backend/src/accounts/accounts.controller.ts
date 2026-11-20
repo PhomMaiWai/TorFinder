@@ -1,9 +1,11 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Param, Patch, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 
 import { AdminGuard } from "../common/admin.guard";
 import { AuthenticatedRequest, SessionGuard } from "../common/session.guard";
 import { StepUpGuard } from "../common/step-up.guard";
 import { AccountsService } from "./accounts.service";
+import { AdminApprovalsService } from "./admin-approvals.service";
 import { AccountQueryDto } from "./dto/account-query.dto";
 import { ReviewAccountDto } from "./dto/review-account.dto";
 import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
@@ -15,7 +17,10 @@ import { UpdateUserDto } from "./dto/update-user.dto";
  */
 @Controller("accounts")
 export class AccountsController {
-  constructor(private readonly accountsService: AccountsService) {}
+  constructor(
+    private readonly accountsService: AccountsService,
+    private readonly approvals: AdminApprovalsService,
+  ) {}
 
   @Get()
   @UseGuards(AdminGuard)
@@ -28,6 +33,29 @@ export class AccountsController {
   @UseGuards(AdminGuard)
   findAllUsers() {
     return this.accountsService.findAllUsers();
+  }
+
+  /** Open requests to grant or remove the admin role (ASVS 2.3.5); declared before ":id" too. */
+  @Get("admin-approvals")
+  @UseGuards(AdminGuard)
+  listAdminApprovals(@Req() request: AuthenticatedRequest) {
+    return this.approvals.list(request.session);
+  }
+
+  /** A second admin applies the request; the one who asked can't. */
+  @Post("admin-approvals/:id/approve")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AdminGuard, StepUpGuard)
+  approveAdminChange(@Param("id") id: string, @Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    return this.approvals.approve(id, request.session, ip);
+  }
+
+  /** The requester cancels, or another admin rejects. */
+  @Post("admin-approvals/:id/reject")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AdminGuard, StepUpGuard)
+  rejectAdminChange(@Param("id") id: string, @Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    return this.approvals.reject(id, request.session, ip);
   }
 
   // Declared before ":id" below — otherwise that param route would swallow "/me".
@@ -49,11 +77,22 @@ export class AccountsController {
     return this.accountsService.review(id, dto, request.session.email);
   }
 
-  /** Rename an account or move it between roles; see AccountsService.updateUser. */
+  /**
+   * Rename an account or move it between roles; see AccountsService.updateUser.
+   * 202 when the role change waits for a second admin's approval.
+   */
   @Patch(":id/details")
   @UseGuards(AdminGuard, StepUpGuard)
-  updateUser(@Param("id") id: string, @Body() dto: UpdateUserDto, @Req() request: AuthenticatedRequest) {
-    return this.accountsService.updateUser(id, dto, request.session.email);
+  async updateUser(
+    @Param("id") id: string,
+    @Body() dto: UpdateUserDto,
+    @Req() request: AuthenticatedRequest,
+    @Ip() ip: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.accountsService.updateUser(id, dto, request.session, ip);
+    if (result.pendingApproval) response.status(HttpStatus.ACCEPTED);
+    return result;
   }
 
   /** Blocks sign-in on an already-approved account, without reversing its approval. */

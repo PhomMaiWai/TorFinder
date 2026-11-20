@@ -32,7 +32,10 @@ export type SecurityEvent =
   | "auth.passkey.register"
   | "auth.passkey.remove"
   | "auth.passkey.reset"
-  | "auth.step_up";
+  | "auth.step_up"
+  | "admin.approval.request"
+  | "admin.approval.approve"
+  | "admin.approval.reject";
 
 export type SecurityEventFields = {
   outcome: "success" | "failure";

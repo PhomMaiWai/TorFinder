@@ -20,6 +20,7 @@ A passkey is a key pair made by a phone, laptop (Touch ID, Windows Hello) or sec
 | Delete an announcement | `DELETE /tor/:id` |
 | Assign or change an announcement's owner | `PUT /tor/:id/owner` |
 | Clear someone's passkeys | `POST /accounts/:id/passkeys/reset` |
+| Approve, reject or cancel a request to grant or remove the admin role | `POST /accounts/admin-approvals/:id/approve`, `/reject` |
 | Add a second passkey, or remove one | `POST /auth/passkeys/options`, `DELETE /auth/passkeys/:id` |
 
 If the check is too old, the action is refused with `step-up-required`. The page then asks for the passkey and tries once more; the admin just touches their key. The TOR edit form sets the owner before it saves the other fields, so a cancelled check leaves the whole record unchanged. The re-signed session keeps its original `iat` and `exp`, so a check can't extend the 7-day absolute lifetime.

@@ -139,6 +139,36 @@ export async function sendUserPasswordReset(id: string): Promise<ActionResult> {
   return actionResultFrom(res, te("actionFailed"));
 }
 
+/** A request to grant or remove the admin role, waiting for a second admin. Mirrors the backend's PendingAdminChange. */
+export type PendingAdminChange = {
+  id: string;
+  targetId: string;
+  targetEmail: string;
+  targetName: string;
+  fromRole: Role;
+  toRole: Role;
+  requestedBy: string;
+  /** This admin asked for it: they may cancel, not approve. */
+  mine: boolean;
+  createdAt: string;
+  expiresAt: string;
+};
+
+export const fetchAdminApprovals = () =>
+  readAsAdmin<PendingAdminChange[]>("/api/accounts/admin-approvals", []);
+
+/** Approve or reject (the requester's reject is a cancel); both need step-up. */
+export async function decideAdminApproval(id: string, decision: "approve" | "reject"): Promise<ActionResult> {
+  const te = await getTranslations("Errors");
+  const res = await fetch(`${process.env.BACKEND_URL}/api/accounts/admin-approvals/${idPath(id)}/${decision}`, {
+    method: "POST",
+    headers: await authHeaders(),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  return actionResultFrom(res, te("actionFailed"));
+}
+
 export const suspendUser = (id: string) => setSuspended(id, true);
 export const reactivateUser = (id: string) => setSuspended(id, false);
 

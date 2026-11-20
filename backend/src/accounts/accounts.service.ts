@@ -10,38 +10,17 @@ import { SessionPayload } from "../common/token";
 import { Role } from "../common/roles";
 import { AccountStatus, DatabaseService, UserDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { AdminApprovalsService, PendingAdminChange } from "./admin-approvals.service";
 import { ReviewAccountDto } from "./dto/review-account.dto";
 import { EDITABLE_ROLES, UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
+import { CHANGED_MEANWHILE, LAST_ADMIN, PUBLIC_FIELDS, RoleChangesService } from "./role-changes.service";
 
 /**
  * Who an admin may suspend: self-serve accounts. Staff roles (admin, owner,
  * auditor) are seeded and managed outside the app, so they stay untouchable.
  */
 const SUSPENDABLE_ROLES = ["org", "viewer"] as const;
-
-const ROLE_LABELS: Record<Role, string> = {
-  admin: "ผู้ดูแลระบบ",
-  org: "บริษัท",
-  owner: "เจ้าของโครงการ",
-  auditor: "ผู้ตรวจสอบ",
-  viewer: "ประชาชนทั่วไป",
-};
-
-const LAST_ADMIN = "ต้องมีผู้ดูแลระบบอย่างน้อย 1 คน จึงเปลี่ยนบทบาทของผู้ดูแลระบบคนสุดท้ายไม่ได้";
-
-/** Never let password material leave the service. */
-const PUBLIC_FIELDS = {
-  email: 1,
-  name: 1,
-  role: 1,
-  status: 1,
-  suspended: 1,
-  createdAt: 1,
-  reviewedAt: 1,
-  lastLoginAt: 1,
-  company: 1,
-} as const;
 
 @Injectable()
 export class AccountsService {
@@ -52,6 +31,8 @@ export class AccountsService {
     private readonly revocation: SessionRevocationService,
     private readonly passkeys: PasskeysService,
     private readonly links: AccountLinksService,
+    private readonly roles: RoleChangesService,
+    private readonly approvals: AdminApprovalsService,
   ) {}
 
   async findAll(status?: AccountStatus) {
@@ -161,14 +142,19 @@ export class AccountsService {
   /**
    * An admin renames an account or moves it between roles. Each field that
    * actually changes gets its own audit entry. A role lives in the session
-   * token, so changing it signs the account out everywhere; otherwise a
-   * demoted admin would keep admin access until the token expired.
+   * token, so changing it signs the account out everywhere (RoleChangesService).
    *
-   * The last admin can't be demoted — nobody would be left to undo it. The
-   * check runs again after the write, so two admins demoting each other at
-   * the same moment can't both get through.
+   * Granting or removing the admin role isn't applied here: it files a request
+   * that a second admin must approve (AdminApprovalsService, ASVS 2.3.5), and
+   * the answer carries `pendingApproval`. A rename in the same edit still
+   * applies at once. The last admin can't be demoted, asked or not.
    */
-  async updateUser(id: string, { name, role }: UpdateUserDto, actor: string) {
+  async updateUser(
+    id: string,
+    { name, role }: UpdateUserDto,
+    actor: SessionPayload,
+    ip?: string,
+  ): Promise<Record<string, unknown> & { id: string; pendingApproval?: PendingAdminChange }> {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
     const _id = new ObjectId(id);
 
@@ -180,52 +166,41 @@ export class AccountsService {
     if (roleChanges && !(EDITABLE_ROLES as readonly Role[]).includes(current.role)) {
       throw new BadRequestException("เปลี่ยนบทบาทของบัญชีบริษัทไม่ได้");
     }
-    const demotesAdmin = roleChanges && current.role === "admin";
-    if (demotesAdmin && (await this.otherAdmins(_id)) === 0) throw new ConflictException(LAST_ADMIN);
+    if (roleChanges && current.role === "admin" && (await this.roles.otherAdmins(_id)) === 0) {
+      throw new ConflictException(LAST_ADMIN);
+    }
 
     if (!roleChanges && !nameChanges) {
       const { _id: unchanged, ...rest } = current;
       return { id: unchanged.toString(), ...rest };
     }
 
-    const result = await this.db.users.findOneAndUpdate(
-      { _id, role: current.role },
-      { $set: { ...(nameChanges && { name }), ...(roleChanges && { role }) } },
-      { returnDocument: "after", projection: PUBLIC_FIELDS },
-    );
-    // The role moved under us between the read and the write.
-    if (!result) throw new ConflictException("บัญชีนี้ถูกแก้ไขไปแล้ว กรุณาโหลดหน้าใหม่");
+    const waits = roleChanges && (await this.approvals.needsApproval(current.role, role, actor));
+    // Filed before anything is written, so a second open request (409) changes nothing.
+    const pendingApproval = waits ? await this.approvals.request(current, role, actor, ip) : undefined;
 
-    if (demotesAdmin && (await this.db.users.countDocuments({ role: "admin" })) === 0) {
-      await this.db.users.updateOne({ _id }, { $set: { role: "admin" } });
-      throw new ConflictException(LAST_ADMIN);
+    let result: UserDoc & { _id: ObjectId };
+    if (roleChanges && !waits) {
+      result = await this.roles.apply(current, role, actor.email, { ...(nameChanges && { name }) });
+    } else if (!nameChanges) {
+      result = current;
+    } else {
+      const renamed = await this.db.users.findOneAndUpdate(
+        { _id, role: current.role },
+        { $set: { name } },
+        { returnDocument: "after", projection: PUBLIC_FIELDS },
+      );
+      if (!renamed) {
+        if (pendingApproval) await this.db.adminApprovals.deleteOne({ _id: new ObjectId(pendingApproval.id) });
+        throw new ConflictException(CHANGED_MEANWHILE);
+      }
+      result = renamed;
     }
 
-    if (roleChanges) await this.revocation.revoke(id);
-
-    await Promise.all([
-      nameChanges && this.audit.record(actor, "แก้ไขชื่อผู้ใช้", `${current.email}: ${current.name} → ${name}`),
-      roleChanges &&
-        this.audit.record(
-          actor,
-          "เปลี่ยนบทบาทผู้ใช้",
-          `${current.email}: ${ROLE_LABELS[current.role]} → ${ROLE_LABELS[result.role]}`,
-        ),
-      roleChanges &&
-        this.notifications.create(
-          _id,
-          "system",
-          "บทบาทของบัญชีคุณเปลี่ยนแล้ว",
-          `ผู้ดูแลระบบเปลี่ยนบทบาทของคุณเป็น${ROLE_LABELS[result.role]} กรุณาเข้าสู่ระบบอีกครั้ง`,
-        ),
-    ]);
+    if (nameChanges) await this.audit.record(actor.email, "แก้ไขชื่อผู้ใช้", `${current.email}: ${current.name} → ${name}`);
 
     const { _id: updated, ...rest } = result;
-    return { id: updated.toString(), ...rest };
-  }
-
-  private otherAdmins(id: ObjectId) {
-    return this.db.users.countDocuments({ role: "admin", _id: { $ne: id } });
+    return { id: updated.toString(), ...rest, ...(pendingApproval && { pendingApproval }) };
   }
 
   async review(id: string, { status }: ReviewAccountDto, actor: string) {

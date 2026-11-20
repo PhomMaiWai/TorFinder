@@ -12,7 +12,7 @@ import type { Locale } from "@/i18n/config";
 import { type PasskeyFailureResult, withStepUp } from "@/lib/passkeys-client";
 
 /** Exhaustive on purpose: a new role that has no label here is a compile error. */
-const ROLE_LABEL = {
+export const ROLE_LABEL = {
   admin: "roleAdmin",
   org: "roleOrg",
   owner: "roleProjectOwner",
@@ -49,7 +49,7 @@ type Props = {
 };
 
 /** The words for a passkey check that didn't happen, so the admin knows nothing changed. */
-function useStepUpMessage() {
+export function useStepUpMessage() {
   const t = useTranslations("Passkeys");
   return (result: PasskeyFailureResult) =>
     result.message ??
@@ -79,7 +79,8 @@ function UserEditor({
 }: {
   user: DirectoryUser;
   onSave: (edit: UserEdit) => Promise<ActionResult>;
-  onClose: () => void;
+  /** `pending`: the role change waits for a second admin (ASVS 2.3.5). */
+  onClose: (pending?: boolean) => void;
 }) {
   const t = useTranslations("AdminUsersPage");
   const [name, setName] = useState(user.name);
@@ -102,7 +103,7 @@ function UserEditor({
         startSaving(async () => {
           const result = await onSave(edit);
           if (result.error) setError(result.error);
-          else onClose();
+          else onClose(result.pending);
         });
       }}
     >
@@ -139,7 +140,7 @@ function UserEditor({
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => onClose()}
           className="h-9 rounded-lg border border-border px-3 text-sm font-medium text-ink-muted hover:text-ink"
         >
           {t("cancelAction")}
@@ -153,7 +154,9 @@ function UserEditor({
         </button>
       </div>
       {edit.role && (
-        <p className="w-full text-xs text-ink-muted">{t("roleChangeNote")}</p>
+        <p className="w-full text-xs text-ink-muted">
+          {edit.role === "admin" || user.role === "admin" ? t("adminRoleChangeNote") : t("roleChangeNote")}
+        </p>
       )}
       {error && (
         <p role="alert" className="w-full text-xs text-danger">
@@ -418,7 +421,10 @@ export function UserList({ users, onSuspend, onReactivate, onEdit, onResetPasske
                   <UserEditor
                     user={user}
                     onSave={(edit) => withStepUp(() => onEdit(user.id, edit), stepUpMessage)}
-                    onClose={() => setEditingId(null)}
+                    onClose={(pending) => {
+                      setEditingId(null);
+                      if (pending) setRowMessage({ id: user.id, text: t("approvalRequested"), ok: true });
+                    }}
                   />
                 )}
               </div>
