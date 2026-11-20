@@ -107,6 +107,11 @@ export const env = {
     stepUpMinutes: optionalNumber("STEP_UP_MINUTES", 10),
   },
   /**
+   * The shortest time, in seconds, between a sign-up or comment form being
+   * served and submitted (ASVS 2.4.2); anything faster isn't a person typing.
+   */
+  formMinSeconds: optionalNumber("FORM_MIN_SECONDS", 2),
+  /**
    * Granting or removing the admin role waits for a second admin (ASVS 2.3.5);
    * an unapproved request is deleted after this many hours.
    */

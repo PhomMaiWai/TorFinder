@@ -42,7 +42,8 @@ export type AccountNotice =
   | "passkey-added"
   | "passkey-removed"
   | "passkeys-reset"
-  | "login-locked";
+  | "login-locked"
+  | "new-device";
 
 const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) => string[] }> = {
   // ASVS 6.3.7
@@ -90,6 +91,15 @@ const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) =
       "มีการกรอกรหัสผ่านผิดหลายครั้งติดกันสำหรับบัญชี TOR Finder ที่ใช้อีเมลนี้ ระบบจึงพักการเข้าสู่ระบบด้วยรหัสผ่านไว้ 15 นาที",
       `ถ้าเป็นคุณ รอ 15 นาทีแล้วลองใหม่ หรือตั้งรหัสผ่านใหม่ที่ ${origin}/forgot-password`,
       "ถ้าไม่ใช่คุณ รหัสผ่านของคุณยังไม่ถูกเปิดเผย แต่ควรตั้งรหัสผ่านใหม่ที่ไม่ซ้ำกับเว็บไซต์อื่น และแจ้งผู้ดูแลระบบหากเกิดขึ้นบ่อย",
+    ],
+  },
+  // ASVS 6.3.5: a sign-in from a browser the account hasn't used before.
+  "new-device": {
+    subject: "มีการเข้าสู่ระบบจากอุปกรณ์ใหม่ — TOR Finder",
+    body: (origin) => [
+      "บัญชี TOR Finder ที่ใช้อีเมลนี้เพิ่งเข้าสู่ระบบจากเบราว์เซอร์หรืออุปกรณ์ที่ไม่เคยใช้มาก่อน",
+      "ถ้าเป็นคุณ ไม่ต้องทำอะไร",
+      `ถ้าไม่ใช่คุณ กรุณาตั้งรหัสผ่านใหม่ทันทีที่ ${origin}/forgot-password (ทุกอุปกรณ์จะถูกออกจากระบบ) และแจ้งผู้ดูแลระบบ`,
     ],
   },
   // ASVS 6.3.8: the signup form answers as if it worked, so the owner is told here instead.
@@ -156,13 +166,15 @@ export class AccountLinksService {
   }
 
   /** Mails a notice to the address. Like send(), failures are logged and never change the caller's answer. */
-  async notify(email: string, notice: AccountNotice): Promise<void> {
+  /** `details` are extra lines (e.g. when and from which browser), placed after the opening paragraph. */
+  async notify(email: string, notice: AccountNotice, details: string[] = []): Promise<void> {
     if (!canSendEmail()) {
       if (env.isProduction) this.logger.warn(`No RESEND_API_KEY: ${notice} notice to ${email} not sent`);
       return;
     }
     const { subject, body } = NOTICES[notice];
-    const paragraphs = body(env.frontendOrigin);
+    const [opening, ...rest] = body(env.frontendOrigin);
+    const paragraphs = [opening, ...details, ...rest];
     try {
       await sendEmail({
         to: email,

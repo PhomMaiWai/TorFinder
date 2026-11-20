@@ -13,6 +13,7 @@ import { Role } from "../common/roles";
 import { env } from "../config/env";
 import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES, TorClassification } from "../tor/tor.constants";
 import { SEED_USERS } from "./seed-data";
+import type { KnownDevice } from "../auth/known-devices";
 
 export const ACCOUNT_STATUSES = ["pending", "approved", "rejected"] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
@@ -114,6 +115,8 @@ export type UserDoc = {
   sessionMinIssuedAt?: Date;
   /** Staff passkeys (WebAuthn credentials); see auth/passkeys.service.ts. Absent or empty means none. */
   passkeys?: StoredPasskey[];
+  /** Browsers this account has signed in from (ASVS 6.3.5); see auth/known-devices.ts. */
+  knownDevices?: KnownDevice[];
 };
 
 /** One registered passkey. Only the public key is held; the private key never leaves the user's device. */
@@ -413,6 +416,14 @@ export type AuditLogEntryDoc = {
 };
 
 /**
+ * How many saved searches one account holds: the atomic guard for the cap
+ * (ASVS 15.4.2). `_id` is the account id. Recounted from `savedSearches` at
+ * every startup, so a crash between the count and the insert can't leave it
+ * wrong for long.
+ */
+export type SavedSearchCountDoc = { _id: ObjectId; count: number };
+
+/**
  * A change to who holds the admin role, waiting for a second admin (ASVS
  * 2.3.5). Granting or removing the role only takes effect once an admin other
  * than the one who asked approves it. MongoDB deletes a request at
@@ -467,6 +478,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   matchAlerts!: Collection<MatchAlertDoc>;
   torEmbeddings!: Collection<TorEmbeddingDoc>;
   adminApprovals!: Collection<AdminApprovalDoc>;
+  savedSearchCounts!: Collection<SavedSearchCountDoc>;
   /** Scans companies attach to their certificates; only ever read by their owner. */
   certificateFiles!: GridFSBucket;
   /** Reference letters and CVs from the proposal library; only ever read by their owner. */
@@ -487,6 +499,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
     this.torEmbeddings = this.client.db().collection<TorEmbeddingDoc>("torEmbeddings");
     this.adminApprovals = this.client.db().collection<AdminApprovalDoc>("adminApprovals");
+    this.savedSearchCounts = this.client.db().collection<SavedSearchCountDoc>("savedSearchCounts");
     this.certificateFiles = new GridFSBucket(this.client.db(), { bucketName: "certificateFiles" });
     this.libraryFiles = new GridFSBucket(this.client.db(), { bucketName: "libraryFiles" });
     await this.users.createIndex({ email: 1 }, { unique: true });
@@ -534,6 +547,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // An unapproved request lapses on its own (env.adminApproval.expiryHours).
     await this.adminApprovals.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     await this.applyRetention();
+    await this.recountSavedSearches();
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
     await this.seed();
@@ -589,6 +603,19 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       await collection.createIndex({ [field]: 1 }, { name, expireAfterSeconds, ...(partialFilterExpression && { partialFilterExpression }) });
     } else if (existing.expireAfterSeconds !== expireAfterSeconds) {
       await this.client.db().command({ collMod: collection.collectionName, index: { name, expireAfterSeconds } });
+    }
+  }
+
+  /** Brings every saved-search counter back to the real number of documents. */
+  private async recountSavedSearches(): Promise<void> {
+    const counts = await this.savedSearches
+      .aggregate<{ _id: ObjectId; count: number }>([{ $group: { _id: "$userId", count: { $sum: 1 } } }])
+      .toArray();
+    await this.savedSearchCounts.deleteMany({ _id: { $nin: counts.map((c) => c._id) } });
+    if (counts.length > 0) {
+      await this.savedSearchCounts.bulkWrite(
+        counts.map(({ _id, count }) => ({ updateOne: { filter: { _id }, update: { $set: { count } }, upsert: true } })),
+      );
     }
   }
 

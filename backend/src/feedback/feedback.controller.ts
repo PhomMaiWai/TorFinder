@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from
 import { Throttle } from "@nestjs/throttler";
 
 import { AdminGuard } from "../common/admin.guard";
+import { FormTiming, FormTimingGuard } from "../common/form-timing.guard";
 import { AuthenticatedRequest } from "../common/session.guard";
 import { env } from "../config/env";
 import { CreateFeedbackDto } from "./dto/create-feedback.dto";
@@ -20,6 +21,8 @@ export class FeedbackController {
    */
   @Post("tor/:torId/feedback")
   @Throttle({ default: { limit: env.throttle.authLimit, ttl: env.throttle.authTtlMs } })
+  @FormTiming("feedback")
+  @UseGuards(FormTimingGuard)
   create(@Param("torId") torId: string, @Body() dto: CreateFeedbackDto) {
     return this.feedback.create(torId, dto);
   }
