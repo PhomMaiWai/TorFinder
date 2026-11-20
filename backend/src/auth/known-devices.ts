@@ -16,6 +16,12 @@ export type KnownDevice = {
   lastSeenAt: Date;
 };
 
+/**
+ * How long a session from a device the account hasn't used before lasts,
+ * instead of the usual 7 days (ASVS 8.2.4): long enough for a working day.
+ */
+export const NEW_DEVICE_SESSION_SECONDS = 12 * 60 * 60;
+
 /** Enough for anyone's phones, laptops and browsers; the oldest falls off. */
 export const MAX_KNOWN_DEVICES = 20;
 
