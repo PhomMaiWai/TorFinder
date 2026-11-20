@@ -59,6 +59,14 @@ export class AccountsController {
   }
 
   // Declared before ":id" below — otherwise that param route would swallow "/me".
+  /** Signs every account out (ASVS 7.4.5). Declared before the `:id` routes. */
+  @Post("sessions/end-all")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AdminGuard, StepUpGuard)
+  endEveryonesSessions(@Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    return this.accountsService.endEveryonesSessions(request.session, ip);
+  }
+
   @Get("me")
   @UseGuards(SessionGuard)
   findOwn(@Req() request: AuthenticatedRequest) {
@@ -117,6 +125,14 @@ export class AccountsController {
   @UseGuards(AdminGuard, StepUpGuard)
   sendPasswordReset(@Param("id") id: string, @Req() request: AuthenticatedRequest, @Ip() ip: string) {
     return this.accountsService.sendPasswordReset(id, request.session, ip);
+  }
+
+  /** Ends every session of this account (ASVS 7.4.5). */
+  @Post(":id/sessions/end")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AdminGuard, StepUpGuard)
+  endUserSessions(@Param("id") id: string, @Req() request: AuthenticatedRequest, @Ip() ip: string) {
+    return this.accountsService.endUserSessions(id, request.session, ip);
   }
 
   /** A staff member lost their passkey: clear them all, end their sessions, and they add a new one at sign-in. */

@@ -19,6 +19,7 @@ const FRONTEND_URL = process.env.E2E_FRONTEND_URL ?? "http://localhost:3000";
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-insecure-secret-change-me";
 /** `next start` runs in production, where the session cookie carries the __Host- prefix (src/lib/auth.ts); set E2E_SESSION_COOKIE=torr_session against `next dev`. */
 const SESSION_COOKIE = process.env.E2E_SESSION_COOKIE ?? "__Host-torr_session";
+const LOCALE_COOKIE = process.env.E2E_LOCALE_COOKIE ?? "__Host-torr_locale";
 
 function makeToken(role) {
   const iat = Math.floor(Date.now() / 1000);
@@ -39,7 +40,7 @@ const TOKENS = {
 
 /** Where a request ends up after the proxy: the redirect target (path + query), or null when it isn't redirected. */
 async function redirectOf(path, role) {
-  const cookie = role ? `${SESSION_COOKIE}=${TOKENS[role]}; NEXT_LOCALE=en` : "NEXT_LOCALE=en";
+  const cookie = role ? `${SESSION_COOKIE}=${TOKENS[role]}; ${LOCALE_COOKIE}=en` : `${LOCALE_COOKIE}=en`;
   const res = await fetch(`${FRONTEND_URL}${path}`, { headers: { cookie }, redirect: "manual" });
   const location = res.headers.get("location");
   if (res.status < 300 || res.status >= 400 || !location) return null;

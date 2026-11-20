@@ -35,4 +35,17 @@
 	reverse_proxy 127.0.0.1:3000
 }
 
-# Plain HTTP only redirects to HTTPS (Caddy does this by itself for the site above).
+# Plain HTTP. ASVS 4.1.2: only pages, which a person opens in a browser,
+# redirect to HTTPS. An API call over plain HTTP is refused instead: a
+# redirect would hide from the caller that it just sent its session cookie
+# or data unencrypted. (Caddy still answers ACME HTTP challenges here.)
+http://{$SITE_ADDRESS:localhost} {
+	handle /api/* {
+		respond "HTTPS required" 403 {
+			close
+		}
+	}
+	handle {
+		redir https://{host}{uri} 308
+	}
+}

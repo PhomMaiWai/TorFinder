@@ -24,10 +24,15 @@ export type SessionPayload = {
   amr?: AuthMethod[];
   /** When a passkey was last checked in this session, epoch seconds — what step-up reads (ASVS 7.5.3). */
   pkt?: number;
+  /** This session's id in the `sessions` collection (ASVS 7.5.2). Absent on tokens issued before it existed. */
+  sid?: string;
 };
 
+/** Absolute lifetime in seconds; also how long a session record is kept. */
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+
 /** Absolute lifetime (ASVS 7.3.2): re-authenticate after 7 days whatever the activity. */
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+const SESSION_MAX_AGE = SESSION_MAX_AGE_SECONDS;
 
 function sign(data: string, secret = env.sessionSecret) {
   return createHmac("sha256", secret).update(data).digest("base64url");

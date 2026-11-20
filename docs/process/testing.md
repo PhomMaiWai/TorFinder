@@ -81,9 +81,12 @@ export MONGODB_URI=mongodb://localhost:27017/torr_test   # the backend's databas
 npm run test:e2e
 ```
 
-The default `MONGODB_URI` in these tests is the Docker Compose database
-(`mongodb://torr:torr@localhost:27017/torr?authSource=admin`), so with
-`docker compose up` running you can skip most of the exports. Some suites
+The default `MONGODB_URI` in these tests is a plain, password-protected
+MongoDB on localhost (`mongodb://torr:torr@localhost:27017/torr?authSource=admin`).
+The Docker Compose database needs TLS with the dev certificate and the
+generated root password, so export the URI from the README's "Only the database
+in Docker?" instead ([key-management.md](../operations/key-management.md#database-passwords)),
+or use a throwaway MongoDB as CI does. Some suites
 refuse to run against a database that already has data in it; point them at
 a fresh one.
 

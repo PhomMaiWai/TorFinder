@@ -453,7 +453,20 @@
   },
   "AccountPage": {
     "pageTitle": "ตั้งค่าบัญชี",
-    "pageDescription": "การตั้งค่าการเข้าสู่ระบบของบัญชีเจ้าหน้าที่หรือบริษัท"
+    "pageDescription": "การตั้งค่าการเข้าสู่ระบบของบัญชีเจ้าหน้าที่หรือบริษัท",
+    "sessionsSectionTitle": "อุปกรณ์ที่เข้าสู่ระบบอยู่",
+    "sessionsDescription": "ทุกเบราว์เซอร์ที่บัญชีนี้เข้าสู่ระบบอยู่ หากมีอุปกรณ์ที่ไม่รู้จัก ให้ออกจากระบบอุปกรณ์นั้น",
+    "sessionsThisDevice": "อุปกรณ์นี้",
+    "sessionsSignedIn": "เข้าสู่ระบบเมื่อ {date}",
+    "sessionsUnknownDevice": "เบราว์เซอร์ที่ไม่ทราบชื่อ",
+    "sessionsEnd": "ออกจากระบบ",
+    "sessionsEndOthers": "ออกจากระบบอุปกรณ์อื่นทั้งหมด",
+    "sessionsPasswordLabel": "ยืนยันด้วยรหัสผ่านปัจจุบัน",
+    "sessionsCancel": "ยกเลิก",
+    "sessionsEnded": "ออกจากระบบแล้ว",
+    "sessionsEndFailed": "ออกจากระบบอุปกรณ์นั้นไม่สำเร็จ กรุณาลองอีกครั้ง",
+    "sessionsLoadFailed": "โหลดรายการอุปกรณ์ไม่สำเร็จ",
+    "sessionsEmpty": "ยังไม่มีอุปกรณ์ให้แสดง เซสชันที่เริ่มก่อนมีรายการนี้จะแสดงหลังเข้าสู่ระบบครั้งถัดไป"
   },
   "NotificationsPage": {
     "pageTitle": "การแจ้งเตือน",
@@ -1021,7 +1034,15 @@
     "approvalWaiting": "รอผู้ดูแลระบบคนอื่นอนุมัติ",
     "approvalApprove": "อนุมัติ",
     "approvalReject": "ปฏิเสธ",
-    "approvalCancel": "ยกเลิกคำขอ"
+    "approvalCancel": "ยกเลิกคำขอ",
+    "endSessionsAction": "ออกจากระบบ",
+    "endSessionsHint": "ปิดทุกเซสชันของบัญชีนี้ในทุกอุปกรณ์",
+    "endSessionsDone": "ออกจากระบบ {name} ในทุกอุปกรณ์แล้ว",
+    "endAllAction": "ออกจากระบบทุกคน",
+    "endAllHint": "ปิดทุกเซสชันของทุกบัญชี ยกเว้นเซสชันนี้",
+    "endAllConfirmPrompt": "ออกจากระบบทุกบัญชีใช่ไหม",
+    "endAllConfirm": "ออกจากระบบทุกคน",
+    "endAllDone": "ออกจากระบบบัญชีอื่นทั้งหมดแล้ว"
   },
   "OpportunityCard": {
     "newBadge": "ใหม่",

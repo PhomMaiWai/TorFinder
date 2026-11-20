@@ -53,9 +53,11 @@ To try it without forcing anyone, deploy with `STAFF_PASSKEYS_REQUIRED=false` on
 Only an admin can reset passkeys, so if the only admin loses theirs, someone with access to the database clears them by hand:
 
 ```
-docker compose exec db mongosh -u "$MONGO_ROOT_USERNAME" -p "$MONGO_ROOT_PASSWORD" --authenticationDatabase admin torr \
-  --eval 'db.users.updateOne({ email: "admin@example.go.th" }, { $unset: { passkeys: "" }, $set: { sessionMinIssuedAt: new Date() } })'
+docker compose exec db sh -c 'mongosh --tls --tlsCAFile /certs/ca.crt --tlsCertificateKeyFile /certs/db.pem -u torr -p "$(cat /secrets/root-password)" --authenticationDatabase admin torr \
+  --eval "db.users.updateOne({ email: \"admin@example.go.th\" }, { \$unset: { passkeys: \"\" }, \$set: { sessionMinIssuedAt: new Date() } })"'
 ```
+
+The root password is the generated one in the secrets volume ([key-management.md](../operations/key-management.md#database-passwords)); use your own `MONGO_ROOT_USERNAME` if you changed it.
 
 Record who did it and why. The admin then signs in with their password and adds a new passkey. Setting `STAFF_PASSKEYS_REQUIRED=false` does **not** help: an account that has a passkey must always use it.
 

@@ -98,9 +98,12 @@ point the backend at it:
 ```bash
 docker compose up -d db                     # makes the certificates on first run
 docker compose run --rm certs export        # writes docker/certs/dev/ (gitignored)
-# backend/.env:
-MONGODB_URI="mongodb://torr:torr@localhost:27017/torfinder?authSource=admin&tls=true&tlsCAFile=../docker/certs/dev/ca.crt&tlsCertificateKeyFile=../docker/certs/dev/local-dev.pem"
+docker compose run --rm db-secrets cat /secrets/root-password   # the generated root password
+# backend/.env, with that password in place of <root-password>:
+MONGODB_URI="mongodb://torr:<root-password>@localhost:27017/torfinder?authSource=admin&tls=true&tlsCAFile=../docker/certs/dev/ca.crt&tlsCertificateKeyFile=../docker/certs/dev/local-dev.pem"
 ```
+
+A database volume made before the root password was generated still uses `torr`.
 
 Without Docker the database starts empty apart from the demo accounts. Press the
 import buttons on `/admin/tor`, or wait for the scheduled imports, to fill it.

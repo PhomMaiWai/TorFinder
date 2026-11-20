@@ -80,6 +80,26 @@ export class AccountsService {
     return { ok: true as const };
   }
 
+  /** ASVS 7.4.5: an admin ends every session of one account, e.g. a stolen laptop or a leaked token. */
+  async endUserSessions(id: string, actor: SessionPayload, ip?: string) {
+    const user = ObjectId.isValid(id)
+      ? await this.db.users.findOne({ _id: new ObjectId(id) }, { projection: { email: 1, name: 1 } })
+      : null;
+    if (!user) throw new NotFoundException("ไม่พบบัญชีนี้");
+    await this.revocation.revoke(id);
+    logSecurityEvent("admin.sessions.revoke", { outcome: "success", userId: id, email: user.email, ip, reason: `by_${actor.sub}` });
+    await this.audit.record(actor.email, "ออกจากระบบทุกอุปกรณ์ของบัญชี", `${user.name} (${user.email})`);
+    return { ok: true as const };
+  }
+
+  /** ASVS 7.4.5: signs every account out at once; the admin keeps only the session they did it from. */
+  async endEveryonesSessions(actor: SessionPayload, ip?: string) {
+    const accounts = await this.revocation.revokeEveryone({ userId: actor.sub, sid: actor.sid });
+    logSecurityEvent("admin.sessions.revoke", { outcome: "success", userId: "all", ip, reason: `by_${actor.sub}:${accounts}` });
+    await this.audit.record(actor.email, "ออกจากระบบผู้ใช้ทุกคน", `${accounts} บัญชี`);
+    return { ok: true as const, accounts };
+  }
+
   /**
    * ASVS 6.4.6: an admin starts a reset without choosing the password. The
    * owner gets the same single-use, one-hour link as "forgot password"; their

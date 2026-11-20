@@ -77,7 +77,7 @@ export abstract class RoleGuard implements CanActivate {
     // Same revocation check as SessionGuard — see SessionRevocationService.
     // Role-guarded routes don't go through SessionGuard at all, so this has
     // to be enforced here independently, not inherited from it.
-    return this.revocation.isValid(session.sub, session.iat).then((valid) => {
+    return this.revocation.isValid(session.sub, session.iat, session.sid).then((valid) => {
       if (!valid) {
         logDenied(request, "revoked_token", session.sub, session.role);
         throw new ForbiddenException(this.refusal);

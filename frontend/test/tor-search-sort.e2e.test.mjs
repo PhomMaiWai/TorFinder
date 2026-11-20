@@ -22,6 +22,8 @@ import { after, before, describe, it } from "node:test";
 
 import { MongoClient } from "mongodb";
 
+const LOCALE_COOKIE = process.env.E2E_LOCALE_COOKIE ?? "__Host-torr_locale";
+
 const FRONTEND_URL = process.env.E2E_FRONTEND_URL ?? "http://localhost:3000";
 const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://torr:torr@localhost:27017/torr?authSource=admin";
 
@@ -75,7 +77,7 @@ const RECORDS = [
 
 /** The record names in the order their cards appear on the rendered page. */
 async function order(query = "") {
-  const res = await fetch(`${FRONTEND_URL}/public${query}`, { headers: { cookie: "NEXT_LOCALE=en" } });
+  const res = await fetch(`${FRONTEND_URL}/public${query}`, { headers: { cookie: `${LOCALE_COOKIE}=en` } });
   assert.equal(res.status, 200);
   const html = await res.text();
   const pattern = new RegExp(`<h3[^>]*>${PREFIX} ([a-z-]+)</h3>`, "g");

@@ -9,9 +9,11 @@ import {
   sessionNeedsRefresh,
   verifySessionToken,
 } from "@/lib/auth";
+import { LOCALE_COOKIE } from "@/i18n/config";
 import { jsonResponse } from "@/lib/json-response";
 import { type Role, homeFor } from "@/lib/roles";
 import { newCspNonce, pageContentSecurityPolicy } from "@/lib/csp";
+import { isSessionOpen } from "@/lib/session-check";
 import { isUnexpectedFile } from "@/lib/served-files";
 
 /** Pages only a signed-in account may see. */
@@ -26,8 +28,8 @@ const PROTECTED_PREFIXES = [
   "/growth",
   "/saved",
   "/notifications",
-  // Every password account's own sign-in settings (change password); a viewer
-  // is sent home below, as they sign in with Google only.
+  // The account's own sign-in settings: signed-in devices for everyone, and
+  // change password for every account that has one.
   "/account",
 ];
 /** Pages only an admin may see. */
@@ -40,8 +42,8 @@ const OWNER_ONLY_PREFIXES = ["/owner"];
 const STAFF_CONSOLE_PREFIXES = ["/admin", "/owner", "/auditor"];
 /** Pages only the Auditor Office may see. */
 const AUDITOR_ONLY_PREFIXES = ["/auditor"];
-/** The one protected page a public viewer has: their own saved list. */
-const VIEWER_PREFIXES = ["/saved"];
+/** The protected pages a public viewer has: their own saved list, and their signed-in devices on /account. */
+const VIEWER_PREFIXES = ["/saved", "/account"];
 /** Pages that make no sense once you are signed in. */
 const GUEST_ONLY_PREFIXES = ["/login", "/signup"];
 
@@ -102,14 +104,26 @@ function forwardedHeaders(request: NextRequest, refreshedToken: string | null, c
 }
 
 /**
- * Runs for every page and API request. It reads the session once, keeps an
+ * Runs for every page and API request. It reads the session once, asks the
+ * backend on page loads whether it is still open (`isSessionOpen`), keeps an
  * active session alive (ASVS 7.3.1: an idle one has already expired in
  * `verifySessionToken`), gates the request, and sets the CSP on pages.
  */
 export async function proxy(request: NextRequest) {
   const isApi = request.nextUrl.pathname.startsWith("/api/");
   const rawToken = request.cookies.get(SESSION_COOKIE)?.value;
-  const session = await verifySessionToken(rawToken);
+  let session = await verifySessionToken(rawToken);
+  // A full page load with a validly signed cookie also asks the backend whether
+  // the session is still open: one ended elsewhere is signed out here too, and
+  // its cookie dropped below. Only full loads (`Sec-Fetch-Dest: document`, or a
+  // client that sends no such header): Next.js prefetches every link on a page,
+  // and those requests would multiply the check. In-app navigation and API
+  // routes need none, because the backend refuses an ended session's data.
+  const fetchDest = request.headers.get("sec-fetch-dest");
+  const isPageLoad = !isApi && request.method === "GET" && (fetchDest === null || fetchDest === "document");
+  if (session && rawToken && isPageLoad && !(await isSessionOpen(rawToken, request.headers.get("x-forwarded-for")))) {
+    session = null;
+  }
   // GET only: logout and the change-password action clear the cookie on POST,
   // and a refresh in the same response must not set it back.
   const refreshedToken =
@@ -126,7 +140,7 @@ export async function proxy(request: NextRequest) {
     const secondsLeft = session.exp - Math.floor(Date.now() / 1000);
     response.cookies.set(SESSION_COOKIE, refreshedToken, sessionCookieOptions(secondsLeft));
   } else if (rawToken && !session) {
-    // Expired, idle or forged: drop it so the browser stops sending it.
+    // Expired, idle, forged or ended: drop it so the browser stops sending it.
     response.cookies.set(SESSION_COOKIE, "", sessionCookieOptions(0));
   }
   return response;
@@ -148,7 +162,7 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
       return null;
     }
     // The proxy runs before next-intl's request config, so it reads the language cookie itself.
-    const signIn = request.cookies.get("NEXT_LOCALE")?.value === "en" ? "Please sign in." : "กรุณาเข้าสู่ระบบ";
+    const signIn = request.cookies.get(LOCALE_COOKIE)?.value === "en" ? "Please sign in." : "กรุณาเข้าสู่ระบบ";
     return session ? null : jsonResponse({ error: signIn }, { status: 401 });
   }
 

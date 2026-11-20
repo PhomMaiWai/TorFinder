@@ -3,6 +3,9 @@
     "createHash",
     "randomBytes"
   ],
+  "backend/src/auth/auth.service.ts": [
+    "randomBytes"
+  ],
   "backend/src/auth/google-claims.ts": [
     "timingSafeEqual"
   ],

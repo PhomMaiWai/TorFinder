@@ -2,7 +2,7 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 105 Pass, 12 Partial, 5 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 105 pass (84%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 118 Pass, 2 Partial, 5 Not done, 58 N/A, 0 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 118 pass (94%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
 
 **Update 19 Nov 2026 (branch `feat/asvs-l2-batch`):** nine items move to Pass. Announcement files are fetched only from the allowlisted portal hosts, and redirects are checked hop by hop (1.3.6, 13.2.4, 15.3.2; threat E3). Google sign-in is bound to the browser with a nonce (10.1.2, 10.5.1). Password hashes use stronger scrypt settings and store them, and old hashes are upgraded at sign-in (11.4.2, 11.2.2). The backend connects to MongoDB as a least-privilege account (13.2.2). Input refused by validation is logged (16.3.3).
 
@@ -16,32 +16,32 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 105 | Control exists, with evidence in code or in this file |
-| Partial | 12 | Control exists with a gap; the gap is named |
+| Pass | 118 | Control exists, with evidence in code or in this file |
+| Partial | 2 | Control exists with a gap; the gap is named |
 | Not done | 5 | Not implemented; out of scope for this deadline (below) |
 | N/A | 58 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
-| Not reviewed | 3 | Set by the hosting proxy, outside the repository |
+| Not reviewed | 0 | The three set by the hosting proxy were reviewed once the Caddy edge joined the repository (PR #401) |
 
 | Chapter | L2 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
 | V1 Encoding and Sanitization | 19 | 8 | 0 | 0 | 11 | 0 |
 | V2 Validation and Business Logic | 7 | 5 | 1 | 0 | 1 | 0 |
-| V3 Web Frontend Security | 11 | 9 | 1 | 0 | 1 | 0 |
-| V4 API and Web Service | 8 | 0 | 1 | 0 | 5 | 2 |
+| V3 Web Frontend Security | 11 | 10 | 0 | 0 | 1 | 0 |
+| V4 API and Web Service | 8 | 3 | 0 | 0 | 5 | 0 |
 | V5 File Handling | 5 | 4 | 0 | 1 | 0 | 0 |
 | V6 Authentication | 22 | 11 | 1 | 0 | 10 | 0 |
-| V7 Session Management | 12 | 10 | 2 | 0 | 0 | 0 |
+| V7 Session Management | 12 | 12 | 0 | 0 | 0 | 0 |
 | V8 Authorization | 3 | 3 | 0 | 0 | 0 | 0 |
 | V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 1 | 0 |
 | V10 OAuth and OIDC | 24 | 6 | 0 | 0 | 18 | 0 |
-| V11 Cryptography | 11 | 8 | 1 | 0 | 2 | 0 |
-| V12 Secure Communication | 6 | 1 | 2 | 0 | 2 | 1 |
-| V13 Configuration | 12 | 8 | 2 | 2 | 0 | 0 |
+| V11 Cryptography | 11 | 9 | 0 | 0 | 2 | 0 |
+| V12 Secure Communication | 6 | 4 | 0 | 0 | 2 | 0 |
+| V13 Configuration | 12 | 10 | 0 | 2 | 0 | 0 |
 | V14 Data Protection | 7 | 7 | 0 | 0 | 0 | 0 |
-| V15 Secure Coding and Architecture | 10 | 9 | 1 | 0 | 0 | 0 |
+| V15 Secure Coding and Architecture | 10 | 10 | 0 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 16 | 14 | 0 | 2 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **105** | **12** | **5** | **58** | **3** |
+| **Total** | **183** | **118** | **2** | **5** | **58** | **0** |
 
 ## Fixed after the triage (PR #343)
 
@@ -89,6 +89,7 @@ Both end in `AuthService.issueSession`, which applies the same status checks and
 - **Lifetime:** a session ends after **30 minutes without activity** (`SESSION_IDLE_MINUTES`) and **7 days after sign-in** whatever the activity. NIST SP 800-63B suggests 30 minutes of inactivity for AAL2; we follow it.
 - **How:** each token carries `act`, its last activity. While the user keeps using the site, `proxy.ts` re-signs the token with a fresh `act` at most every 5 minutes, keeping `iat` (for revocation) and `exp` (the absolute limit). Backend and frontend both refuse an idle token.
 - **Concurrency:** any number of sessions per account (several devices are normal). Logout, password change or reset, suspension and role change end **all** of them at once.
+- **Seeing and ending sessions:** each sign-in is a row in `sessions`, named by the token's `sid`. An account sees its sessions on `/account` and ends one or all others after giving its password again (7.5.2). An admin ends one account's sessions, or every account's, from Manage Users (7.4.5).
 - **Google:** Google is used only to prove identity at sign-in. The TorFinder session is independent of the Google session: signing out of Google doesn't end it, and logging out of TorFinder doesn't sign you out of Google.
 
 ## Business rules and limits
@@ -174,7 +175,7 @@ The one destination a user supplies is a Slack incoming-webhook URL in their not
 | Google ID tokens | RS256, verified by `google-auth-library` | Google's published keys |
 | Transport | TLS | Set by the hosting proxy |
 
-**Key handling:** `SESSION_SECRET` is generated with `openssl rand -base64 32`, stored only in the server's environment or `.env` (never committed; the git history was scanned), and rotated by changing it and restarting both services, which signs everyone out. It must be rotated if it is ever exposed.
+**Key handling:** `SESSION_SECRET` is generated with `openssl rand -base64 32`, stored only in the server's environment or `.env` (never committed; the git history was scanned), and rotated by changing it and restarting both services, which signs everyone out. It must be rotated if it is ever exposed. The full policy, for every key and credential, is [key-management.md](../operations/key-management.md).
 
 ## Data protection
 
@@ -249,7 +250,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 3.3.2 | Each cookie's 'SameSite' attribute value is set according to the purpose of the cookie, to limit exposure to user… | Pass | `SameSite=Lax` on the session cookie: blocks cross-site POSTs, still allows arriving from an email link |
-| 3.3.3 | Cookies have the '__Host-' prefix for the cookie name unless they are explicitly designed to be shared with other hosts | Partial | The session cookie is `__Host-torr_session`; the locale cookie and the path-scoped signup-email cookie have no prefix (neither is a credential) |
+| 3.3.3 | Cookies have the '__Host-' prefix for the cookie name unless they are explicitly designed to be shared with other hosts | Pass | Every cookie has the prefix in production: `__Host-torr_session`, `__Host-torr_locale` (`frontend/src/i18n/config.ts`) and `__Host-torr_signup_email` (`frontend/src/lib/signup-email.ts`, now `Path=/` as the prefix requires). Dev keeps plain names, because some browsers refuse Secure cookies over http://localhost |
 | 3.3.4 | If the value of a cookie is not meant to be accessible to client-side scripts (such as a session token), the cookie… | Pass | The session cookie is `HttpOnly` and only ever sent in `Set-Cookie`; the frontend never returns the token in a body |
 | 3.4.3 | HTTP responses include a Content-Security-Policy response header field which defines directives to ensure the… | Pass | Strict CSP on every page from `proxy.ts`: per-request nonce, `'strict-dynamic'`, only Google sign-in added to `'self'`, `object-src 'none'`, `base-uri 'none'` (PR #343; `base-uri` tightened from `'self'` on 19 Nov). Static files get the same minimum from `next.config.ts` |
 | 3.4.4 | All HTTP responses contain an 'X-Content-Type-Options: nosniff' header field | Pass | `nosniff` on every frontend response (`next.config.ts`) and backend response (helmet) |
@@ -264,9 +265,9 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 4.1.2 | Only user-facing endpoints (intended for manual web-browser access) automatically redirect from HTTP to HTTPS, while… | Not reviewed | HTTP→HTTPS redirect is done by the hosting proxy, outside the repo |
-| 4.1.3 | Any HTTP header field used by the application and set by an intermediary layer, such as a load balancer, a web… | Partial | `X-Forwarded-For` is trusted only from loopback/private hops, but Next.js keeps a client-sent value when it is reached directly; the per-email lock is the backstop |
-| 4.2.1 | All application components (including load balancers, firewalls, and application servers) determine boundaries of… | Not reviewed | Message framing is up to the hosting proxy; Node's own parser rejects conflicting `Content-Length`/`Transfer-Encoding` |
+| 4.1.2 | Only user-facing endpoints (intended for manual web-browser access) automatically redirect from HTTP to HTTPS, while… | Pass | The Caddy edge (`docker/caddy/Caddyfile`) redirects pages from HTTP to HTTPS with 308, and refuses `/api/*` over plain HTTP with 403 instead of redirecting, so a client that sent an API call unencrypted finds out. Evidence 17 |
+| 4.1.3 | Any HTTP header field used by the application and set by an intermediary layer, such as a load balancer, a web… | Pass | Next.js keeps a client-sent `X-Forwarded-For` when reached directly (`??=` in `next/dist/server/base-server.js`), so it never is: compose binds it to 127.0.0.1, and the deployment checklist requires the reverse proxy to append the address it saw. The frontend forwards only that right-most entry (`frontend/src/lib/client-ip.ts`), and the backend trusts it only from loopback or private hops (`TRUST_PROXY`) |
+| 4.2.1 | All application components (including load balancers, firewalls, and application servers) determine boundaries of… | Pass | The Caddy edge parses every request and builds a new one for Next.js over HTTP/1.1, so the two never disagree about where a message ends. Probed through the edge: `Content-Length` with `Transfer-Encoding` → 400, two different `Content-Length` values → 400, an unknown `Transfer-Encoding` → 501. The backend sits behind Next.js and is reached only by it. Evidence 17 |
 | 4.3.1 | A query allowlist, depth limiting, amount limiting, or query cost analysis is used to prevent GraphQL or data layer… | N/A | No GraphQL |
 | 4.3.2 | GraphQL introspection queries are disabled in the production environment unless the GraphQL API is meant to be used… | N/A | No GraphQL |
 | 4.4.2 | Verify that, during the initial HTTP WebSocket handshake, the Origin header field is checked against a list of… | N/A | No WebSockets |
@@ -321,9 +322,9 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 7.3.2 | There is an absolute maximum session lifetime such that re-authentication is enforced according to risk analysis and… | Pass | Tokens expire 7 days after sign-in (`exp`), checked by backend and frontend |
 | 7.4.3 | The application gives the option to terminate all other active sessions after a successful change or removal of any… | Pass | A password change or reset ends every session automatically |
 | 7.4.4 | All pages that require authentication have easy and visible access to logout functionality | Pass | Sign out is in the sidebar and the navbar on every signed-in page |
-| 7.4.5 | Application administrators are able to terminate active sessions for an individual user or for all users | Partial | Admins end a user's sessions by suspending them or changing their role; there is no "sign out this user" without suspending, and no all-users switch except rotating `SESSION_SECRET` |
+| 7.4.5 | Application administrators are able to terminate active sessions for an individual user or for all users | Pass | Manage Users has "Sign out" on every account and "Sign out everyone" (`POST /accounts/:id/sessions/end`, `POST /accounts/sessions/end-all`), each behind a passkey step-up, written to the audit log and logged as `admin.sessions.revoke`. Tested in `backend/test/sessions.e2e.test.mjs` |
 | 7.5.1 | The application requires full re-authentication before allowing modifications to sensitive account attributes which… | Pass | The email address can't be changed; a password change needs the current password; adding a second passkey or removing one needs a passkey check from the last 10 minutes |
-| 7.5.2 | Users are able to view and (having authenticated again with at least one factor) terminate any or all currently… | Partial | Tokens are stateless, so there is no list of active sessions; a user can end all of them by logging out |
+| 7.5.2 | Users are able to view and (having authenticated again with at least one factor) terminate any or all currently… | Pass | Each sign-in is recorded in a `sessions` collection, and its id (`sid`) is in the token. `/account` lists the account's sessions (browser, address, time; this one marked) and ends one or all others after the current password, or for a Google-only account a sign-in in the last 10 minutes. Every backend request checks the session is still open, and the frontend asks too on each full page load (`GET /auth/session`, `frontend/src/lib/session-check.ts`), so an ended session is sent to sign-in. Tested in `backend/test/sessions.e2e.test.mjs` |
 | 7.6.1 | Session lifetime and termination between Relying Parties (RPs) and Identity Providers (IdPs) behave as documented,… | Pass | Written in [Sessions](#sessions) |
 | 7.6.2 | Creation of a session requires either the user's consent or an explicit action, preventing the creation of new… | Pass | Google sign-in starts only from a click on the button (no One Tap, no auto-select) |
 
@@ -376,7 +377,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 11.1.1 | There is a documented policy for management of cryptographic keys and a cryptographic key lifecycle that follows a… | Partial | Basic key handling is written in [Cryptography](#cryptography); not a full NIST SP 800-57 policy |
+| 11.1.1 | There is a documented policy for management of cryptographic keys and a cryptographic key lifecycle that follows a… | Pass | [key-management.md](../operations/key-management.md): roles, every key with its purpose, source, storage and cryptoperiod, and the SP 800-57 lifecycle from generation to destruction, including compromise |
 | 11.1.2 | A cryptographic inventory is performed, maintained, regularly updated, and includes all cryptographic keys,… | Pass | Crypto inventory in [Cryptography](#cryptography) |
 | 11.2.1 | Industry-validated implementations (including libraries and hardware-accelerated implementations) are used for… | Pass | Node.js `crypto` (OpenSSL) and `google-auth-library` only; no home-made crypto |
 | 11.2.2 | The application is designed with crypto agility such that random number, authenticated encryption, MAC, or hashing… | Pass | Each password hash stores the algorithm and settings it was made with (`passwordParams`); a hash is checked with its own settings and redone with the current ones at the owner's next sign-in, so settings change without a migration (`common/password.ts`) |
@@ -392,11 +393,11 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 12.1.2 | Only recommended cipher suites are enabled, with the strongest cipher suites set as preferred | Not reviewed | Cipher suites are set by the hosting proxy |
+| 12.1.2 | Only recommended cipher suites are enabled, with the strongest cipher suites set as preferred | Pass | The Caddy edge allows TLS 1.2 and 1.3 only, and for 1.2 only ECDHE with AES-GCM or ChaCha20 (`docker/caddy/Caddyfile`). Probed: TLS 1.1, `AES128-SHA`, `AES256-GCM-SHA384` and `DHE-RSA-AES128-GCM-SHA256` are refused; ECDHE-ECDSA-AES128-GCM and TLS 1.3 are accepted. Evidence 17 |
 | 12.1.3 | The application validates that mTLS client certificates are trusted before using the certificate identity for… | N/A | No mTLS |
-| 12.3.1 | An encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application,… | Partial | Outbound calls (portals, Google, Resend, Vertex) use HTTPS; MongoDB in the Docker network has no TLS (Atlas would) |
+| 12.3.1 | An encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application,… | Pass | Inbound: the Caddy edge serves HTTPS only and redirects plain HTTP (`docker/caddy/Caddyfile`, `docker-compose.edge.yml`). Outbound calls (portals, Google, Resend, Vertex) use HTTPS. MongoDB accepts TLS only, with a client certificate from the internal CA (`--tlsMode=requireTLS`, `docker-compose.yml`) |
 | 12.3.2 | TLS clients validate certificates received before communicating with a TLS server | Pass | Node's `fetch` validates certificates; no `rejectUnauthorized: false` or `NODE_TLS_REJECT_UNAUTHORIZED` anywhere |
-| 12.3.3 | TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP-based… | Partial | Frontend→backend and backend→MongoDB are plain HTTP inside one host's Docker network, with ports bound to 127.0.0.1 (accepted for a single host) |
+| 12.3.3 | TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP-based… | Pass | Frontend→backend is HTTPS with mutual TLS: the backend requires a client certificate from the internal CA and accepts only the frontend's (`backend/src/common/internal-tls.ts`, `frontend/src/lib/internal-tls.ts`). Backend→MongoDB is TLS with the backend's certificate as its login (MONGODB-X509). Tested in `backend/test/internal-tls.test.mjs` |
 | 12.3.4 | TLS connections between internal services use trusted certificates | N/A | No internal TLS |
 
 ### V13 Configuration
@@ -406,11 +407,11 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 13.1.1 | All communication needs for the application are documented | Pass | Communication needs are written in [External communication](#external-communication), including the user-supplied Slack webhook and the inbound LINE webhook (added on re-check, 19 Nov) |
 | 13.2.1 | Communications between backend application components that don't support the application's standard user session… | Pass | MongoDB requires credentials; every frontend→backend call carries the user's own session token; no unauthenticated internal API |
 | 13.2.2 | Communications between backend application components, including local or operating system services, APIs,… | Pass | The backend connects as `torr_app`, which has `readWrite` and `collMod` on its own database only; root is used only by the one-shot `db-users` service that creates or updates that account on every `docker compose up` (`docker/mongo-users/app-user.js`). Checked: the account can't read `admin`, write another database or drop its own |
-| 13.2.3 | If a credential has to be used for service authentication, the credential being used by the consumer is not a… | Partial | Compose defaults to `torr`/`torr`, overridable in `.env`; the deployment checklist says to set real credentials |
+| 13.2.3 | If a credential has to be used for service authentication, the credential being used by the consumer is not a… | Pass | No default credential: the backend signs in to MongoDB with its TLS certificate (MONGODB-X509, no password), and the root password is generated on the first `docker compose up` (32 random bytes, `docker/db-secrets/init.sh`) into a private volume. An older volume still on the old root password works, with a warning and the steps to change it ([key-management.md](../operations/key-management.md#database-passwords)) |
 | 13.2.4 | An allowlist is used to define the external resources or systems with which the application is permitted to… | Pass | Import and notification hosts are fixed in code; announcement files are fetched only from the allowlisted portal hosts (as V1.3.6) |
 | 13.2.5 | The web or application server is configured with an allowlist of resources or systems to which the server can send… | **Not done** | No network-level egress allowlist |
 | 13.3.1 | A secrets management solution, such as a key vault, is used to securely create, store, control access to, and… | **Not done** | Secrets come from environment variables and `.env`, not a vault (accepted for the course deployment) |
-| 13.3.2 | Access to secret assets adheres to the principle of least privilege | Partial | Secrets exist only in server environments, but anyone with access to the host can read them |
+| 13.3.2 | Access to secret assets adheres to the principle of least privilege | Pass | Each container gets only the secrets it uses. Each service's private key is in its own volume, readable only by that service's user, and the CA key only by the one-shot `certs` service (`docker/certs/generate.sh`). The backend has no database password (certificate login), and the generated root password is readable only by the database's user (`docker/db-secrets/init.sh`). The frontend gets only `SESSION_SECRET` and its own certificate, never the email or LINE keys. Server administrators can still read everything, as on any host ([key-management.md](../operations/key-management.md)) |
 | 13.4.2 | Debug modes are disabled for all components in production environments to prevent exposure of debugging features and… | Pass | `NODE_ENV=production` in both images: no debug output, no source maps served, demo data off |
 | 13.4.3 | Web servers do not expose directory listings to clients unless explicitly intended | Pass | No directory listing (no static file server) |
 | 13.4.4 | Using the HTTP TRACE method is not supported in production environments, to avoid potential information leakage | Pass | Neither Express nor Next.js implements TRACE; it gets 404 |
@@ -438,7 +439,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 15.2.3 | The production environment only includes functionality that is required for the application to function, and does… | Pass | Debug route removed; demo data opt-in; no test code in the images |
 | 15.3.2 | Where the application backend makes calls to external URLs, it is configured to not follow redirects unless it is… | Pass | Portal file fetches follow redirects by hand (`redirect: "manual"`), at most 3, and every hop must be an allowlisted host (`fetchPortalFile`); the portals' own files don't redirect today |
 | 15.3.3 | The application has countermeasures to protect against mass assignment attacks by limiting allowed fields per… | Pass | ValidationPipe `whitelist: true` drops fields a route doesn't declare |
-| 15.3.4 | All proxying and middleware components transfer the user's original IP address correctly using trusted data fields… | Partial | Same as V4.1.3 |
+| 15.3.4 | All proxying and middleware components transfer the user's original IP address correctly using trusted data fields… | Pass | Same as V4.1.3 |
 | 15.3.5 | The application explicitly ensures that variables are of the correct type and performs strict equality and… | Pass | TypeScript, `===` throughout, DTO `transform` gives each field its declared type |
 | 15.3.6 | JavaScript code is written in a way that prevents prototype pollution, for example, by using Set() or Map() instead… | Pass | DTO whitelist; prototype keys skipped in `changedFields` (PR #341) |
 | 15.3.7 | The application has defenses against HTTP parameter pollution attacks, particularly if the application framework… | Pass | A repeated parameter becomes an array, which the DTO validators reject |

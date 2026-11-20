@@ -10,7 +10,7 @@ No cookie, token or secret value appears in any image. The cookie table hides va
 shows `<org session token — hidden>` instead of the token. The CSP nonce in 01 is a
 one-time value per request, not a secret.
 
-Most shots were taken with [`capture-screenshots.js`](capture-screenshots.js) (Playwright
+Shots 14–16 were taken on 20 Nov 2026 on a stack with internal TLS (#401). Most shots were taken with [`capture-screenshots.js`](capture-screenshots.js) (Playwright
 driving Google Chrome), so they can be re-taken the same way. Headers and cookies are what
 Chrome received, shown as a table rather than the DevTools panel.
 
@@ -39,6 +39,18 @@ Chrome received, shown as a table rather than the DevTools panel.
 | [13e-approved-role-changed.png](screenshots/13e-approved-role-changed.png) | ASVS 2.3.5 Two-admin approval | Only after the second admin approves is `owner@bma.go.th` an Administrator. |
 | [13f-audit-log-approval-steps.png](screenshots/13f-audit-log-approval-steps.png) | ASVS 2.3.5 Two-admin approval | The audit log has the request (by `admin@`), the approval and the role change (by `admin2@`), each naming who asked and who approved. The account was afterwards returned to Project owner through the same flow. |
 | [12b-google-sign-in-success.png](screenshots/12b-google-sign-in-success.png) | 5 SSO | A completed Google sign-in with a real Google account on the local stack, landing on the company dashboard (the account is an approved company registered through Google sign-up). The backend logged `auth.google` success for it, and the token's nonce matched this browser (ASVS 10.1.2). The account's name and email are blanked out because the repository is public. The sidebar header shows "Arun Digital" for every company account; that's a display bug, noted below. |
+| [14a-signed-in-devices.png](screenshots/14a-signed-in-devices.png) | ASVS 7.5.2 Session management | Taken 20 Nov 2026. A company signed in on a Mac and an iPhone sees both on `/account` (browser, time, address), with this one marked. The address is the Docker network's, because there is no reverse proxy in front locally. |
+| [14b-end-sessions-needs-password.png](screenshots/14b-end-sessions-needs-password.png) | ASVS 7.5.2 Session management | "Sign out all other devices" asks for the current password first. |
+| [14c-wrong-password-refused.png](screenshots/14c-wrong-password-refused.png) | ASVS 7.5.2 Session management | A wrong password ends nothing; every session is still listed. |
+| [14d-other-sessions-ended.png](screenshots/14d-other-sessions-ended.png) | ASVS 7.5.2 Session management | With the right password, only this device is left. |
+| [14e-phone-sent-to-sign-in.png](screenshots/14e-phone-sent-to-sign-in.png) | ASVS 7.5.2 Session management | The phone's next page load (`/matches`) goes to sign-in: the frontend asks the backend on each full page load whether the session is still open, and drops the cookie when it isn't. |
+| [14f-ended-session-refused.png](screenshots/14f-ended-session-refused.png) | ASVS 7.5.2 Session management | A copy of the phone's old cookie, sent again by hand, gets 401 for its notifications, saved TORs and saved searches. The cookie's value is not shown. |
+| [15a-admin-sign-out-buttons.png](screenshots/15a-admin-sign-out-buttons.png) | ASVS 7.4.5 Session management | Manage Users, filtered to the demo company: "Sign out" on the account, and "Sign out everyone" above the list. |
+| [15b-admin-sign-out-everyone-confirm.png](screenshots/15b-admin-sign-out-everyone-confirm.png) | ASVS 7.4.5 Session management | "Sign out everyone" asks to confirm first; it was cancelled here. |
+| [15c-admin-signed-account-out.png](screenshots/15c-admin-signed-account-out.png) | ASVS 7.4.5 Session management | The admin signs Arun Digital out on every device. |
+| [15d-admin-sign-out-logged.png](screenshots/15d-admin-sign-out-logged.png) | 12 Security logging | The sign-out is logged as `admin.sessions.revoke` with the account and the admin's id. |
+| [16-mutual-tls.png](screenshots/16-mutual-tls.png) | ASVS 12.3.3, 12.3.5 Secure communication | The backend starts with HTTPS and client certificates required, and the backend's database login is its certificate. Without a client certificate, the backend's TLS handshake fails ("certificate required"). With a certificate from our CA that isn't the frontend's, it answers 403, with no `X-Powered-By` header. MongoDB closes connections without TLS, and over TLS without a client certificate. |
+| [17-https-edge.png](screenshots/17-https-edge.png) | ASVS 4.1.2, 4.2.1, 12.1.2 Secure communication | The Caddy edge, run locally on ports 18080/18443: a page over plain HTTP gets 308 to HTTPS while an API call gets 403. Requests with ambiguous framing are refused (400, 400, 501). TLS 1.1 and non-forward-secret suites are refused; only ECDHE AEAD and TLS 1.3 connect. The framing probes are [`edge-framing.py`](edge-framing.py). |
 
 ## Observed while collecting
 

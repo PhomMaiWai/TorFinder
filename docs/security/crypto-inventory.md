@@ -27,6 +27,7 @@ To update after a reviewed change: run `node scripts/crypto-inventory.mjs --json
 | Passkeys (WebAuthn) | `backend/src/auth/passkeys.service.ts` (`@simplewebauthn/server`) | Authenticator's key pair: ES256 (P-256) or RS256, as the device chooses | Private key never leaves the device | Staff sign-in and step-up |
 | Google sign-in | `backend/src/auth/auth.service.ts` (`google-auth-library`), `backend/src/auth/google-claims.ts` | RS256 ID token from Google; nonce compared in constant time | Google's keys | Who the Google user is, bound to this browser |
 | Google nonce | `frontend/src/lib/google-nonce.ts` | 32 random bytes (Web Crypto) | None | Ties a Google token to one browser's sign-in |
+| Session ids | `backend/src/auth/auth.service.ts` | 16 random bytes, base64url; a key in the `sessions` collection, never a secret on its own (the token's HMAC is) | None | Lets an account or an admin end one session (7.5.2, 7.4.5) |
 | Device id | `frontend/src/lib/device-cookie.ts`, `backend/src/auth/known-devices.ts` | 32 random bytes; SHA-256 stored | None | Recognising a known device for new-device emails |
 | LINE webhook | `backend/src/notifications/line-link.ts` | HMAC-SHA-256 over the raw body, constant-time compare | `LINE_CHANNEL_SECRET` | Webhook calls really come from LINE |
 | LINE link codes | `backend/src/notifications/line-link.ts` | `randomInt` code; SHA-256 stored | None | One-time codes can't be read back from the database |

@@ -64,7 +64,7 @@ Deleting an account on request is done by an admin in the database for now; ther
 | Secret | Held in | Rotate | How |
 | --- | --- | --- | --- |
 | `SESSION_SECRET` | Frontend and backend environment | Every 12 months (`SESSION_SECRET_MAX_AGE_DAYS`), and at once if exposed | Scheduled: with a grace period, below; nobody is signed out. Exposed: new value only, restart both services, every session ends |
-| MongoDB credentials | `.env` and the database | Every 12 months, and when someone with access leaves | `db.changeUserPassword`, then `.env`, then restart the backend |
+| MongoDB root password | Generated into the `torr_db_secrets` volume (or set in `.env`). The backend signs in with its certificate, not a password | Every 12 months, and when someone with access leaves | Steps in [key-management.md, Database passwords](./key-management.md#database-passwords) |
 | `RESEND_API_KEY` | Backend environment | Every 12 months, and if exposed | New key in the Resend dashboard, `.env`, restart; revoke the old one |
 | `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` | Backend environment | Every 12 months; the secret at once if exposed (forged webhooks) | Reissue in the LINE console, `.env`, restart |
 | `GOOGLE_CLIENT_ID` | Both environments | Not a secret; changes only with the Google project | — |

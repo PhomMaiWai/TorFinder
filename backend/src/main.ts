@@ -51,6 +51,9 @@ async function bootstrap() {
   // from those hops, so a client reaching this port directly can't pick its own
   // rate-limit bucket (ASVS 6.3.1).
   app.set("trust proxy", env.trustProxy);
+  // ASVS 13.4.6: no framework banner on any answer. helmet() removes it later
+  // in the chain, but the certificate check below answers 403 before that.
+  app.disable("x-powered-by");
   // Before anything else: only the frontend's certificate may use the API.
   if (httpsOptions) app.use(requireInternalClient);
   app.use(helmet());

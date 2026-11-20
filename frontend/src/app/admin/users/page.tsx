@@ -8,6 +8,8 @@ import { fetchAdminApprovals, fetchUserDirectory } from "@/lib/admin-api";
 import {
   approveAdminChange,
   editAccount,
+  endAccountSessions,
+  endEveryonesSessions,
   reactivateAccount,
   rejectAdminChange,
   resetAccountPasskeys,
@@ -32,6 +34,8 @@ export default async function AdminUsersPage() {
         onEdit={editAccount}
         onResetPasskeys={resetAccountPasskeys}
         onSendPasswordReset={sendAccountPasswordReset}
+        onEndSessions={endAccountSessions}
+        onEndAllSessions={endEveryonesSessions}
       />
     </AdminPageShell>
   );

@@ -81,7 +81,7 @@ export class SessionGuard implements CanActivate {
     // Signature and exp alone aren't enough: a token can be well-formed and
     // unexpired yet still revoked (logout, password reset, suspension) — see
     // SessionRevocationService.
-    return this.revocation.isValid(session.sub, session.iat).then((valid) => {
+    return this.revocation.isValid(session.sub, session.iat, session.sid).then((valid) => {
       if (!valid) {
         logDenied(request, "revoked_token", session.sub, session.role);
         throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
