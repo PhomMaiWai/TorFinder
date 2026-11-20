@@ -30,7 +30,7 @@ To update after a reviewed change: run `node scripts/crypto-inventory.mjs --json
 | Device id | `frontend/src/lib/device-cookie.ts`, `backend/src/auth/known-devices.ts` | 32 random bytes; SHA-256 stored | None | Recognising a known device for new-device emails |
 | LINE webhook | `backend/src/notifications/line-link.ts` | HMAC-SHA-256 over the raw body, constant-time compare | `LINE_CHANNEL_SECRET` | Webhook calls really come from LINE |
 | LINE link codes | `backend/src/notifications/line-link.ts` | `randomInt` code; SHA-256 stored | None | One-time codes can't be read back from the database |
-| CSP nonce | `frontend/src/proxy.ts` | `crypto.randomUUID` per request | None | Only this response's own scripts run |
+| CSP nonce | `frontend/src/lib/csp.ts` (called from `frontend/src/proxy.ts`) | `crypto.randomUUID` per request | None | Only this response's own scripts run |
 | Error and run ids | `backend/src/common/all-exceptions.filter.ts`, `backend/src/gproc/gproc.service.ts` | `randomUUID` | None | Not security: correlation ids |
 | Similar-TOR cache key | `backend/src/similar/similar.service.ts` | SHA-1 of public announcement text | None | Not security: a content key for a cache. SHA-1's collision weakness doesn't matter here, because nothing trusts the hash |
 | HTTPS | Hosting proxy, outside the repository | TLS 1.2/1.3, as the proxy is configured | The site's certificate | Everything in transit |
