@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 43 Pass, 12 Partial, 12 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 43 pass (61%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+**Result: 44 Pass, 12 Partial, 11 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 44 pass (62%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -14,20 +14,22 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 19 Nov 2026 (branch `docs-asvs-l3-policies`):** [limits-and-retention.md](../operations/limits-and-retention.md) documents connection limits, timeouts and retries, data retention and the secret rotation schedule. The MongoDB pool limits are now set in code, MongoDB deletes expired notifications, import runs, audit entries and abandoned sign-ups through TTL indexes, and container logs are capped. 13.1.2, 13.1.3, 13.1.4, 13.2.6 and 14.2.7 pass.
 
+**Update 20 Nov 2026 (branch `feat/asvs-l3-admin-approval`):** granting or removing the admin role needs a second admin. The first admin's edit files a request; a different admin approves it behind step-up, the requester can only cancel, and an unapproved request lapses after 48 hours. Every step is in the audit log and the security log. 2.3.5 passes; 8.4.2 gains a layer but stays Partial.
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 43 | Control exists, with evidence in code or in this file |
+| Pass | 44 | Control exists, with evidence in code or in this file |
 | Partial | 12 | Control exists with a gap; the gap is named |
-| Not done | 12 | Not implemented |
+| Not done | 11 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
 
 | Chapter | L3 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
 | V1 Encoding and Sanitization | 3 | 0 | 2 | 0 | 1 | 0 |
-| V2 Validation and Business Logic | 2 | 0 | 0 | 2 | 0 | 0 |
+| V2 Validation and Business Logic | 2 | 1 | 0 | 1 | 0 | 0 |
 | V3 Web Frontend Security | 12 | 9 | 1 | 2 | 0 | 0 |
 | V4 API and Web Service | 6 | 2 | 1 | 0 | 1 | 2 |
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
@@ -43,7 +45,7 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V15 Secure Coding and Architecture | 8 | 6 | 1 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **43** | **12** | **12** | **21** | **4** |
+| **Total** | **92** | **44** | **12** | **11** | **21** | **4** |
 
 ## Done on this branch
 
@@ -135,7 +137,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 2.3.5 | High-value flows need approval by more than one user | **Not done** | One admin can promote another account to admin, delete a TOR or suspend an account |
+| 2.3.5 | High-value flows need approval by more than one user | Pass | Granting or removing the admin role files a request (`PATCH /accounts/:id/details` answers 202) that a different admin must approve, behind step-up (`AdminApprovalsService`, `test/admin-approvals.e2e.test.mjs`). The requester can't approve their own request, only cancel it; a request is void if its requester stopped being an admin or the account's role moved; at most one is open per account, and it lapses after 48 h (TTL). The one exception: a lone admin may name the first extra admin directly, since no one else could approve. Admins can't be suspended at all (only companies and public viewers can). Deleting a TOR and suspending a company still take one admin: they are reversible or don't hand out power |
 | 2.4.2 | Business flows require realistic human timing | **Not done** | Only rate limits; no minimum time between steps (e.g. signup form filled in under a second) |
 
 ### V3 Web Frontend Security
@@ -207,7 +209,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 8.2.4 | Adaptive controls on environmental attributes, at sign-in and during a session | **Not done** | Rate limits and lockout only; nothing reacts to location, device or time |
 | 8.3.2 | Authorization changes apply immediately | Partial | Role change and suspension revoke every session; each backend process may keep accepting a revoked token for up to 30 s (revocation cache). One process today, so this is the whole delay |
 | 8.3.3 | Access is based on the originating user's permissions, not an intermediary's | Pass | The frontend calls the backend with the user's own session token; there is no service account acting for users |
-| 8.4.2 | Administrative interfaces have multiple layers of security | Partial | Admin role, a phishing-resistant passkey at sign-in, and step-up for sensitive actions. No device-posture or contextual risk checks |
+| 8.4.2 | Administrative interfaces have multiple layers of security | Partial | Admin role, a phishing-resistant passkey at sign-in, step-up for sensitive actions, and a second admin's approval to grant or remove the admin role. No device-posture or contextual risk checks |
 
 ### V10 OAuth and OIDC
 
@@ -310,7 +312,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 
 1. ~~**6.3.3 / 7.5.3:** passkeys for staff and step-up before admin actions~~ — done on `feat/staff-passkeys`, and step-up on owner assignment on `fix/step-up-tor-owner`. Left: a second factor for company accounts.
 2. ~~**6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action~~ — done on `feat/asvs-l3-lockout-reset`. Left: an email for a sign-in from a new device.
-3. **2.3.5, 8.4.2:** a second admin's approval to grant the admin role.
+3. ~~**2.3.5, 8.4.2:** a second admin's approval to grant the admin role~~ — done on `feat/asvs-l3-admin-approval`, for removing it too.
 4. ~~**14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on~~ — done on `docs-asvs-l3-policies`. Left: 13.3.4, secrets that expire by themselves (a vault, and a session secret that can be rolled without signing everyone out).
 5. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.
 6. **16.3.2, 11.1.3, 12.3.5, 13.3.x:** need logging, network and hosting infrastructure beyond the repository.

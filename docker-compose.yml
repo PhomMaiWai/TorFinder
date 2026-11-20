@@ -61,6 +61,7 @@ services:
       # a real deployment sets STAFF_PASSKEYS_REQUIRED=true (rollout in passkeys.md).
       - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
+      - ADMIN_APPROVAL_EXPIRY_HOURS=${ADMIN_APPROVAL_EXPIRY_HOURS:-48}
     depends_on:
       db-users:
         condition: service_completed_successfully
