@@ -9,7 +9,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
  */
 const SECURITY_HEADERS = [
   // ASVS 3.4.1: HTTPS only for a year once seen over HTTPS (ignored on plain HTTP, so local dev is unaffected).
-  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+  // ASVS 3.7.4: `preload` asks browsers to ship this domain as HTTPS-only;
+  // it takes effect once the domain is submitted (deployment checklist).
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
   // Level 2 extras that cost nothing: no MIME sniffing, no full URLs (and their
   // one-time ?token= links) leaked to other sites, and no framing by other sites.
   { key: "X-Content-Type-Options", value: "nosniff" },
