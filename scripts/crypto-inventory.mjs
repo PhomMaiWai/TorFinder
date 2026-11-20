@@ -42,7 +42,8 @@ const API_FAMILY = Object.fromEntries(Object.entries(CRYPTO_APIS).flatMap(([fami
 const PATTERN = new RegExp(
   `(?<![\\w.])(${Object.keys(API_FAMILY)
     .sort((a, b) => b.length - a.length)
-    .map((api) => api.replace(/\./g, "\\."))
+    // Every regex metacharacter escaped, not just ".": the names are constants, but the escaping should be complete.
+    .map((api) => api.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
     .join("|")})\\b`,
   "g",
 );
