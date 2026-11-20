@@ -13,8 +13,17 @@ export type SessionList = { needsPassword: boolean; sessions: SignedInSession[] 
 /** `error` is the backend's own message when it gave one; null means "show the generic failure". */
 export type EndSessionsResult = { ok: true; signedOut: boolean } | { ok: false; error: string | null; reauth: boolean };
 
-/** A session id is 16 random bytes, base64url: anything else never reaches the backend's URL. */
+/** A session id is 16 random bytes, base64url: 22 characters. */
 const SESSION_ID = /^[A-Za-z0-9_-]{22}$/;
+
+/**
+ * A session id as one segment of a backend URL, like `idPath()` for record
+ * ids: the id comes from the browser, so only a real session id gets through
+ * (no `..` or `/` to walk to another backend path), and it is encoded anyway.
+ */
+function sessionIdPath(id: string): string | null {
+  return SESSION_ID.test(id) ? encodeURIComponent(id) : null;
+}
 
 export async function fetchMySessions(): Promise<SessionList | null> {
   try {
@@ -35,8 +44,9 @@ export async function fetchMySessions(): Promise<SessionList | null> {
  * session this browser is using clears its cookie too.
  */
 export async function endMySessions(target: { id: string; current: boolean } | "others", password: string): Promise<EndSessionsResult> {
-  if (target !== "others" && !SESSION_ID.test(target.id)) return { ok: false, error: null, reauth: false };
-  const path = target === "others" ? "sessions/end-others" : `sessions/${target.id}/end`;
+  const segment = target === "others" ? null : sessionIdPath(target.id);
+  if (target !== "others" && segment === null) return { ok: false, error: null, reauth: false };
+  const path = target === "others" ? "sessions/end-others" : `sessions/${segment}/end`;
   let res: Response;
   try {
     res = await fetch(`${process.env.BACKEND_URL}/api/auth/${path}`, {
