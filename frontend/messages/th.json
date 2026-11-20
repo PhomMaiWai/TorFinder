@@ -1006,7 +1006,19 @@
     "saveAction": "บันทึก",
     "savingAction": "กำลังบันทึก...",
     "cancelAction": "ยกเลิก",
-    "roleChangeNote": "เมื่อบันทึก ผู้ใช้จะถูกออกจากระบบและต้องเข้าสู่ระบบใหม่ด้วยบทบาทใหม่"
+    "roleChangeNote": "เมื่อบันทึก ผู้ใช้จะถูกออกจากระบบและต้องเข้าสู่ระบบใหม่ด้วยบทบาทใหม่",
+    "adminRoleChangeNote": "การให้หรือถอนบทบาทผู้ดูแลระบบต้องได้รับการอนุมัติจากผู้ดูแลระบบอีกคนก่อนจึงจะมีผล",
+    "approvalRequested": "ส่งคำขอแล้ว ต้องให้ผู้ดูแลระบบอีกคนอนุมัติการเปลี่ยนบทบาทนี้",
+    "approvalsTitle": "คำขอเปลี่ยนบทบาทผู้ดูแลระบบรออนุมัติ {count} รายการ",
+    "approvalsDescription": "การให้หรือถอนบทบาทผู้ดูแลระบบต้องใช้ผู้ดูแลระบบสองคน คำขอที่ไม่มีผู้อนุมัติจะหมดอายุเอง",
+    "approvalChange": "{from} → {to}",
+    "approvalRequestedBy": "ขอโดย {email}",
+    "approvalRequestedByYou": "คุณเป็นผู้ขอ",
+    "approvalExpires": "หมดอายุ {date}",
+    "approvalWaiting": "รอผู้ดูแลระบบคนอื่นอนุมัติ",
+    "approvalApprove": "อนุมัติ",
+    "approvalReject": "ปฏิเสธ",
+    "approvalCancel": "ยกเลิกคำขอ"
   },
   "OpportunityCard": {
     "newBadge": "ใหม่",

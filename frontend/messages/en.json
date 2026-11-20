@@ -1006,7 +1006,19 @@
     "saveAction": "Save",
     "savingAction": "Saving...",
     "cancelAction": "Cancel",
-    "roleChangeNote": "Changing the role signs this user out; they'll need to sign in again"
+    "roleChangeNote": "Changing the role signs this user out; they'll need to sign in again",
+    "adminRoleChangeNote": "Granting or removing the administrator role needs another administrator's approval before it takes effect",
+    "approvalRequested": "Sent for approval. Another administrator must approve this role change.",
+    "approvalsTitle": "{count, plural, =1 {1 administrator role change waiting for approval} other {# administrator role changes waiting for approval}}",
+    "approvalsDescription": "Granting or removing the administrator role takes two administrators. Requests expire if no one approves them.",
+    "approvalChange": "{from} → {to}",
+    "approvalRequestedBy": "Requested by {email}",
+    "approvalRequestedByYou": "Requested by you",
+    "approvalExpires": "Expires {date}",
+    "approvalWaiting": "Waiting for another administrator",
+    "approvalApprove": "Approve",
+    "approvalReject": "Reject",
+    "approvalCancel": "Cancel request"
   },
   "OpportunityCard": {
     "newBadge": "New",

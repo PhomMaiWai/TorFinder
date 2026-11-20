@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { ActionResult } from "@/lib/action-result";
 import {
+  decideAdminApproval,
   reactivateUser,
   resetUserPasskeys,
   sendUserPasswordReset,
@@ -37,4 +38,12 @@ export async function sendAccountPasswordReset(id: string) {
 
 export async function resetAccountPasskeys(id: string) {
   return done(await resetUserPasskeys(id));
+}
+
+export async function approveAdminChange(id: string) {
+  return done(await decideAdminApproval(id, "approve"));
+}
+
+export async function rejectAdminChange(id: string) {
+  return done(await decideAdminApproval(id, "reject"));
 }
