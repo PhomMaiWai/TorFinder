@@ -1,4 +1,4 @@
-import { STAGE, TOR_STAGES } from "./tor.constants";
+import { ProcurementStage, STAGE, TOR_STAGES } from "./tor.constants";
 
 export type TorStage = (typeof TOR_STAGES)[number];
 
@@ -7,7 +7,11 @@ export type TimelineEntry = {
   stage: TorStage;
   /** The paper trail (or the record itself) shows the project got here. */
   reached: boolean;
-  /** The stage this record is. Exactly one entry has it. */
+  /**
+   * The furthest stage the project is known to have reached — not necessarily
+   * the stage this record was imported as: a draft whose project has since
+   * been awarded is at the award. Exactly one entry has it.
+   */
   current: boolean;
   /** ISO timestamp of the earliest announcement for the stage, when one has a date. */
   publishedAt: string | null;
@@ -46,7 +50,23 @@ export type TimelineFields = {
   documents?: Dated[];
   /** A published ราคากลาง is evidence the price stage happened even with no notice for it. */
   referencePrice?: number;
+  /** e-GP's own step for the project, which can be well past this record's stage. */
+  procurementStep?: { stage: ProcurementStage | null } | null;
+  /** A winner is on file for this project number, on any portal (awardedProjectNumbers). */
+  awarded?: boolean;
 };
+
+/** e-GP steps that place the project at one of the five stages; the rest place it nowhere. */
+const STAGE_BY_STEP: Partial<Record<ProcurementStage, TorStage>> = {
+  invitation: STAGE.invitation,
+  awarded: STAGE.award,
+  contract: STAGE.award,
+};
+
+/** The later of two stages in lifecycle order. */
+function later(a: TorStage, b: TorStage | null | undefined): TorStage {
+  return b && TOR_STAGES.indexOf(b) > TOR_STAGES.indexOf(a) ? b : a;
+}
 
 /**
  * The five stages in lifecycle order, each marked reached or not. Only evidence
@@ -66,6 +86,15 @@ export function buildTimeline(tor: TimelineFields): TimelineEntry[] {
     else if (!Number.isNaN(time) && (known == null || time < known)) earliest.set(stage, time);
   }
 
+  // Where the project is now: the furthest stage any evidence puts it at — the
+  // same evidence biddingOf reads to call a record closed, so the timeline and
+  // the "ประกาศผู้ชนะแล้ว" badge never disagree about the same project.
+  let current: TorStage = tor.stage;
+  for (const stage of earliest.keys()) current = later(current, stage);
+  const step = tor.procurementStep?.stage;
+  if (step) current = later(current, STAGE_BY_STEP[step]);
+  if (tor.awarded) current = later(current, STAGE.award);
+
   return TOR_STAGES.map((stage) => {
     const time = earliest.get(stage) ?? null;
     return {
@@ -73,8 +102,9 @@ export function buildTimeline(tor: TimelineFields): TimelineEntry[] {
       reached:
         earliest.has(stage) ||
         stage === tor.stage ||
+        stage === current ||
         (stage === STAGE.price && tor.referencePrice != null),
-      current: stage === tor.stage,
+      current: stage === current,
       publishedAt: time == null ? null : new Date(time).toISOString(),
     };
   });

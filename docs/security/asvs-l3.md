@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 67 Pass, 0 Partial, 4 Not done, 21 N/A, 0 not reviewed** (92 items). Of the 71 that apply, 67 pass (94%). Of the six stricter Level 3 conditions on L1/L2 requirements, 3 pass, 1 is partial, 1 is N/A and 1 is not done.
+**Result: 68 Pass, 0 Partial, 4 Not done, 20 N/A, 0 not reviewed** (92 items). Of the 72 that apply, 68 pass (94%). Of the six stricter Level 3 conditions on L1/L2 requirements, 3 pass, 1 is partial, 1 is N/A and 1 is not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -26,14 +26,16 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 20 Nov 2026 (branch `feat/asvs-l3-mtls-edge`):** the services authenticate each other with TLS certificates from a private CA: frontend to backend, and backend to MongoDB with an x509 login instead of a password (12.3.5). A Caddy edge for deployment (`docker-compose.edge.yml`) serves TLS 1.2 and 1.3 with forward-secret ciphers only, staples OCSP and terminates HTTP/2 and HTTP/3 (12.1.2, 12.1.4, 4.2.3, 4.2.4). Companies can add a passkey (6.3.3, still Partial: optional). What is left is listed under [Accepted risks](#accepted-risks): each needs a domain, DNS or hardware the project doesn't have yet.
 
+**Re-check 20 Nov 2026 (branch `fix/asvs-l3-recheck`):** counts and evidence re-checked against the code; every cited file, function and test exists. Since the services now set up TLS themselves, 11.6.2 applies: the internal links (frontend → backend, backend → MongoDB) are TLS 1.3 only, as Node's default TLS 1.2 list still included RSA key exchange and MongoDB accepted TLS 1.1 (`internal-tls.ts` on both sides, `--tlsDisabledProtocols` on `db`; `test/internal-tls.test.mjs` proves a 1.2 handshake is refused). Also corrected: the risky-components review now covers the four production dependencies added since 19 Nov, the contextual-attributes note no longer says 8.2.4 is not done, and the 3.4.3 condition points at `frontend/src/lib/csp.ts`. L3 is 68/72.
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 67 | Control exists, with evidence in code or in this file |
+| Pass | 68 | Control exists, with evidence in code or in this file |
 | Partial | 0 | Control exists with a gap; the gap is named |
 | Not done | 4 | Not implemented |
-| N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
+| N/A | 20 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 0 | Set by the hosting proxy, outside the repository (now configured in `docker/caddy/Caddyfile`) |
 
 | Chapter | L3 items | Pass | Partial | Not done | N/A | Not reviewed |
@@ -48,14 +50,14 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V8 Authorization | 6 | 6 | 0 | 0 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
-| V11 Cryptography | 10 | 6 | 0 | 1 | 3 | 0 |
+| V11 Cryptography | 10 | 7 | 0 | 1 | 2 | 0 |
 | V12 Secure Communication | 3 | 2 | 0 | 1 | 0 | 0 |
 | V13 Configuration | 8 | 7 | 0 | 1 | 0 | 0 |
 | V14 Data Protection | 4 | 4 | 0 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 8 | 8 | 0 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **67** | **0** | **4** | **21** | **0** |
+| **Total** | **92** | **68** | **0** | **4** | **20** | **0** |
 
 ## Done on this branch
 
@@ -82,7 +84,7 @@ TorFinder expects a browser that supports and honours:
 
 | Feature | Used for |
 | --- | --- |
-| HTTPS with HSTS | All traffic; `max-age=31536000; includeSubDomains` |
+| HTTPS with HSTS | All traffic; `max-age=31536000; includeSubDomains; preload` |
 | Content-Security-Policy Level 3 (`nonce`, `'strict-dynamic'`) | Blocking injected scripts |
 | `SameSite` and `__Host-` cookies | The session cookie |
 | `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` | Window and resource isolation |
@@ -107,13 +109,13 @@ Every current version of Chrome, Edge, Firefox and Safari supports all of them. 
 | Time since last activity | Every signed-in request | 30 min idle, 7 days absolute | Session refused; sign in again |
 | Comment window of a TOR | Feedback | Outside the window | Refused |
 
-No other attribute (location, time of day) affects authentication or authorization, and the device cookie only decides whether the owner is told. Adaptive controls built on them (8.2.4) are not done.
+No other attribute (location, time of day) affects authentication or authorization. The device cookie is the adaptive control (8.2.4): a sign-in from a new device gets a shorter session and is reported, but is never refused.
 
 ## Risky components and dangerous functionality
 
 (V15.1.4, V15.1.5)
 
-**Risky components.** Production dependencies were reviewed on 19 Nov 2026. Backend: `@google/genai`, `@nestjs/*`, `class-transformer`, `class-validator`, `compression`, `google-auth-library`, `helmet`, `mongodb`, `reflect-metadata`, `rxjs`. Frontend: `jose`, `lucide-react`, `next`, `next-intl`, `react`, `react-dom`, `recharts`. All are maintained by their vendor or a large project, none is end-of-life, and `npm audit --omit=dev` reports 0 in both. **None is classed as risky.** `class-validator` is watched most closely: its validators have had ReDoS advisories in the past (see 1.3.12).
+**Risky components.** Production dependencies were reviewed on 19 Nov 2026 and re-checked on 20 Nov 2026. Backend: `@google/genai`, `@nestjs/*` (including `@nestjs/throttler`), `@simplewebauthn/server`, `class-transformer`, `class-validator`, `compression`, `google-auth-library`, `helmet`, `mongodb`, `reflect-metadata`, `rxjs`. Frontend: `@simplewebauthn/browser`, `jose`, `lucide-react`, `next`, `next-intl`, `react`, `react-dom`, `recharts`, `undici`. All are maintained by their vendor or a large project, none is end-of-life, and `npm audit --omit=dev` reports 0 in both. **None is classed as risky.** `class-validator` is watched most closely: its validators have had ReDoS advisories in the past (see 1.3.12). `@simplewebauthn/*` verifies passkeys, so its releases are read before updating; `undici` is Node's own HTTP client, used only to give server-side `fetch` the internal TLS certificate.
 
 **Dangerous functionality** (parses untrusted bytes or runs costly work on untrusted input):
 
@@ -246,7 +248,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 11.3.4 | Nonces and IVs used once per key | N/A | No encryption |
 | 11.3.5 | Encrypt-then-MAC | N/A | No encryption |
 | 11.5.2 | Random generation works under heavy demand | Pass | Node's `crypto.randomBytes` / `randomInt` (OpenSSL CSPRNG), which doesn't block or degrade |
-| 11.6.2 | Approved key exchange with secure parameters | N/A | No key exchange in the application; TLS is the proxy's |
+| 11.6.2 | Approved key exchange with secure parameters | Pass | The application's own TLS (frontend → backend, backend → MongoDB) is TLS 1.3 only, so the key exchange is always ephemeral ECDHE (X25519 or P-256) with AEAD suites: `minVersion: "TLSv1.3"` in `backend/src/common/internal-tls.ts` and `frontend/src/lib/internal-tls.ts`, `--tlsDisabledProtocols=TLS1_0,TLS1_1,TLS1_2` on `db` (`test/internal-tls.test.mjs` refuses a 1.2 handshake; checked against `mongo:7`: 1.2 refused, 1.3 accepted). The public edge is 12.1.2 |
 | 11.7.1 | Full memory encryption for data in use | **Not done** | Depends on the host (e.g. confidential VMs); not in place |
 | 11.7.2 | Data minimization during processing | Pass | Sign-in, password change and passkey code read an account through `SIGN_IN_FIELDS` (credentials and status, not the company profile); account endpoints use one projection per audience (`DIRECTORY_FIELDS`, `REVIEW_FIELDS`, `OWN_ACCOUNT_FIELDS`). Password hashes are never returned and secrets never logged. Code that reads a whole company profile (matching, proposal drafts) uses it |
 
@@ -313,10 +315,10 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 
 | ID | Level 3 condition | Status | Evidence |
 | --- | --- | --- | --- |
-| 3.4.3 | Per-response CSP with nonces or hashes | Pass | A fresh nonce per page request in `proxy.ts` |
+| 3.4.3 | Per-response CSP with nonces or hashes | Pass | A fresh nonce per page request: `frontend/src/lib/csp.ts`, set by `proxy.ts` (`frontend/test/csp.test.mts`) |
 | 6.3.3 | One factor is hardware-based and phishing-resistant (FIDO, passkey) | Partial | Staff use a passkey (WebAuthn, origin-bound, user presence required) after their password or Google, required in production. Companies must too in production (`COMPANY_PASSKEYS_REQUIRED`, `test/company-passkeys.test.mjs`). Public viewers sign in with Google only, so not every account has a phishing-resistant factor of TorFinder's own |
 | 6.6.1 | No phone or SMS factor | N/A | None offered |
-| 12.1.2 | Only forward-secret cipher suites | Pass | The Caddy edge allows TLS 1.2 and 1.3 only; for 1.2, ECDHE key exchange with AES-GCM or ChaCha20 only, and every 1.3 suite is forward secret. Checked: TLS 1.0 and 1.1, `AES128-SHA`, `AES256-GCM-SHA384` (RSA key exchange) and `ECDHE-RSA-AES128-SHA` (CBC) are refused; `ECDHE-ECDSA-AES128-GCM-SHA256` and TLS 1.3 are accepted |
+| 12.1.2 | Only forward-secret cipher suites | Pass | The Caddy edge allows TLS 1.2 and 1.3 only; for 1.2, ECDHE key exchange with AES-GCM or ChaCha20 only, and every 1.3 suite is forward secret. Checked: TLS 1.0 and 1.1, `AES128-SHA`, `AES256-GCM-SHA384` (RSA key exchange) and `ECDHE-RSA-AES128-SHA` (CBC) are refused; `ECDHE-ECDSA-AES128-GCM-SHA256` and TLS 1.3 are accepted. The internal links are TLS 1.3 only (11.6.2) |
 | 13.3.1 | Secrets in a hardware-backed store (HSM) | **Not done** | Environment variables |
 | 16.3.2 | Every authorization decision logged, including reads of sensitive data | Pass | Refusals are logged as `access.denied`, and every request a guard admits as `access.granted` (user, role, method, path; never the query or the data), so reads of protected data are on record (`logGranted` in `session.guard.ts`, `test/authorization-log.test.mjs`) |
 

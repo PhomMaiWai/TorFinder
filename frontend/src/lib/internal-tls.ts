@@ -36,6 +36,8 @@ export function enableInternalTls(): void {
     ca: readFileSync(caFile),
     servername: backend.hostname,
     rejectUnauthorized: true,
+    // ASVS 11.6.2, 12.1.2: TLS 1.3 only, so every key exchange is forward secret.
+    minVersion: "TLSv1.3" as const,
   };
 
   setGlobalDispatcher(
