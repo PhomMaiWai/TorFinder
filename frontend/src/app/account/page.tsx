@@ -15,8 +15,8 @@ import { fetchMySessions } from "./actions";
  * signed in and can end those sessions (ASVS 7.5.2). Every role with a password
  * changes it here (ASVS 6.2.2 / 6.2.3): /profile is the company's workspace and
  * org-only. A viewer signs in with Google only, so has no password section.
- * Staff also manage their passkeys here; while passkeys are required, a staff
- * member without one is sent here first (proxy.ts).
+ * Staff and companies manage their passkeys here; while passkeys are
+ * required, a staff member without one is sent here first (proxy.ts).
  */
 export default async function AccountPage() {
   const [t, session, sessions] = await Promise.all([
@@ -30,7 +30,9 @@ export default async function AccountPage() {
       <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
       <PageBody>
         <div className="max-w-2xl space-y-8">
-          {isStaffRole(session?.role) && <PasskeySection setupRequired={needsPasskeySetup(session)} />}
+          {(isStaffRole(session?.role) || session?.role === "org") && (
+            <PasskeySection setupRequired={needsPasskeySetup(session)} forCompany={session?.role === "org"} />
+          )}
           <SessionsSection list={sessions} />
           {session?.role !== "viewer" && <ChangePasswordSection />}
         </div>

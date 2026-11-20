@@ -1730,7 +1730,8 @@
     "resetAction": "Reset passkeys",
     "resetConfirm": "Clear all passkeys?",
     "resetCancel": "Cancel",
-    "resetDone": "Passkeys cleared. They'll add a new one the next time they sign in."
+    "resetDone": "Passkeys cleared. They'll add a new one the next time they sign in.",
+    "descriptionCompany": "Add a passkey on your phone, laptop or security key and your company's sign-in will need it after the password. A passkey only works on this site, so a fake site can't phish it. Optional, and recommended for anyone who submits bids."
   },
   "LeavingPage": {
     "title": "You're leaving TorFinder",

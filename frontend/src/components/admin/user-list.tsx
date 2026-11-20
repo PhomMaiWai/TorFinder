@@ -455,7 +455,7 @@ export function UserList({
                     {t("endSessionsAction")}
                   </button>
 
-                  {isStaffRole(user.role) &&
+                  {(isStaffRole(user.role) || user.role === "org") &&
                     (confirmingResetId === user.id ? (
                       <span className="flex shrink-0 items-center gap-2 text-sm">
                         <button

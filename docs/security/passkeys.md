@@ -4,6 +4,8 @@ Staff accounts (admin, owner, auditor) confirm every sign-in with a **passkey**,
 
 A passkey is a key pair made by a phone, laptop (Touch ID, Windows Hello) or security key. The private key never leaves the device. The browser only lets it sign for this site's own domain, so a look-alike phishing page gets nothing it can replay, and a stolen password alone no longer opens a staff account.
 
+**Company accounts (optional).** A company can add a passkey on its Account page. From then on its sign-in needs the passkey after the password, exactly like staff, and an admin can clear a company's passkeys from Manage Users if it loses its device. It is optional by the team's decision (ASVS 6.3.3 stays Partial at Level 3 for companies and public viewers). Step-up applies only to admin actions, so it doesn't affect companies.
+
 ## How it works
 
 **Sign-in.** A staff member enters their password (or uses Google). If the account has a passkey, the backend answers `passkey-required` with a challenge instead of a session. The browser asks the device to sign it, and only then is the session cookie set. The session records how it was made (`amr: ["pwd", "passkey"]`) and when the passkey was checked (`pkt`).
@@ -51,7 +53,7 @@ To try it without forcing anyone, deploy with `STAFF_PASSKEYS_REQUIRED=false` on
 Only an admin can reset passkeys, so if the only admin loses theirs, someone with access to the database clears them by hand:
 
 ```
-docker compose exec db sh -c 'mongosh -u torr -p "$(cat /secrets/root-password)" --authenticationDatabase admin torr \
+docker compose exec db sh -c 'mongosh --tls --tlsCAFile /certs/ca.crt --tlsCertificateKeyFile /certs/db.pem -u torr -p "$(cat /secrets/root-password)" --authenticationDatabase admin torr \
   --eval "db.users.updateOne({ email: \"admin@example.go.th\" }, { \$unset: { passkeys: \"\" }, \$set: { sessionMinIssuedAt: new Date() } })"'
 ```
 

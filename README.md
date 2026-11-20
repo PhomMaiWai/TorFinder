@@ -91,6 +91,20 @@ npm run dev              # http://localhost:3000
 > session cookies locally instead of calling the backend on every navigation, so a
 > mismatch logs everyone out.
 
+**Only the database in Docker?** It accepts TLS connections with a client
+certificate only (ASVS 12.3.5). Copy the development certificate out once, then
+point the backend at it:
+
+```bash
+docker compose up -d db                     # makes the certificates on first run
+docker compose run --rm certs export        # writes docker/certs/dev/ (gitignored)
+docker compose run --rm db-secrets cat /secrets/root-password   # the generated root password
+# backend/.env, with that password in place of <root-password>:
+MONGODB_URI="mongodb://torr:<root-password>@localhost:27017/torfinder?authSource=admin&tls=true&tlsCAFile=../docker/certs/dev/ca.crt&tlsCertificateKeyFile=../docker/certs/dev/local-dev.pem"
+```
+
+A database volume made before the root password was generated still uses `torr`.
+
 Without Docker the database starts empty apart from the demo accounts. Press the
 import buttons on `/admin/tor`, or wait for the scheduled imports, to fill it.
 

@@ -146,13 +146,33 @@ pre-production work, not yet done:
 
 - [ ] **Password wordlist** — `common-passwords.ts` ships a ~120-word starter list; the audit recommends the SecLists top-10k before production
 - [ ] **`npm audit`**, both services — explicitly listed as "outside source review," i.e. not yet checked
-- [ ] **Client address** — the reverse proxy appends the address it saw to `X-Forwarded-For` (nginx: `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, Caddy's `reverse_proxy` does it by default). The frontend passes on only the right-most entry, so this is the value the rate limits and the security log use (ASVS 4.1.3, 15.3.4). Never let clients reach port 3000 except through that proxy
-- [ ] **TLS termination** — this codebase never terminates TLS or redirects HTTP→HTTPS itself; it's entirely the hosting/reverse-proxy layer's job. `docker-compose.yml` binds every port to `127.0.0.1`, so the proxy must run on the same host and forward to `127.0.0.1:3000`; never publish 4000 or 27017. The database passwords are generated on the first `up` ([key-management.md](./key-management.md#database-passwords)); set `MONGO_ROOT_PASSWORD` / `MONGO_APP_PASSWORD` in `.env` only to choose them yourself. Whatever sits in front of these containers needs to do this, and needs `NODE_ENV=production` set correctly on the frontend for the `Secure` cookie attribute to follow along (see above)
+- [ ] **Client address** — the reverse proxy writes the address it saw as the right-most `X-Forwarded-For` entry. The Caddy edge does this by default (`reverse_proxy` in `docker/caddy/Caddyfile`); a proxy of your own must too (nginx: `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`). The frontend passes on only the right-most entry, so this is the value the rate limits and the security log use (ASVS 4.1.3, 15.3.4). Never let clients reach port 3000 except through that proxy
+- [ ] **TLS termination** — use the Caddy edge (see "HTTPS edge" below) rather than a proxy of your own; it is what the ASVS Level 3 report was checked against. Never publish 4000 or 27017. The database root password is generated on the first `up` ([key-management.md](./key-management.md#database-passwords)); set `MONGO_ROOT_PASSWORD` in `.env` only to choose it yourself. `NODE_ENV=production` stays set on the frontend for the `Secure` cookie attribute (see above)
 
 And not from the audit, just from reading the code:
 
 - [ ] No database backup strategy exists anywhere in this repo. `docker-compose.yml`'s volume persists data across container restarts — that is not a backup, it's the same disk
 - [ ] No image ever gets pushed anywhere by CI (`docker-images` job in `auth.yml` builds with `push: false`) — getting an image to a registry and rolling it out is entirely manual today
+
+## HTTPS edge
+
+`docker-compose.edge.yml` adds Caddy in front of the frontend (ASVS 12.1.2, 12.1.4, 4.2.3, 4.2.4; `docker/caddy/Caddyfile`): HTTPS with a certificate it obtains and renews itself, TLS 1.2 and 1.3 with forward-secret ciphers only, OCSP stapling, HTTP/2 and HTTP/3, and HTTP redirected to HTTPS.
+
+- [ ] DNS for the domain points at the server, and ports 80 and 443 (TCP, plus 443/UDP for HTTP/3) are open to it
+- [ ] In `.env`: `SITE_ADDRESS=<domain>`, `FRONTEND_ORIGIN=https://<domain>` (passkeys and CORS use it)
+- [ ] Start with both files: `docker compose -f docker-compose.yml -f docker-compose.edge.yml up -d --build`
+- [ ] `curl -sI https://<domain>/` shows `HTTP/2` and `strict-transport-security: max-age=31536000; includeSubDomains; preload`
+- [ ] Check the TLS setup with an external scanner (e.g. SSL Labs): only TLS 1.2 and 1.3, no non-forward-secret suites
+- [ ] **HSTS preload (ASVS 3.7.4):** once every subdomain serves HTTPS, submit the domain at hstspreload.org. Removal takes months, so only after the site is settled on HTTPS
+- [ ] **Encrypted Client Hello (ASVS 12.1.5):** build Caddy with your DNS provider's module (`xcaddy build --with github.com/caddy-dns/<provider>`), give it an API token for the zone, and enable the two commented `dns` / `ech` lines at the top of the Caddyfile. Caddy then publishes the ECH key in the domain's HTTPS record and rotates it
+
+## Internal TLS between the services
+
+The frontend, backend and MongoDB authenticate each other with certificates from a private CA (ASVS 12.3.5). The `certs` service makes them on every `up` (`docker/certs/generate.sh`): a new CA the first time, each certificate again within 30 days of expiry. Nothing to do on a normal deploy.
+
+- [ ] The backend's log says `listening on :4000 (HTTPS, client certificates required)`; in production a plain-HTTP start logs `config.internal_tls_off`
+- [ ] `db-users` logs `created` or `updated CN=torr_app,OU=backend,O=TorFinder`: the backend's database login is its certificate. The old password account (`MONGO_APP_PASSWORD`) is removed and the variable is no longer read
+- [ ] To start over with a new CA (e.g. after a key was exposed): `docker compose down`, `docker volume rm <project>_certs_ca`, `docker compose up -d`. Every certificate is reissued
 
 ## Confirm it actually works, not just that it booted
 

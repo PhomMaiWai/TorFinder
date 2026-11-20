@@ -52,6 +52,9 @@
     "crypto.subtle.sign",
     "timingSafeEqual"
   ],
+  "frontend/src/lib/csp.ts": [
+    "crypto.randomUUID"
+  ],
   "frontend/src/lib/device-cookie.ts": [
     "crypto.getRandomValues"
   ],
@@ -60,8 +63,5 @@
   ],
   "frontend/src/lib/google-nonce.ts": [
     "crypto.getRandomValues"
-  ],
-  "frontend/src/proxy.ts": [
-    "crypto.randomUUID"
   ]
 }

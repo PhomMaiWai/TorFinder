@@ -12,6 +12,7 @@ import {
 import { LOCALE_COOKIE } from "@/i18n/config";
 import { jsonResponse } from "@/lib/json-response";
 import { type Role, homeFor } from "@/lib/roles";
+import { newCspNonce, pageContentSecurityPolicy } from "@/lib/csp";
 import { isUnexpectedFile } from "@/lib/served-files";
 
 /** Pages only a signed-in account may see. */
@@ -83,35 +84,6 @@ function matches(pathname: string, prefixes: string[]): boolean {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-/**
- * ASVS 3.4.3: a strict policy for every page, with a fresh nonce per request.
- * Next.js puts the nonce on its own scripts and on every `next/script`, and
- * `'strict-dynamic'` lets those load what they need (the Google sign-in
- * script) — any other script, inline or injected, is refused. Inline style
- * attributes stay allowed: React and the Google button use them, and styles
- * can't run code.
- */
-function contentSecurityPolicy(nonce: string): string {
-  const isDev = process.env.NODE_ENV === "development";
-  return [
-    "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://accounts.google.com/gsi/client${isDev ? " 'unsafe-eval'" : ""}`,
-    "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
-    "img-src 'self' data: blob:",
-    "font-src 'self'",
-    `connect-src 'self' https://accounts.google.com/gsi/${isDev ? " ws: wss:" : ""}`,
-    "frame-src 'self' https://accounts.google.com/gsi/",
-    "object-src 'none'",
-    // ASVS 3.4.3 asks for 'none': nothing here uses a <base> element.
-    "base-uri 'none'",
-    "form-action 'self'",
-    "frame-ancestors 'self'",
-    // ASVS 3.4.7: violations go to app/api/csp-report (Reporting-Endpoints in next.config.ts).
-    "report-uri /api/csp-report",
-    "report-to csp",
-  ].join("; ");
-}
-
 /** The incoming headers as the page should see them: the refreshed session and the CSP nonce. */
 function forwardedHeaders(request: NextRequest, refreshedToken: string | null, csp: string | null, nonce: string | null) {
   const headers = new Headers(request.headers);
@@ -143,8 +115,8 @@ export async function proxy(request: NextRequest) {
   // and a refresh in the same response must not set it back.
   const refreshedToken =
     session && request.method === "GET" && sessionNeedsRefresh(session) ? await refreshSessionToken(session) : null;
-  const nonce = isApi ? null : btoa(crypto.randomUUID());
-  const csp = nonce ? contentSecurityPolicy(nonce) : null;
+  const nonce = isApi ? null : newCspNonce();
+  const csp = nonce ? pageContentSecurityPolicy(nonce) : null;
 
   const response =
     gate(request, session) ??

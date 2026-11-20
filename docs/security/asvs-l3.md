@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 63 Pass, 0 Partial, 4 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 63 pass (89%). Of the six stricter Level 3 conditions on L1/L2 requirements, 2 pass, 1 is partial, 1 is N/A, 1 is set by hosting and 1 is not done.
+**Result: 67 Pass, 0 Partial, 4 Not done, 21 N/A, 0 not reviewed** (92 items). Of the 71 that apply, 67 pass (94%). Of the six stricter Level 3 conditions on L1/L2 requirements, 3 pass, 1 is partial, 1 is N/A and 1 is not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -24,22 +24,24 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 20 Nov 2026 (branch `feat/asvs-l3-files-secrets-adaptive`):** five items move to Pass, leaving no Partial. PDF and Word uploads lose their author, software and dates before storage (14.2.8); every parser of untrusted bytes runs in a worker thread with its own memory limit and deadline (15.2.5); `SESSION_SECRET` can be rotated without signing anyone out, the old key expiring by itself (13.3.4); and a sign-in from a device the account hasn't used before gets a 12-hour session, with every other admin emailed when it is a staff account (8.2.4, 8.4.2). What is left needs hosting or hardware: memory encryption, mutual TLS between services, an HSM, and the HSTS preload submission.
 
+**Update 20 Nov 2026 (branch `feat/asvs-l3-mtls-edge`):** the services authenticate each other with TLS certificates from a private CA: frontend to backend, and backend to MongoDB with an x509 login instead of a password (12.3.5). A Caddy edge for deployment (`docker-compose.edge.yml`) serves TLS 1.2 and 1.3 with forward-secret ciphers only, staples OCSP and terminates HTTP/2 and HTTP/3 (12.1.2, 12.1.4, 4.2.3, 4.2.4). Companies can add a passkey (6.3.3, still Partial: optional). What is left is listed under [Accepted risks](#accepted-risks): each needs a domain, DNS or hardware the project doesn't have yet.
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 63 | Control exists, with evidence in code or in this file |
+| Pass | 67 | Control exists, with evidence in code or in this file |
 | Partial | 0 | Control exists with a gap; the gap is named |
 | Not done | 4 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
-| Not reviewed | 4 | Set by the hosting proxy, outside the repository |
+| Not reviewed | 0 | Set by the hosting proxy, outside the repository (now configured in `docker/caddy/Caddyfile`) |
 
 | Chapter | L3 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
 | V1 Encoding and Sanitization | 3 | 2 | 0 | 0 | 1 | 0 |
 | V2 Validation and Business Logic | 2 | 2 | 0 | 0 | 0 | 0 |
 | V3 Web Frontend Security | 12 | 11 | 0 | 1 | 0 | 0 |
-| V4 API and Web Service | 6 | 3 | 0 | 0 | 1 | 2 |
+| V4 API and Web Service | 6 | 5 | 0 | 0 | 1 | 0 |
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
 | V6 Authentication | 12 | 7 | 0 | 0 | 5 | 0 |
 | V7 Session Management | 1 | 1 | 0 | 0 | 0 | 0 |
@@ -47,13 +49,13 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
 | V11 Cryptography | 10 | 6 | 0 | 1 | 3 | 0 |
-| V12 Secure Communication | 3 | 0 | 0 | 1 | 0 | 2 |
+| V12 Secure Communication | 3 | 2 | 0 | 1 | 0 | 0 |
 | V13 Configuration | 8 | 7 | 0 | 1 | 0 | 0 |
 | V14 Data Protection | 4 | 4 | 0 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 8 | 8 | 0 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **63** | **0** | **4** | **21** | **4** |
+| **Total** | **92** | **67** | **0** | **4** | **21** | **0** |
 
 ## Done on this branch
 
@@ -164,7 +166,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 3.5.8 | Authenticated resources can't be embedded cross-origin | Pass | `Cross-Origin-Resource-Policy: same-origin` on every frontend response (this branch) and backend response (helmet); company files are also `attachment` |
 | 3.6.1 | External assets use SRI, or a documented decision | Pass | Google Identity Services can't use SRI; decision recorded in [Required browser features](#required-browser-features) |
 | 3.7.3 | Notify the user before redirecting outside the application, with a way to cancel | Pass | Every link out (e-GP and MEA source pages and documents, LINE, a certificate's verification page, the admin e-GP search) goes through `/leaving`, which names the destination host and offers **Continue** or **Stay on TorFinder** (`OffsiteLink`, `frontend/src/app/leaving`). Nothing redirects by itself, and only http(s) destinations are offered (`test/leaving-link.test.mts`) |
-| 3.7.4 | Top-level domain on the HSTS preload list | **Not done** | Needs `preload` in the HSTS header and a submission for the production domain, once every subdomain is HTTPS |
+| 3.7.4 | Top-level domain on the HSTS preload list | **Not done** | The header is ready: `max-age=31536000; includeSubDomains; preload` (`frontend/next.config.ts`). What is left is submitting the production domain at hstspreload.org once every subdomain serves HTTPS; there is no production domain yet. See [Accepted risks](#accepted-risks) |
 | 3.7.5 | Behaves as documented when the browser lacks a security feature | Pass | As documented in [Required browser features](#required-browser-features): a page loaded in a browser without CSP Level 3, Web Crypto (no secure context) or cross-origin isolation support shows a warning banner asking for a current browser over HTTPS (`BrowserSupportNotice`, `frontend/test/browser-features.test.mts`); it warns rather than blocks |
 
 ### V4 API and Web Service
@@ -174,8 +176,8 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 4.1.4 | Only supported HTTP methods are accepted | Pass | Nest answers 404 and Next.js route handlers 405 to any method a route doesn't declare; TRACE is not implemented |
 | 4.1.5 | Per-message signatures for highly sensitive requests | N/A | No such requests; the one machine-to-machine call in (LINE's webhook) is signed and checked |
 | 4.2.2 | Generated `Content-Length` doesn't conflict with the framing | Pass | Lengths are set from buffers or stored sizes; the relayed portal document no longer forwards a compressed length for a decompressed body (this branch) |
-| 4.2.3 | No HTTP/2 or HTTP/3 connection-specific header fields | Not reviewed | HTTP/2 ends at the hosting proxy; Node serves HTTP/1.1 |
-| 4.2.4 | No CR/LF in HTTP/2 or HTTP/3 header fields | Not reviewed | Same; Node's HTTP/1.1 parser rejects CR/LF in header values |
+| 4.2.3 | No HTTP/2 or HTTP/3 connection-specific header fields | Pass | HTTP/2 and HTTP/3 end at the Caddy edge (`docker/caddy/Caddyfile`), whose Go implementation drops connection-specific fields; Next.js behind it speaks HTTP/1.1. Checked: Next.js sends `Connection: close` on its own port, and the same response over HTTP/2 from the edge has no `Connection` or `Keep-Alive` field |
+| 4.2.4 | No CR/LF in HTTP/2 or HTTP/3 header fields | Pass | Caddy's HTTP/2 and HTTP/3 servers refuse a field value containing CR, LF or NUL (Go `httpguts.ValidHeaderFieldValue`), and Node's HTTP/1.1 parser behind it refuses CR/LF in header values |
 | 4.2.5 | Outgoing URIs and headers are kept short enough for the receiver | Pass | The frontend never sends the backend a URL longer than 2,048 characters (`isBackendPathTooLong` in `fetchJson` and the shared proxy answer 414 instead), well under the backend's 16 KB header limit; the forwarded client address is sent only if it is IP-shaped and at most 45 characters (`client-ip.ts`); ids are validated ObjectIds and cookies are small (`frontend/test/backend-path.test.mts`) |
 
 ### V5 File Handling
@@ -252,9 +254,9 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 12.1.4 | Certificate revocation (OCSP stapling) enabled | Not reviewed | Set by the hosting proxy |
-| 12.1.5 | Encrypted Client Hello enabled | Not reviewed | Set by the hosting proxy and DNS |
-| 12.3.5 | Strong mutual authentication between internal services | **Not done** | Frontend → backend is plain HTTP on the Docker network, authenticated only by the user's token; backend → MongoDB by password |
+| 12.1.4 | Certificate revocation (OCSP stapling) enabled | Pass | Caddy staples an OCSP response whenever the certificate names a responder and refreshes it in the background; it is on by default and not turned off (`docker/caddy/Caddyfile`). Let's Encrypt now publishes revocation by CRL instead of OCSP, which browsers check themselves |
+| 12.1.5 | Encrypted Client Hello enabled | **Not done** | Caddy supports ECH, but it must publish its key in a DNS HTTPS record, which needs Caddy built with the DNS provider's module and an API token for the production domain. The two lines are in the Caddyfile, commented; steps in the deployment checklist. See [Accepted risks](#accepted-risks) |
+| 12.3.5 | Strong mutual authentication between internal services | Pass | A private CA (`docker/certs/generate.sh`, run by the `certs` service on every `up`) issues one certificate per service, each in its own volume. Frontend → backend: HTTPS where the backend requires a client certificate from that CA and then only the frontend's (`common/internal-tls.ts`), and the frontend trusts only that CA for the backend (`frontend/src/lib/internal-tls.ts`). Backend → MongoDB: TLS required, with an x509 login (`MONGODB-X509`) instead of a password; the old password account is removed. Edge → frontend: Caddy shares the frontend's network namespace and Next.js listens on loopback only. Checked on a running stack: no client certificate, or another service's certificate, is refused; MongoDB refuses a password without a certificate, and plain TCP |
 
 ### V13 Configuration
 
@@ -312,11 +314,22 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | ID | Level 3 condition | Status | Evidence |
 | --- | --- | --- | --- |
 | 3.4.3 | Per-response CSP with nonces or hashes | Pass | A fresh nonce per page request in `proxy.ts` |
-| 6.3.3 | One factor is hardware-based and phishing-resistant (FIDO, passkey) | Partial | Staff use a passkey (WebAuthn, origin-bound, user presence required) after their password or Google; companies and public viewers have no second factor |
+| 6.3.3 | One factor is hardware-based and phishing-resistant (FIDO, passkey) | Partial | Staff use a passkey (WebAuthn, origin-bound, user presence required) after their password or Google, required in production. Company accounts can add one, and from then on their sign-in needs it (`test/passkeys.e2e.test.mjs`); it is optional, by the team's decision. Public viewers sign in with Google only |
 | 6.6.1 | No phone or SMS factor | N/A | None offered |
-| 12.1.2 | Only forward-secret cipher suites | Not reviewed | Set by the hosting proxy |
+| 12.1.2 | Only forward-secret cipher suites | Pass | The Caddy edge allows TLS 1.2 and 1.3 only; for 1.2, ECDHE key exchange with AES-GCM or ChaCha20 only, and every 1.3 suite is forward secret. Checked: TLS 1.0 and 1.1, `AES128-SHA`, `AES256-GCM-SHA384` (RSA key exchange) and `ECDHE-RSA-AES128-SHA` (CBC) are refused; `ECDHE-ECDSA-AES128-GCM-SHA256` and TLS 1.3 are accepted |
 | 13.3.1 | Secrets in a hardware-backed store (HSM) | **Not done** | Environment variables |
 | 16.3.2 | Every authorization decision logged, including reads of sensitive data | Pass | Refusals are logged as `access.denied`, and every request a guard admits as `access.granted` (user, role, method, path; never the query or the data), so reads of protected data are on record (`logGranted` in `session.guard.ts`, `test/authorization-log.test.mjs`) |
+
+## Accepted risks
+
+What is still Not done, why, and what would close it. None of these can be done in the repository alone; each is reviewed when the project gets a production host.
+
+| ID | What is missing | Why it is accepted for now | What closes it |
+| --- | --- | --- | --- |
+| 3.7.4 | The domain on the HSTS preload list | There is no production domain yet. The header already asks for preload | Submit the domain at hstspreload.org after the first deploy, once every subdomain serves HTTPS |
+| 12.1.5 | Encrypted Client Hello | Needs a DNS provider and API token for the production domain | Build Caddy with the provider's DNS module and enable the two commented lines in `docker/caddy/Caddyfile` |
+| 11.7.1 | Memory encrypted while in use | A host feature (AMD SEV, Intel TDX) of the machine, not of the application | Deploy on confidential VMs (e.g. Google Cloud Confidential VM, Azure DCasv5) |
+| 13.3.3 / 13.3.1 (condition) | Keys in a hardware security module | `SESSION_SECRET` signs every request in the frontend's proxy and backend; a remote HSM call per request is out of scope for this project. The impact is limited: the key rotates with an expiring grace period (13.3.4), and every internal private key is readable only by its own service | Move `SESSION_SECRET` and the internal CA key into a cloud KMS or HSM, with signing done there |
 
 ## Suggested order for the rest
 
@@ -328,3 +341,4 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 6. ~~**14.2.8 (documents), 15.2.5, 13.3.4, 8.2.4, 8.4.2:** strip PDF/Word metadata, parse files in a worker, rotate the session secret with a grace period, shorter sessions and admin alerts on new devices~~ — done on `feat/asvs-l3-files-secrets-adaptive`. Originally: strip PDF/Word metadata and move file parsing into a worker with its own limits.
 7. ~~**16.3.2, 11.1.3**~~ — done on `feat/asvs-l3-revocation-url` (every authorization decision logged; crypto discovery in CI). Left: **12.3.5, 13.3.x**, which need network and hosting infrastructure beyond the repository.
 8. ~~**14.2.6, 11.7.2, 13.4.7:** minimal projections per audience and for sign-in; file-type gate~~ — done on `feat/asvs-l3-data-minimization`.
+9. ~~**12.3.5, 12.1.2, 12.1.4, 4.2.3, 4.2.4, 6.3.3 (companies):** internal mutual TLS, the Caddy edge, optional company passkeys~~ — done on `feat/asvs-l3-mtls-edge`. The rest is in [Accepted risks](#accepted-risks).

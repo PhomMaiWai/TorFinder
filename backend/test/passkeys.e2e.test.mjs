@@ -248,10 +248,25 @@ describe("staff passkeys", () => {
     assert.deepEqual(removed.body.map((passkey) => passkey.id), [device.id]);
   });
 
-  it("a company account can't add a passkey (staff only)", async () => {
+  // ASVS 6.3.3 (Level 3 condition): optional for companies. Without one a
+  // company signs in with its password as before; once it adds one, the
+  // password alone no longer signs it in.
+  it("a company account may add a passkey, and its sign-in then needs it", async () => {
     const org = await insertUser("org");
-    const { body } = await login(org.email);
-    assert.equal((await api("/auth/passkeys/options", { method: "POST", token: body.token })).status, 403);
+    const first = await login(org.email);
+    assert.equal(first.status, 200);
+    assert.ok(first.body.token, "no passkey yet: the password signs the company in");
+
+    const companyKey = new SoftwareAuthenticator(ORIGIN);
+    await enrol(first.body.token, companyKey, "Company laptop");
+
+    const token = await signInWithPasskey(org.email, companyKey);
+    assert.ok(token, "the passkey completes the sign-in");
+  });
+
+  it("a public viewer can't add a passkey (Google sign-in only)", async () => {
+    const token = mintToken({ role: "viewer", sub: new ObjectId().toString(), email: "viewer@ci.test" });
+    assert.equal((await api("/auth/passkeys/options", { method: "POST", token })).status, 403);
   });
 });
 

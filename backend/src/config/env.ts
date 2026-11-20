@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-
 // Local runs read backend/.env; in Docker the values come from the service's
 // `environment:` instead and there is no file to load.
 try {
@@ -88,22 +86,6 @@ function optionalNumber(name: string, fallback: number): number {
   return parsed;
 }
 
-/**
- * The connection string, with the password from MONGODB_PASSWORD_FILE when
- * that is set: Docker Compose keeps the generated database password in a
- * secrets volume instead of the environment (ASVS 13.2.3).
- */
-function mongodbUri(): string {
-  const uri = required("MONGODB_URI", "mongodb://localhost:27017/torfinder");
-  const passwordFile = process.env.MONGODB_PASSWORD_FILE;
-  if (!passwordFile) return uri;
-  const password = readFileSync(passwordFile, "utf8").trim();
-  if (!password) throw new Error(`MONGODB_PASSWORD_FILE (${passwordFile}) is empty`);
-  const url = new URL(uri);
-  url.password = encodeURIComponent(password);
-  return url.toString();
-}
-
 const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 
 export const env = {
@@ -112,7 +94,7 @@ export const env = {
   // Announcements published before this are kept but not listed: they are
   // too old to be anyone's opportunity or a useful price reference.
   torListedSince: new Date(process.env.TOR_LISTED_SINCE ?? "2022-01-01"),
-  mongodbUri: mongodbUri(),
+  mongodbUri: required("MONGODB_URI", "mongodb://localhost:27017/torfinder"),
   /**
    * The database connection's limits (ASVS 13.1.2, 13.2.6; written up in
    * docs/operations/limits-and-retention.md). At the pool limit a query waits
@@ -174,6 +156,17 @@ export const env = {
    * served and submitted (ASVS 2.4.2); anything faster isn't a person typing.
    */
   formMinSeconds: optionalNumber("FORM_MIN_SECONDS", 2),
+  /**
+   * Mutual TLS between the services (ASVS 12.3.5; common/internal-tls.ts).
+   * All three files or none; `allowedClients` are the certificate common
+   * names that may call the API.
+   */
+  internalTls: {
+    certFile: process.env.INTERNAL_TLS_CERT_FILE ?? "",
+    keyFile: process.env.INTERNAL_TLS_KEY_FILE ?? "",
+    caFile: process.env.INTERNAL_TLS_CA_FILE ?? "",
+    allowedClients: (process.env.INTERNAL_TLS_ALLOWED_CLIENTS ?? "frontend").split(",").map((name) => name.trim()).filter(Boolean),
+  },
   /**
    * Granting or removing the admin role waits for a second admin (ASVS 2.3.5);
    * an unapproved request is deleted after this many hours.

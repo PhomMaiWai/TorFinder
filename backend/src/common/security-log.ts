@@ -38,6 +38,7 @@ export type SecurityEvent =
   | "auth.session.revoke"
   | "admin.sessions.revoke"
   | "config.secret_rotation_due"
+  | "config.internal_tls_off"
   | "admin.approval.request"
   | "admin.approval.approve"
   | "admin.approval.reject";
