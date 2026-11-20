@@ -21,7 +21,7 @@ import {
 } from "@simplewebauthn/server";
 import { ObjectId, WithId } from "mongodb";
 
-import { isStaffRole } from "../common/roles";
+import { Role, isStaffRole } from "../common/roles";
 import { logSecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { StepUpRequiredException } from "../common/step-up.guard";
@@ -32,7 +32,16 @@ import { AccountLinksService } from "./account-links.service";
 import { SIGN_IN_FIELDS } from "./sign-in-fields";
 
 /**
- * Passkeys (WebAuthn) for staff accounts: admin, owner and auditor.
+ * Who may add passkeys: staff (required in production, docs/security/passkeys.md)
+ * and companies, for whom it is optional (ASVS 6.3.3 at Level 3). Once a
+ * company adds one, its sign-in needs it too. Public viewers sign in with
+ * Google only.
+ */
+const canUsePasskeys = (role: Role) => isStaffRole(role) || role === "org";
+
+/**
+ * Passkeys (WebAuthn) for staff accounts (admin, owner and auditor), and,
+ * optionally, company accounts.
  *
  * A passkey is a key pair made by the user's device or security key. The
  * private key never leaves it, and the browser only lets it sign for our own
@@ -86,7 +95,7 @@ export class PasskeysService {
 
   /** Whether this account must finish sign-in with a passkey. */
   static needsPasskey(user: Pick<UserDoc, "role" | "passkeys">): boolean {
-    return isStaffRole(user.role) && (user.passkeys?.length ?? 0) > 0;
+    return canUsePasskeys(user.role) && (user.passkeys?.length ?? 0) > 0;
   }
 
   // ---- challenges -------------------------------------------------------
@@ -220,7 +229,7 @@ export class PasskeysService {
    * learns the password can't add their own key next to the owner's.
    */
   async registrationOptions(session: SessionPayload): Promise<PublicKeyCredentialCreationOptionsJSON> {
-    if (!isStaffRole(session.role)) throw new ForbiddenException("พาสคีย์ใช้กับบัญชีเจ้าหน้าที่เท่านั้น");
+    if (!canUsePasskeys(session.role)) throw new ForbiddenException("พาสคีย์ใช้ได้กับบัญชีเจ้าหน้าที่และบัญชีบริษัทเท่านั้น");
     const user = await this.userOf(session.sub);
     const existing = user.passkeys ?? [];
     if (existing.length > 0 && !hasRecentPasskey(session, env.passkeys.stepUpMinutes)) {

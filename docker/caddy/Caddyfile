@@ -1,0 +1,38 @@
+# The HTTPS edge for a deployment (docker-compose.edge.yml). Caddy runs in the
+# frontend container's network namespace and forwards to Next.js on
+# 127.0.0.1:3000, so the hop between them never crosses a network.
+#
+#   SITE_ADDRESS  the public domain, e.g. torfinder.example.go.th (default: localhost,
+#                 served with Caddy's own local CA, for trying it out)
+{
+	servers {
+		# ASVS 4.2.3 / 4.2.4: HTTP/2 and HTTP/3 are terminated here by Go's
+		# implementation, which drops connection-specific header fields
+		# (Connection, Keep-Alive, Upgrade, Transfer-Encoding) and refuses
+		# CR, LF and NUL in field values; Next.js behind it speaks HTTP/1.1.
+		protocols h1 h2 h3
+	}
+	# ASVS 12.1.5, Encrypted Client Hello: needs Caddy built with your DNS
+	# provider's module, so Caddy can publish the ECH key in an HTTPS record.
+	# See docs/operations/deployment-checklist.md, "HTTPS edge". Then:
+	#   dns <provider> {env.DNS_API_TOKEN}
+	#   ech ech.{$SITE_ADDRESS}
+}
+
+{$SITE_ADDRESS:localhost} {
+	tls {
+		# ASVS 12.1.1 / 12.1.2: TLS 1.2 and 1.3 only. Every TLS 1.3 suite is
+		# forward secret; for 1.2 only ECDHE key exchange with AEAD ciphers.
+		protocols tls1.2 tls1.3
+		ciphers TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+		# ASVS 12.1.4: Caddy staples an OCSP response whenever the certificate
+		# names an OCSP responder, refreshing it in the background; nothing to
+		# switch on. (Let's Encrypt now publishes revocation by CRL instead.)
+	}
+	encode zstd gzip
+	# Next.js reads the client address from the right-most X-Forwarded-For
+	# entry (frontend/src/lib/client-ip.ts), which Caddy appends.
+	reverse_proxy 127.0.0.1:3000
+}
+
+# Plain HTTP only redirects to HTTPS (Caddy does this by itself for the site above).

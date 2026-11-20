@@ -26,7 +26,8 @@ const noSubscription = () => () => {};
  * see where they were used, remove one. Adding a second or removing one needs
  * a fresh passkey check, which is asked for here and then retried.
  */
-export function PasskeySection({ setupRequired }: { setupRequired: boolean }) {
+/** `forCompany`: a company account, for which a passkey is optional (ASVS 6.3.3). */
+export function PasskeySection({ setupRequired, forCompany = false }: { setupRequired: boolean; forCompany?: boolean }) {
   const t = useTranslations("Passkeys");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -87,7 +88,7 @@ export function PasskeySection({ setupRequired }: { setupRequired: boolean }) {
   return (
     <Section title={t("sectionTitle")}>
       <div className="space-y-4 rounded-xl border border-border bg-surface p-5">
-        <p className="text-sm text-ink-muted">{t("description")}</p>
+        <p className="text-sm text-ink-muted">{t(forCompany ? "descriptionCompany" : "description")}</p>
 
         {setupRequired && (
           <p role="status" className="rounded-lg bg-accent-soft px-4 py-2.5 text-sm font-medium text-accent-text">
