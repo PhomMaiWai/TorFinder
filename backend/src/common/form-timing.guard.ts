@@ -5,6 +5,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { env } from "../config/env";
 import { logSecurityEvent } from "./security-log";
+import { verifyingSecrets } from "./session-keys";
 
 /** The forms that carry a timing token; the purpose is signed in, so one form's token can't be used on another. */
 export type FormPurpose = "signup" | "feedback";
@@ -28,15 +29,19 @@ const STALE = "แบบฟอร์มนี้หมดอายุหรื�
  * shares, with a prefix so it can never pass as a session signature (or the
  * other way round). Mirrors frontend/src/lib/form-timing.ts.
  */
-const sign = (data: string) => createHmac("sha256", env.sessionSecret).update(`form-timing:${data}`).digest();
+const sign = (data: string, secret: string) => createHmac("sha256", secret).update(`form-timing:${data}`).digest();
 
 /** The time the form was served, if the token is genuine and for this purpose; null otherwise. */
 export function formStartedAt(token: string | undefined, purpose: FormPurpose): number | null {
   const [data, signature] = token?.split(".") ?? [];
   if (!data || !signature) return null;
-  const expected = sign(data);
   const received = Buffer.from(signature, "base64url");
-  if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null;
+  // Any key still accepted: a form served just before a rotation stays valid.
+  const genuine = verifyingSecrets().some((secret) => {
+    const expected = sign(data, secret);
+    return expected.length === received.length && timingSafeEqual(expected, received);
+  });
+  if (!genuine) return null;
   try {
     const { p, t } = JSON.parse(Buffer.from(data, "base64url").toString()) as { p?: unknown; t?: unknown };
     return p === purpose && typeof t === "number" && Number.isFinite(t) ? t : null;

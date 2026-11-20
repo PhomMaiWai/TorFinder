@@ -1,5 +1,7 @@
 import { inflateRawSync } from "node:zlib";
 
+import { runParseTask } from "./parse-worker";
+
 /**
  * Just enough of the ZIP format to take files out of the document bundles the
  * national e-GP publishes: stored and deflated entries, no ZIP64, no
@@ -21,6 +23,8 @@ export type ZipEntry = {
   size: number;
   /** Decompresses on demand, refusing to grow past `size` — a bundle is untrusted input. */
   read(): Buffer;
+  /** The same, in a parse worker (ASVS 15.2.5); what a request handler uses. */
+  readAsync(): Promise<Buffer>;
 };
 
 const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
@@ -79,6 +83,14 @@ export function readZip(zip: Buffer): ZipEntry[] {
           localOffset + 30 + zip.readUInt16LE(localOffset + 26) + zip.readUInt16LE(localOffset + 28);
         const data = zip.subarray(dataStart, dataStart + compressedSize);
         return method === STORED ? Buffer.from(data) : inflateRawSync(data, { maxOutputLength: size });
+      },
+      readAsync() {
+        if (method === STORED) return Promise.resolve(this.read());
+        if (zip.readUInt32LE(localOffset) !== LOCAL_FILE_HEADER) return Promise.reject(new Error("corrupt zip entry"));
+        const dataStart =
+          localOffset + 30 + zip.readUInt16LE(localOffset + 26) + zip.readUInt16LE(localOffset + 28);
+        const data = Buffer.from(zip.subarray(dataStart, dataStart + compressedSize));
+        return runParseTask({ kind: "inflateRaw", data, maxOutputLength: size });
       },
     });
   }

@@ -22,7 +22,7 @@ import {
   sniffFileType,
   storeFile,
 } from "../common/stored-files";
-import { cleanUpload } from "../common/image-uploads";
+import { cleanUploadIsolated } from "../common/parse-worker";
 import { writeZip } from "../common/zip-writer";
 import { CompanyProfile, DatabaseService } from "../database/database.service";
 import { Coverage, coverageOf } from "./coverage";
@@ -117,7 +117,7 @@ export class LibraryService {
     if (!type) throw new UnsupportedMediaTypeException("รับเฉพาะไฟล์ PDF, Word (.docx), PNG หรือ JPG");
 
     // Images: pixel-size cap and metadata stripped (ASVS 5.2.6, 14.2.8).
-    const content = cleanUpload(upload.buffer, type);
+    const content = await cleanUploadIsolated(upload.buffer, type);
     const current = await this.recordOf(userId, kind, id);
     const name = safeFileName(upload.originalname, type, kind === "team" ? "cv" : "reference");
     const fileId = await storeFile(this.db.libraryFiles, content, name, {

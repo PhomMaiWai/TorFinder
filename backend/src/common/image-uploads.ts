@@ -1,5 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 
+import { cleanDocx, cleanPdf } from "./document-metadata";
+
 /**
  * Checks and cleans an uploaded PNG or JPEG before it is stored, with no
  * image library: only the container's own structure is read, the pixels are
@@ -118,12 +120,14 @@ export function cleanJpeg(buffer: Buffer): { buffer: Buffer; dimensions: ImageDi
 }
 
 /**
- * What to store for an upload whose type has already been sniffed: an image
- * checked and cleaned, anything else unchanged. PDF and Word metadata is not
- * rewritten (docs/security/asvs-l3.md, 14.2.8).
+ * What to store for an upload whose type has already been sniffed, with its
+ * metadata removed (ASVS 14.2.8): an image checked and cleaned here, a PDF or
+ * Word document by document-metadata.ts.
  */
 export function cleanUpload(buffer: Buffer, contentType: string): Buffer {
   if (contentType === "image/png") return cleanPng(buffer).buffer;
   if (contentType === "image/jpeg") return cleanJpeg(buffer).buffer;
+  if (contentType === "application/pdf") return cleanPdf(buffer);
+  if (contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return cleanDocx(buffer);
   return buffer;
 }

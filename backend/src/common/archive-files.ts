@@ -30,7 +30,7 @@ export function showableFiles(entries: ZipEntry[]): ArchiveFile[] {
 }
 
 /** One file out of a bundle, only if its first bytes say it is the PDF or image it claims to be. */
-export function readShowableFile(entries: ZipEntry[], position: number): ArchiveFileData {
+export async function readShowableFile(entries: ZipEntry[], position: number): Promise<ArchiveFileData> {
   const entry = entries[position];
   const type = entry && TYPES.find((candidate) => candidate.extension.test(entry.name));
   if (!entry || !type) throw new NotFoundException("ไม่พบไฟล์นี้ในชุดเอกสาร");
@@ -38,7 +38,7 @@ export function readShowableFile(entries: ZipEntry[], position: number): Archive
 
   let data: Buffer;
   try {
-    data = entry.read();
+    data = await entry.readAsync();
   } catch {
     throw new NotFoundException("เปิดไฟล์นี้ในชุดเอกสารไม่ได้");
   }
