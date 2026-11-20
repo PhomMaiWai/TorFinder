@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import { jsonResponse } from "@/lib/json-response";
 import { type Role, homeFor } from "@/lib/roles";
+import { isUnexpectedFile } from "@/lib/served-files";
 
 /** Pages only a signed-in account may see. */
 // /dashboard is the public overview now; the company workspace lives at /matches.
@@ -166,6 +167,9 @@ export async function proxy(request: NextRequest) {
  */
 function gate(request: NextRequest, session: SessionPayload | null): NextResponse | null {
   const { pathname } = request.nextUrl;
+
+  // ASVS 13.4.7: no page looks like a file; see served-files.ts.
+  if (isUnexpectedFile(pathname)) return new NextResponse("Not found", { status: 404 });
 
   if (pathname.startsWith("/api/")) {
     if (PUBLIC_API_ROUTES.includes(pathname) || PUBLIC_API_PATTERNS.some((pattern) => pattern.test(pathname))) {
