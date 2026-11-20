@@ -2,7 +2,7 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 115 Pass, 2 Partial, 5 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 115 pass (92%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 118 Pass, 2 Partial, 5 Not done, 58 N/A, 0 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 118 pass (94%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
 
 **Update 19 Nov 2026 (branch `feat/asvs-l2-batch`):** nine items move to Pass. Announcement files are fetched only from the allowlisted portal hosts, and redirects are checked hop by hop (1.3.6, 13.2.4, 15.3.2; threat E3). Google sign-in is bound to the browser with a nonce (10.1.2, 10.5.1). Password hashes use stronger scrypt settings and store them, and old hashes are upgraded at sign-in (11.4.2, 11.2.2). The backend connects to MongoDB as a least-privilege account (13.2.2). Input refused by validation is logged (16.3.3).
 
@@ -16,18 +16,18 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 115 | Control exists, with evidence in code or in this file |
+| Pass | 118 | Control exists, with evidence in code or in this file |
 | Partial | 2 | Control exists with a gap; the gap is named |
 | Not done | 5 | Not implemented; out of scope for this deadline (below) |
 | N/A | 58 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
-| Not reviewed | 3 | Set by the hosting proxy, outside the repository |
+| Not reviewed | 0 | The three set by the hosting proxy were reviewed once the Caddy edge joined the repository (PR #401) |
 
 | Chapter | L2 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
 | V1 Encoding and Sanitization | 19 | 8 | 0 | 0 | 11 | 0 |
 | V2 Validation and Business Logic | 7 | 5 | 1 | 0 | 1 | 0 |
 | V3 Web Frontend Security | 11 | 10 | 0 | 0 | 1 | 0 |
-| V4 API and Web Service | 8 | 1 | 0 | 0 | 5 | 2 |
+| V4 API and Web Service | 8 | 3 | 0 | 0 | 5 | 0 |
 | V5 File Handling | 5 | 4 | 0 | 1 | 0 | 0 |
 | V6 Authentication | 22 | 11 | 1 | 0 | 10 | 0 |
 | V7 Session Management | 12 | 12 | 0 | 0 | 0 | 0 |
@@ -35,13 +35,13 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 1 | 0 |
 | V10 OAuth and OIDC | 24 | 6 | 0 | 0 | 18 | 0 |
 | V11 Cryptography | 11 | 9 | 0 | 0 | 2 | 0 |
-| V12 Secure Communication | 6 | 3 | 0 | 0 | 2 | 1 |
+| V12 Secure Communication | 6 | 4 | 0 | 0 | 2 | 0 |
 | V13 Configuration | 12 | 10 | 0 | 2 | 0 | 0 |
 | V14 Data Protection | 7 | 7 | 0 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 10 | 10 | 0 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 16 | 14 | 0 | 2 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **115** | **2** | **5** | **58** | **3** |
+| **Total** | **183** | **118** | **2** | **5** | **58** | **0** |
 
 ## Fixed after the triage (PR #343)
 
@@ -265,9 +265,9 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 4.1.2 | Only user-facing endpoints (intended for manual web-browser access) automatically redirect from HTTP to HTTPS, while… | Not reviewed | HTTP→HTTPS redirect is done by the hosting proxy, outside the repo |
+| 4.1.2 | Only user-facing endpoints (intended for manual web-browser access) automatically redirect from HTTP to HTTPS, while… | Pass | The Caddy edge (`docker/caddy/Caddyfile`) redirects pages from HTTP to HTTPS with 308, and refuses `/api/*` over plain HTTP with 403 instead of redirecting, so a client that sent an API call unencrypted finds out. Evidence 17 |
 | 4.1.3 | Any HTTP header field used by the application and set by an intermediary layer, such as a load balancer, a web… | Pass | Next.js keeps a client-sent `X-Forwarded-For` when reached directly (`??=` in `next/dist/server/base-server.js`), so it never is: compose binds it to 127.0.0.1, and the deployment checklist requires the reverse proxy to append the address it saw. The frontend forwards only that right-most entry (`frontend/src/lib/client-ip.ts`), and the backend trusts it only from loopback or private hops (`TRUST_PROXY`) |
-| 4.2.1 | All application components (including load balancers, firewalls, and application servers) determine boundaries of… | Not reviewed | Message framing is up to the hosting proxy; Node's own parser rejects conflicting `Content-Length`/`Transfer-Encoding` |
+| 4.2.1 | All application components (including load balancers, firewalls, and application servers) determine boundaries of… | Pass | The Caddy edge parses every request and builds a new one for Next.js over HTTP/1.1, so the two never disagree about where a message ends. Probed through the edge: `Content-Length` with `Transfer-Encoding` → 400, two different `Content-Length` values → 400, an unknown `Transfer-Encoding` → 501. The backend sits behind Next.js and is reached only by it. Evidence 17 |
 | 4.3.1 | A query allowlist, depth limiting, amount limiting, or query cost analysis is used to prevent GraphQL or data layer… | N/A | No GraphQL |
 | 4.3.2 | GraphQL introspection queries are disabled in the production environment unless the GraphQL API is meant to be used… | N/A | No GraphQL |
 | 4.4.2 | Verify that, during the initial HTTP WebSocket handshake, the Origin header field is checked against a list of… | N/A | No WebSockets |
@@ -393,7 +393,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 12.1.2 | Only recommended cipher suites are enabled, with the strongest cipher suites set as preferred | Not reviewed | Cipher suites are set by the hosting proxy |
+| 12.1.2 | Only recommended cipher suites are enabled, with the strongest cipher suites set as preferred | Pass | The Caddy edge allows TLS 1.2 and 1.3 only, and for 1.2 only ECDHE with AES-GCM or ChaCha20 (`docker/caddy/Caddyfile`). Probed: TLS 1.1, `AES128-SHA`, `AES256-GCM-SHA384` and `DHE-RSA-AES128-GCM-SHA256` are refused; ECDHE-ECDSA-AES128-GCM and TLS 1.3 are accepted. Evidence 17 |
 | 12.1.3 | The application validates that mTLS client certificates are trusted before using the certificate identity for… | N/A | No mTLS |
 | 12.3.1 | An encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application,… | Pass | Inbound: the Caddy edge serves HTTPS only and redirects plain HTTP (`docker/caddy/Caddyfile`, `docker-compose.edge.yml`). Outbound calls (portals, Google, Resend, Vertex) use HTTPS. MongoDB accepts TLS only, with a client certificate from the internal CA (`--tlsMode=requireTLS`, `docker-compose.yml`) |
 | 12.3.2 | TLS clients validate certificates received before communicating with a TLS server | Pass | Node's `fetch` validates certificates; no `rejectUnauthorized: false` or `NODE_TLS_REJECT_UNAUTHORIZED` anywhere |

@@ -5,7 +5,7 @@
 // Google Chrome, and Playwright in some folder of your own:
 //   mkdir /tmp/pw && cd /tmp/pw && npm i playwright
 //   NODE_PATH=/tmp/pw/node_modules node docs/security/evidence/capture-screenshots.js headers cors
-// Shots: headers cors lockout passwords authz logs google adminsignout sessions mtls
+// Shots: headers cors lockout passwords authz logs google adminsignout sessions mtls edge
 //   (run adminsignout before sessions: it clears the company's other sessions)
 //   idle      needs SESSION_IDLE_MINUTES=1 on frontend + backend (a compose override)
 //   error500  needs MongoDB stopped first: docker compose stop db (start it again after)
@@ -367,6 +367,38 @@ const shots = {
     );
     await phone.close();
     await ctx.close();
+  },
+
+  // 17: the HTTPS edge (ASVS 4.1.2, 4.2.1, 12.1.2). Needs the stack started with it:
+  //   EDGE_HTTP_PORT=18080 EDGE_HTTPS_PORT=18443 FRONTEND_ORIGIN=https://localhost:18443 \
+  //     docker compose -f docker-compose.yml -f docker-compose.edge.yml up -d
+  async edge(browser) {
+    const redirects = sh(
+      `curl -s -o /dev/null -w "GET /search      (a page) -> %{http_code} %{redirect_url}\n" http://localhost:18080/search; ` +
+        `curl -s -w "  %{http_code}\n" http://localhost:18080/api/auth/me | sed 's|^|GET /api/auth/me (an API) -> |'`,
+    );
+    const framing = sh(`python3 -I docs/security/evidence/edge-framing.py`);
+    const tls = sh(`docker run --rm --entrypoint sh mongo:7 -c '
+for c in "-tls1_1 -cipher DEFAULT:@SECLEVEL=0" "-tls1_2 -cipher AES128-SHA:@SECLEVEL=0" "-tls1_2 -cipher AES256-GCM-SHA384" "-tls1_2 -cipher DHE-RSA-AES128-GCM-SHA256:@SECLEVEL=0" "-tls1_2 -cipher ECDHE-ECDSA-AES128-GCM-SHA256" "-tls1_3"; do
+  out=$(echo | timeout 5 openssl s_client -connect host.docker.internal:18443 -servername localhost $c 2>&1)
+  got=$(echo "$out" | grep -oE "Cipher is [A-Z0-9_-]+" | grep -v NONE | head -1)
+  err=$(echo "$out" | grep -oE "alert [a-z ]+" | head -1)
+  echo "$c -> \${got:-refused: $err}"
+done'`);
+    await renderCard(
+      browser,
+      "17-https-edge.png",
+      card({
+        title: "The HTTPS edge (ASVS 4.1.2, 4.2.1, 12.1.2)",
+        source: "Caddy (docker/caddy/Caddyfile) in front of the frontend, run locally on ports 18080 (HTTP) and 18443 (HTTPS)",
+        terminal: [
+          term("# plain HTTP: pages redirect, API calls are refused (4.1.2)", redirects, ["308", "403"]),
+          term("# requests with ambiguous message framing, over TLS (4.2.1)", framing, ["400", "501"]),
+          term("# TLS versions and cipher suites the edge accepts (12.1.2)", tls, ["refused", "Cipher is"]),
+        ].join(""),
+        note: "Caddy rebuilds each request before passing it to Next.js over HTTP/1.1, so the two never disagree about where a message ends. Only forward-secret AEAD suites are accepted.",
+      }),
+    );
   },
 
   // 16: services authenticate each other with certificates (ASVS 12.3.3, 12.3.5).

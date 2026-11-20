@@ -156,12 +156,13 @@ And not from the audit, just from reading the code:
 
 ## HTTPS edge
 
-`docker-compose.edge.yml` adds Caddy in front of the frontend (ASVS 12.1.2, 12.1.4, 4.2.3, 4.2.4; `docker/caddy/Caddyfile`): HTTPS with a certificate it obtains and renews itself, TLS 1.2 and 1.3 with forward-secret ciphers only, OCSP stapling, HTTP/2 and HTTP/3, and HTTP redirected to HTTPS.
+`docker-compose.edge.yml` adds Caddy in front of the frontend (ASVS 12.1.2, 12.1.4, 4.1.2, 4.2.1, 4.2.3, 4.2.4; `docker/caddy/Caddyfile`): HTTPS with a certificate it obtains and renews itself, TLS 1.2 and 1.3 with forward-secret ciphers only, OCSP stapling, HTTP/2 and HTTP/3, and plain HTTP redirected to HTTPS for pages but refused with 403 for `/api/*`, so an API call sent unencrypted fails visibly.
 
 - [ ] DNS for the domain points at the server, and ports 80 and 443 (TCP, plus 443/UDP for HTTP/3) are open to it
 - [ ] In `.env`: `SITE_ADDRESS=<domain>`, `FRONTEND_ORIGIN=https://<domain>` (passkeys and CORS use it)
 - [ ] Start with both files: `docker compose -f docker-compose.yml -f docker-compose.edge.yml up -d --build`
 - [ ] `curl -sI https://<domain>/` shows `HTTP/2` and `strict-transport-security: max-age=31536000; includeSubDomains; preload`
+- [ ] `curl -sI http://<domain>/search` gives `308` to `https://`, and `curl -s http://<domain>/api/auth/me` gives `403 HTTPS required`
 - [ ] Check the TLS setup with an external scanner (e.g. SSL Labs): only TLS 1.2 and 1.3, no non-forward-secret suites
 - [ ] **HSTS preload (ASVS 3.7.4):** once every subdomain serves HTTPS, submit the domain at hstspreload.org. Removal takes months, so only after the site is settled on HTTPS
 - [ ] **Encrypted Client Hello (ASVS 12.1.5):** build Caddy with your DNS provider's module (`xcaddy build --with github.com/caddy-dns/<provider>`), give it an API token for the zone, and enable the two commented `dns` / `ech` lines at the top of the Caddyfile. Caddy then publishes the ECH key in the domain's HTTPS record and rotates it

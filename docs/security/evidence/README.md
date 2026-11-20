@@ -50,6 +50,7 @@ Chrome received, shown as a table rather than the DevTools panel.
 | [15c-admin-signed-account-out.png](screenshots/15c-admin-signed-account-out.png) | ASVS 7.4.5 Session management | The admin signs Arun Digital out on every device. |
 | [15d-admin-sign-out-logged.png](screenshots/15d-admin-sign-out-logged.png) | 12 Security logging | The sign-out is logged as `admin.sessions.revoke` with the account and the admin's id. |
 | [16-mutual-tls.png](screenshots/16-mutual-tls.png) | ASVS 12.3.3, 12.3.5 Secure communication | The backend starts with HTTPS and client certificates required, and the backend's database login is its certificate. Without a client certificate, the backend's TLS handshake fails ("certificate required"). With a certificate from our CA that isn't the frontend's, it answers 403, with no `X-Powered-By` header. MongoDB closes connections without TLS, and over TLS without a client certificate. |
+| [17-https-edge.png](screenshots/17-https-edge.png) | ASVS 4.1.2, 4.2.1, 12.1.2 Secure communication | The Caddy edge, run locally on ports 18080/18443: a page over plain HTTP gets 308 to HTTPS while an API call gets 403. Requests with ambiguous framing are refused (400, 400, 501). TLS 1.1 and non-forward-secret suites are refused; only ECDHE AEAD and TLS 1.3 connect. The framing probes are [`edge-framing.py`](edge-framing.py). |
 
 ## Observed while collecting
 
