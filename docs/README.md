@@ -84,6 +84,7 @@ change must keep.
 | [asvs-l2.md](./security/asvs-l2.md) | Triage against all 183 OWASP ASVS 5.0 Level 2 requirements |
 | [passkeys.md](./security/passkeys.md) | Staff passkeys and step-up: how they work, settings, rollout, recovery |
 | [asvs-l3.md](./security/asvs-l3.md) | Triage of the 92 OWASP ASVS 5.0 Level 3 requirements: which fit TorFinder, what is done, what is left |
+| [crypto-inventory.md](./security/crypto-inventory.md) | Every use of cryptography, how it is discovered in CI, and the migration plan (including post-quantum) |
 | [sast-report.md](./security/sast-report.md) | CodeQL and Semgrep scans: findings, fixes and false positives |
 | [dast-report.md](./security/dast-report.md) | OWASP ZAP baseline and signed-in active scans of a local copy: findings, the CSP fix, false positives |
 

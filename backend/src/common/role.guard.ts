@@ -3,7 +3,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Optional
 import { env } from "../config/env";
 import { Role, isStaffRole } from "./roles";
 import { SessionRevocationService } from "./session-revocation.service";
-import { AuthenticatedRequest, logDenied } from "./session.guard";
+import { AuthenticatedRequest, logDenied, logGranted } from "./session.guard";
 import { verifySessionToken } from "./token";
 
 /**
@@ -70,6 +70,7 @@ export abstract class RoleGuard implements CanActivate {
       // Same attachment as below — lets a handler attribute the action to
       // this caller (see AuditService) without re-verifying the token itself.
       request.session = session;
+      logGranted(request, `role:${this.roles.join("|")}`, session.sub, session.role);
       return true;
     }
 
@@ -82,6 +83,7 @@ export abstract class RoleGuard implements CanActivate {
         throw new ForbiddenException(this.refusal);
       }
       request.session = session;
+      logGranted(request, `role:${this.roles.join("|")}`, session.sub, session.role);
       return true;
     });
   }

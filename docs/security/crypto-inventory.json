@@ -1,0 +1,64 @@
+{
+  "backend/src/auth/account-links.service.ts": [
+    "createHash",
+    "randomBytes"
+  ],
+  "backend/src/auth/google-claims.ts": [
+    "timingSafeEqual"
+  ],
+  "backend/src/auth/known-devices.ts": [
+    "createHash"
+  ],
+  "backend/src/auth/passkeys.service.ts": [
+    "createHash",
+    "generateAuthenticationOptions",
+    "generateRegistrationOptions",
+    "verifyAuthenticationResponse",
+    "verifyRegistrationResponse"
+  ],
+  "backend/src/common/all-exceptions.filter.ts": [
+    "randomUUID"
+  ],
+  "backend/src/common/form-timing.guard.ts": [
+    "createHmac",
+    "timingSafeEqual"
+  ],
+  "backend/src/common/password.ts": [
+    "randomBytes",
+    "scrypt",
+    "timingSafeEqual"
+  ],
+  "backend/src/common/token.ts": [
+    "createHmac",
+    "timingSafeEqual"
+  ],
+  "backend/src/gproc/gproc.service.ts": [
+    "randomUUID"
+  ],
+  "backend/src/notifications/line-link.ts": [
+    "createHash",
+    "createHmac",
+    "randomInt",
+    "timingSafeEqual"
+  ],
+  "backend/src/similar/similar.service.ts": [
+    "createHash"
+  ],
+  "frontend/src/lib/auth.ts": [
+    "crypto.subtle.importKey",
+    "crypto.subtle.sign",
+    "timingSafeEqual"
+  ],
+  "frontend/src/lib/device-cookie.ts": [
+    "crypto.getRandomValues"
+  ],
+  "frontend/src/lib/form-timing.ts": [
+    "createHmac"
+  ],
+  "frontend/src/lib/google-nonce.ts": [
+    "crypto.getRandomValues"
+  ],
+  "frontend/src/proxy.ts": [
+    "crypto.randomUUID"
+  ]
+}

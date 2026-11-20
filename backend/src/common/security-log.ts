@@ -26,6 +26,7 @@ export type SecurityEvent =
   | "auth.password.reset"
   | "auth.email.verify"
   | "access.denied"
+  | "access.granted"
   | "input.rejected"
   | "rate.limited"
   | "line.webhook.bad_signature"

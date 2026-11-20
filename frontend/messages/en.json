@@ -26,6 +26,9 @@
     "logout": "Sign out",
     "navInsights": "Insights"
   },
+  "BrowserSupport": {
+    "warning": "Your browser is missing security features TorFinder relies on, so some protections don't apply. Please update to a current Chrome, Edge, Firefox or Safari, and use the site over HTTPS."
+  },
   "Footer": {
     "productsHeading": "Products",
     "productsLinks": [

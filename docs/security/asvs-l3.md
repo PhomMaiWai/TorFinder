@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 50 Pass, 8 Partial, 9 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 50 pass (70%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+**Result: 55 Pass, 5 Partial, 7 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 55 pass (77%). Of the six stricter Level 3 conditions on L1/L2 requirements, 2 pass, 1 is partial, 1 is N/A, 1 is set by hosting and 1 is not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -18,23 +18,23 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 20 Nov 2026 (branch `feat/asvs-l3-quick-wins`):** four items move to Pass. The saved-search cap is claimed atomically (15.4.2); a sign-in from a browser the account hasn't used before emails its owner (6.3.5); links out of TorFinder go through a "you're leaving" page with a way back (3.7.3); and sign-up and comment forms are refused when sent back sooner than a person could fill them in (2.4.2).
 
-**Update 20 Nov 2026 (branch `feat/asvs-l3-revocation-url`):** session revocation is read from the database on every request, and taking back a company's approval revokes its sessions (8.3.2); the frontend caps backend URLs and the forwarded client address (4.2.5). Both pass.
+**Update 20 Nov 2026 (branch `feat/asvs-l3-revocation-url`):** session revocation is read from the database on every request, and taking back a company's approval revokes its sessions (8.3.2); the frontend caps backend URLs and the forwarded client address (4.2.5). Then: a ReDoS audit of every regex in CI (1.3.12), the sign-in redirect checked with the browser's own URL parser (1.5.3), a warning banner for browsers missing the security features listed below (3.7.5), crypto discovery in CI with an inventory and post-quantum migration plan (11.1.3, 11.1.4, [crypto-inventory.md](./crypto-inventory.md)), and every allowed authorization decision logged (the 16.3.2 condition). L3 is 55/71 (77%).
 
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 50 | Control exists, with evidence in code or in this file |
-| Partial | 8 | Control exists with a gap; the gap is named |
-| Not done | 9 | Not implemented |
+| Pass | 55 | Control exists, with evidence in code or in this file |
+| Partial | 5 | Control exists with a gap; the gap is named |
+| Not done | 7 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
 
 | Chapter | L3 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
-| V1 Encoding and Sanitization | 3 | 0 | 2 | 0 | 1 | 0 |
+| V1 Encoding and Sanitization | 3 | 2 | 0 | 0 | 1 | 0 |
 | V2 Validation and Business Logic | 2 | 2 | 0 | 0 | 0 | 0 |
-| V3 Web Frontend Security | 12 | 10 | 1 | 1 | 0 | 0 |
+| V3 Web Frontend Security | 12 | 11 | 0 | 1 | 0 | 0 |
 | V4 API and Web Service | 6 | 3 | 0 | 0 | 1 | 2 |
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
 | V6 Authentication | 12 | 7 | 0 | 0 | 5 | 0 |
@@ -42,14 +42,14 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V8 Authorization | 6 | 4 | 1 | 1 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
-| V11 Cryptography | 10 | 3 | 1 | 3 | 3 | 0 |
+| V11 Cryptography | 10 | 5 | 1 | 1 | 3 | 0 |
 | V12 Secure Communication | 3 | 0 | 0 | 1 | 0 | 2 |
 | V13 Configuration | 8 | 5 | 1 | 2 | 0 | 0 |
 | V14 Data Protection | 4 | 2 | 2 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 8 | 7 | 0 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **50** | **8** | **9** | **21** | **4** |
+| **Total** | **92** | **55** | **5** | **7** | **21** | **4** |
 
 ## Done on this branch
 
@@ -82,7 +82,7 @@ TorFinder expects a browser that supports and honours:
 | `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` | Window and resource isolation |
 | `X-Content-Type-Options: nosniff` | No MIME sniffing of documents |
 
-Every current version of Chrome, Edge, Firefox and Safari supports all of them. **Behaviour without them:** the application does not detect the browser and does not warn or block. A browser without CSP still gets React's output escaping and the server-side checks, which do not depend on the browser. This is the documented decision, so 3.7.5 is Partial rather than Pass: the behaviour is defined, but it is "allow", not "warn".
+Every current version of Chrome, Edge, Firefox and Safari supports all of them. **Behaviour without them: warn, don't block.** Every page checks for CSP Level 3 (violation events), Web Crypto (which exists only in a secure, HTTPS context) and cross-origin isolation support (browsers that honour COOP). If any is missing, a banner asks the reader to update to a current browser and use HTTPS (`BrowserSupportNotice`). The site keeps working: React's output escaping and every server-side check still apply, since they don't depend on the browser. `SameSite`/`__Host-` cookies and `nosniff` can't be detected from a page; every browser that passes these checks supports them.
 
 **External scripts (3.6.1):** the only script from another origin is Google Identity Services (`https://accounts.google.com/gsi/client`). Google does not publish a versioned, fixed file for it, so Subresource Integrity can't be used. The decision is to accept it: it is needed for Google sign-in, it is served by the identity provider itself, and the CSP lets only that one URL load. Fonts and every other asset are self-hosted.
 
@@ -136,8 +136,8 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 1.2.10 | Protection against CSV and formula injection when exporting spreadsheets | N/A | Nothing exports CSV or spreadsheet files |
-| 1.3.12 | Regular expressions free from exponential backtracking; ReDoS mitigated | Partial | App patterns that see user input are linear (`escapeRegex` before every `$regex`, the LINE code and Slack URL patterns are anchored without nested quantifiers) and inputs have `@MaxLength`. Not every regex in the codebase and in `class-validator` has been audited |
-| 1.5.3 | Different parsers of the same data type parse consistently | Partial | The LINE signature is checked over the same raw bytes Express parses; the sign-in `next` parameter is checked by one function (`safeNextPath`). Not reviewed across every URL and JSON parser |
+| 1.3.12 | Regular expressions free from exponential backtracking; ReDoS mitigated | Pass | `scripts/regex-audit.mjs` finds every regex in the backend and frontend with the TypeScript parser (218 today), rejects nested-quantifier shapes and times each against adversarial 5,000-character inputs with a hard stop; CI fails on a finding (`test/regex-audit.test.mjs`, which also proves it catches `(a+)+$` and `^\s*\s*\s*$`). Patterns built at run time wrap only `escapeRegex(...)` input in fixed linear shapes, and inputs carry `@MaxLength` |
+| 1.5.3 | Different parsers of the same data type parse consistently | Pass | One parser per data type, used for both the check and the use. JSON: Express's parser everywhere, and the LINE signature is checked over the same raw bytes it parses; the frontend re-serialises what it validated. URLs: the WHATWG `URL` parser decides the portal-host allowlist and is what `fetch` uses (`portal-fetch.ts`), and the sign-in `next` check now resolves with the same parser the browser uses (`safeNextPath`, `frontend/test/safe-redirect.test.mts`). UTF-8 throughout; no XML |
 
 ### V2 Validation and Business Logic
 
@@ -161,7 +161,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 3.6.1 | External assets use SRI, or a documented decision | Pass | Google Identity Services can't use SRI; decision recorded in [Required browser features](#required-browser-features) |
 | 3.7.3 | Notify the user before redirecting outside the application, with a way to cancel | Pass | Every link out (e-GP and MEA source pages and documents, LINE, a certificate's verification page, the admin e-GP search) goes through `/leaving`, which names the destination host and offers **Continue** or **Stay on TorFinder** (`OffsiteLink`, `frontend/src/app/leaving`). Nothing redirects by itself, and only http(s) destinations are offered (`test/leaving-link.test.mts`) |
 | 3.7.4 | Top-level domain on the HSTS preload list | **Not done** | Needs `preload` in the HSTS header and a submission for the production domain, once every subdomain is HTTPS |
-| 3.7.5 | Behaves as documented when the browser lacks a security feature | Partial | The documented behaviour is to allow without warning; there is no detection |
+| 3.7.5 | Behaves as documented when the browser lacks a security feature | Pass | As documented in [Required browser features](#required-browser-features): a page loaded in a browser without CSP Level 3, Web Crypto (no secure context) or cross-origin isolation support shows a warning banner asking for a current browser over HTTPS (`BrowserSupportNotice`, `frontend/test/browser-features.test.mts`); it warns rather than blocks |
 
 ### V4 API and Web Service
 
@@ -233,8 +233,8 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 11.1.3 | Cryptographic discovery finds every use of cryptography | **Not done** | The inventory in [asvs-l2.md](./asvs-l2.md#cryptography) is kept by hand; no discovery tool |
-| 11.1.4 | Migration plan to new standards, including post-quantum | **Not done** | Not written. Exposure is low: HMAC and scrypt are symmetric; only TLS and Google's RS256 rely on public-key cryptography, both owned by others |
+| 11.1.3 | Cryptographic discovery finds every use of cryptography | Pass | `scripts/crypto-inventory.mjs` scans the backend and frontend for every cryptographic API (hashing, MACs, KDFs, random, signatures, WebAuthn, ID-token verification); the result is recorded in [crypto-inventory.json](./crypto-inventory.json) and CI fails when the code uses cryptography the inventory doesn't list (`test/crypto-inventory.test.mjs`) |
+| 11.1.4 | Migration plan to new standards, including post-quantum | Pass | [crypto-inventory.md](./crypto-inventory.md): every use with its algorithm, key and purpose, plus a migration plan per primitive, including post-quantum (WebAuthn algorithms, hybrid TLS key exchange at the proxy, HMAC/scrypt changes through the stored settings) |
 | 11.2.4 | Constant-time cryptographic operations | Pass | `timingSafeEqual` for session signatures, password hashes and LINE signatures; login now runs scrypt for unknown addresses too |
 | 11.2.5 | Cryptographic modules fail securely | Pass | Any parse or verify error makes a token invalid; there is no decryption to leak padding errors |
 | 11.3.4 | Nonces and IVs used once per key | N/A | No encryption |
@@ -312,7 +312,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 6.6.1 | No phone or SMS factor | N/A | None offered |
 | 12.1.2 | Only forward-secret cipher suites | Not reviewed | Set by the hosting proxy |
 | 13.3.1 | Secrets in a hardware-backed store (HSM) | **Not done** | Environment variables |
-| 16.3.2 | Every authorization decision logged, including reads of sensitive data | **Not done** | Refusals are logged; allowed decisions are not |
+| 16.3.2 | Every authorization decision logged, including reads of sensitive data | Pass | Refusals are logged as `access.denied`, and every request a guard admits as `access.granted` (user, role, method, path; never the query or the data), so reads of protected data are on record (`logGranted` in `session.guard.ts`, `test/authorization-log.test.mjs`) |
 
 ## Suggested order for the rest
 
@@ -322,4 +322,4 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 4. ~~**14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on~~ — done on `docs-asvs-l3-policies`. Left: 13.3.4, secrets that expire by themselves (a vault, and a session secret that can be rolled without signing everyone out).
 5. ~~**15.4.2, 3.7.3, 2.4.2:** atomic saved-search cap, leaving-site notice, human timing on forms~~ — done on `feat/asvs-l3-quick-wins`.
 6. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.
-7. **16.3.2, 11.1.3, 12.3.5, 13.3.x:** need logging, network and hosting infrastructure beyond the repository.
+7. ~~**16.3.2, 11.1.3**~~ — done on `feat/asvs-l3-revocation-url` (every authorization decision logged; crypto discovery in CI). Left: **12.3.5, 13.3.x**, which need network and hosting infrastructure beyond the repository.
