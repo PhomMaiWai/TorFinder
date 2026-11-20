@@ -32,6 +32,12 @@ Chrome received, shown as a table rather than the DevTools panel.
 | [11a-org-opens-admin-redirected.png](screenshots/11a-org-opens-admin-redirected.png) | 6/7 Authorization | An org account that types `/admin` is redirected to `/dashboard`. |
 | [11b-api-accounts-forbidden.png](screenshots/11b-api-accounts-forbidden.png) | 6/7 Authorization | `GET /api/accounts` on the backend answers 403 for an org session and 403 with no session. The admin guard runs on the server, not only in the UI. |
 | [12a-google-sign-in-button.png](screenshots/12a-google-sign-in-button.png) | 5 SSO | The public login page offers Google sign-in. |
+| [13a-admin-role-needs-approval.png](screenshots/13a-admin-role-needs-approval.png) | ASVS 2.3.5 Two-admin approval | Taken 20 Nov 2026. `admin@bma.go.th` sets `owner@bma.go.th` to Administrator; the form says the change needs another administrator's approval before it takes effect. |
+| [13b-requester-can-only-cancel.png](screenshots/13b-requester-can-only-cancel.png) | ASVS 2.3.5 Two-admin approval | After saving, the role is unchanged and a pending request appears. Its requester sees "รอผู้ดูแลระบบคนอื่นอนุมัติ" (waiting for another administrator) and can only cancel; it expires after 48 h. |
+| [13c-second-admin-notified.png](screenshots/13c-second-admin-notified.png) | ASVS 2.3.5 Two-admin approval | `admin2@bma.go.th` is notified that a request is waiting. |
+| [13d-second-admin-approve-reject.png](screenshots/13d-second-admin-approve-reject.png) | ASVS 2.3.5 Two-admin approval | A different admin sees the same request with Approve and Reject (both behind passkey step-up). |
+| [13e-approved-role-changed.png](screenshots/13e-approved-role-changed.png) | ASVS 2.3.5 Two-admin approval | Only after the second admin approves is `owner@bma.go.th` an Administrator. |
+| [13f-audit-log-approval-steps.png](screenshots/13f-audit-log-approval-steps.png) | ASVS 2.3.5 Two-admin approval | The audit log has the request (by `admin@`), the approval and the role change (by `admin2@`), each naming who asked and who approved. The account was afterwards returned to Project owner through the same flow. |
 | 12b-google-sign-in-success.png *(to add)* | 5 SSO | A completed Google sign-in landing on the signed-in public view. |
 
 ## Observed while collecting
