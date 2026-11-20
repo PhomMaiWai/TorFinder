@@ -119,8 +119,18 @@ describe("cleanJpeg", () => {
 });
 
 describe("cleanUpload", () => {
-  it("leaves PDF and Word files as they are", () => {
+  // PDF and Word metadata is removed too (ASVS 14.2.8; test/document-metadata.test.mjs).
+  it("returns a PDF with no metadata byte for byte, as a copy", () => {
     const pdf = Buffer.from("%PDF-1.7\n%%EOF");
-    assert.equal(cleanUpload(pdf, "application/pdf"), pdf);
+    const cleaned = cleanUpload(pdf, "application/pdf");
+    assert.deepEqual(cleaned, pdf);
+    assert.notEqual(cleaned, pdf, "the caller's buffer is never modified in place");
+  });
+
+  it("strips a PDF's author", () => {
+    const pdf = Buffer.from("%PDF-1.7\n1 0 obj\n<< /Author (Somchai) /Producer (x) >>\nendobj\n%%EOF", "latin1");
+    const cleaned = cleanUpload(pdf, "application/pdf");
+    assert.equal(cleaned.length, pdf.length);
+    assert.ok(!cleaned.toString("latin1").includes("Somchai"));
   });
 });

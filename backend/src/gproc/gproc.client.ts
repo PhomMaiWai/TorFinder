@@ -204,7 +204,7 @@ export class GprocClient {
         [tor, "tor", "ขอบเขตของงาน TOR (e-GP กรมบัญชีกลาง)"],
       ] as const) {
         if (!entry || entry.size > room) continue;
-        const pdf = entry.read();
+        const pdf = await entry.readAsync();
         if (!isPdf(pdf)) continue;
         picked.push({ kind, label, pdf });
         room -= pdf.byteLength;
