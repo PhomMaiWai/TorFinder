@@ -125,9 +125,10 @@ export class CertificatesService {
     // Multer already refuses anything larger; this keeps the rule true without it.
     if (upload.size > CERTIFICATE_LIMITS.fileBytes) throw new BadRequestException("ไฟล์ใหญ่เกิน 5 MB");
 
+    // Every file from outside is scanned first, whatever it claims to be (ASVS 5.4.3).
+    await scanForViruses(upload.buffer, { source: "certificate", userId });
     const type = sniffCertificateFile(upload.buffer);
     if (!type) throw new UnsupportedMediaTypeException("รับเฉพาะไฟล์ PDF, PNG หรือ JPG");
-    await scanForViruses(upload.buffer, { source: "certificate", userId });
 
     // Images: pixel-size cap and metadata stripped (ASVS 5.2.6, 14.2.8).
     const content = await cleanUploadIsolated(upload.buffer, type);

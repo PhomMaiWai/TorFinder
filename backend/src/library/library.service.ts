@@ -114,9 +114,10 @@ export class LibraryService {
     if (!upload?.buffer?.length) throw new BadRequestException("กรุณาเลือกไฟล์");
     if (upload.size > MAX_STORED_FILE_BYTES) throw new BadRequestException("ไฟล์ใหญ่เกิน 5 MB");
 
+    // Every file from outside is scanned first, whatever it claims to be (ASVS 5.4.3).
+    await scanForViruses(upload.buffer, { source: `library-${kind}`, userId });
     const type = sniffFileType(upload.buffer, LIBRARY_FILE_TYPES);
     if (!type) throw new UnsupportedMediaTypeException("รับเฉพาะไฟล์ PDF, Word (.docx), PNG หรือ JPG");
-    await scanForViruses(upload.buffer, { source: `library-${kind}`, userId });
 
     // Images: pixel-size cap and metadata stripped (ASVS 5.2.6, 14.2.8).
     const content = await cleanUploadIsolated(upload.buffer, type);

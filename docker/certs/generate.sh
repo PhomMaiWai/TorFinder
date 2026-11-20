@@ -86,8 +86,16 @@ leaf /certs/backend mongo-client "/O=TorFinder/OU=backend/CN=torr_app" clientAut
 leaf /certs/db db "/O=TorFinder/OU=database/CN=db" "serverAuth,clientAuth" "DNS:db,DNS:localhost,IP:127.0.0.1" "$MONGO_UID" yes
 leaf /certs/dev local-dev "/O=TorFinder/OU=developer/CN=local-dev" clientAuth "" 0 yes
 
+# The secrets vault's server certificate, only when docker-compose.hardening.yml
+# mounts its volume (ASVS 13.3.1). The vault image runs as uid 100.
+dirs="/certs/frontend /certs/backend /certs/db /certs/dev"
+if [ -d /certs/vault-volume ]; then
+  leaf /certs/vault-volume vault "/O=TorFinder/OU=vault/CN=vault" serverAuth "DNS:vault" 100 no
+  dirs="$dirs /certs/vault-volume"
+fi
+
 # Every service trusts only this CA.
-for dir in /certs/frontend /certs/backend /certs/db /certs/dev; do
+for dir in $dirs; do
   cp "$CA_DIR/ca.crt" "$dir/ca.crt"
   chmod 444 "$dir/ca.crt"
 done
