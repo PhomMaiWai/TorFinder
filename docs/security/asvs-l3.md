@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 48 Pass, 10 Partial, 9 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 48 pass (68%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+**Result: 50 Pass, 8 Partial, 9 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 50 pass (70%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -18,12 +18,14 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 20 Nov 2026 (branch `feat/asvs-l3-quick-wins`):** four items move to Pass. The saved-search cap is claimed atomically (15.4.2); a sign-in from a browser the account hasn't used before emails its owner (6.3.5); links out of TorFinder go through a "you're leaving" page with a way back (3.7.3); and sign-up and comment forms are refused when sent back sooner than a person could fill them in (2.4.2).
 
+**Update 20 Nov 2026 (branch `feat/asvs-l3-revocation-url`):** session revocation is read from the database on every request, and taking back a company's approval revokes its sessions (8.3.2); the frontend caps backend URLs and the forwarded client address (4.2.5). Both pass.
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 48 | Control exists, with evidence in code or in this file |
-| Partial | 10 | Control exists with a gap; the gap is named |
+| Pass | 50 | Control exists, with evidence in code or in this file |
+| Partial | 8 | Control exists with a gap; the gap is named |
 | Not done | 9 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
@@ -33,11 +35,11 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V1 Encoding and Sanitization | 3 | 0 | 2 | 0 | 1 | 0 |
 | V2 Validation and Business Logic | 2 | 2 | 0 | 0 | 0 | 0 |
 | V3 Web Frontend Security | 12 | 10 | 1 | 1 | 0 | 0 |
-| V4 API and Web Service | 6 | 2 | 1 | 0 | 1 | 2 |
+| V4 API and Web Service | 6 | 3 | 0 | 0 | 1 | 2 |
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
 | V6 Authentication | 12 | 7 | 0 | 0 | 5 | 0 |
 | V7 Session Management | 1 | 1 | 0 | 0 | 0 | 0 |
-| V8 Authorization | 6 | 3 | 2 | 1 | 0 | 0 |
+| V8 Authorization | 6 | 4 | 1 | 1 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
 | V11 Cryptography | 10 | 3 | 1 | 3 | 3 | 0 |
@@ -47,7 +49,7 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V15 Secure Coding and Architecture | 8 | 7 | 0 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **48** | **10** | **9** | **21** | **4** |
+| **Total** | **92** | **50** | **8** | **9** | **21** | **4** |
 
 ## Done on this branch
 
@@ -170,7 +172,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 4.2.2 | Generated `Content-Length` doesn't conflict with the framing | Pass | Lengths are set from buffers or stored sizes; the relayed portal document no longer forwards a compressed length for a decompressed body (this branch) |
 | 4.2.3 | No HTTP/2 or HTTP/3 connection-specific header fields | Not reviewed | HTTP/2 ends at the hosting proxy; Node serves HTTP/1.1 |
 | 4.2.4 | No CR/LF in HTTP/2 or HTTP/3 header fields | Not reviewed | Same; Node's HTTP/1.1 parser rejects CR/LF in header values |
-| 4.2.5 | Outgoing URIs and headers are kept short enough for the receiver | Partial | Path ids are URL-encoded and validated; cookies are small. No explicit length check on the frontend → backend URLs |
+| 4.2.5 | Outgoing URIs and headers are kept short enough for the receiver | Pass | The frontend never sends the backend a URL longer than 2,048 characters (`isBackendPathTooLong` in `fetchJson` and the shared proxy answer 414 instead), well under the backend's 16 KB header limit; the forwarded client address is sent only if it is IP-shaped and at most 45 characters (`client-ip.ts`); ids are validated ObjectIds and cookies are small (`frontend/test/backend-path.test.mts`) |
 
 ### V5 File Handling
 
@@ -211,7 +213,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 8.1.3 | Environmental and contextual attributes used in security decisions are documented | Pass | [Contextual attributes](#contextual-attributes-in-security-decisions) |
 | 8.1.4 | How those attributes are used (thresholds, actions) is documented | Pass | Same table |
 | 8.2.4 | Adaptive controls on environmental attributes, at sign-in and during a session | **Not done** | Rate limits and lockout only; nothing reacts to location, device or time |
-| 8.3.2 | Authorization changes apply immediately | Partial | Role change and suspension revoke every session; each backend process may keep accepting a revoked token for up to 30 s (revocation cache). One process today, so this is the whole delay |
+| 8.3.2 | Authorization changes apply immediately | Pass | Every authenticated request reads the account's revocation floor from the database (no cache), so a revocation from any backend process applies to the next request. Role changes, suspension, passkey resets, password changes and taking back a company's approval all revoke the account's sessions (`test/revocation-immediate.e2e.test.mjs`) |
 | 8.3.3 | Access is based on the originating user's permissions, not an intermediary's | Pass | The frontend calls the backend with the user's own session token; there is no service account acting for users |
 | 8.4.2 | Administrative interfaces have multiple layers of security | Partial | Admin role, a phishing-resistant passkey at sign-in, step-up for sensitive actions, and a second admin's approval to grant or remove the admin role. No device-posture or contextual risk checks |
 
