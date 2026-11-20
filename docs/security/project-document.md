@@ -4,7 +4,7 @@ Software Development Security (01219325), group project, semester 1/2026. Submit
 
 This document follows the six sections the assignment asks for. Each section is short and links to the detailed report in this folder that holds the evidence. Where a graded criterion (1–18) is covered, its number is shown as **[C*n*]**.
 
-> **Draft (18 Nov 2026).** Still to fill: student IDs (§1), the OWASP Top 10 mapping (§3.3, from #348), and the evidence screenshots (§6, from #349). Each is marked **TODO**.
+> **Draft (18 Nov 2026).** Still to fill: student IDs (§1), marked **TODO**, and two screenshots noted as missing in §6 (the ZAP summary and a cross-company file request).
 
 ## Contents
 
@@ -96,7 +96,22 @@ The assignment asks for four. TorFinder has six:
 
 ### 3.3 OWASP Top 10 mapping [C17]
 
-**TODO (#348):** map each OWASP Top 10 (2025) category to the controls above and to the threats in §4.
+Full mapping, with file paths, ASVS IDs, test evidence and gaps: [owasp-top10.md](./owasp-top10.md) **[C17]**.
+
+| ID | Category | Status | Main controls | Threats (§4) |
+| --- | --- | --- | --- | --- |
+| A01:2025 | Broken Access Control | Covered | Role guard on every route; queries scoped to the session's account; portal host allowlist (SSRF) | E1, I1, I7, I8, T5, E3 |
+| A02:2025 | Security Misconfiguration | Covered | Weak secrets refused; strict CSP and headers; ports on 127.0.0.1; non-root containers | S1, S3, E4, I2 |
+| A03:2025 | Software Supply Chain Failures | Partly | CI blocks high/critical advisories; Dependabot cooldown; SHA-pinned actions; SBOMs | D4 |
+| A04:2025 | Cryptographic Failures | Covered | scrypt; HMAC-SHA256 sessions; TLS 1.3 + mutual TLS inside; hashed one-time links | S1, S6 |
+| A05:2025 | Injection | Covered | DTO whitelist; escaped `$regex`; React escaping; nonce CSP | T1, S5 |
+| A06:2025 | Insecure Design | Covered | Threat model; business rules; two-admin approval; step-up; atomic limits | all |
+| A07:2025 | Authentication Failures | Covered | Breached-password check; IP and email lockout; passkeys; idle timeout | S2, S4, D1, E2, I6 |
+| A08:2025 | Software or Data Integrity Failures | Covered | Signed tokens and webhooks; files typed by their bytes; audit log | S7, T3, T4, T6, T8, R2 |
+| A09:2025 | Security Logging and Alerting Failures | Partly | JSON security events; audit log; lockout and new-device emails | R1, R2 |
+| A10:2025 | Mishandling of Exceptional Conditions | Covered | Generic 500 with `errorId`; fail closed; transactions; timeouts and caps | I3, D3, D5 |
+
+The two Partly items: GitHub secret scanning is off and images aren't signed (A03), and no alert rule fires on the security log itself (A09).
 
 ## 4. Threat model
 
@@ -184,11 +199,13 @@ Each principle is mapped to where the code applies it **[C3]**. The full table i
 
 ### Evidence screenshots
 
-**TODO (#349):** add these screenshots to `docs/security/evidence/`:
+All screenshots, with what each one proves, are listed in [evidence/README.md](./evidence/README.md) (#349). The ones each criterion asks for:
 
-- the security headers in the browser's devtools **[C13]**
-- the CodeQL alerts page at 0 open **[C14]**
-- the ZAP report summary **[C15]**
-- a lockout response (429) and its log line **[C12]**, **[C18]**
-- a 403 when an org opens an admin route **[C6]**
-- a 404 when one company asks for another company's file **[C7]**
+| Criterion | Evidence |
+| --- | --- |
+| **[C13]** Security headers | [01](./evidence/screenshots/01-headers-search-page.png) page headers and nonce CSP, [02](./evidence/screenshots/02-headers-api-auth-me.png) API answer with `no-store` |
+| **[C14]** CodeQL at 0 open | [10](./evidence/screenshots/10-code-scanning.png) |
+| **[C15]** ZAP report | [zap-full.html](./evidence/zap-full.html) (signed-in active scan), [zap-baseline.html](./evidence/zap-baseline.html) (after the fix). No screenshot of the summary yet |
+| **[C12]**, **[C18]** Lockout and its log line | [05](./evidence/screenshots/05-login-lockout.png) lockout message, [08](./evidence/screenshots/08-security-log-json.png) `auth.login.locked` in the JSON log |
+| **[C6]** Org refused on an admin route | [11a](./evidence/screenshots/11a-org-opens-admin-redirected.png) page redirect, [11b](./evidence/screenshots/11b-api-accounts-forbidden.png) backend 403 |
+| **[C7]** One company asking for another's file | **Missing.** Covered by `backend/test/certificates.e2e.test.mjs` and `library.e2e.test.mjs`; no screenshot yet |
