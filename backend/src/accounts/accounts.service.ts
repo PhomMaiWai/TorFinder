@@ -44,7 +44,13 @@ export class AccountsService {
 
   async findAll(status?: AccountStatus) {
     const filter: Filter<UserDoc> = { role: "org" };
-    if (status) filter.status = status;
+    if (status !== undefined) {
+      const allowedStatuses: AccountStatus[] = ["pending", "approved", "rejected", "suspended"];
+      if (!allowedStatuses.includes(status)) {
+        throw new BadRequestException("Invalid account status.");
+      }
+      filter.status = status;
+    }
 
     const docs = await this.db.users
       .find(filter, { projection: REVIEW_FIELDS })
