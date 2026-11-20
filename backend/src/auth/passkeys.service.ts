@@ -29,6 +29,7 @@ import { AuthMethod, SessionPayload, hasRecentPasskey, reissueSessionToken } fro
 import { env } from "../config/env";
 import { AuthTokenPurpose, DatabaseService, StoredPasskey, UserDoc } from "../database/database.service";
 import { AccountLinksService } from "./account-links.service";
+import { SIGN_IN_FIELDS } from "./sign-in-fields";
 
 /**
  * Passkeys (WebAuthn) for staff accounts: admin, owner and auditor.
@@ -123,7 +124,7 @@ export class PasskeysService {
   }
 
   private async userOf(id: ObjectId | string): Promise<WithId<UserDoc>> {
-    const user = ObjectId.isValid(id) ? await this.db.users.findOne({ _id: new ObjectId(id) }) : null;
+    const user = ObjectId.isValid(id) ? await this.db.users.findOne({ _id: new ObjectId(id) }, { projection: SIGN_IN_FIELDS }) : null;
     if (!user) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
     return user;
   }
@@ -196,7 +197,7 @@ export class PasskeysService {
     };
     const challenge = await this.consumeChallenge(response, "passkey-login");
     if (!challenge) throw refused("unknown_or_expired_challenge");
-    const user = await this.db.users.findOne({ _id: challenge.userId });
+    const user = await this.db.users.findOne({ _id: challenge.userId }, { projection: SIGN_IN_FIELDS });
     if (!user) throw refused("unknown_account");
     if (!(await this.verifyAssertion(user, response, challenge.challenge))) {
       throw refused("bad_assertion", user._id.toString());
