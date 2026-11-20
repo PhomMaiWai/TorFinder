@@ -166,6 +166,8 @@ The one destination a user supplies is a Slack incoming-webhook URL in their not
 
 (V11.1.1, V11.1.2)
 
+A summary by purpose. The complete inventory, file by file and checked against the code in CI, with the migration plan, is in [cryptography.md](./cryptography.md).
+
 | What | Algorithm | Key or parameter |
 | --- | --- | --- |
 | Password storage | scrypt, 16-byte random salt | Node defaults (N = 16384); raising it is a Partial item |
