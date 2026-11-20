@@ -183,17 +183,19 @@ export class AuthService {
     });
     if (problem) throw new BadRequestException(problem);
 
-    const userId = await this.links.consume(token, "password-reset");
-    if (!userId) throw invalidLink();
-
-    await this.db.users.updateOne(
-      { _id: userId },
-      { $set: { ...(await passwordFields(password)), emailVerified: true } },
-    );
-    // Proves the account's owner is back in control, so any token issued
-    // before now — including one an attacker who triggered this might hold —
-    // stops working (ASVS 7.4.3).
-    await this.revocation.revoke(userId.toString());
+    const fields = { ...(await passwordFields(password)), emailVerified: true };
+    // The link is used up, the password set and every session ended together,
+    // or none of it happens (ASVS 2.3.3).
+    const userId = await this.db.transaction(async (session) => {
+      const id = await this.links.consume(token, "password-reset", session);
+      if (!id) throw invalidLink();
+      await this.db.users.updateOne({ _id: id }, { $set: fields }, { session });
+      // Proves the account's owner is back in control, so any token issued
+      // before now — including one an attacker who triggered this might hold —
+      // stops working (ASVS 7.4.3).
+      await this.revocation.revoke(id.toString(), session);
+      return id;
+    });
     logSecurityEvent("auth.password.reset", { outcome: "success", userId: userId.toString(), ip });
     // ASVS 6.3.7: the owner hears about it even if someone else used the link.
     if (account?.email) await this.links.notify(account.email, "password-changed");
@@ -306,8 +308,12 @@ export class AuthService {
     const problem = passwordProblem(newPassword, { email: user.email, companyName: user.company?.companyName });
     if (problem) throw new BadRequestException(problem);
 
-    await this.db.users.updateOne({ _id: user._id }, { $set: await passwordFields(newPassword) });
-    await this.revocation.revoke(userId);
+    const fields = await passwordFields(newPassword);
+    // The new password and the sign-out everywhere land together (ASVS 2.3.3).
+    await this.db.transaction(async (session) => {
+      await this.db.users.updateOne({ _id: user._id }, { $set: fields }, { session });
+      await this.revocation.revoke(userId, session);
+    });
     logSecurityEvent("auth.password.change", { outcome: "success", userId, email: user.email, ip });
     // ASVS 6.3.7: a stolen session plus a guessed password would otherwise go unnoticed.
     await this.links.notify(user.email, "password-changed");

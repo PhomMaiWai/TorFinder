@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { Collection, Document, GridFSBucket, MongoBulkWriteError, MongoClient, ObjectId } from "mongodb";
+import { ClientSession, Collection, Document, GridFSBucket, MongoBulkWriteError, MongoClient, ObjectId } from "mongodb";
 
 import { StoredExtraction } from "../ai/ai.types";
 import { CertificateRecord } from "../certificates/certificate.types";
@@ -497,11 +497,41 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   torEmbeddings!: Collection<TorEmbeddingDoc>;
   adminApprovals!: Collection<AdminApprovalDoc>;
   sessions!: Collection<SessionDoc>;
+  /**
+   * One document per kind of change that must not run twice at once. A
+   * transaction writes its document first, so two that would each be fine
+   * alone but not together (two admins demoted at once) collide instead of
+   * both committing (DatabaseService.transaction, RoleChangesService).
+   */
+  locks!: Collection<{ _id: string; at: Date }>;
   savedSearchCounts!: Collection<SavedSearchCountDoc>;
   /** Scans companies attach to their certificates; only ever read by their owner. */
   certificateFiles!: GridFSBucket;
   /** Reference letters and CVs from the proposal library; only ever read by their owner. */
   libraryFiles!: GridFSBucket;
+
+  /** Whether the server runs transactions; read once, at the first one. */
+  private transactionsSupported?: boolean;
+
+  /**
+   * Runs a business operation's writes all-or-nothing (ASVS 2.3.3): `work`
+   * gets a session to pass to every write, and either all of them land or
+   * none does. Transactions need a replica set, which docker-compose.yml runs;
+   * a single plain server (CI, `npm run dev` on a local mongod) has none, so
+   * there `work` runs with no session and the writes land one by one, as
+   * before. Notifications and emails go after this returns, never inside.
+   */
+  async transaction<T>(work: (session: ClientSession | undefined) => Promise<T>): Promise<T> {
+    if (this.transactionsSupported === undefined) {
+      const hello = await this.client.db().admin().command({ hello: 1 });
+      this.transactionsSupported = typeof hello.setName === "string" || hello.msg === "isdbgrid";
+      if (!this.transactionsSupported) {
+        this.logger.warn("MongoDB is a single server without a replica set: multi-step writes run without transactions");
+      }
+    }
+    if (!this.transactionsSupported) return work(undefined);
+    return this.client.withSession((session) => session.withTransaction(() => work(session)));
+  }
 
   async onModuleInit(): Promise<void> {
     await this.client.connect();
@@ -519,6 +549,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.torEmbeddings = this.client.db().collection<TorEmbeddingDoc>("torEmbeddings");
     this.adminApprovals = this.client.db().collection<AdminApprovalDoc>("adminApprovals");
     this.sessions = this.client.db().collection<SessionDoc>("sessions");
+    this.locks = this.client.db().collection<{ _id: string; at: Date }>("locks");
     this.savedSearchCounts = this.client.db().collection<SavedSearchCountDoc>("savedSearchCounts");
     this.certificateFiles = new GridFSBucket(this.client.db(), { bucketName: "certificateFiles" });
     this.libraryFiles = new GridFSBucket(this.client.db(), { bucketName: "libraryFiles" });

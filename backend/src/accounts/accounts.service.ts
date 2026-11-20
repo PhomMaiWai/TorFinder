@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { Filter, ObjectId } from "mongodb";
+import { ClientSession, Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
 import { AccountLinksService } from "../auth/account-links.service";
@@ -75,8 +75,13 @@ export class AccountsService {
    */
   /** See PasskeysService.resetFor; recorded in the audit log like the other account decisions. */
   async resetPasskeys(id: string, actor: SessionPayload, ip?: string) {
-    const user = await this.passkeys.resetFor(id, actor, ip);
-    await this.audit.record(actor.email, "ล้างพาสคีย์ของบัญชี", `${user.name} (${user.email})`);
+    // The reset, the sign-out and the audit entry land together (ASVS 2.3.3).
+    const user = await this.db.transaction(async (session) => {
+      const reset = await this.passkeys.resetFor(id, actor, ip, session);
+      await this.audit.record(actor.email, "ล้างพาสคีย์ของบัญชี", `${reset.name} (${reset.email})`, session);
+      return reset;
+    });
+    await this.passkeys.notifyReset(user);
     return { ok: true as const };
   }
 
@@ -86,9 +91,11 @@ export class AccountsService {
       ? await this.db.users.findOne({ _id: new ObjectId(id) }, { projection: { email: 1, name: 1 } })
       : null;
     if (!user) throw new NotFoundException("ไม่พบบัญชีนี้");
-    await this.revocation.revoke(id);
+    await this.db.transaction(async (session) => {
+      await this.revocation.revoke(id, session);
+      await this.audit.record(actor.email, "ออกจากระบบทุกอุปกรณ์ของบัญชี", `${user.name} (${user.email})`, session);
+    });
     logSecurityEvent("admin.sessions.revoke", { outcome: "success", userId: id, email: user.email, ip, reason: `by_${actor.sub}` });
-    await this.audit.record(actor.email, "ออกจากระบบทุกอุปกรณ์ของบัญชี", `${user.name} (${user.email})`);
     return { ok: true as const };
   }
 
@@ -132,39 +139,41 @@ export class AccountsService {
   async setSuspended(id: string, suspended: boolean, actor: string) {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
 
-    const result = await this.db.users.findOneAndUpdate(
-      { _id: new ObjectId(id), role: { $in: [...SUSPENDABLE_ROLES] } },
-      { $set: { suspended } },
-      { returnDocument: "after", projection: DIRECTORY_FIELDS },
-    );
-    if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
+    // The flag, the sign-out and the audit entry land together (ASVS 2.3.3).
+    const result = await this.db.transaction(async (session) => {
+      const updated = await this.db.users.findOneAndUpdate(
+        { _id: new ObjectId(id), role: { $in: [...SUSPENDABLE_ROLES] } },
+        { $set: { suspended } },
+        { returnDocument: "after", projection: DIRECTORY_FIELDS, session },
+      );
+      if (!updated) throw new NotFoundException("ไม่พบบัญชีนี้");
 
-    // Otherwise a token issued before the suspension keeps working for the
-    // rest of its 7-day lifetime regardless of this decision (ASVS 7.4.2).
-    if (suspended) await this.revocation.revoke(id);
-
-    const companyName = result.company?.companyName ?? result.name;
-    await Promise.all([
-      this.notifications.create(
-        result._id,
-        "system",
-        suspended ? "บัญชีของคุณถูกระงับการใช้งาน" : "บัญชีของคุณกลับมาใช้งานได้แล้ว",
-        suspended
-          ? "ผู้ดูแลระบบระงับการใช้งานบัญชีนี้ชั่วคราว กรุณาติดต่อผู้ดูแลระบบหากมีข้อสงสัย"
-          : "ผู้ดูแลระบบเปิดใช้งานบัญชีนี้อีกครั้ง เข้าใช้งานได้ทันที",
-      ),
-      this.audit.record(
+      // Otherwise a token issued before the suspension keeps working for the
+      // rest of its 7-day lifetime regardless of this decision (ASVS 7.4.2).
+      if (suspended) await this.revocation.revoke(id, session);
+      await this.audit.record(
         actor,
-        result.role === "viewer"
+        updated.role === "viewer"
           ? suspended
             ? "ระงับบัญชีประชาชนทั่วไป"
             : "เปิดใช้งานบัญชีประชาชนทั่วไปอีกครั้ง"
           : suspended
             ? "ระงับบัญชีบริษัท"
             : "เปิดใช้งานบัญชีบริษัทอีกครั้ง",
-        companyName,
-      ),
-    ]);
+        updated.company?.companyName ?? updated.name,
+        session,
+      );
+      return updated;
+    });
+
+    await this.notifications.create(
+      result._id,
+      "system",
+      suspended ? "บัญชีของคุณถูกระงับการใช้งาน" : "บัญชีของคุณกลับมาใช้งานได้แล้ว",
+      suspended
+        ? "ผู้ดูแลระบบระงับการใช้งานบัญชีนี้ชั่วคราว กรุณาติดต่อผู้ดูแลระบบหากมีข้อสงสัย"
+        : "ผู้ดูแลระบบเปิดใช้งานบัญชีนี้อีกครั้ง เข้าใช้งานได้ทันที",
+    );
 
     const { _id, ...rest } = result;
     return { id: _id.toString(), ...rest };
@@ -211,24 +220,35 @@ export class AccountsService {
     const pendingApproval = waits ? await this.approvals.request(current, role, actor, ip) : undefined;
 
     let result: UserDoc & { _id: ObjectId };
+    const recordRename = (session: ClientSession | undefined) =>
+      nameChanges ? this.audit.record(actor.email, "แก้ไขชื่อผู้ใช้", `${current.email}: ${current.name} → ${name}`, session) : undefined;
     if (roleChanges && !waits) {
-      result = await this.roles.apply(current, role, actor.email, { ...(nameChanges && { name }) });
+      // The role, the name and both audit entries land together (ASVS 2.3.3).
+      result = await this.db.transaction(async (session) => {
+        const changed = await this.roles.apply(current, role, actor.email, { ...(nameChanges && { name }), session, notify: false });
+        await recordRename(session);
+        return changed;
+      });
+      await this.roles.notifyRoleChanged(current._id, role);
     } else if (!nameChanges) {
       result = current;
     } else {
-      const renamed = await this.db.users.findOneAndUpdate(
-        { _id, role: current.role },
-        { $set: { name } },
-        { returnDocument: "after", projection: DIRECTORY_FIELDS },
-      );
-      if (!renamed) {
+      try {
+        result = await this.db.transaction(async (session) => {
+          const renamed = await this.db.users.findOneAndUpdate(
+            { _id, role: current.role },
+            { $set: { name } },
+            { returnDocument: "after", projection: DIRECTORY_FIELDS, session },
+          );
+          if (!renamed) throw new ConflictException(CHANGED_MEANWHILE);
+          await recordRename(session);
+          return renamed;
+        });
+      } catch (error) {
         if (pendingApproval) await this.db.adminApprovals.deleteOne({ _id: new ObjectId(pendingApproval.id) });
-        throw new ConflictException(CHANGED_MEANWHILE);
+        throw error;
       }
-      result = renamed;
     }
-
-    if (nameChanges) await this.audit.record(actor.email, "แก้ไขชื่อผู้ใช้", `${current.email}: ${current.name} → ${name}`);
 
     const { _id: updated, ...rest } = result;
     return { id: updated.toString(), ...rest, ...(pendingApproval && { pendingApproval }) };
@@ -237,27 +257,29 @@ export class AccountsService {
   async review(id: string, { status }: ReviewAccountDto, actor: string) {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
 
-    const result = await this.db.users.findOneAndUpdate(
-      { _id: new ObjectId(id), role: "org" },
-      { $set: { status, reviewedAt: new Date() } },
-      { returnDocument: "after", projection: REVIEW_FIELDS },
-    );
-    if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
+    // The decision, the sign-out and the audit entry land together (ASVS 2.3.3).
+    const result = await this.db.transaction(async (session) => {
+      const updated = await this.db.users.findOneAndUpdate(
+        { _id: new ObjectId(id), role: "org" },
+        { $set: { status, reviewedAt: new Date() } },
+        { returnDocument: "after", projection: REVIEW_FIELDS, session },
+      );
+      if (!updated) throw new NotFoundException("ไม่พบบัญชีนี้");
 
-    // A company whose approval is taken back loses its access now, not when
-    // its 7-day session runs out: the guards trust the session, so it is
-    // revoked here (ASVS 8.3.2).
-    if (status !== "approved") await this.revocation.revoke(id);
-
-    const companyName = result.company?.companyName ?? result.name;
-    await Promise.all([
-      this.notifyReviewDecision(result._id, status, companyName),
-      this.audit.record(
+      // A company whose approval is taken back loses its access now, not when
+      // its 7-day session runs out: the guards trust the session, so it is
+      // revoked here (ASVS 8.3.2).
+      if (status !== "approved") await this.revocation.revoke(id, session);
+      await this.audit.record(
         actor,
         status === "approved" ? "อนุมัติบัญชีบริษัท" : "ปฏิเสธบัญชีบริษัท",
-        companyName,
-      ),
-    ]);
+        updated.company?.companyName ?? updated.name,
+        session,
+      );
+      return updated;
+    });
+
+    await this.notifyReviewDecision(result._id, status, result.company?.companyName ?? result.name);
 
     const { _id, ...rest } = result;
     return { id: _id.toString(), ...rest };

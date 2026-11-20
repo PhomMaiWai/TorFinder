@@ -100,7 +100,7 @@ docker compose up -d db                     # makes the certificates on first ru
 docker compose run --rm certs export        # writes docker/certs/dev/ (gitignored)
 docker compose run --rm db-secrets cat /secrets/root-password   # the generated root password
 # backend/.env, with that password in place of <root-password>:
-MONGODB_URI="mongodb://torr:<root-password>@localhost:27017/torfinder?authSource=admin&tls=true&tlsCAFile=../docker/certs/dev/ca.crt&tlsCertificateKeyFile=../docker/certs/dev/local-dev.pem"
+MONGODB_URI="mongodb://torr:<root-password>@localhost:27017/torfinder?authSource=admin&tls=true&tlsCAFile=../docker/certs/dev/ca.crt&tlsCertificateKeyFile=../docker/certs/dev/local-dev.pem&directConnection=true"
 ```
 
 A database volume made before the root password was generated still uses `torr`.

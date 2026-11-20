@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 
-import { Document } from "mongodb";
+import { ClientSession, Document } from "mongodb";
 
 import { escapeRegex } from "../common/regex";
 import { DatabaseService, SyncRunDoc, SyncRunStatus } from "../database/database.service";
@@ -93,7 +93,16 @@ export class AuditService {
    * never block (or fail) the action itself, same posture as EgpService's
    * sync-run recording.
    */
-  async record(actor: string, action: string, detail: string): Promise<void> {
+  /**
+   * Inside an operation's transaction (`session`), a failed entry fails the
+   * whole operation, so no change is ever made without its record (ASVS
+   * 2.3.3). On its own, a failed entry is logged and the caller carries on.
+   */
+  async record(actor: string, action: string, detail: string, session?: ClientSession): Promise<void> {
+    if (session) {
+      await this.db.auditLogEntries.insertOne({ actor, action, detail, createdAt: new Date() }, { session });
+      return;
+    }
     try {
       await this.db.auditLogEntries.insertOne({ actor, action, detail, createdAt: new Date() });
     } catch (error) {
