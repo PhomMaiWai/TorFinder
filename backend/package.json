@@ -32,6 +32,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22",
     "eslint": "^9",
+    "recheck": "4.6.2",
     "typescript": "^5",
     "typescript-eslint": "^8.68.0"
   }

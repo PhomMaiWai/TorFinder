@@ -106,7 +106,8 @@ export function vendorKey(name: string): string {
     .replace(/\s+/g, "")
     .replace(/^(บริษัท|บจก\.?|ห้างหุ้นส่วนจำกัด|ห้างหุ้นส่วนสามัญ|หจก\.?)/, "")
     .replace(/(จำกัด\(มหาชน\)|\(มหาชน\)|จำกัด|co\.?,?ltd\.?|companylimited|limited|ltd\.?|inc\.?)$/, "")
-    .replace(/[.,]+$/, "");
+    // Starts only at the beginning of a run of dots and commas, so it runs in linear time (ASVS 1.3.12).
+    .replace(/(?<![.,])[.,]+$/, "");
 }
 
 const cleanName = (name: string) => name.replace(/\s+/g, " ").trim();

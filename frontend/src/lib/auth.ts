@@ -89,7 +89,7 @@ export function readSessionSecret() {
 function toBase64Url(bytes: Uint8Array) {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/(?<!=)=+$/, "");
 }
 
 function fromBase64Url(input: string) {

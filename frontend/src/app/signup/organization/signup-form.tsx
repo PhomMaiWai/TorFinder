@@ -52,7 +52,7 @@ const EMPTY: Values = {
 function validate(values: Values, t: (key: string) => string): Partial<Record<FieldName, string>> {
   const errors: Partial<Record<FieldName, string>> = {};
 
-  if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+  if (values.email && !/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(values.email)) {
     errors.email = t("errorEmail");
   }
   if (values.password && values.password.length < 8) {

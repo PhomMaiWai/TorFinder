@@ -20,7 +20,10 @@ function searchForm(start: number, length: number): Record<string, string> {
  * detail page is published. Both halves stop at the first closing tag, so a row
  * can never swallow the ones after it.
  */
-const TABLE_ROW = /<th[^>]*>([\s\S]*?)<\/th>\s*<td[^>]*>([\s\S]*?)<\/td>/g;
+// A cell's content can't run past the next opening or closing tag of its
+// kind, so an unclosed cell fails at once instead of rescanning the rest of the
+// page from every `<th` (ASVS 1.3.12: linear time on the portal's HTML).
+const TABLE_ROW = /<th\b[^<>]*>((?:(?!<\/?th\b)[\s\S])*)<\/th>\s*<td\b[^<>]*>((?:(?!<\/?td\b)[\s\S])*)<\/td>/g;
 
 /**
  * The value of the row whose label starts with `label`. `label` is matched as a prefix because
@@ -36,7 +39,7 @@ function rowValue(html: string, label: string): string | null {
 
 function stripTags(html: string): string {
   return html
-    .replace(/<[^>]*>/g, " ")
+    .replace(/<[^<>]*>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
@@ -44,10 +47,15 @@ function stripTags(html: string): string {
 }
 
 /** One table cell. Non-greedy, so a cell never swallows the ones after it. */
-const TABLE_CELL = /<td[^>]*>([\s\S]*?)<\/td>/g;
+const TABLE_CELL = /<td\b[^<>]*>((?:(?!<\/?td\b)[\s\S])*)<\/td>/g;
 
-/** Attachments live under the site's own upload path; other links are navigation. */
-const FILE_LINK = /href="([^"]*\/files_procurement\/[^"]+)"/g;
+/**
+ * Every link in a cell; attachments are the ones under the site's own upload
+ * path (isFileLink), other links are navigation. Filtered in code rather than
+ * in the pattern, which would otherwise backtrack (ASVS 1.3.12).
+ */
+const LINK = /href="([^"]+)"/g;
+const isFileLink = (url: string) => /\/files_procurement\/./.test(url);
 
 /**
  * The file's printed name, out of the cell holding it: everything before the
@@ -151,8 +159,8 @@ export class MeaClient {
       if (!cell.includes("files_procurement")) continue;
       const label = fileLabel(cell);
 
-      for (const [, url] of cell.matchAll(FILE_LINK)) {
-        if (seen.has(url)) continue;
+      for (const [, url] of cell.matchAll(LINK)) {
+        if (!isFileLink(url) || seen.has(url)) continue;
         seen.add(url);
         documents.push({ label: label || decodeURIComponent(url.split("/").pop() ?? ""), url });
       }

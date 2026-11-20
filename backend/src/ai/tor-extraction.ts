@@ -40,7 +40,9 @@ function sharpenQualifications(items: string[]): string[] {
   return hadGeneral ? [REGULATION_SUMMARY, ...specific] : specific;
 }
 
-const INSTALMENT = /^งวด(?:ที่)?\s*(\d+)\s*[:：.-]?\s*(.+)$/;
+// `s`: `.` takes newlines too, so `$` can only fail at the very end and the
+// digits are never re-split against the text (ASVS 1.3.12: linear time).
+const INSTALMENT = /^งวด(?:ที่)?\s*(\d+)\s*[:：.-]?\s*(.+)$/s;
 const THAI_MONTH =
   "(?:มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)";
 /** What differs between otherwise identical monthly instalments: the month and its day count. */

@@ -65,8 +65,10 @@ export function groupOf(line: string): QualificationGroup {
 const GOVERNMENT = /ภาครัฐ|หน่วยงาน(?:ของ)?รัฐ|ส่วนราชการ|ราชการ|รัฐวิสาหกิจ|รัฐบาล/;
 const SAME_KIND = /ประเภทเดียวกัน|ลักษณะ(?:งาน)?เดียวกัน|ลักษณะคล้ายคลึง|ลักษณะใกล้เคียง/;
 const WITHIN_YEARS = /(?:ภายใน|ย้อนหลัง(?:ไม่เกิน)?|ไม่เกิน)\s*(\d+)\s*ปี/;
-const PROJECT_COUNT = /(\d+)\s*(?:โครงการ|สัญญา|งาน)/;
-const PEOPLE_COUNT = /(\d+)\s*คน/;
+// `(?<!\d)`: a count is matched from its first digit only, so a long run of
+// digits is scanned once, not once per digit (ASVS 1.3.12).
+const PROJECT_COUNT = /(?<!\d)(\d+)\s*(?:โครงการ|สัญญา|งาน)/;
+const PEOPLE_COUNT = /(?<!\d)(\d+)\s*คน/;
 const YEARS_EXPERIENCE = /ประสบการณ์\D{0,80}?(\d+)\s*ปี/;
 
 /**
@@ -94,7 +96,7 @@ function roleFamily(text: string): string | null {
 
 /** The role a personnel line names: what comes before "×", "—", ":" or the head count. */
 function roleText(line: string): string {
-  return line.split(/×|—|:|จำนวน|\d+\s*คน/)[0] ?? line;
+  return line.split(/×|—|:|จำนวน|(?<!\d)\d+\s*คน/)[0] ?? line;
 }
 
 function yearsBefore(today: string, years: number): string {

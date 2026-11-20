@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
  */
 export function CountUp({ value, duration = 1200 }: { value: string | number; duration?: number }) {
   const text = String(value);
-  const match = /^(\D*)(\d[\d,]*(?:\.\d+)?)(.*)$/.exec(text);
+  const match = /^(\D*)(\d[\d,]*(?:\.\d+)?)([\s\S]*)$/.exec(text);
   const ref = useRef<HTMLSpanElement>(null);
   const [shown, setShown] = useState<number | null>(null);
 
