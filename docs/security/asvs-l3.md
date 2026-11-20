@@ -314,7 +314,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | ID | Level 3 condition | Status | Evidence |
 | --- | --- | --- | --- |
 | 3.4.3 | Per-response CSP with nonces or hashes | Pass | A fresh nonce per page request in `proxy.ts` |
-| 6.3.3 | One factor is hardware-based and phishing-resistant (FIDO, passkey) | Partial | Staff use a passkey (WebAuthn, origin-bound, user presence required) after their password or Google, required in production. Company accounts can add one, and from then on their sign-in needs it (`test/passkeys.e2e.test.mjs`); it is optional, by the team's decision. Public viewers sign in with Google only |
+| 6.3.3 | One factor is hardware-based and phishing-resistant (FIDO, passkey) | Partial | Staff use a passkey (WebAuthn, origin-bound, user presence required) after their password or Google, required in production. Companies must too in production (`COMPANY_PASSKEYS_REQUIRED`, `test/company-passkeys.test.mjs`). Public viewers sign in with Google only, so not every account has a phishing-resistant factor of TorFinder's own |
 | 6.6.1 | No phone or SMS factor | N/A | None offered |
 | 12.1.2 | Only forward-secret cipher suites | Pass | The Caddy edge allows TLS 1.2 and 1.3 only; for 1.2, ECDHE key exchange with AES-GCM or ChaCha20 only, and every 1.3 suite is forward secret. Checked: TLS 1.0 and 1.1, `AES128-SHA`, `AES256-GCM-SHA384` (RSA key exchange) and `ECDHE-RSA-AES128-SHA` (CBC) are refused; `ECDHE-ECDSA-AES128-GCM-SHA256` and TLS 1.3 are accepted |
 | 13.3.1 | Secrets in a hardware-backed store (HSM) | **Not done** | Environment variables |

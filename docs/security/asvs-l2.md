@@ -2,7 +2,7 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 118 Pass, 2 Partial, 5 Not done, 58 N/A, 0 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 118 pass (94%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 125 Pass, 0 Partial, 0 Not done, 58 N/A, 0 not reviewed.** All 125 items that apply to TorFinder (excluding N/A) pass (100%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
 
 **Update 19 Nov 2026 (branch `feat/asvs-l2-batch`):** nine items move to Pass. Announcement files are fetched only from the allowlisted portal hosts, and redirects are checked hop by hop (1.3.6, 13.2.4, 15.3.2; threat E3). Google sign-in is bound to the browser with a nonce (10.1.2, 10.5.1). Password hashes use stronger scrypt settings and store them, and old hashes are upgraded at sign-in (11.4.2, 11.2.2). The backend connects to MongoDB as a least-privilege account (13.2.2). Input refused by validation is logged (16.3.3).
 
@@ -16,32 +16,32 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 118 | Control exists, with evidence in code or in this file |
-| Partial | 2 | Control exists with a gap; the gap is named |
-| Not done | 5 | Not implemented; out of scope for this deadline (below) |
+| Pass | 125 | Control exists, with evidence in code or in this file |
+| Partial | 0 | Control exists with a gap; the gap is named |
+| Not done | 0 | Not implemented (the five left were closed on 20 Nov, below) |
 | N/A | 58 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 0 | The three set by the hosting proxy were reviewed once the Caddy edge joined the repository (PR #401) |
 
 | Chapter | L2 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
 | V1 Encoding and Sanitization | 19 | 8 | 0 | 0 | 11 | 0 |
-| V2 Validation and Business Logic | 7 | 5 | 1 | 0 | 1 | 0 |
+| V2 Validation and Business Logic | 7 | 6 | 0 | 0 | 1 | 0 |
 | V3 Web Frontend Security | 11 | 10 | 0 | 0 | 1 | 0 |
 | V4 API and Web Service | 8 | 3 | 0 | 0 | 5 | 0 |
-| V5 File Handling | 5 | 4 | 0 | 1 | 0 | 0 |
-| V6 Authentication | 22 | 11 | 1 | 0 | 10 | 0 |
+| V5 File Handling | 5 | 5 | 0 | 0 | 0 | 0 |
+| V6 Authentication | 22 | 12 | 0 | 0 | 10 | 0 |
 | V7 Session Management | 12 | 12 | 0 | 0 | 0 | 0 |
 | V8 Authorization | 3 | 3 | 0 | 0 | 0 | 0 |
 | V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 1 | 0 |
 | V10 OAuth and OIDC | 24 | 6 | 0 | 0 | 18 | 0 |
 | V11 Cryptography | 11 | 9 | 0 | 0 | 2 | 0 |
 | V12 Secure Communication | 6 | 4 | 0 | 0 | 2 | 0 |
-| V13 Configuration | 12 | 10 | 0 | 2 | 0 | 0 |
+| V13 Configuration | 12 | 12 | 0 | 0 | 0 | 0 |
 | V14 Data Protection | 7 | 7 | 0 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 10 | 10 | 0 | 0 | 0 | 0 |
-| V16 Security Logging and Error Handling | 16 | 14 | 0 | 2 | 0 | 0 |
+| V16 Security Logging and Error Handling | 16 | 16 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **118** | **2** | **5** | **58** | **0** |
+| **Total** | **183** | **125** | **0** | **0** | **58** | **0** |
 
 ## Fixed after the triage (PR #343)
 
@@ -57,10 +57,21 @@ The triage marked these as Planned; all are now implemented and tested:
 | 6 | Company profile: preferred budget minimum must not exceed the maximum | V2.2.3 |
 | 7 | SBOM (CycloneDX via `npm sbom`) for backend and frontend | V15.1.2 |
 
-## Not done (out of scope for this deadline)
+## Closed on 20 Nov (the last Partial and Not done items)
 
-| ID | Gap | Why not now |
+| ID | Was | Now |
 | --- | --- | --- |
+| V2.3.3 | Multi-step writes without transactions | One MongoDB transaction per business operation; MongoDB runs as a replica set |
+| V6.3.3 | Only staff needed a passkey | Companies too, on by default in production; viewers sign in through Google only |
+| V5.4.3 | Files not virus-scanned | ClamAV scans every upload and relayed portal file |
+| V13.2.5 | No network-level egress allowlist | The backend's only way out is an allowlist proxy |
+| V13.3.1 | No secrets vault | A vault holds the secrets and hands each service only its own |
+| V16.4.2 | Logs could be modified | Logs are appended to a separate store no application container can reach |
+| V16.4.3 | Logs not shipped to a separate system | Same store, fed by Docker's logging driver |
+
+The last four need services the application itself doesn't: they run in the opt-in `docker-compose.hardening.yml`, so a local stack and the demo stay light ([hardening.md](../operations/hardening.md)).
+
+--- | --- | --- |
 | V5.4.3 | Relayed portal files are not virus-scanned | Needs a scanning service; files are limited to PDF/JPEG/PNG with magic-byte checks |
 | V13.2.5 | No network-level egress allowlist | Set at the host or firewall, not in the app |
 | V13.3.1 | No secrets vault | Environment variables are the accepted setup for the course deployment |
@@ -241,7 +252,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 2.1.3 | Expectations for business logic limits and validations are documented, including both per-user and globally across… | Pass | Per-user and global limits are written in [Business rules and limits](#business-rules-and-limits) |
 | 2.2.3 | The application ensures that combinations of related data items are reasonable according to the pre-defined rules | Pass | The preferred budget minimum can't exceed the maximum: checked in `accounts.service.ts` (against the stored value too) and on the profile page (PR #343) |
 | 2.3.2 | Business logic limits are implemented per the application's documentation to avoid business logic flaws being exploited | Pass | Limits are enforced as documented: rate limits, per-email lockout, saved-search cap, page-size caps |
-| 2.3.3 | Transactions are being used at the business logic level such that either a business logic operation succeeds in its… | Partial | Multi-step writes (e.g. role change, then session revocation, then audit entry) don't use MongoDB transactions; the last-admin guard compensates for its own case |
+| 2.3.3 | Transactions are being used at the business logic level such that either a business logic operation succeeds in its… | Pass | Multi-step operations run in one MongoDB transaction (`DatabaseService.transaction`): role changes, admin approvals, suspend and reactivate, company approval or rejection, admin sign-out, password change and reset, and passkey reset write their state, the sign-out and the audit entry together. A failed audit entry fails the operation; notifications go after the commit. Compose runs MongoDB as a one-member replica set, which transactions need. Two parallel admin demotions write one shared document so snapshot isolation can't let both commit (tested by the race test in `admin-edit-users.e2e.test.mjs`, with the whole suite run on a replica set) |
 | 2.3.4 | Business logic level locking mechanisms are used to ensure that limited quantity resources (such as theater seats or… | N/A | No limited-quantity resources to double-book |
 | 2.4.1 | Anti-automation controls are in place to protect against excessive calls to application functions that could lead to… | Pass | Global, per-route and per-email rate limits; costly AI calls 5/min; the public LINE webhook 300/min per client IP; see `asvs-l1.md` |
 
@@ -282,7 +293,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 5.2.3 | The application checks compressed files (e.g., zip, gz, docx, odt) against maximum allowed uncompressed size and… | Pass | Each zip entry's declared size is checked before inflating, inflation is capped at that size, archives are ≤ 40 MB and only one entry is inflated per request |
 | 5.4.1 | The application validates or ignores user-submitted filenames, including in a JSON, JSONP, or URL parameter and… | Pass | An uploaded file's name is reduced to a display name: no path, no control characters or quotes, at most 120 characters, and the extension of its real type (`safeFileName`). It is never used as a storage path (GridFS ids are), and every file response sets `Content-Disposition` |
 | 5.4.2 | File names served (e.g., in HTTP response header fields or email attachments) are encoded or sanitized (e.g.,… | Pass | `filename*=UTF-8''` + `encodeURIComponent` (RFC 6266 / 5987) |
-| 5.4.3 | Files obtained from untrusted sources are scanned by antivirus scanners to prevent serving of known malicious content | **Not done** | Neither portal files nor company uploads are virus-scanned. Both are limited by type with magic-byte checks and served with `nosniff`; uploads are always attachments, and only their owner's company can download them (accepted risk) |
+| 5.4.3 | Files obtained from untrusted sources are scanned by antivirus scanners to prevent serving of known malicious content | Pass | Every file from outside is scanned by ClamAV before it is stored or served: company uploads (certificates, library), whatever type they claim to be, and every relayed portal file (TOR archive entries, e-GP bundles and invitations; `common/virus-scan.ts`). A known signature is refused with 422 and a `file.malware` event; while a configured scanner can't answer, the file is refused (503), never served unscanned. ClamAV runs in `docker-compose.hardening.yml`; a production start without it logs `config.virus_scan_off`. Evidence 18, `test/virus-scan.test.mjs` |
 
 ### V6 Authentication
 
@@ -294,7 +305,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 6.2.10 | A user's password stays valid until it is discovered to be compromised or the user rotates it | Pass | No forced periodic password change |
 | 6.2.11 | The documented list of context specific words is used to prevent easy to guess passwords being created | Pass | `passwordProblem()` refuses passwords built on those words or the account's own email or company name, at signup, reset and change (PR #343) |
 | 6.2.12 | Passwords submitted during account registration or password changes are checked against a set of breached passwords | Pass | Checked against the 10,000 most common breached passwords (NCSC / Have I Been Pwned list) on signup, reset and change |
-| 6.3.3 | Either a multi-factor authentication mechanism or a combination of single-factor authentication mechanisms, must be… | Partial | Staff (admin, owner, auditor) must add a passkey and use it after their password or Google sign-in ([passkeys.md](./passkeys.md)). Companies and public viewers have no second factor of their own; Google accounts carry Google's. Email verification is not a second factor |
+| 6.3.3 | Either a multi-factor authentication mechanism or a combination of single-factor authentication mechanisms, must be… | Pass | Staff and companies must use a passkey after their password or Google sign-in, on by default in production (`STAFF_PASSKEYS_REQUIRED`, `COMPANY_PASSKEYS_REQUIRED`; [passkeys.md](./passkeys.md)). Until they add one, the session guards let only `/api/auth/*` through (`common/passkey-policy.ts`, `test/company-passkeys.test.mjs`). Public viewers sign in only through Google, which holds their credentials and runs its own second step; TorFinder keeps no password for them |
 | 6.3.4 | Verify that, if the application includes multiple authentication pathways, there are no undocumented pathways and… | Pass | Only the two documented pathways exist, and both end in the same `issueSession` checks |
 | 6.4.3 | A secure process for resetting a forgotten password is implemented, that does not bypass any enabled multi-factor… | Pass | A reset sets the password only: a staff account still needs its passkey at the next sign-in. The reset link needs the inbox, is single use, and ends every session |
 | 6.4.4 | If a multi-factor authentication factor is lost, evidence of identity proofing is performed at the same level as… | Pass | A lost passkey is cleared by another admin, who must pass a passkey check first; the owner is emailed, every session ends, and they add a new passkey after signing in with their password, the same proof as the first time |
@@ -409,8 +420,8 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 13.2.2 | Communications between backend application components, including local or operating system services, APIs,… | Pass | The backend connects as `torr_app`, which has `readWrite` and `collMod` on its own database only; root is used only by the one-shot `db-users` service that creates or updates that account on every `docker compose up` (`docker/mongo-users/app-user.js`). Checked: the account can't read `admin`, write another database or drop its own |
 | 13.2.3 | If a credential has to be used for service authentication, the credential being used by the consumer is not a… | Pass | No default credential: the backend signs in to MongoDB with its TLS certificate (MONGODB-X509, no password), and the root password is generated on the first `docker compose up` (32 random bytes, `docker/db-secrets/init.sh`) into a private volume. An older volume still on the old root password works, with a warning and the steps to change it ([key-management.md](../operations/key-management.md#database-passwords)) |
 | 13.2.4 | An allowlist is used to define the external resources or systems with which the application is permitted to… | Pass | Import and notification hosts are fixed in code; announcement files are fetched only from the allowlisted portal hosts (as V1.3.6) |
-| 13.2.5 | The web or application server is configured with an allowlist of resources or systems to which the server can send… | **Not done** | No network-level egress allowlist |
-| 13.3.1 | A secrets management solution, such as a key vault, is used to securely create, store, control access to, and… | **Not done** | Secrets come from environment variables and `.env`, not a vault (accepted for the course deployment) |
+| 13.2.5 | The web or application server is configured with an allowlist of resources or systems to which the server can send… | Pass | In `docker-compose.hardening.yml` the backend sits on an internal network with no route out; its only way to the internet is a Squid proxy that allows HTTPS to the portals, Resend, LINE, Slack and `googleapis.com` and nothing else (`docker/hardening/squid.conf`). Probed: a portal answers 200, `example.com` is refused (`TCP_DENIED/403`), and without the proxy nothing resolves. Evidence 18 |
+| 13.3.1 | A secrets management solution, such as a key vault, is used to securely create, store, control access to, and… | Pass | In `docker-compose.hardening.yml`, a HashiCorp Vault (TLS from the internal CA, internal network only) holds the application secrets. `vault-init` loads them once, keeps one read policy per service, and writes each service only its own secrets with a five-minute token; the apps' compose variables are emptied, so the vault is the only source. Key lifecycle in [key-management.md](../operations/key-management.md). Evidence 18 |
 | 13.3.2 | Access to secret assets adheres to the principle of least privilege | Pass | Each container gets only the secrets it uses. Each service's private key is in its own volume, readable only by that service's user, and the CA key only by the one-shot `certs` service (`docker/certs/generate.sh`). The backend has no database password (certificate login), and the generated root password is readable only by the database's user (`docker/db-secrets/init.sh`). The frontend gets only `SESSION_SECRET` and its own certificate, never the email or LINE keys. Server administrators can still read everything, as on any host ([key-management.md](../operations/key-management.md)) |
 | 13.4.2 | Debug modes are disabled for all components in production environments to prevent exposure of debugging features and… | Pass | `NODE_ENV=production` in both images: no debug output, no source maps served, demo data off |
 | 13.4.3 | Web servers do not expose directory listings to clients unless explicitly intended | Pass | No directory listing (no static file server) |
@@ -459,8 +470,8 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 16.3.3 | The application logs the security events that are defined in the documentation and also logs attempts to bypass the… | Pass | Rate limits and lockouts are logged, and so is input refused by validation: `input.rejected` with the path, client address, user and the names of the refused fields, never their values (`LoggingValidationPipe`, `test/input-rejected.test.mjs`) |
 | 16.3.4 | The application logs unexpected errors and security control failures such as backend TLS failures | Pass | Every 5xx is logged with an errorId by `AllExceptionsFilter` |
 | 16.4.1 | All logging components appropriately encode data to prevent log injection | Pass | JSON encoding and a 254-character cap per field |
-| 16.4.2 | Logs are protected from unauthorized access and cannot be modified | **Not done** | Logs sit in the host's container log; no write-once storage |
-| 16.4.3 | Logs are securely transmitted to a logically separate system for analysis, detection, alerting, and escalation | **Not done** | Logs are not shipped to a separate system |
+| 16.4.2 | Logs are protected from unauthorized access and cannot be modified | Pass | In `docker-compose.hardening.yml`, Docker's fluentd driver sends the backend's and frontend's lines to a separate log store (Fluent Bit) that appends them to its own volume. No application container mounts that volume or can reach the files, and the store's only interface takes new records: nothing can change or delete one through it (`docker/hardening/log-store.conf`). Evidence 18 |
+| 16.4.3 | Logs are securely transmitted to a logically separate system for analysis, detection, alerting, and escalation | Pass | The same log store is a separate system: the application's lines are shipped to it as they are written, outside the application's containers, and kept there for analysis and alerting; on a real server it runs on another host (`fluentd-address`). Evidence 18 |
 | 16.5.1 | A generic message is returned to the consumer when an unexpected or security-sensitive error occurs, ensuring no… | Pass | Unexpected errors return a generic message and an errorId only |
 | 16.5.2 | The application continues to operate securely when external resource access fails, for example, by using patterns… | Pass | Imports retry with backoff and finish partially; optional panels fall back; every outbound call has a timeout |
 | 16.5.3 | The application fails gracefully and securely, including when an exception occurs, preventing fail-open conditions… | Pass | Guards fail closed; invalid input is refused before any write; a missing or weak secret stops startup |

@@ -1,10 +1,10 @@
 # Staff passkeys
 
-Staff accounts (admin, owner, auditor) confirm every sign-in with a **passkey**, and confirm again before sensitive admin actions. This is the Level 3 form of ASVS 5.0 **6.3.3** (a phishing-resistant, hardware-based factor that needs a user action) and **7.5.3** (re-authentication before highly sensitive operations). Company and public accounts are unchanged.
+Staff accounts (admin, owner, auditor) confirm every sign-in with a **passkey**, and confirm again before sensitive admin actions. This is the Level 3 form of ASVS 5.0 **6.3.3** (a phishing-resistant, hardware-based factor that needs a user action) and **7.5.3** (re-authentication before highly sensitive operations). Companies follow the same rule (below); public viewers sign in only through Google.
 
 A passkey is a key pair made by a phone, laptop (Touch ID, Windows Hello) or security key. The private key never leaves the device. The browser only lets it sign for this site's own domain, so a look-alike phishing page gets nothing it can replay, and a stolen password alone no longer opens a staff account.
 
-**Company accounts (optional).** A company can add a passkey on its Account page. From then on its sign-in needs the passkey after the password, exactly like staff, and an admin can clear a company's passkeys from Manage Users if it loses its device. It is optional by the team's decision (ASVS 6.3.3 stays Partial at Level 3 for companies and public viewers). Step-up applies only to admin actions, so it doesn't affect companies.
+**Company accounts.** A company adds a passkey on its Account page; from then on its sign-in needs the passkey after the password, exactly like staff, and an admin can clear a company's passkeys from Manage Users if it loses its device. With `COMPANY_PASSKEYS_REQUIRED` (on by default in production, ASVS 6.3.3 at Level 2), a company that hasn't added one yet can only reach `/account` to add it: the session guards let only `/api/auth/*` through (`backend/src/common/passkey-policy.ts`). Step-up applies only to admin actions, so it doesn't affect companies. **Public viewers** sign in only through Google, which holds their credentials and runs its own second step; TorFinder keeps no password for them.
 
 ## How it works
 
@@ -35,6 +35,7 @@ If the check is too old, the action is refused with `step-up-required`. The page
 
 | Variable | Where | Default | Meaning |
 | --- | --- | --- | --- |
+| `COMPANY_PASSKEYS_REQUIRED` | backend **and** frontend (must match) | `true` in production, `false` otherwise; `docker-compose.yml` passes `false` unless `.env` sets it | Required: a company can't use its workspace until it adds a passkey. Optional: a company that added one must always use it |
 | `STAFF_PASSKEYS_REQUIRED` | backend **and** frontend (must match) | `true` in production, `false` otherwise; `docker-compose.yml` passes `false` unless `.env` sets it | Required: staff can't use the console until they add a passkey, and step-up applies to every admin. Optional: passkeys are opt-in, but anyone who added one must always use it and gets step-up |
 | `FRONTEND_ORIGIN` | backend | `http://localhost:3000` | The site's public address. Passkeys only work on this origin; on a server it must be the `https://` address users type |
 | `WEBAUTHN_RP_ID` | backend | `FRONTEND_ORIGIN`'s host | Set to a parent domain only to share passkeys across subdomains |
@@ -64,7 +65,7 @@ Record who did it and why. The admin then signs in with their password and adds 
 ## Known limits
 
 - **First enrolment trusts the password.** Someone who learns a staff password before the owner adds a passkey could add theirs first. The owner is emailed when it happens, and an admin can reset it. Rolling out soon after accounts are created keeps this window short.
-- **Company and public accounts** still have no second factor of their own (L2 6.3.3 stays Partial). Google accounts carry Google's.
+- **Public viewers** have no second factor of TorFinder's own: their sign-in is Google's, with Google's own second step.
 - **User verification is preferred, not required** (`requireUserVerification: false`). Every passkey check needs the user present (a touch or tap), but a security key without a PIN or biometric is accepted. That is enough for a second factor: the password is the first, and the passkey proves possession of the device. It is why the 6.3.3 claim rests on password plus passkey, not on the passkey alone as a single multi-factor step.
 - **Attestation is `none`.** Any standards-compliant authenticator is accepted; the app doesn't restrict to particular makes of security key.
 

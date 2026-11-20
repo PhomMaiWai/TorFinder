@@ -5,7 +5,7 @@
 // Google Chrome, and Playwright in some folder of your own:
 //   mkdir /tmp/pw && cd /tmp/pw && npm i playwright
 //   NODE_PATH=/tmp/pw/node_modules node docs/security/evidence/capture-screenshots.js headers cors
-// Shots: headers cors lockout passwords authz logs google adminsignout sessions mtls edge
+// Shots: headers cors lockout passwords authz logs google adminsignout sessions mtls edge hardening
 //   (run adminsignout before sessions: it clears the company's other sessions)
 //   idle      needs SESSION_IDLE_MINUTES=1 on frontend + backend (a compose override)
 //   error500  needs MongoDB stopped first: docker compose stop db (start it again after)
@@ -397,6 +397,43 @@ done'`);
           term("# TLS versions and cipher suites the edge accepts (12.1.2)", tls, ["refused", "Cipher is"]),
         ].join(""),
         note: "Caddy rebuilds each request before passing it to Next.js over HTTP/1.1, so the two never disagree about where a message ends. Only forward-secret AEAD suites are accepted.",
+      }),
+    );
+  },
+
+  // 18: the opt-in hardening services (ASVS 5.4.3, 13.2.5, 13.3.1, 16.4.2, 16.4.3).
+  // Needs: docker compose -f docker-compose.yml -f docker-compose.hardening.yml up -d --build
+  async hardening(browser) {
+    const H = "docker compose -f docker-compose.yml -f docker-compose.hardening.yml";
+    const quiet = "2>&1 | grep -v -e UNDICI -e trace-warnings";
+    const egress = sh(
+      `${H} exec -T backend node -e 'const t = async (l, u) => { try { const r = await fetch(u, { signal: AbortSignal.timeout(15000) }); console.log(l, "->", r.status); } catch (e) { console.log(l, "-> refused"); } }; (async () => { await t("https://data.go.th/   (a portal)", "https://data.go.th/"); await t("https://example.com/  (not on the list)", "https://example.com/"); })();' ${quiet}; ` +
+        `${H} exec -T -e NODE_USE_ENV_PROXY=0 backend node -e 'fetch("https://data.go.th/", { signal: AbortSignal.timeout(8000) }).then((r) => console.log("https://data.go.th/   without the proxy ->", r.status)).catch((e) => console.log("https://data.go.th/   without the proxy -> refused:", e.cause?.code ?? e.message))' ${quiet}; ` +
+        `${H} exec -T egress grep -E 'example.com|data.go.th' /var/log/squid/access.log | tail -n 2 | awk '{print "proxy log:", $4, $7}'`,
+    );
+    // Loads the vault's secrets file first, as the app itself does at start.
+    const virus = sh(`${H} exec -T backend sh -c 'set -a && . /run/app-secrets/app.env && set +a && node -' < docs/security/evidence/virus-probe.js ${quiet} | grep -e "->"`);
+    const logs = sh(
+      `docker run --rm -v torfinder_security_logs:/logs:ro alpine sh -c 'for f in /logs/*; do echo "$(basename $f): $(wc -l < $f) lines"; done'; ` +
+        `${H} config --format json | node -e 'const c = JSON.parse(require("fs").readFileSync(0)); for (const [n, s] of Object.entries(c.services)) if ((s.volumes ?? []).some((v) => v.source === "security_logs")) console.log("containers that mount the log volume:", n)'`,
+    );
+    const vault = sh(
+      `${H} logs --no-log-prefix vault-init | tail -n 6; ` +
+        `${H} exec -T backend sh -c 'echo "SESSION_SECRET from compose: [\${SESSION_SECRET}]"; ls -ln /run/app-secrets/app.env | awk "{print \"secrets file:\", \$1, \"owner uid\", \$3}"; sed "s/=.*/=<value hidden>/" /run/app-secrets/app.env'`,
+    );
+    await renderCard(
+      browser,
+      "18-hardening-services.png",
+      card({
+        title: "Hardening services (ASVS 5.4.3, 13.2.5, 13.3.1, 16.4.2, 16.4.3)",
+        source: "docker-compose.hardening.yml on the local stack; each command runs inside the named container",
+        terminal: [
+          term("# 13.2.5: the backend's only way out is the allowlist proxy", egress, ["-> 200", "refused", "TCP_DENIED"]),
+          term("# 5.4.3: files from outside are scanned by ClamAV", virus, ["422", "passed"]),
+          term("# 16.4.2 / 16.4.3: logs go to a separate store no app container mounts", logs, ["lines", "log-store"]),
+          term("# 13.3.1: secrets come from the vault, one file per service", vault, ["gave", "[]", "hidden"]),
+        ].join(""),
+        note: "Secret values are never shown. The vault's unseal key stays in a volume only vault-init mounts; a real server would use auto-unseal instead.",
       }),
     );
   },
