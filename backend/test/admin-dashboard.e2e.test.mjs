@@ -132,6 +132,35 @@ describe("GET /api/accounts/directory — admin only, every account regardless o
     assert.equal(entry.status, "pending");
   });
 
+  // ASVS 14.2.6: a directory row needs a company's name, not its contacts,
+  // team (CVs), past projects or certificates.
+  it("returns only the company's name, never the rest of its profile", async () => {
+    const res = await api("/accounts/directory", { token: ADMIN_TOKEN });
+    assert.equal(res.status, 200);
+    const companies = res.body.filter((a) => a.company);
+    assert.ok(companies.length > 0, "the seeded companies should be listed");
+    for (const account of companies) {
+      assert.deepEqual(Object.keys(account.company), ["companyName"], account.email);
+    }
+    for (const account of res.body) {
+      for (const field of ["passkeys", "knownDevices", "notificationChannels", "lineLink", "googleId"]) {
+        assert.equal(account[field], undefined, `${account.email} leaked ${field}`);
+      }
+    }
+  });
+
+  it("gives the review queue what an admin checks, not the company's team, projects or certificates", async () => {
+    const res = await api("/accounts", { token: ADMIN_TOKEN });
+    assert.equal(res.status, 200);
+    const reviewed = res.body.find((a) => a.company?.phone);
+    assert.ok(reviewed, "the queue still shows contact details for review");
+    for (const account of res.body) {
+      for (const field of ["teamMembers", "pastProjects", "certificates", "certifications", "matchAlerts", "preferredBudgetMin"]) {
+        assert.equal(account.company?.[field], undefined, `${account.email} leaked company.${field}`);
+      }
+    }
+  });
+
   it("never leaks password material for any account, admin included", async () => {
     const res = await api("/accounts/directory", { token: ADMIN_TOKEN });
     assert.equal(res.status, 200);

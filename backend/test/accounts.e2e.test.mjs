@@ -192,6 +192,22 @@ describe("GET /api/accounts — list, admin only", () => {
 
     assert.equal(res.status, 400);
   });
+
+  // NoSQL injection: if `status[$ne]=pending` ever reached MongoDB as
+  // { $ne: "pending" }, it would drop pending accounts. Express 5's query parser
+  // keeps `status[$ne]` as a plain key, which the validation whitelist strips,
+  // and the service only ever queries a constant status; so each of these must
+  // answer exactly like no filter at all.
+  it("never lets a query operator act as a status filter", async () => {
+    const unfiltered = await api("/accounts", { token: ADMIN_TOKEN });
+    assert.ok(unfiltered.body.some((a) => a.status === "pending"), "the seeded pending companies are listed");
+    const ids = (body) => body.map((a) => a.id).sort();
+    for (const query of ["status[$ne]=pending", "status[$regex]=^app", "status[]=approved"]) {
+      const res = await api(`/accounts?${query}`, { token: ADMIN_TOKEN });
+      assert.ok([200, 400].includes(res.status), query);
+      if (res.status === 200) assert.deepEqual(ids(res.body), ids(unfiltered.body), query);
+    }
+  });
 });
 
 describe("GET /api/accounts/me — own profile", () => {
