@@ -5,7 +5,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { request as httpsRequest, createServer } from "node:https";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -63,7 +63,7 @@ after(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-const read = (path) => execFileSync("cat", [path]);
+const read = (path) => readFileSync(path);
 
 function call(clientCert) {
   return new Promise((resolve) => {
