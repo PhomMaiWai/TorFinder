@@ -26,7 +26,9 @@ export default async function AccountPage() {
       <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
       <PageBody>
         <div className="max-w-2xl space-y-8">
-          {isStaffRole(session?.role) && <PasskeySection setupRequired={needsPasskeySetup(session)} />}
+          {(isStaffRole(session?.role) || session?.role === "org") && (
+            <PasskeySection setupRequired={needsPasskeySetup(session)} forCompany={session?.role === "org"} />
+          )}
           <ChangePasswordSection />
         </div>
       </PageBody>
