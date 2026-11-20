@@ -212,14 +212,23 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
         : getOrgNav(t);
 
   const [user, setUser] = useState<SessionUser | null>(null);
+  // A company's workspace is named after the company on its profile. The
+  // session only carries the account name, which for a Google sign-up is the
+  // person's name, so the profile is read once for company accounts.
+  const [companyName, setCompanyName] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/me")
       .then((res) => (res.ok ? res.json() : { user: null }))
-      .then((data) => {
-        if (!cancelled) setUser(data.user);
+      .then(async (data) => {
+        if (cancelled) return;
+        setUser(data.user);
+        if (data.user?.role !== "org") return;
+        const profile = await fetch("/api/accounts/me").then((res) => (res.ok ? res.json() : null));
+        const name = profile?.company?.companyName;
+        if (!cancelled && typeof name === "string" && name) setCompanyName(name);
       })
       .catch(() => {});
     return () => {
@@ -253,7 +262,7 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
             T
           </span>
           <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-ink">
-            {isAdmin ? "Torr Admin" : isAuditor ? "Torr Auditor" : "Arun Digital"}
+            {isAdmin ? "Torr Admin" : isAuditor ? "Torr Auditor" : isOwner ? "Torr Owner" : (companyName ?? user?.name ?? "")}
           </span>
           <ChevronDown size={14} className="shrink-0 text-ink-subtle" />
         </button>
