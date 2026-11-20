@@ -277,7 +277,10 @@ export class AuthService {
     // An existing account always signs in as itself, whichever button was
     // pressed — a company owner using the public button still lands as org.
     if (!user && as === "viewer") {
-      return this.issueSession(await this.createViewer(googleId, email, name ?? email), "auth.google", ip, "google", device);
+      const viewer = await this.createViewer(googleId, email, name ?? email);
+      // A new account, so it is logged as a sign-up, like the password and company paths (ASVS 16.3.1).
+      logSecurityEvent("auth.signup", { outcome: "success", userId: viewer._id.toString(), email, ip, role: "viewer", reason: "google" });
+      return this.issueSession(viewer, "auth.google", ip, "google", device);
     }
 
     if (!user) {
@@ -328,15 +331,19 @@ export class AuthService {
       emailVerified: true,
     };
 
+    let userId: ObjectId;
     try {
-      await this.db.users.insertOne(newUser);
+      ({ insertedId: userId } = await this.db.users.insertOne(newUser));
     } catch (error) {
       if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) {
+        logSecurityEvent("auth.signup", { outcome: "failure", email, ip, reason: "google_duplicate_email" });
         throw new ConflictException("อีเมลนี้ถูกใช้สมัครแล้ว");
       }
       throw error;
     }
 
+    // Logged like the password sign-up, so every new account leaves a line in the security log (ASVS 16.3.1).
+    logSecurityEvent("auth.signup", { outcome: "success", userId: userId.toString(), email, ip, role: "org", reason: "google" });
     return { status: "pending" as const, companyName: company.companyName };
   }
 
