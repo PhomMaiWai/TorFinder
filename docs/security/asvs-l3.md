@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 55 Pass, 5 Partial, 7 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 55 pass (77%). Of the six stricter Level 3 conditions on L1/L2 requirements, 2 pass, 1 is partial, 1 is N/A, 1 is set by hosting and 1 is not done.
+**Result: 58 Pass, 2 Partial, 7 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 58 pass (82%). Of the six stricter Level 3 conditions on L1/L2 requirements, 2 pass, 1 is partial, 1 is N/A, 1 is set by hosting and 1 is not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -20,12 +20,14 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 20 Nov 2026 (branch `feat/asvs-l3-revocation-url`):** session revocation is read from the database on every request, and taking back a company's approval revokes its sessions (8.3.2); the frontend caps backend URLs and the forwarded client address (4.2.5). Then: a ReDoS audit of every regex in CI (1.3.12), the sign-in redirect checked with the browser's own URL parser (1.5.3), a warning banner for browsers missing the security features listed below (3.7.5), crypto discovery in CI with an inventory and post-quantum migration plan (11.1.3, 11.1.4, [crypto-inventory.md](./crypto-inventory.md)), and every allowed authorization decision logged (the 16.3.2 condition). L3 is 55/71 (77%).
 
+**Update 20 Nov 2026 (branch `feat/asvs-l3-data-minimization`):** three items move to Pass. Admin lists return only what each screen shows; the user directory had been sending every company's whole profile, team members' CVs included (14.2.6). Sign-in and passkey code read only the account fields they use (11.7.2). Paths that look like files are refused before routing (13.4.7).
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 55 | Control exists, with evidence in code or in this file |
-| Partial | 5 | Control exists with a gap; the gap is named |
+| Pass | 58 | Control exists, with evidence in code or in this file |
+| Partial | 2 | Control exists with a gap; the gap is named |
 | Not done | 7 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
@@ -42,14 +44,14 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V8 Authorization | 6 | 4 | 1 | 1 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
-| V11 Cryptography | 10 | 5 | 1 | 1 | 3 | 0 |
+| V11 Cryptography | 10 | 6 | 0 | 1 | 3 | 0 |
 | V12 Secure Communication | 3 | 0 | 0 | 1 | 0 | 2 |
-| V13 Configuration | 8 | 5 | 1 | 2 | 0 | 0 |
-| V14 Data Protection | 4 | 2 | 2 | 0 | 0 | 0 |
+| V13 Configuration | 8 | 6 | 0 | 2 | 0 | 0 |
+| V14 Data Protection | 4 | 3 | 1 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 8 | 7 | 0 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **55** | **5** | **7** | **21** | **4** |
+| **Total** | **92** | **58** | **2** | **7** | **21** | **4** |
 
 ## Done on this branch
 
@@ -242,7 +244,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 11.5.2 | Random generation works under heavy demand | Pass | Node's `crypto.randomBytes` / `randomInt` (OpenSSL CSPRNG), which doesn't block or degrade |
 | 11.6.2 | Approved key exchange with secure parameters | N/A | No key exchange in the application; TLS is the proxy's |
 | 11.7.1 | Full memory encryption for data in use | **Not done** | Depends on the host (e.g. confidential VMs); not in place |
-| 11.7.2 | Data minimization during processing | Partial | Password hashes are projected out of every read and secrets are never logged; account documents are otherwise loaded whole |
+| 11.7.2 | Data minimization during processing | Pass | Sign-in, password change and passkey code read an account through `SIGN_IN_FIELDS` (credentials and status, not the company profile); account endpoints use one projection per audience (`DIRECTORY_FIELDS`, `REVIEW_FIELDS`, `OWN_ACCOUNT_FIELDS`). Password hashes are never returned and secrets never logged. Code that reads a whole company profile (matching, proposal drafts) uses it |
 
 ### V12 Secure Communication
 
@@ -263,14 +265,14 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 13.3.3 | Cryptographic operations in an isolated security module | **Not done** | Keys are in process memory |
 | 13.3.4 | Secrets expire and are rotated as documented | **Not done** | No automatic expiry; rotation is manual |
 | 13.4.6 | No detailed backend version information exposed | Pass | `poweredByHeader: false` (now also in the Docker image, which had left `next.config.ts` out of its final stage until 19 Nov), helmet removes `X-Powered-By`, `/health` returns status only, errors are generic |
-| 13.4.7 | The web tier serves only expected file types | Partial | Next.js serves only its build output and `public/`, which is now empty (sample SVGs deleted on this branch); there is no explicit extension allowlist |
+| 13.4.7 | The web tier serves only expected file types | Pass | Next.js serves only its build output and `public/` (empty). The proxy's matcher lets only image, font, `.txt` and `.xml` requests bypass it; any other path with a dot in a segment, outside `/api/`, gets 404 before routing (`isUnexpectedFile`, `frontend/test/served-files.test.mts`), so `/.env`, `/.git/config` or `/backup.zip` never reach a handler |
 
 ### V14 Data Protection
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 14.2.5 | Caches store only expected content; no web cache deception | Pass | No shared cache in front of the app; every API and page answer is `no-store` except immutable public documents, and unknown paths get 404 |
-| 14.2.6 | Only the minimum sensitive data is returned | Partial | Hashes never leave the server; admin lists return full contact details |
+| 14.2.6 | Only the minimum sensitive data is returned | Pass | Hashes never leave the server. The user directory returns a company's name only; the sign-up review queue returns the contact and business details an admin checks, not team members (CVs), past projects or certificates; full profiles go only to their owner (`test/admin-dashboard.e2e.test.mjs`). The queue's status filter queries only a constant status, so a query operator can't reach MongoDB (`test/accounts.e2e.test.mjs`) |
 | 14.2.7 | Sensitive data deleted on a retention schedule | Pass | [How long data is kept](../operations/limits-and-retention.md#how-long-data-is-kept): TTL indexes delete notifications (180 days), import runs (90), audit entries (365) and unconfirmed pending sign-ups (30); links expire on their own; container logs are capped at 5 × 10 MB. `DatabaseService.applyRetention`, `test/retention.e2e.test.mjs`. An account's own data is deleted by an admin on request (no self-service) |
 | 14.2.8 | Metadata removed from user-submitted files | Partial | PNG and JPEG metadata removed on upload (this branch); PDF and Word metadata (author, software) is kept |
 
@@ -323,3 +325,4 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 5. ~~**15.4.2, 3.7.3, 2.4.2:** atomic saved-search cap, leaving-site notice, human timing on forms~~ — done on `feat/asvs-l3-quick-wins`.
 6. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.
 7. ~~**16.3.2, 11.1.3**~~ — done on `feat/asvs-l3-revocation-url` (every authorization decision logged; crypto discovery in CI). Left: **12.3.5, 13.3.x**, which need network and hosting infrastructure beyond the repository.
+8. ~~**14.2.6, 11.7.2, 13.4.7:** minimal projections per audience and for sign-in; file-type gate~~ — done on `feat/asvs-l3-data-minimization`.
