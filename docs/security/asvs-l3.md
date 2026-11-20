@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 58 Pass, 2 Partial, 7 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 58 pass (82%). Of the six stricter Level 3 conditions on L1/L2 requirements, 2 pass, 1 is partial, 1 is N/A, 1 is set by hosting and 1 is not done.
+**Result: 63 Pass, 0 Partial, 4 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 63 pass (89%). Of the six stricter Level 3 conditions on L1/L2 requirements, 2 pass, 1 is partial, 1 is N/A, 1 is set by hosting and 1 is not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -22,13 +22,15 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 20 Nov 2026 (branch `feat/asvs-l3-data-minimization`):** three items move to Pass. Admin lists return only what each screen shows; the user directory had been sending every company's whole profile, team members' CVs included (14.2.6). Sign-in and passkey code read only the account fields they use (11.7.2). Paths that look like files are refused before routing (13.4.7).
 
+**Update 20 Nov 2026 (branch `feat/asvs-l3-files-secrets-adaptive`):** five items move to Pass, leaving no Partial. PDF and Word uploads lose their author, software and dates before storage (14.2.8); every parser of untrusted bytes runs in a worker thread with its own memory limit and deadline (15.2.5); `SESSION_SECRET` can be rotated without signing anyone out, the old key expiring by itself (13.3.4); and a sign-in from a device the account hasn't used before gets a 12-hour session, with every other admin emailed when it is a staff account (8.2.4, 8.4.2). What is left needs hosting or hardware: memory encryption, mutual TLS between services, an HSM, and the HSTS preload submission.
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 58 | Control exists, with evidence in code or in this file |
-| Partial | 2 | Control exists with a gap; the gap is named |
-| Not done | 7 | Not implemented |
+| Pass | 63 | Control exists, with evidence in code or in this file |
+| Partial | 0 | Control exists with a gap; the gap is named |
+| Not done | 4 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
 
@@ -41,17 +43,17 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V5 File Handling | 4 | 4 | 0 | 0 | 0 | 0 |
 | V6 Authentication | 12 | 7 | 0 | 0 | 5 | 0 |
 | V7 Session Management | 1 | 1 | 0 | 0 | 0 | 0 |
-| V8 Authorization | 6 | 4 | 1 | 1 | 0 | 0 |
+| V8 Authorization | 6 | 6 | 0 | 0 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
 | V11 Cryptography | 10 | 6 | 0 | 1 | 3 | 0 |
 | V12 Secure Communication | 3 | 0 | 0 | 1 | 0 | 2 |
-| V13 Configuration | 8 | 6 | 0 | 2 | 0 | 0 |
-| V14 Data Protection | 4 | 3 | 1 | 0 | 0 | 0 |
-| V15 Secure Coding and Architecture | 8 | 7 | 0 | 1 | 0 | 0 |
+| V13 Configuration | 8 | 7 | 0 | 1 | 0 | 0 |
+| V14 Data Protection | 4 | 4 | 0 | 0 | 0 | 0 |
+| V15 Secure Coding and Architecture | 8 | 8 | 0 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **58** | **2** | **7** | **21** | **4** |
+| **Total** | **92** | **63** | **0** | **4** | **21** | **4** |
 
 ## Done on this branch
 
@@ -98,7 +100,7 @@ Every current version of Chrome, Edge, Firefox and Safari supports all of them. 
 | Client IP | Sign-in, signup, password and email-link routes, feedback, reports | 5 / 60 s | 429 |
 | Client IP | LINE webhook | 300 / 60 s | 429 |
 | Email address | Failed logins and wrong current passwords | 10 per 15 min | Refused until 15 quiet minutes pass, `auth.login.locked` logged |
-| Device cookie (random, HttpOnly, hashed on the server) | Every successful sign-in | Not among the account's last 20 browsers | Owner emailed (`new-device`), `auth.login.new_device` logged; the sign-in itself is not blocked |
+| Device cookie (random, HttpOnly, hashed on the server) | Every successful sign-in | Not among the account's last 20 browsers | Owner emailed (`new-device`), and for a staff account every other admin (`staff-new-device`); session lasts 12 hours instead of 7 days; `auth.login.new_device` logged |
 | Time since the form was served | Sign-up and comment submissions | Under 2 s, or over 24 h | 400, `input.rejected` logged (`form_too_fast` / `form_token_invalid`) |
 | Time since last activity | Every signed-in request | 30 min idle, 7 days absolute | Session refused; sign in again |
 | Comment window of a TOR | Feedback | Outside the window | Refused |
@@ -121,13 +123,13 @@ No other attribute (location, time of day) affects authentication or authorizati
 | `ai/*` | Sending TOR text and company data to Vertex AI | Off unless configured; admin-triggered extraction; drafts 5 per minute per client |
 | `notifications/line-webhook.controller.ts` | Parsing LINE webhook bodies | Signature checked over the raw bytes before the body is used |
 
-These run in the same process as the rest of the backend; sandboxing them (15.2.5) is not done.
+Parsing of untrusted bytes runs in a worker thread with its own memory limit and deadline (15.2.5, `common/parse-worker.ts`): upload cleaning and zip-entry inflation. Reading a zip's directory stays in the main thread; it is bounded by the archive cap and never inflates anything.
 
 ## Secrets and rotation
 
 (V13.1.4, V13.3.4)
 
-The secrets, where each is held, and when and how each is rotated are in [limits-and-retention.md](../operations/limits-and-retention.md#secrets-and-rotation) (13.1.4 passes). Rotation is by hand: nothing expires by itself, and the app can't hold an old and a new session secret at once, so 13.3.4 is Not done.
+The secrets, where each is held, and when and how each is rotated are in [limits-and-retention.md](../operations/limits-and-retention.md#secrets-and-rotation) (13.1.4 passes). `SESSION_SECRET` rotates with a grace period in which the old key still verifies, then expires by itself; the other secrets are rotated by hand on the same schedule (13.3.4 passes).
 
 ---
 
@@ -214,10 +216,10 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | --- | --- | --- | --- |
 | 8.1.3 | Environmental and contextual attributes used in security decisions are documented | Pass | [Contextual attributes](#contextual-attributes-in-security-decisions) |
 | 8.1.4 | How those attributes are used (thresholds, actions) is documented | Pass | Same table |
-| 8.2.4 | Adaptive controls on environmental attributes, at sign-in and during a session | **Not done** | Rate limits and lockout only; nothing reacts to location, device or time |
+| 8.2.4 | Adaptive controls on environmental attributes, at sign-in and during a session | Pass | The device a sign-in comes from changes what happens: from a device the account hasn't used before (device cookie, see [Contextual attributes](#contextual-attributes-in-security-decisions)) the owner is emailed, a staff account's sign-in is also emailed to every other admin, and the session lasts 12 hours instead of 7 days, so it ends the same day (`NEW_DEVICE_SESSION_SECONDS`, `test/new-device-notice.test.mjs`). Rate limits and the per-address lockout react to failed attempts |
 | 8.3.2 | Authorization changes apply immediately | Pass | Every authenticated request reads the account's revocation floor from the database (no cache), so a revocation from any backend process applies to the next request. Role changes, suspension, passkey resets, password changes and taking back a company's approval all revoke the account's sessions (`test/revocation-immediate.e2e.test.mjs`) |
 | 8.3.3 | Access is based on the originating user's permissions, not an intermediary's | Pass | The frontend calls the backend with the user's own session token; there is no service account acting for users |
-| 8.4.2 | Administrative interfaces have multiple layers of security | Partial | Admin role, a phishing-resistant passkey at sign-in, step-up for sensitive actions, and a second admin's approval to grant or remove the admin role. No device-posture or contextual risk checks |
+| 8.4.2 | Administrative interfaces have multiple layers of security | Pass | Admin role; a phishing-resistant passkey at sign-in; step-up for sensitive actions; a second admin's approval to grant or remove the admin role; and contextual checks: a staff sign-in from a new device gets a 12-hour session and is reported to every other admin (8.2.4) |
 
 ### V10 OAuth and OIDC
 
@@ -263,7 +265,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 13.1.4 | Critical secrets and their rotation schedule documented | Pass | [Secrets and rotation](../operations/limits-and-retention.md#secrets-and-rotation): each secret, where it is held, when and how it is rotated |
 | 13.2.6 | Connections follow the documented configuration | Pass | The MongoDB client is built from the documented settings (`env.database`, `DatabaseService`); portal clients use the documented timeouts, retries and concurrency |
 | 13.3.3 | Cryptographic operations in an isolated security module | **Not done** | Keys are in process memory |
-| 13.3.4 | Secrets expire and are rotated as documented | **Not done** | No automatic expiry; rotation is manual |
+| 13.3.4 | Secrets expire and are rotated as documented | Pass | `SESSION_SECRET` rotates without signing anyone out: the old key goes in `SESSION_SECRET_PREVIOUS`, accepted for checking only, until `SESSION_SECRET_PREVIOUS_UNTIL`, after which it stops working by itself; production refuses an end date more than 8 days ahead. `SESSION_SECRET_CREATED` dates the current key, and the backend logs `config.secret_rotation_due` daily once it is older than the 365-day schedule (`test/session-rotation.test.mjs`). Procedure and the other secrets' schedule: [limits-and-retention.md](../operations/limits-and-retention.md#secrets-and-rotation) |
 | 13.4.6 | No detailed backend version information exposed | Pass | `poweredByHeader: false` (now also in the Docker image, which had left `next.config.ts` out of its final stage until 19 Nov), helmet removes `X-Powered-By`, `/health` returns status only, errors are generic |
 | 13.4.7 | The web tier serves only expected file types | Pass | Next.js serves only its build output and `public/` (empty). The proxy's matcher lets only image, font, `.txt` and `.xml` requests bypass it; any other path with a dot in a segment, outside `/api/`, gets 404 before routing (`isUnexpectedFile`, `frontend/test/served-files.test.mts`), so `/.env`, `/.git/config` or `/backup.zip` never reach a handler |
 
@@ -274,7 +276,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 14.2.5 | Caches store only expected content; no web cache deception | Pass | No shared cache in front of the app; every API and page answer is `no-store` except immutable public documents, and unknown paths get 404 |
 | 14.2.6 | Only the minimum sensitive data is returned | Pass | Hashes never leave the server. The user directory returns a company's name only; the sign-up review queue returns the contact and business details an admin checks, not team members (CVs), past projects or certificates; full profiles go only to their owner (`test/admin-dashboard.e2e.test.mjs`). The queue's status filter queries only a constant status, so a query operator can't reach MongoDB (`test/accounts.e2e.test.mjs`) |
 | 14.2.7 | Sensitive data deleted on a retention schedule | Pass | [How long data is kept](../operations/limits-and-retention.md#how-long-data-is-kept): TTL indexes delete notifications (180 days), import runs (90), audit entries (365) and unconfirmed pending sign-ups (30); links expire on their own; container logs are capped at 5 × 10 MB. `DatabaseService.applyRetention`, `test/retention.e2e.test.mjs`. An account's own data is deleted by an admin on request (no self-service) |
-| 14.2.8 | Metadata removed from user-submitted files | Partial | PNG and JPEG metadata removed on upload (this branch); PDF and Word metadata (author, software) is kept |
+| 14.2.8 | Metadata removed from user-submitted files | Pass | Every upload is cleaned before storage (`cleanUpload`): PNG and JPEG lose EXIF, XMP, IPTC and text chunks; PDFs lose their document-information values and XMP, overwritten in place at the same length, including inside compressed object streams and old revisions; Word files lose `docProps` (author, last modified by, company, software, dates) (`common/document-metadata.ts`, `test/document-metadata.test.mjs`). Encrypted PDFs are refused. Names inside the content (comment and tracked-change authors) are part of what was written and are kept |
 
 ### V15 Secure Coding and Architecture
 
@@ -283,7 +285,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 15.1.4 | Risky third-party components identified | Pass | [Risky components and dangerous functionality](#risky-components-and-dangerous-functionality) |
 | 15.1.5 | Dangerous functionality identified | Pass | Same section |
 | 15.2.4 | Dependencies come from the expected repository; no dependency confusion | Pass | Only public npm packages, no private or scoped internal names to impersonate; `npm ci` from lockfiles with integrity hashes; Dependabot with a cooldown |
-| 15.2.5 | Extra protection (sandboxing, isolation) around dangerous functionality | **Not done** | Parsing and AI calls run in the main backend process |
+| 15.2.5 | Extra protection (sandboxing, isolation) around dangerous functionality | Pass | Cleaning uploads (images, PDF, Word) and inflating entries of portal zip bundles run in a worker thread per task, with a 256 MB heap limit and a 15-second deadline, after which the worker is terminated; the request gets a 4xx and the server carries on (`common/parse-worker.ts`). AI calls are network requests to Vertex AI, not local parsing, and stay in the main process |
 | 15.4.1 | Thread-safe access to shared objects | Pass | Node.js runs request code on one thread; in-memory caches are only touched there |
 | 15.4.2 | Check and action are atomic (no TOCTOU) | Pass | Certificate and library caps, link-code use and email uniqueness are atomic database operations. The saved-search cap reserves a slot with a conditional `$inc` on a per-account counter (`savedSearchCounts`) before inserting, recounted from the real documents at startup (`test/saved-searches.e2e.test.mjs`: five parallel saves for the last slot, one succeeds) |
 | 15.4.3 | Locks used consistently, no deadlocks | Pass | No locks; MongoDB single-document updates only |
@@ -321,8 +323,8 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 1. ~~**6.3.3 / 7.5.3:** passkeys for staff and step-up before admin actions~~ — done on `feat/staff-passkeys`, and step-up on owner assignment on `fix/step-up-tor-owner`. Left: a second factor for company accounts.
 2. ~~**6.3.5, 6.4.6:** email on lockout; an admin "send reset link" action~~ — done on `feat/asvs-l3-lockout-reset`, and the new-device email on `feat/asvs-l3-quick-wins`.
 3. ~~**2.3.5, 8.4.2:** a second admin's approval to grant the admin role~~ — done on `feat/asvs-l3-admin-approval`, for removing it too.
-4. ~~**14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on~~ — done on `docs-asvs-l3-policies`. Left: 13.3.4, secrets that expire by themselves (a vault, and a session secret that can be rolled without signing everyone out).
+4. ~~**14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on~~ — done on `docs-asvs-l3-policies`. The session-secret rotation and expiry were added on `feat/asvs-l3-files-secrets-adaptive`.
 5. ~~**15.4.2, 3.7.3, 2.4.2:** atomic saved-search cap, leaving-site notice, human timing on forms~~ — done on `feat/asvs-l3-quick-wins`.
-6. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.
+6. ~~**14.2.8 (documents), 15.2.5, 13.3.4, 8.2.4, 8.4.2:** strip PDF/Word metadata, parse files in a worker, rotate the session secret with a grace period, shorter sessions and admin alerts on new devices~~ — done on `feat/asvs-l3-files-secrets-adaptive`. Originally: strip PDF/Word metadata and move file parsing into a worker with its own limits.
 7. ~~**16.3.2, 11.1.3**~~ — done on `feat/asvs-l3-revocation-url` (every authorization decision logged; crypto discovery in CI). Left: **12.3.5, 13.3.x**, which need network and hosting infrastructure beyond the repository.
 8. ~~**14.2.6, 11.7.2, 13.4.7:** minimal projections per audience and for sign-in; file-type gate~~ — done on `feat/asvs-l3-data-minimization`.
