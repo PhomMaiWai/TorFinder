@@ -65,7 +65,7 @@ after(() => {
 
 const read = (path) => readFileSync(path);
 
-function call(clientCert) {
+function call(clientCert, tls = {}) {
   return new Promise((resolve) => {
     const req = httpsRequest(
       {
@@ -75,6 +75,7 @@ function call(clientCert) {
         path: "/api/x",
         ca: read(file("ca.crt")),
         ...(clientCert && { cert: read(file(`${clientCert}.crt`)), key: read(file(`${clientCert}.key`)) }),
+        ...tls,
       },
       (response) => {
         let body = "";
@@ -95,6 +96,11 @@ describe("backend mutual TLS (ASVS 12.3.5)", () => {
 
   it("refuses another internal service's certificate with 403", async () => {
     assert.equal((await call("db")).status, 403);
+  });
+
+  it("refuses TLS 1.2, even with the frontend's certificate (ASVS 11.6.2, 12.1.2)", async () => {
+    const result = await call("frontend", { maxVersion: "TLSv1.2" });
+    assert.ok(result.error, `expected a TLS failure, got ${JSON.stringify(result)}`);
   });
 
   it("serves the frontend's certificate", async () => {

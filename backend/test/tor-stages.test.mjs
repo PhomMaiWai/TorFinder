@@ -153,4 +153,31 @@ describe("buildTimeline", () => {
     });
     assert.equal(timeline.find((entry) => entry.stage === STAGE.invitation).publishedAt, "2026-03-10T00:00:00.000Z");
   });
+
+  // A draft record whose project e-GP shows as awarded used to sit on the draft
+  // stage while the same page said "ปิดรับแล้ว · ประกาศผู้ชนะแล้ว".
+  const currentOf = (timeline) => timeline.filter((entry) => entry.current).map((entry) => entry.stage);
+
+  it("moves current to the award when e-GP's step is the award", () => {
+    const timeline = buildTimeline({ stage: STAGE.draft, procurementStep: { stage: "awarded" } });
+    assert.deepEqual(currentOf(timeline), [STAGE.award]);
+    assert.deepEqual(reached(timeline), [STAGE.draft, STAGE.award]);
+  });
+
+  it("moves current to the award when another record for the project names a winner", () => {
+    assert.deepEqual(currentOf(buildTimeline({ stage: STAGE.draft, awarded: true })), [STAGE.award]);
+  });
+
+  it("moves current to the furthest announcement on file", () => {
+    const timeline = buildTimeline({
+      stage: STAGE.draft,
+      documents: [{ label: "ประกาศเชิญชวน", publishedAt: new Date("2026-03-10T00:00:00Z") }],
+    });
+    assert.deepEqual(currentOf(timeline), [STAGE.invitation]);
+  });
+
+  it("never moves current backwards, and a cancellation places it nowhere new", () => {
+    assert.deepEqual(currentOf(buildTimeline({ stage: STAGE.award, procurementStep: { stage: "invitation" } })), [STAGE.award]);
+    assert.deepEqual(currentOf(buildTimeline({ stage: STAGE.draft, procurementStep: { stage: "cancelled" } })), [STAGE.draft]);
+  });
 });

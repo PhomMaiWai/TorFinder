@@ -18,6 +18,10 @@ import { logSecurityEvent } from "./security-log";
  * - the backend logs in to MongoDB with its own certificate (MONGODB-X509),
  *   not a password, over TLS (docker-compose.yml).
  *
+ * TLS 1.3 only (ASVS 11.6.2, 12.1.2): every 1.3 suite is forward secret and
+ * AEAD, while Node's default 1.2 list still includes RSA key exchange. Both
+ * ends are ours, so nothing needs the older versions.
+ *
  * Off unless INTERNAL_TLS_CERT_FILE, _KEY_FILE and _CA_FILE are set:
  * docker-compose sets them; the test suite and `npm run dev` run plain HTTP.
  */
@@ -28,7 +32,7 @@ export type InternalHttpsOptions = {
   ca: Buffer;
   requestCert: true;
   rejectUnauthorized: true;
-  minVersion: "TLSv1.2";
+  minVersion: "TLSv1.3";
 };
 
 export function internalHttpsOptions(): InternalHttpsOptions | undefined {
@@ -43,7 +47,7 @@ export function internalHttpsOptions(): InternalHttpsOptions | undefined {
     ca: readFileSync(caFile),
     requestCert: true,
     rejectUnauthorized: true,
-    minVersion: "TLSv1.2",
+    minVersion: "TLSv1.3",
   };
 }
 
