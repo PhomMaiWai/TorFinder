@@ -63,7 +63,7 @@ Deleting an account on request is done by an admin in the database for now; ther
 
 | Secret | Held in | Rotate | How |
 | --- | --- | --- | --- |
-| `SESSION_SECRET` | Frontend and backend environment | Every 12 months, and at once if exposed | New value in `.env`, restart both services. Every session ends; staff and companies sign in again |
+| `SESSION_SECRET` | Frontend and backend environment | Every 12 months (`SESSION_SECRET_MAX_AGE_DAYS`), and at once if exposed | Scheduled: with a grace period, below; nobody is signed out. Exposed: new value only, restart both services, every session ends |
 | MongoDB credentials | `.env` and the database | Every 12 months, and when someone with access leaves | `db.changeUserPassword`, then `.env`, then restart the backend |
 | `RESEND_API_KEY` | Backend environment | Every 12 months, and if exposed | New key in the Resend dashboard, `.env`, restart; revoke the old one |
 | `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` | Backend environment | Every 12 months; the secret at once if exposed (forged webhooks) | Reissue in the LINE console, `.env`, restart |
@@ -71,4 +71,13 @@ Deleting an account on request is done by an admin in the database for now; ther
 | Vertex AI credentials | Host's Application Default Credentials | Per the Google Cloud key policy | Rotate the service-account key in Google Cloud |
 | Companies' Slack webhook URLs | User records | Owned by each company | The company replaces it in its settings |
 
-Whoever runs the server rotates the secrets and records the date in the team's operations notes. Nothing expires by itself: the application can't hold two session secrets at once, so rotation is manual, and 13.3.4 stays Not done.
+Whoever runs the server rotates the secrets and records the date in the team's operations notes.
+
+**Rotating `SESSION_SECRET` without signing anyone out (ASVS 13.3.4).** Sessions and form tokens are signed with `SESSION_SECRET`. During a rotation the old key is still accepted for checking, never for signing, until a set date:
+
+1. Generate a new value (`openssl rand -base64 32`).
+2. In `.env`: move the old value to `SESSION_SECRET_PREVIOUS`, put the new one in `SESSION_SECRET`, set `SESSION_SECRET_PREVIOUS_UNTIL` to 8 days from now (a session lasts at most 7), and set `SESSION_SECRET_CREATED` to today.
+3. Restart both services. Existing sessions keep working; each is re-signed with the new key on its next request.
+4. After the end date the old key stops being accepted by itself. Remove the two `PREVIOUS` lines at the next restart; until then the backend logs `config.secret_rotation_due` daily as a reminder.
+
+**Expiry.** The previous key has a hard end date: in production the services refuse to start with one more than 8 days ahead, or one equal to the current key. The current key's age is known from `SESSION_SECRET_CREATED`; once it is older than `SESSION_SECRET_MAX_AGE_DAYS` (365), the backend logs `config.secret_rotation_due` at startup and daily. It keeps working: an overdue rotation is an operator's alert, not an outage. The other secrets above are rotated by hand on the same schedule; their providers (MongoDB, Resend, LINE) can hold only one value at a time.

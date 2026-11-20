@@ -35,6 +35,7 @@ export type SecurityEvent =
   | "auth.passkey.remove"
   | "auth.passkey.reset"
   | "auth.step_up"
+  | "config.secret_rotation_due"
   | "admin.approval.request"
   | "admin.approval.approve"
   | "admin.approval.reject";

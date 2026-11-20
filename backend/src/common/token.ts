@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { env } from "../config/env";
+import { verifyingSecrets } from "./session-keys";
 import { Role } from "./roles";
 
 /** How the holder proved who they are: a password, Google, a passkey (RFC 8176 style). */
@@ -28,8 +29,17 @@ export type SessionPayload = {
 /** Absolute lifetime (ASVS 7.3.2): re-authenticate after 7 days whatever the activity. */
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
-function sign(data: string) {
-  return createHmac("sha256", env.sessionSecret).update(data).digest("base64url");
+function sign(data: string, secret = env.sessionSecret) {
+  return createHmac("sha256", secret).update(data).digest("base64url");
+}
+
+/** Whether `signature` is data's signature under any key still accepted (current, or previous during a rotation). */
+function signedByAcceptedKey(data: string, signature: string): boolean {
+  const received = Buffer.from(signature);
+  return verifyingSecrets().some((secret) => {
+    const expected = Buffer.from(sign(data, secret));
+    return expected.length === received.length && timingSafeEqual(expected, received);
+  });
 }
 
 function encode(body: SessionPayload): string {
@@ -37,9 +47,10 @@ function encode(body: SessionPayload): string {
   return `${data}.${sign(data)}`;
 }
 
-export function createSessionToken(payload: Omit<SessionPayload, "iat" | "exp" | "act">): string {
+/** `maxAge` shortens the absolute lifetime (e.g. a new device, ASVS 8.2.4); it never lengthens it. */
+export function createSessionToken(payload: Omit<SessionPayload, "iat" | "exp" | "act">, maxAge = SESSION_MAX_AGE): string {
   const iat = Math.floor(Date.now() / 1000);
-  return encode({ ...payload, iat, act: iat, exp: iat + SESSION_MAX_AGE });
+  return encode({ ...payload, iat, act: iat, exp: iat + Math.min(maxAge, SESSION_MAX_AGE) });
 }
 
 /**
@@ -60,9 +71,7 @@ export function verifySessionToken(token: string | undefined): SessionPayload | 
   const [data, signature] = token?.split(".") ?? [];
   if (!data || !signature) return null;
 
-  const expected = Buffer.from(sign(data));
-  const received = Buffer.from(signature);
-  if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null;
+  if (!signedByAcceptedKey(data, signature)) return null;
 
   try {
     const payload = JSON.parse(Buffer.from(data, "base64url").toString()) as SessionPayload;

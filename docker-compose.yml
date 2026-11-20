@@ -25,6 +25,9 @@ services:
       # No fallback on purpose: the image runs with NODE_ENV=production and
       # refuses a missing or published secret. Set it in .env (see .env.example).
       - SESSION_SECRET=${SESSION_SECRET:-}
+      # Only during a rotation (docs/operations/limits-and-retention.md); must match the backend.
+      - SESSION_SECRET_PREVIOUS=${SESSION_SECRET_PREVIOUS:-}
+      - SESSION_SECRET_PREVIOUS_UNTIL=${SESSION_SECRET_PREVIOUS_UNTIL:-}
       # Must match the backend's value (docs/security/passkeys.md).
       - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
     depends_on:
@@ -43,6 +46,9 @@ services:
       # not root (ASVS 13.2.2). On a server, set MONGO_APP_PASSWORD in .env.
       - MONGODB_URI=mongodb://${MONGO_APP_USERNAME:-torr_app}:${MONGO_APP_PASSWORD:-torr_app}@db:27017/torr?authSource=torr
       - SESSION_SECRET=${SESSION_SECRET:-}
+      - SESSION_SECRET_PREVIOUS=${SESSION_SECRET_PREVIOUS:-}
+      - SESSION_SECRET_PREVIOUS_UNTIL=${SESSION_SECRET_PREVIOUS_UNTIL:-}
+      - SESSION_SECRET_CREATED=${SESSION_SECRET_CREATED:-}
       # The site's public address; on a server, https://<your domain> (CORS and passkeys use it).
       - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:3000}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}

@@ -9,6 +9,7 @@ import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { LoggingValidationPipe } from "./common/logging-validation.pipe";
 import { env } from "./config/env";
+import { checkSecretAges } from "./common/session-keys";
 
 /**
  * ASVS 16.5.4, the last resort. Request errors already end in
@@ -60,6 +61,9 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   await app.listen(env.port);
+  // ASVS 13.3.4: a session secret past its rotation date is reported now and daily.
+  checkSecretAges();
+  setInterval(() => checkSecretAges(), 24 * 60 * 60 * 1000).unref();
   Logger.log(`torr-backend listening on :${env.port}`, "Bootstrap");
 }
 
