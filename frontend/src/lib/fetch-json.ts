@@ -1,3 +1,5 @@
+import { isBackendPathTooLong } from "@/lib/backend-path";
+
 /**
  * Every read from the backend goes through here, so a page can tell the two
  * failures apart: "the backend said there is no such thing" and "the backend
@@ -31,6 +33,8 @@ type Options = {
 };
 
 export async function fetchJson<T>(path: string, options: Options = {}): Promise<T> {
+  // ASVS 4.2.5: never send the backend a URL longer than it is sure to accept.
+  if (isBackendPathTooLong(path)) throw new BackendError(414, path.slice(0, 120));
   let res: Response;
 
   try {

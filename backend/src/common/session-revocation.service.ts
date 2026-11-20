@@ -2,14 +2,6 @@ import { Injectable } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 
 import { DatabaseService } from "../database/database.service";
-import { TtlCache } from "./ttl-cache";
-
-// How long a revocation takes to take effect on a request that was already
-// served from cache. Short enough that "logout" and "suspend" feel immediate,
-// long enough that a normal authenticated request never pays for a database
-// round trip.
-const CACHE_TTL_MS = 30_000;
-const CACHE_MAX_ENTRIES = 10_000;
 
 /**
  * Session tokens are self-contained (see token.ts) and can't be revoked by
@@ -23,27 +15,27 @@ const CACHE_MAX_ENTRIES = 10_000;
  * deliberately revokes every session for the account, not just the one that
  * logged out — there's no per-session id to target individually, and
  * revoking everything is the safer failure mode.
+ *
+ * The floor is read from the database on every authenticated request (one
+ * lookup by _id, the primary key), with no cache: a revocation, a role change
+ * or a suspension applies to the very next request in every backend process,
+ * not after a cache expires (ASVS 8.3.2).
  */
 @Injectable()
 export class SessionRevocationService {
-  private readonly cache = new TtlCache<string, Promise<Date | null>>(CACHE_TTL_MS, CACHE_MAX_ENTRIES);
-
   constructor(private readonly db: DatabaseService) {}
 
   /** Whether a token issued at `iatSeconds` is still accepted for this user. */
   async isValid(userId: string, iatSeconds: number): Promise<boolean> {
-    const minIssuedAt = await this.cache.getOrLoad(userId, () => this.loadMinIssuedAt(userId));
+    const minIssuedAt = await this.loadMinIssuedAt(userId);
     if (!minIssuedAt) return true;
     return iatSeconds * 1000 >= minIssuedAt.getTime();
   }
 
-  /** Invalidates every token already issued to this user — logout, a password reset, or a suspension. */
+  /** Invalidates every token already issued to this user — logout, a password reset, a suspension, a lost approval. */
   async revoke(userId: string): Promise<void> {
     if (!ObjectId.isValid(userId)) return;
     await this.db.users.updateOne({ _id: new ObjectId(userId) }, { $set: { sessionMinIssuedAt: new Date() } });
-    // Otherwise a request served from this process's cache in the next
-    // CACHE_TTL_MS would still accept a token this call just revoked.
-    this.cache.delete(userId);
   }
 
   private async loadMinIssuedAt(userId: string): Promise<Date | null> {

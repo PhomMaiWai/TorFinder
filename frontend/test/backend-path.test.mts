@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { idPath, isObjectId, isPlainPath } from "../src/lib/backend-path.ts";
+import { idPath, isBackendPathTooLong, isObjectId, isPlainPath, MAX_BACKEND_PATH } from "../src/lib/backend-path.ts";
 
 const ID = "0123456789abcdef01234567";
 
@@ -47,5 +47,22 @@ describe("isPlainPath", () => {
   it("would otherwise have walked to another route", () => {
     // The bug this guards against: what fetch makes of an unchecked `..`.
     assert.equal(new URL(`http://backend/api/certificates/${encodeURIComponent("..")}/file`).pathname, "/api/file");
+  });
+});
+
+describe("isBackendPathTooLong (ASVS 4.2.5)", () => {
+  it("lets every ordinary backend path through", () => {
+    assert.equal(isBackendPathTooLong(`/api/tor/${ID}/documents/0?download=1`), false);
+    assert.equal(isBackendPathTooLong(`/api/audit?page=2&actor=admin%40bma.go.th&action=x&from=2026-11-01&to=2026-11-20`), false);
+  });
+
+  it("refuses a path past the limit the backend is sure to accept", () => {
+    assert.equal(isBackendPathTooLong("/api/audit?actor=" + "a".repeat(MAX_BACKEND_PATH)), true);
+    assert.equal(isBackendPathTooLong("/" + "a".repeat(MAX_BACKEND_PATH - 1)), false);
+    assert.equal(isBackendPathTooLong("/" + "a".repeat(MAX_BACKEND_PATH)), true);
+  });
+
+  it("stays well under Node's 16 KB header limit", () => {
+    assert.ok(MAX_BACKEND_PATH <= 4096);
   });
 });
