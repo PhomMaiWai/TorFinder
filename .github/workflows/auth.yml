@@ -12,11 +12,15 @@ on:
       - "backend/**"
       - "frontend/**"
       - ".github/workflows/auth.yml"
+      - ".github/scripts/**"
+      - "docs/security/cryptography.md"
   pull_request:
     paths:
       - "backend/**"
       - "frontend/**"
       - ".github/workflows/auth.yml"
+      - ".github/scripts/**"
+      - "docs/security/cryptography.md"
   workflow_dispatch:
 
 # Least privilege for the CI token: the jobs only read the code (CodeQL
@@ -99,6 +103,16 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      # ASVS 11.1.3: every use of cryptography in backend/src and frontend/src
+      # is listed in docs/security/cryptography.md, or this fails.
+      - name: Cryptography inventory
+        run: node ../.github/scripts/check-crypto-inventory.mjs
+
+      # ASVS 1.3.12: every regular expression in both apps is proved free of
+      # exponential and polynomial backtracking (recheck).
+      - name: ReDoS check
+        run: node ../.github/scripts/check-redos.mjs
 
       - name: Build
         run: npm run build

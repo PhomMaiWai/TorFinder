@@ -4,7 +4,7 @@ Triage of TorFinder against the 92 [OWASP ASVS 5.0](https://github.com/OWASP/ASV
 
 TorFinder does not claim Level 3. This file says which Level 3 controls fit the application, which are done, and what the rest would take.
 
-**Result: 50 Pass, 8 Partial, 9 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 50 pass (70%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
+**Result: 56 Pass, 4 Partial, 7 Not done, 21 N/A, 4 not reviewed** (92 items). Of the 71 that apply, 56 pass (79%). Of the six stricter Level 3 conditions on L1/L2 requirements, 1 passes, 1 is partial, 1 is N/A, 1 is set by hosting and 2 are not done.
 
 **Update 19 Nov 2026 (branch `feat/staff-passkeys`):** staff passkeys and step-up ([passkeys.md](./passkeys.md)). 6.5.6 and 6.7.2 now apply and pass; 7.5.3, 8.4.2 and the Level 3 condition on 6.3.3 move from Not done to Partial.
 
@@ -20,19 +20,21 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 
 **Update 20 Nov 2026 (branch `feat/asvs-l3-revocation-url`):** session revocation is read from the database on every request, and taking back a company's approval revokes its sessions (8.3.2); the frontend caps backend URLs and the forwarded client address (4.2.5). Both pass.
 
+**Update 20 Nov 2026 (branch `feat/asvs-l3-data-crypto-hardening`):** six items move to Pass. Admin lists return only what each screen shows (14.2.6) and sign-in code reads only the account fields it uses (11.7.2); CI checks the cryptography inventory against the code (11.1.3) and every regular expression for backtracking (1.3.12), which found and fixed 12 polynomial patterns; a cryptography migration plan is written (11.1.4); and paths that look like files are refused before routing (13.4.7).
+
 ## Summary
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 50 | Control exists, with evidence in code or in this file |
-| Partial | 8 | Control exists with a gap; the gap is named |
-| Not done | 9 | Not implemented |
+| Pass | 56 | Control exists, with evidence in code or in this file |
+| Partial | 4 | Control exists with a gap; the gap is named |
+| Not done | 7 | Not implemented |
 | N/A | 21 | The feature doesn't exist in TorFinder (no MFA devices, OAuth server, WebRTC, CSV export…) |
 | Not reviewed | 4 | Set by the hosting proxy, outside the repository |
 
 | Chapter | L3 items | Pass | Partial | Not done | N/A | Not reviewed |
 | --- | --- | --- | --- | --- | --- | --- |
-| V1 Encoding and Sanitization | 3 | 0 | 2 | 0 | 1 | 0 |
+| V1 Encoding and Sanitization | 3 | 1 | 1 | 0 | 1 | 0 |
 | V2 Validation and Business Logic | 2 | 2 | 0 | 0 | 0 | 0 |
 | V3 Web Frontend Security | 12 | 10 | 1 | 1 | 0 | 0 |
 | V4 API and Web Service | 6 | 3 | 0 | 0 | 1 | 2 |
@@ -42,14 +44,14 @@ TorFinder does not claim Level 3. This file says which Level 3 controls fit the 
 | V8 Authorization | 6 | 4 | 1 | 1 | 0 | 0 |
 | V9 Self-contained Tokens | 0 | — | — | — | — | — |
 | V10 OAuth and OIDC | 7 | 1 | 0 | 0 | 6 | 0 |
-| V11 Cryptography | 10 | 3 | 1 | 3 | 3 | 0 |
+| V11 Cryptography | 10 | 6 | 0 | 1 | 3 | 0 |
 | V12 Secure Communication | 3 | 0 | 0 | 1 | 0 | 2 |
-| V13 Configuration | 8 | 5 | 1 | 2 | 0 | 0 |
-| V14 Data Protection | 4 | 2 | 2 | 0 | 0 | 0 |
+| V13 Configuration | 8 | 6 | 0 | 2 | 0 | 0 |
+| V14 Data Protection | 4 | 3 | 1 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 8 | 7 | 0 | 1 | 0 | 0 |
 | V16 Security Logging and Error Handling | 1 | 1 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 5 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **92** | **50** | **8** | **9** | **21** | **4** |
+| **Total** | **92** | **56** | **4** | **7** | **21** | **4** |
 
 ## Done on this branch
 
@@ -136,7 +138,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 1.2.10 | Protection against CSV and formula injection when exporting spreadsheets | N/A | Nothing exports CSV or spreadsheet files |
-| 1.3.12 | Regular expressions free from exponential backtracking; ReDoS mitigated | Partial | App patterns that see user input are linear (`escapeRegex` before every `$regex`, the LINE code and Slack URL patterns are anchored without nested quantifiers) and inputs have `@MaxLength`. Not every regex in the codebase and in `class-validator` has been audited |
+| 1.3.12 | Regular expressions free from exponential backtracking; ReDoS mitigated | Pass | CI proves every regex literal and literal `new RegExp` in both apps (219) free of exponential and polynomial backtracking with recheck ([`check-redos.mjs`](../../.github/scripts/check-redos.mjs)). The first run found 12 polynomial patterns (MEA HTML scraping, library and TOR text, the signup email check, base64 padding); all were rewritten to run in linear time. The 8 `RegExp`s built at run time are listed by the check: each is built from constants or `escapeRegex` output. `class-validator`'s own patterns (validator.js) are covered by `npm audit` and run on `@MaxLength`-capped input |
 | 1.5.3 | Different parsers of the same data type parse consistently | Partial | The LINE signature is checked over the same raw bytes Express parses; the sign-in `next` parameter is checked by one function (`safeNextPath`). Not reviewed across every URL and JSON parser |
 
 ### V2 Validation and Business Logic
@@ -233,8 +235,8 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 11.1.3 | Cryptographic discovery finds every use of cryptography | **Not done** | The inventory in [asvs-l2.md](./asvs-l2.md#cryptography) is kept by hand; no discovery tool |
-| 11.1.4 | Migration plan to new standards, including post-quantum | **Not done** | Not written. Exposure is low: HMAC and scrypt are symmetric; only TLS and Google's RS256 rely on public-key cryptography, both owned by others |
+| 11.1.3 | Cryptographic discovery finds every use of cryptography | Pass | [cryptography.md](./cryptography.md) lists every file that uses a primitive or crypto library (21), and CI fails when the code and the list differ ([`check-crypto-inventory.mjs`](../../.github/scripts/check-crypto-inventory.mjs)): a new use, a changed one, or a stale row |
+| 11.1.4 | Migration plan to new standards, including post-quantum | Pass | [cryptography.md § Migration plan](./cryptography.md#migration-plan): a replacement, trigger and path for each algorithm. Only TLS, Google's RS256 and passkey signatures are public-key; TLS moves to hybrid post-quantum key exchange at the proxy |
 | 11.2.4 | Constant-time cryptographic operations | Pass | `timingSafeEqual` for session signatures, password hashes and LINE signatures; login now runs scrypt for unknown addresses too |
 | 11.2.5 | Cryptographic modules fail securely | Pass | Any parse or verify error makes a token invalid; there is no decryption to leak padding errors |
 | 11.3.4 | Nonces and IVs used once per key | N/A | No encryption |
@@ -242,7 +244,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 11.5.2 | Random generation works under heavy demand | Pass | Node's `crypto.randomBytes` / `randomInt` (OpenSSL CSPRNG), which doesn't block or degrade |
 | 11.6.2 | Approved key exchange with secure parameters | N/A | No key exchange in the application; TLS is the proxy's |
 | 11.7.1 | Full memory encryption for data in use | **Not done** | Depends on the host (e.g. confidential VMs); not in place |
-| 11.7.2 | Data minimization during processing | Partial | Password hashes are projected out of every read and secrets are never logged; account documents are otherwise loaded whole |
+| 11.7.2 | Data minimization during processing | Pass | Sign-in, password change and passkey code read an account through `SIGN_IN_FIELDS` (credentials and status, not the company profile); account endpoints use one projection per audience (`DIRECTORY_FIELDS`, `REVIEW_FIELDS`, `OWN_ACCOUNT_FIELDS`). Password hashes are never returned and secrets never logged. Code that reads a whole company profile (matching, proposal drafts) uses it |
 
 ### V12 Secure Communication
 
@@ -263,14 +265,14 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 | 13.3.3 | Cryptographic operations in an isolated security module | **Not done** | Keys are in process memory |
 | 13.3.4 | Secrets expire and are rotated as documented | **Not done** | No automatic expiry; rotation is manual |
 | 13.4.6 | No detailed backend version information exposed | Pass | `poweredByHeader: false` (now also in the Docker image, which had left `next.config.ts` out of its final stage until 19 Nov), helmet removes `X-Powered-By`, `/health` returns status only, errors are generic |
-| 13.4.7 | The web tier serves only expected file types | Partial | Next.js serves only its build output and `public/`, which is now empty (sample SVGs deleted on this branch); there is no explicit extension allowlist |
+| 13.4.7 | The web tier serves only expected file types | Pass | Next.js serves only its build output and `public/` (empty). The proxy's matcher lets only image, font, `.txt` and `.xml` requests bypass it; any other path with a dot in a segment, outside `/api/`, gets 404 before routing (`isUnexpectedFile`, `frontend/test/served-files.test.mts`), so `/.env`, `/.git/config` or `/backup.zip` never reach a handler |
 
 ### V14 Data Protection
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 14.2.5 | Caches store only expected content; no web cache deception | Pass | No shared cache in front of the app; every API and page answer is `no-store` except immutable public documents, and unknown paths get 404 |
-| 14.2.6 | Only the minimum sensitive data is returned | Partial | Hashes never leave the server; admin lists return full contact details |
+| 14.2.6 | Only the minimum sensitive data is returned | Pass | Hashes never leave the server. The user directory returns a company's name only; the sign-up review queue returns the contact and business details an admin checks, not team members (CVs), past projects or certificates; full profiles go only to their owner (`test/admin-dashboard.e2e.test.mjs`) |
 | 14.2.7 | Sensitive data deleted on a retention schedule | Pass | [How long data is kept](../operations/limits-and-retention.md#how-long-data-is-kept): TTL indexes delete notifications (180 days), import runs (90), audit entries (365) and unconfirmed pending sign-ups (30); links expire on their own; container logs are capped at 5 × 10 MB. `DatabaseService.applyRetention`, `test/retention.e2e.test.mjs`. An account's own data is deleted by an admin on request (no self-service) |
 | 14.2.8 | Metadata removed from user-submitted files | Partial | PNG and JPEG metadata removed on upload (this branch); PDF and Word metadata (author, software) is kept |
 
@@ -322,4 +324,5 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 4. ~~**14.2.7, 13.1.2–13.1.4, 13.3.4:** write the retention, connection and rotation policies the team agrees on~~ — done on `docs-asvs-l3-policies`. Left: 13.3.4, secrets that expire by themselves (a vault, and a session secret that can be rolled without signing everyone out).
 5. ~~**15.4.2, 3.7.3, 2.4.2:** atomic saved-search cap, leaving-site notice, human timing on forms~~ — done on `feat/asvs-l3-quick-wins`.
 6. **14.2.8 (documents), 15.2.5:** strip PDF/Word metadata and move file parsing into a worker with its own limits.
-7. **16.3.2, 11.1.3, 12.3.5, 13.3.x:** need logging, network and hosting infrastructure beyond the repository.
+7. ~~**14.2.6, 11.7.2, 11.1.3, 11.1.4, 1.3.12, 13.4.7:** minimal projections, crypto discovery and migration plan, ReDoS check, file-type gate~~ — done on `feat/asvs-l3-data-crypto-hardening`.
+8. **16.3.2, 12.3.5, 13.3.x:** need logging, network and hosting infrastructure beyond the repository.
