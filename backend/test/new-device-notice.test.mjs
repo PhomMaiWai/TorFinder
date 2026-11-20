@@ -10,17 +10,23 @@ import { describe, it } from "node:test";
 import { ObjectId } from "mongodb";
 
 import { AuthService } from "../dist/auth/auth.service.js";
-import { MAX_KNOWN_DEVICES, deviceHash, deviceLabel } from "../dist/auth/known-devices.js";
+import { MAX_KNOWN_DEVICES, NEW_DEVICE_SESSION_SECONDS, deviceHash, deviceLabel } from "../dist/auth/known-devices.js";
+import { createSessionToken } from "../dist/common/token.js";
 
 const CHROME_MAC =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 const deviceId = (n) => String(n).padStart(43, "A");
 
 /** An AuthService whose database only records updates and whose mailer only records. */
-function serviceWith() {
+function serviceWith(admins = []) {
   const updates = [];
   const sent = [];
-  const db = { users: { updateOne: async (filter, update) => updates.push({ filter, update }) } };
+  const db = {
+    users: {
+      updateOne: async (filter, update) => updates.push({ filter, update }),
+      find: () => ({ toArray: async () => admins }),
+    },
+  };
   const links = { notify: async (email, notice, details) => sent.push({ email, notice, details }) };
   return { service: new AuthService(db, links, {}, {}), updates, sent };
 }
@@ -66,6 +72,42 @@ describe("AuthService.noteDevice", () => {
       assert.equal(sent.length, 1, String(id));
       assert.equal(updates.length, 0, String(id));
     }
+  });
+});
+
+describe("adaptive controls on a new device (ASVS 8.2.4, 8.4.2)", () => {
+  it("reports a new device to the caller, and not a known or first one", async () => {
+    const { service } = serviceWith();
+    assert.equal(await service.noteDevice(user([known(1)]), { id: deviceId(2) }, "203.0.113.7"), true);
+    assert.equal(await service.noteDevice(user([known(1)]), { id: deviceId(1) }, "203.0.113.7"), false);
+    assert.equal(await service.noteDevice(user(undefined), { id: deviceId(1) }, "203.0.113.7"), false);
+  });
+
+  it("emails every other admin when a staff account signs in from a new device", async () => {
+    const { service, sent } = serviceWith([{ email: "boss@example.com" }, { email: "other@example.com" }]);
+    const staff = { ...user([known(1)]), role: "owner", name: "Owner One" };
+    await service.noteDevice(staff, { id: deviceId(2), userAgent: CHROME_MAC }, "203.0.113.7");
+    await new Promise((resolve) => setImmediate(resolve));
+    const toAdmins = sent.filter((mail) => mail.notice === "staff-new-device");
+    assert.deepEqual(toAdmins.map((mail) => mail.email).sort(), ["boss@example.com", "other@example.com"]);
+    assert.match(toAdmins[0].details.join("\n"), /Owner One/);
+  });
+
+  it("doesn't email admins about a company's new device", async () => {
+    const { service, sent } = serviceWith([{ email: "boss@example.com" }]);
+    await service.noteDevice({ ...user([known(1)]), role: "org" }, { id: deviceId(2) }, "203.0.113.7");
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(sent.filter((mail) => mail.notice === "staff-new-device").length, 0);
+  });
+
+  it("gives a new-device session a 12-hour lifetime, never longer than 7 days", () => {
+    const decode = (t) => JSON.parse(Buffer.from(t.split(".")[0], "base64url").toString());
+    const short = decode(createSessionToken({ sub: "x", email: "a", name: "a", role: "org" }, NEW_DEVICE_SESSION_SECONDS));
+    assert.equal(short.exp - short.iat, 12 * 60 * 60);
+    const normal = decode(createSessionToken({ sub: "x", email: "a", name: "a", role: "org" }));
+    assert.equal(normal.exp - normal.iat, 7 * 24 * 60 * 60);
+    const capped = decode(createSessionToken({ sub: "x", email: "a", name: "a", role: "org" }, 30 * 24 * 60 * 60));
+    assert.equal(capped.exp - capped.iat, 7 * 24 * 60 * 60);
   });
 });
 

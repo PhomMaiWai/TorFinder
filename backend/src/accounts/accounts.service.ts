@@ -8,13 +8,20 @@ import { logSecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
 import { SessionPayload } from "../common/token";
 import { Role } from "../common/roles";
-import { AccountStatus, DatabaseService, UserDoc } from "../database/database.service";
+import { ACCOUNT_STATUSES, AccountStatus, DatabaseService, UserDoc } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { AdminApprovalsService, PendingAdminChange } from "./admin-approvals.service";
 import { ReviewAccountDto } from "./dto/review-account.dto";
 import { EDITABLE_ROLES, UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateCompanyProfileDto } from "./dto/update-company-profile.dto";
-import { CHANGED_MEANWHILE, LAST_ADMIN, PUBLIC_FIELDS, RoleChangesService } from "./role-changes.service";
+import {
+  CHANGED_MEANWHILE,
+  DIRECTORY_FIELDS,
+  LAST_ADMIN,
+  OWN_ACCOUNT_FIELDS,
+  REVIEW_FIELDS,
+  RoleChangesService,
+} from "./role-changes.service";
 
 /**
  * Who an admin may suspend: self-serve accounts. Staff roles (admin, owner,
@@ -37,10 +44,14 @@ export class AccountsService {
 
   async findAll(status?: AccountStatus) {
     const filter: Filter<UserDoc> = { role: "org" };
-    if (status) filter.status = status;
+    // The DTO already allows only these three (@IsIn), but the query doesn't
+    // rely on that: the value used is the constant from the list, never the
+    // request's own, so no operator object can reach MongoDB (NoSQL injection).
+    const known = ACCOUNT_STATUSES.find((value) => value === status);
+    if (known) filter.status = known;
 
     const docs = await this.db.users
-      .find(filter, { projection: PUBLIC_FIELDS })
+      .find(filter, { projection: REVIEW_FIELDS })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -53,7 +64,7 @@ export class AccountsService {
    * what the signup-approval queue needs, this is "who exists at all".
    */
   async findAllUsers() {
-    const docs = await this.db.users.find({}, { projection: PUBLIC_FIELDS }).sort({ createdAt: -1 }).toArray();
+    const docs = await this.db.users.find({}, { projection: DIRECTORY_FIELDS }).sort({ createdAt: -1 }).toArray();
     return docs.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
   }
 
@@ -124,7 +135,7 @@ export class AccountsService {
     const result = await this.db.users.findOneAndUpdate(
       { _id: new ObjectId(id), role: { $in: [...SUSPENDABLE_ROLES] } },
       { $set: { suspended } },
-      { returnDocument: "after", projection: PUBLIC_FIELDS },
+      { returnDocument: "after", projection: DIRECTORY_FIELDS },
     );
     if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
 
@@ -178,7 +189,7 @@ export class AccountsService {
     if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบบัญชีนี้");
     const _id = new ObjectId(id);
 
-    const current = await this.db.users.findOne({ _id }, { projection: PUBLIC_FIELDS });
+    const current = await this.db.users.findOne({ _id }, { projection: DIRECTORY_FIELDS });
     if (!current) throw new NotFoundException("ไม่พบบัญชีนี้");
 
     const roleChanges = role !== undefined && role !== current.role;
@@ -208,7 +219,7 @@ export class AccountsService {
       const renamed = await this.db.users.findOneAndUpdate(
         { _id, role: current.role },
         { $set: { name } },
-        { returnDocument: "after", projection: PUBLIC_FIELDS },
+        { returnDocument: "after", projection: DIRECTORY_FIELDS },
       );
       if (!renamed) {
         if (pendingApproval) await this.db.adminApprovals.deleteOne({ _id: new ObjectId(pendingApproval.id) });
@@ -229,7 +240,7 @@ export class AccountsService {
     const result = await this.db.users.findOneAndUpdate(
       { _id: new ObjectId(id), role: "org" },
       { $set: { status, reviewedAt: new Date() } },
-      { returnDocument: "after", projection: PUBLIC_FIELDS },
+      { returnDocument: "after", projection: REVIEW_FIELDS },
     );
     if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
 
@@ -277,7 +288,7 @@ export class AccountsService {
   async findOwn(userId: string) {
     if (!ObjectId.isValid(userId)) throw new NotFoundException("ไม่พบบัญชีนี้");
 
-    const doc = await this.db.users.findOne({ _id: new ObjectId(userId) }, { projection: PUBLIC_FIELDS });
+    const doc = await this.db.users.findOne({ _id: new ObjectId(userId) }, { projection: OWN_ACCOUNT_FIELDS });
     if (!doc) throw new NotFoundException("ไม่พบบัญชีนี้");
 
     const { _id, ...rest } = doc;
@@ -325,9 +336,9 @@ export class AccountsService {
         ? await this.db.users.findOneAndUpdate(
             { _id: new ObjectId(userId), role: "org" },
             { $set: updates },
-            { returnDocument: "after", projection: PUBLIC_FIELDS },
+            { returnDocument: "after", projection: OWN_ACCOUNT_FIELDS },
           )
-        : await this.db.users.findOne({ _id: new ObjectId(userId), role: "org" }, { projection: PUBLIC_FIELDS });
+        : await this.db.users.findOne({ _id: new ObjectId(userId), role: "org" }, { projection: OWN_ACCOUNT_FIELDS });
     if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
 
     const { _id, ...rest } = result;

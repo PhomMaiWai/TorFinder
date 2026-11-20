@@ -1,9 +1,9 @@
 import { getTranslations } from "next-intl/server";
 
-import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { clientIpHeaders } from "@/lib/client-ip";
 import { clientDevice, rememberDevice } from "@/lib/device-cookie";
 import { jsonResponse } from "@/lib/json-response";
+import { withSession } from "@/lib/passkey-relay";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
   }
 
   const response = jsonResponse({ user: data.user });
-  response.cookies.set(SESSION_COOKIE, data.token, sessionCookieOptions());
+  // The cookie lasts as long as the token: 12 hours from a new device (ASVS 8.2.4), else 7 days.
+  await withSession(response, data.token);
   return rememberDevice(response, device);
 }

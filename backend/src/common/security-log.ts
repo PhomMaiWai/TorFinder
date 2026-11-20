@@ -37,6 +37,7 @@ export type SecurityEvent =
   | "auth.step_up"
   | "auth.session.revoke"
   | "admin.sessions.revoke"
+  | "config.secret_rotation_due"
   | "admin.approval.request"
   | "admin.approval.approve"
   | "admin.approval.reject";

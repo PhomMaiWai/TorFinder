@@ -42,6 +42,42 @@ function sessionSecret(): string {
   return value;
 }
 
+/** A session lasts at most 7 days, so an old key needs at most that long (plus a day) to drain. */
+const MAX_PREVIOUS_SECRET_DAYS = 8;
+
+/**
+ * ASVS 13.3.4: the key `SESSION_SECRET` replaced, still accepted for checking
+ * (never for signing) until SESSION_SECRET_PREVIOUS_UNTIL, so a rotation
+ * doesn't sign everyone out. Past that date it stops working by itself. In
+ * production it must be as strong as the current one, differ from it, and
+ * have an end date no more than MAX_PREVIOUS_SECRET_DAYS away.
+ */
+function previousSessionSecret(current: string): { value: string; until: Date } | null {
+  const value = process.env.SESSION_SECRET_PREVIOUS;
+  if (!value) return null;
+  const until = new Date(process.env.SESSION_SECRET_PREVIOUS_UNTIL ?? "");
+  if (Number.isNaN(until.getTime())) {
+    throw new Error("SESSION_SECRET_PREVIOUS needs SESSION_SECRET_PREVIOUS_UNTIL, the date it stops being accepted (e.g. 2027-01-08)");
+  }
+  if (isProduction) {
+    if (value === DEV_SESSION_SECRET || value.length < MIN_SESSION_SECRET_LENGTH || value === current) {
+      throw new Error("SESSION_SECRET_PREVIOUS must be the old production secret, different from SESSION_SECRET");
+    }
+    if (until.getTime() - Date.now() > MAX_PREVIOUS_SECRET_DAYS * 86_400_000) {
+      throw new Error(`SESSION_SECRET_PREVIOUS_UNTIL may be at most ${MAX_PREVIOUS_SECRET_DAYS} days ahead: a session lasts 7`);
+    }
+  }
+  return { value, until };
+}
+
+function optionalDate(name: string): Date | null {
+  const value = process.env[name];
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new Error(`Environment variable ${name} must be a date (YYYY-MM-DD), got "${value}"`);
+  return date;
+}
+
 function optionalNumber(name: string, fallback: number): number {
   const value = process.env[name];
   if (!value) return fallback;
@@ -100,6 +136,15 @@ export const env = {
     unverifiedSignupDays: optionalNumber("RETENTION_UNVERIFIED_SIGNUP_DAYS", 30),
   },
   sessionSecret: sessionSecret(),
+  /** See previousSessionSecret; null when no rotation is in progress. */
+  sessionSecretPrevious: previousSessionSecret(process.env.SESSION_SECRET ?? DEV_SESSION_SECRET),
+  /**
+   * When the current SESSION_SECRET was made, and how long it may live
+   * (ASVS 13.3.4; schedule in docs/operations/limits-and-retention.md). The
+   * backend logs `config.secret_rotation_due` once it is older than that.
+   */
+  sessionSecretCreated: optionalDate("SESSION_SECRET_CREATED"),
+  sessionSecretMaxAgeDays: optionalNumber("SESSION_SECRET_MAX_AGE_DAYS", 365),
   // Google Identity Services ID tokens are verified against this audience.
   // Empty in dev disables Google sign-in rather than throwing on every request.
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",

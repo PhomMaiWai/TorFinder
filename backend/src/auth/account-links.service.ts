@@ -43,7 +43,8 @@ export type AccountNotice =
   | "passkey-removed"
   | "passkeys-reset"
   | "login-locked"
-  | "new-device";
+  | "new-device"
+  | "staff-new-device";
 
 const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) => string[] }> = {
   // ASVS 6.3.7
@@ -100,6 +101,15 @@ const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) =
       "บัญชี TOR Finder ที่ใช้อีเมลนี้เพิ่งเข้าสู่ระบบจากเบราว์เซอร์หรืออุปกรณ์ที่ไม่เคยใช้มาก่อน",
       "ถ้าเป็นคุณ ไม่ต้องทำอะไร",
       `ถ้าไม่ใช่คุณ กรุณาตั้งรหัสผ่านใหม่ทันทีที่ ${origin}/forgot-password (ทุกอุปกรณ์จะถูกออกจากระบบ) และแจ้งผู้ดูแลระบบ`,
+    ],
+  },
+  // ASVS 8.4.2: told to every other admin when a staff account signs in from a new device.
+  "staff-new-device": {
+    subject: "บัญชีเจ้าหน้าที่เข้าสู่ระบบจากอุปกรณ์ใหม่ — TOR Finder",
+    body: (origin) => [
+      "บัญชีเจ้าหน้าที่ต่อไปนี้เพิ่งเข้าสู่ระบบ TOR Finder จากเบราว์เซอร์หรืออุปกรณ์ที่ไม่เคยใช้มาก่อน เซสชันนี้จะหมดอายุภายใน 12 ชั่วโมง",
+      "ถ้าเป็นการเข้าสู่ระบบที่ทราบอยู่แล้ว ไม่ต้องทำอะไร",
+      `ถ้าไม่แน่ใจ ติดต่อเจ้าของบัญชี และหากจำเป็น ระงับสิทธิ์หรือล้างพาสคีย์ได้ที่ ${origin}/admin/users`,
     ],
   },
   // ASVS 6.3.8: the signup form answers as if it worked, so the owner is told here instead.

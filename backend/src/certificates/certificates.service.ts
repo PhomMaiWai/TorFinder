@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 
-import { cleanUpload } from "../common/image-uploads";
+import { cleanUploadIsolated } from "../common/parse-worker";
 import { DatabaseService } from "../database/database.service";
 import {
   CERTIFICATE_LIMITS,
@@ -128,7 +128,7 @@ export class CertificatesService {
     if (!type) throw new UnsupportedMediaTypeException("รับเฉพาะไฟล์ PDF, PNG หรือ JPG");
 
     // Images: pixel-size cap and metadata stripped (ASVS 5.2.6, 14.2.8).
-    const content = cleanUpload(upload.buffer, type);
+    const content = await cleanUploadIsolated(upload.buffer, type);
     const current = await this.recordOf(userId, id);
     const name = safeFileName(upload.originalname, type);
 

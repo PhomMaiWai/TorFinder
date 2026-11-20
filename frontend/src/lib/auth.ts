@@ -107,18 +107,35 @@ function timingSafeEqual(a: string, b: string) {
   return mismatch === 0;
 }
 
-async function hmacKey() {
+/**
+ * ASVS 13.3.4: during a rotation the key SESSION_SECRET replaced is still
+ * accepted for checking (never signing) until SESSION_SECRET_PREVIOUS_UNTIL,
+ * then ignored. Must match the backend's settings (config/env.ts).
+ */
+function previousSessionSecret(): string | null {
+  const value = process.env.SESSION_SECRET_PREVIOUS;
+  const until = Date.parse(process.env.SESSION_SECRET_PREVIOUS_UNTIL ?? "");
+  return value && Number.isFinite(until) && until > Date.now() ? value : null;
+}
+
+/** The keys a signature may be checked against: current first, then previous during a rotation. */
+function verifyingSecrets(): string[] {
+  const previous = previousSessionSecret();
+  return previous ? [readSessionSecret(), previous] : [readSessionSecret()];
+}
+
+async function hmacKey(secret: string = readSessionSecret()) {
   return crypto.subtle.importKey(
     "raw",
-    encoder.encode(readSessionSecret()),
+    encoder.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
   );
 }
 
-async function sign(data: string) {
-  const key = await hmacKey();
+async function sign(data: string, secret?: string) {
+  const key = await hmacKey(secret);
   const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(data));
   return toBase64Url(new Uint8Array(signature));
 }
@@ -128,8 +145,11 @@ export async function verifySessionToken(token: string | undefined | null): Prom
   const [data, signature] = token.split(".");
   if (!data || !signature) return null;
 
-  const expected = await sign(data);
-  if (!timingSafeEqual(signature, expected)) return null;
+  let genuine = false;
+  for (const secret of verifyingSecrets()) {
+    if (timingSafeEqual(signature, await sign(data, secret))) genuine = true;
+  }
+  if (!genuine) return null;
 
   try {
     const payload = JSON.parse(decoder.decode(fromBase64Url(data))) as SessionPayload;

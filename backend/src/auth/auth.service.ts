@@ -26,8 +26,10 @@ import { googleClaimsProblem } from "./google-claims";
 import { LoginDto } from "./dto/login.dto";
 import { SignupDto } from "./dto/signup.dto";
 import { LoginAttempts } from "./login-attempts";
-import { ClientDevice, KnownDevice, MAX_KNOWN_DEVICES, deviceHash, deviceLabel } from "./known-devices";
+import { ClientDevice, KnownDevice, MAX_KNOWN_DEVICES, NEW_DEVICE_SESSION_SECONDS, deviceHash, deviceLabel } from "./known-devices";
+import { isStaffRole } from "../common/roles";
 import { PasskeysService } from "./passkeys.service";
+import { SIGN_IN_FIELDS } from "./sign-in-fields";
 
 const DUPLICATE_KEY = 11000;
 
@@ -100,7 +102,7 @@ export class AuthService {
   async login({ email, password }: LoginDto, ip?: string, device: ClientDevice = {}) {
     const address = email.trim().toLowerCase();
     this.assertNotLocked(address, ip);
-    const user = await this.db.users.findOne({ email: address });
+    const user = await this.db.users.findOne({ email: address }, { projection: SIGN_IN_FIELDS });
 
     // No passwordHash means the account was created via Google and never set
     // one — verifyPassword can't run against nothing, so it's a mismatch too.
@@ -276,7 +278,7 @@ export class AuthService {
   }
 
   async changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordDto, ip?: string) {
-    const user = ObjectId.isValid(userId) ? await this.db.users.findOne({ _id: new ObjectId(userId) }) : null;
+    const user = ObjectId.isValid(userId) ? await this.db.users.findOne({ _id: new ObjectId(userId) }, { projection: SIGN_IN_FIELDS }) : null;
     if (!user) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
     if (!user.passwordHash || !user.passwordSalt) {
       // A Google-only account has no current password to prove; the emailed reset link sets a first one.
@@ -461,7 +463,7 @@ export class AuthService {
       // Two tabs finishing sign-in at once: the unique index let one insert
       // through, so sign in as the account the other one created.
       if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) {
-        const existing = await this.db.users.findOne({ googleId });
+        const existing = await this.db.users.findOne({ googleId }, { projection: SIGN_IN_FIELDS });
         if (existing) return existing;
       }
       throw error;
@@ -470,10 +472,10 @@ export class AuthService {
 
   /** Finds the account for this Google identity, linking it to a matching email/password account if one exists. */
   private async findOrLinkGoogleUser(googleId: string, email: string) {
-    const user = await this.db.users.findOne({ googleId });
+    const user = await this.db.users.findOne({ googleId }, { projection: SIGN_IN_FIELDS });
     if (user) return user;
 
-    const existing = await this.db.users.findOne({ email });
+    const existing = await this.db.users.findOne({ email }, { projection: SIGN_IN_FIELDS });
     if (!existing) return null;
 
     // Google has just proven this inbox, which settles any pending address check too.
@@ -574,12 +576,18 @@ export class AuthService {
   ) {
     // Best-effort: a write hiccup here must never block a real sign-in, same
     // posture as EgpService's sync-run recording and AuditService.record.
+    let newDevice = false;
     try {
       await this.db.users.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
-      await this.noteDevice(user, device, ip);
+      newDevice = await this.noteDevice(user, device, ip);
     } catch (error) {
       this.logger.warn(`Failed to record sign-in for ${user.email}: ${String(error)}`);
     }
+
+    // ASVS 8.2.4: a session from a device this account hasn't used before is
+    // short (NEW_DEVICE_SESSION_SECONDS) instead of the usual 7 days. Its next
+    // sign-in comes from a known device and gets the normal lifetime.
+    const lifetimeSeconds = newDevice ? NEW_DEVICE_SESSION_SECONDS : SESSION_MAX_AGE_SECONDS;
 
     // ASVS 7.5.2: each session is recorded, so its owner can see it and end it
     // on its own. If the record can't be written the sign-in still works, as
@@ -592,7 +600,7 @@ export class AuthService {
         _id: sid,
         userId: user._id,
         createdAt: now,
-        expiresAt: new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000),
+        expiresAt: new Date(now.getTime() + lifetimeSeconds * 1000),
         device: deviceLabel(device.userAgent),
         ...(ip && { ip }),
         amr,
@@ -602,15 +610,18 @@ export class AuthService {
       this.logger.warn(`Failed to record session for ${user.email}: ${String(error)}`);
     }
 
-    const token = createSessionToken({
-      sub: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      amr,
-      ...(pkt !== undefined && { pkt }),
-      ...(recorded && { sid }),
-    });
+    const token = createSessionToken(
+      {
+        sub: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        amr,
+        ...(pkt !== undefined && { pkt }),
+        ...(recorded && { sid }),
+      },
+      newDevice ? NEW_DEVICE_SESSION_SECONDS : undefined,
+    );
 
     logSecurityEvent(event, {
       outcome: "success",
@@ -639,14 +650,14 @@ export class AuthService {
    * and an email for each would teach people to ignore them. A sign-in with no
    * device id at all (a script calling the API) counts as new every time.
    */
-  private async noteDevice(user: WithId<UserDoc>, device: ClientDevice, ip?: string): Promise<void> {
+  private async noteDevice(user: WithId<UserDoc>, device: ClientDevice, ip?: string): Promise<boolean> {
     const hash = deviceHash(device.id);
     const known = user.knownDevices ?? [];
     const now = new Date();
 
     if (hash && known.some((d) => d.hash === hash)) {
       await this.db.users.updateOne({ _id: user._id, "knownDevices.hash": hash }, { $set: { "knownDevices.$.lastSeenAt": now } });
-      return;
+      return false;
     }
 
     const label = deviceLabel(device.userAgent);
@@ -657,7 +668,7 @@ export class AuthService {
         { $push: { knownDevices: { $each: [entry], $slice: -MAX_KNOWN_DEVICES } } },
       );
     }
-    if (known.length === 0) return;
+    if (known.length === 0) return false;
 
     logSecurityEvent("auth.login.new_device", {
       outcome: "success",
@@ -668,10 +679,27 @@ export class AuthService {
     });
     const when = now.toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "long", timeStyle: "short" });
     // Not awaited: the email must never hold up (or fail) the sign-in itself.
-    void this.links.notify(user.email, "new-device", [
-      `เวลา: ${when} (เวลาประเทศไทย)`,
-      `เบราว์เซอร์: ${label}`,
-      ...(ip ? [`IP: ${ip}`] : []),
-    ]);
+    const details = [`เวลา: ${when} (เวลาประเทศไทย)`, `เบราว์เซอร์: ${label}`, ...(ip ? [`IP: ${ip}`] : [])];
+    void this.links.notify(user.email, "new-device", details);
+    // ASVS 8.4.2: a staff account on a new device is something every other
+    // admin should know about, not only its owner.
+    if (isStaffRole(user.role)) void this.notifyAdmins(user, details);
+    return true;
+  }
+
+  /** Emails every other admin about a staff sign-in from a new device. Never throws. */
+  private async notifyAdmins(user: WithId<UserDoc>, details: string[]): Promise<void> {
+    try {
+      const admins = await this.db.users
+        .find({ role: "admin", _id: { $ne: user._id }, suspended: { $ne: true } }, { projection: { email: 1 } })
+        .toArray();
+      await Promise.all(
+        admins.map((admin) =>
+          this.links.notify(admin.email, "staff-new-device", [`บัญชีเจ้าหน้าที่: ${user.name} (${user.email})`, ...details]),
+        ),
+      );
+    } catch (error) {
+      this.logger.warn(`Failed to tell admins about ${user.email}'s new device: ${String(error)}`);
+    }
   }
 }
