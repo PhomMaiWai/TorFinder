@@ -34,9 +34,10 @@ To update after a reviewed change: run `node scripts/crypto-inventory.mjs --json
 | CSP nonce | `frontend/src/lib/csp.ts` (called from `frontend/src/proxy.ts`) | `crypto.randomUUID` per request | None | Only this response's own scripts run |
 | Error and run ids | `backend/src/common/all-exceptions.filter.ts`, `backend/src/gproc/gproc.service.ts` | `randomUUID` | None | Not security: correlation ids |
 | Similar-TOR cache key | `backend/src/similar/similar.service.ts` | SHA-1 of public announcement text | None | Not security: a content key for a cache. SHA-1's collision weakness doesn't matter here, because nothing trusts the hash |
-| HTTPS | Hosting proxy, outside the repository | TLS 1.2/1.3, as the proxy is configured | The site's certificate | Everything in transit |
+| HTTPS (public) | Caddy edge, `docker/caddy/Caddyfile` | TLS 1.2 (ECDHE with AES-GCM or ChaCha20 only) and 1.3 | The site's certificate, obtained and renewed by Caddy | Everything between the browser and the site |
+| Internal mutual TLS | `docker/certs/generate.sh`, `backend/src/common/internal-tls.ts`, `frontend/src/lib/internal-tls.ts`, `db` in `docker-compose.yml` | TLS 1.3 only; private CA and one certificate per service, ECDSA P-256 / SHA-256 | CA key in the `certs_ca` volume, mounted only by the `certs` service; each service's key readable only by that service | Frontend → backend and backend → MongoDB: each side proves which service it is (12.3.5) |
 
-There is no encryption at rest in the application, no RSA or ECC key of TorFinder's own, and no custom cryptographic code. Everything comes from Node, the browser, or a maintained library.
+There is no encryption at rest in the application and no custom cryptographic code. TorFinder's own keys are the internal CA's and each service's ECDSA P-256 TLS keys. Everything comes from Node, the browser, or a maintained library.
 
 ## Migration plan
 
