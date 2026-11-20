@@ -52,6 +52,17 @@ async function edit(id, body, token = ADMIN_TOKEN) {
   return { status: res.status, body: text ? JSON.parse(text) : undefined };
 }
 
+async function decide(requestId, decision, token) {
+  const res = await fetch(`${API}/accounts/admin-approvals/${requestId}/${decision}`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  const text = await res.text();
+  return { status: res.status, body: text ? JSON.parse(text) : undefined };
+}
+
+const tokenFor = (user) => makeToken(user.role, user.id, user.email);
+
 async function api(path, token) {
   const res = await fetch(`${API}${path}`, { headers: { authorization: `Bearer ${token}` } });
   return { status: res.status, body: await res.json() };
@@ -267,18 +278,24 @@ describe("the last admin", () => {
     );
   });
 
-  it("can be demoted once another admin exists", async () => {
-    await insertUser("admin");
-    const res = await edit(last.id, { role: "owner" });
-    assert.equal(res.status, 200);
-    assert.equal(res.body.role, "owner");
+  it("can be demoted once another admin exists, with that admin's approval", async () => {
+    const second = await insertUser("admin");
+    const res = await edit(last.id, { role: "owner" }, tokenFor(second));
+    assert.equal(res.status, 202);
+    assert.equal(res.body.role, "admin", "nothing changes until it is approved");
+
+    // The demoted admin agreeing is the second admin here: there are only two.
+    const approved = await decide(res.body.pendingApproval.id, "approve", tokenFor(last));
+    assert.equal(approved.status, 200, JSON.stringify(approved.body));
+    assert.equal(approved.body.role, "owner");
   });
 });
 
-// The pre-write count check (above) can't catch two admins demoting each
-// other at once — each one's own count still sees the other as admin. The
-// post-write re-check is the safety net for exactly that race; this is the
-// only way to actually exercise it rather than just trust it's there.
+// The pre-write count check can't catch two demotions approved at once: each
+// one's own count still sees the other as admin. The post-write re-check in
+// RoleChangesService is the safety net for exactly that race; demotions now
+// go through a second admin's approval (ASVS 2.3.5), so the race is between
+// two approvals.
 describe("two admins demoted at the same moment", () => {
   let others = [];
   let first, second;
@@ -295,12 +312,16 @@ describe("two admins demoted at the same moment", () => {
 
   after(() => users().updateMany({ _id: { $in: others } }, { $set: { role: "admin" } }));
 
-  it("never lets the count reach zero, however the two requests interleave", async () => {
-    const [a, b] = await Promise.all([
-      edit(first.id, { role: "owner" }),
-      edit(second.id, { role: "owner" }),
-    ]);
+  it("never lets the count reach zero, however the two approvals interleave", async () => {
+    const askA = await edit(second.id, { role: "owner" }, tokenFor(first));
+    const askB = await edit(first.id, { role: "owner" }, tokenFor(second));
+    assert.equal(askA.status, 202);
+    assert.equal(askB.status, 202);
 
+    const [a, b] = await Promise.all([
+      decide(askA.body.pendingApproval.id, "approve", tokenFor(second)),
+      decide(askB.body.pendingApproval.id, "approve", tokenFor(first)),
+    ]);
     for (const res of [a, b]) {
       assert.ok([200, 409].includes(res.status), `unexpected status ${res.status}`);
     }
