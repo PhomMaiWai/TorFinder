@@ -147,6 +147,17 @@ export class AuthController {
 
   // ---- the account's own sessions (ASVS 7.5.2) ------------------------------
 
+  /**
+   * 204 while this session is open, 401 once it was ended anywhere (logout,
+   * another device, an admin, a password change). The frontend asks on each
+   * page, so an ended session is sent to sign-in rather than kept on pages
+   * whose data the backend already refuses (ASVS 7.4.1).
+   */
+  @Get("session")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(SessionGuard)
+  checkSession(): void {}
+
   @Get("sessions")
   @UseGuards(SessionGuard)
   listSessions(@Req() request: AuthenticatedRequest) {

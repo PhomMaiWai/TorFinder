@@ -342,25 +342,27 @@ const shots = {
     await page.getByText("ออกจากระบบแล้ว").waitFor();
     await page.waitForTimeout(800);
     await pageShot(page, "14d-other-sessions-ended.png", "after the right password only this device is left");
-    // The phone asks for its account's data through the frontend, as its pages do.
+    // Kept before the phone's next page, which drops it: 14f sends it again by hand.
+    const [oldCookie] = (await phone.cookies()).filter((c) => c.name.endsWith("torr_session"));
+    // Its next page asks the backend, which says the session is over: sign-in.
     const phonePage = await phone.newPage();
-    await phonePage.goto(FE + "/search");
+    await phonePage.goto(FE + "/matches");
+    await phonePage.waitForURL((u) => u.pathname.startsWith("/login"));
+    await pageShot(phonePage, "14e-phone-sent-to-sign-in.png", "the phone's next page: back to sign-in");
+    // A copy of the old cookie, replayed, still gets no account data.
     const results = [];
     for (const url of ["/api/notifications", "/api/saved-tors", "/api/saved-searches"]) {
-      const answer = await phonePage.evaluate(async (u) => {
-        const res = await fetch(u);
-        return `${res.status} ${(await res.text()).slice(0, 90)}`;
-      }, url);
-      results.push(`GET ${url}\n  → ${answer}`);
+      const res = await phone.request.get(FE + url, { headers: { cookie: `${oldCookie.name}=${oldCookie.value}` } });
+      results.push(`GET ${url}\n  → ${res.status()} ${(await res.text()).slice(0, 90)}`);
     }
     await renderCard(
       browser,
-      "14e-ended-session-refused.png",
+      "14f-ended-session-refused.png",
       card({
-        title: "The ended session gets no account data (ASVS 7.5.2)",
-        source: "The phone from 14a, after 14d ended its session; requests sent from its browser through the frontend",
-        terminal: term("# the phone's next requests for its account's data", results.join("\n"), ["401"]),
-        note: "The backend checks the session on every request and refuses it. The frontend only checks the cookie's signature, so public pages still open until the phone signs in again.",
+        title: "A copy of the ended session's cookie gets no account data (ASVS 7.5.2)",
+        source: "The phone's session cookie from before 14d, sent again by hand after it was ended (its value is not shown)",
+        terminal: term("# the ended session's cookie, replayed", results.join("\n"), ["401"]),
+        note: "The backend checks the session on every request. The frontend also asks it on every full page load (14e) and drops the cookie once the session is over.",
       }),
     );
     await phone.close();
@@ -375,7 +377,7 @@ const shots = {
     const dbCert = run(`${req} | timeout 5 openssl s_client -quiet -verify_quiet -connect backend:4000 -CAfile /certs/ca.crt -cert /certs/db.pem`);
     const mongoPlain = run(`timeout 8 mongosh --quiet --host 127.0.0.1 --eval 1`);
     const mongoNoCert = run(`timeout 8 mongosh --quiet --host 127.0.0.1 --tls --tlsCAFile /certs/ca.crt --eval 1`);
-    const boot = sh(`docker compose logs --no-log-prefix backend | grep -o 'torr-backend listening[^"]*' | tail -n 1; docker compose logs --no-log-prefix db-users | grep -E 'CN=torr_app|password account' | tail -n 2`);
+    const boot = sh(`docker compose logs --no-log-prefix backend | grep -o 'torr-backend listening[^"]*' | tail -n 1; docker compose logs --no-log-prefix db-users | grep 'CN=torr_app' | tail -n 1`);
     await renderCard(
       browser,
       "16-mutual-tls.png",
@@ -383,7 +385,7 @@ const shots = {
         title: "Services authenticate each other with certificates (ASVS 12.3.3, 12.3.5)",
         source: "Local stack, docker compose; each command runs inside the database container",
         terminal: [
-          term("docker compose logs backend db-users   # how they started", boot, ["client certificates required", "CN=torr_app", "removed"]),
+          term("docker compose logs backend db-users   # how they started", boot, ["client certificates required", "CN=torr_app"]),
           term("# backend over TLS with no client certificate", noCert, ["certificate required"]),
           term("# backend with a certificate from our CA that isn't the frontend's (the database's)", dbCert, ["403"]),
           term("# MongoDB without TLS", mongoPlain, ["closed"]),

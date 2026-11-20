@@ -132,6 +132,18 @@ describe("signed-in devices (ASVS 7.5.2)", () => {
     assert.equal((await api("/accounts/me", { token: current })).status, 200);
   });
 
+  it("GET /auth/session says whether this session is still open, for the frontend's page check", async () => {
+    const company = await approvedCompany(created);
+    const other = await signIn(company.email, FIREFOX);
+    const current = await signIn(company.email, SAFARI);
+    assert.equal((await api("/auth/session", { token: other })).status, 204);
+    assert.equal((await api("/auth/session")).status, 401);
+
+    await api("/auth/sessions/end-others", { method: "POST", token: current, body: { password: PASSWORD } });
+    assert.equal((await api("/auth/session", { token: other })).status, 401);
+    assert.equal((await api("/auth/session", { token: current })).status, 204);
+  });
+
   it("a token that names a session not in the database is refused", async () => {
     const company = await approvedCompany(created);
     const token = await signIn(company.email, FIREFOX);

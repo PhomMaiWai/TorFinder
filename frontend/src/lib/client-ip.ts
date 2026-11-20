@@ -22,7 +22,11 @@ import { headers } from "next/headers";
 const IP_LIKE = /^[0-9a-fA-F.:]{2,45}$/;
 
 export async function clientIpHeaders(): Promise<Record<string, string>> {
-  const forwarded = (await headers()).get("x-forwarded-for");
+  return clientIpHeadersFrom((await headers()).get("x-forwarded-for"));
+}
+
+/** The same, from an `X-Forwarded-For` value already in hand (the proxy has the request itself). */
+export function clientIpHeadersFrom(forwarded: string | null): Record<string, string> {
   const ip = forwarded?.split(",").pop()?.trim();
   // ASVS 4.2.5: only an address-shaped value is forwarded, so a client can't
   // make this server send the backend an oversized or malformed header.
