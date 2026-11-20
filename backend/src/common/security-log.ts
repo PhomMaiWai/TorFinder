@@ -36,6 +36,7 @@ export type SecurityEvent =
   | "auth.passkey.reset"
   | "auth.step_up"
   | "config.secret_rotation_due"
+  | "config.internal_tls_off"
   | "admin.approval.request"
   | "admin.approval.approve"
   | "admin.approval.reject";

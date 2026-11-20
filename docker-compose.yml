@@ -21,7 +21,12 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      - BACKEND_URL=http://backend:4000
+      # ASVS 12.3.5: HTTPS with the frontend's client certificate (made by the
+      # certs service); the backend accepts no other caller.
+      - BACKEND_URL=https://backend:4000
+      - INTERNAL_TLS_CERT_FILE=/certs/frontend.crt
+      - INTERNAL_TLS_KEY_FILE=/certs/frontend.key
+      - INTERNAL_TLS_CA_FILE=/certs/ca.crt
       # No fallback on purpose: the image runs with NODE_ENV=production and
       # refuses a missing or published secret. Set it in .env (see .env.example).
       - SESSION_SECRET=${SESSION_SECRET:-}
@@ -30,6 +35,8 @@ services:
       - SESSION_SECRET_PREVIOUS_UNTIL=${SESSION_SECRET_PREVIOUS_UNTIL:-}
       # Must match the backend's value (docs/security/passkeys.md).
       - STAFF_PASSKEYS_REQUIRED=${STAFF_PASSKEYS_REQUIRED:-false}
+    volumes:
+      - certs_frontend:/certs:ro
     depends_on:
       - backend
     # A crashed process comes back by itself (ASVS 16.5.4; see backend main.ts).
@@ -43,8 +50,13 @@ services:
       - "127.0.0.1:4000:4000"
     environment:
       # The app's own account (readWrite on `torr` only, made by db-users below),
-      # not root (ASVS 13.2.2). On a server, set MONGO_APP_PASSWORD in .env.
-      - MONGODB_URI=mongodb://${MONGO_APP_USERNAME:-torr_app}:${MONGO_APP_PASSWORD:-torr_app}@db:27017/torr?authSource=torr
+      # not root (ASVS 13.2.2), logged in with the backend's TLS client
+      # certificate instead of a password (MONGODB-X509, ASVS 12.3.5).
+      - MONGODB_URI=mongodb://db:27017/torr?tls=true&tlsCAFile=/certs/ca.crt&tlsCertificateKeyFile=/certs/mongo-client.pem&authMechanism=MONGODB-X509&authSource=%24external
+      # The API is served over HTTPS and requires the frontend's client certificate.
+      - INTERNAL_TLS_CERT_FILE=/certs/server.crt
+      - INTERNAL_TLS_KEY_FILE=/certs/server.key
+      - INTERNAL_TLS_CA_FILE=/certs/ca.crt
       - SESSION_SECRET=${SESSION_SECRET:-}
       - SESSION_SECRET_PREVIOUS=${SESSION_SECRET_PREVIOUS:-}
       - SESSION_SECRET_PREVIOUS_UNTIL=${SESSION_SECRET_PREVIOUS_UNTIL:-}
@@ -69,10 +81,29 @@ services:
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
       - ADMIN_APPROVAL_EXPIRY_HOURS=${ADMIN_APPROVAL_EXPIRY_HOURS:-48}
       - FORM_MIN_SECONDS=${FORM_MIN_SECONDS:-2}
+    volumes:
+      - certs_backend:/certs:ro
     depends_on:
       db-users:
         condition: service_completed_successfully
     restart: unless-stopped
+
+  # One-shot: makes (or renews) the internal CA and each service's certificate,
+  # then exits (docker/certs/generate.sh). Runs on every `up`; idempotent.
+  certs:
+    image: mongo:7
+    user: root
+    volumes:
+      - certs_ca:/certs/ca
+      - certs_frontend:/certs/frontend
+      - certs_backend:/certs/backend
+      - certs_db:/certs/db
+      - certs_dev:/certs/dev
+      - ./docker/certs:/scripts:ro
+      # `docker compose run --rm certs export` copies the dev client cert here.
+      - ./docker/certs/dev:/export
+    entrypoint: ["sh", "/scripts/generate.sh"]
+    restart: "no"
 
   # One-shot: creates or updates the backend's database account, then exits.
   # Runs on every `up` (as root), so an existing volume gets the account too.
@@ -85,10 +116,11 @@ services:
       - MONGO_APP_PASSWORD=${MONGO_APP_PASSWORD:-torr_app}
     volumes:
       - ./docker/mongo-users:/scripts:ro
+      - certs_db:/certs:ro
     entrypoint:
       - sh
       - -c
-      - mongosh --quiet --host db -u "$$MONGO_ROOT_USERNAME" -p "$$MONGO_ROOT_PASSWORD" --authenticationDatabase admin /scripts/app-user.js
+      - mongosh --quiet --host db --tls --tlsCAFile /certs/ca.crt --tlsCertificateKeyFile /certs/db.pem -u "$$MONGO_ROOT_USERNAME" -p "$$MONGO_ROOT_PASSWORD" --authenticationDatabase admin /scripts/app-user.js
     depends_on:
       db:
         condition: service_healthy
@@ -106,12 +138,22 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-torr}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-torr}
+    # ASVS 12.3.5: TLS only, and every client must present a certificate from
+    # the internal CA (passwords alone, without one, are refused).
+    command:
+      - --tlsMode=requireTLS
+      - --tlsCertificateKeyFile=/certs/db.pem
+      - --tlsCAFile=/certs/ca.crt
     volumes:
       - torr_db_data:/data/db
+      - certs_db:/certs:ro
       # Fills an empty database with a snapshot of real TOR records on first start.
       - ./docker/mongo-seed:/docker-entrypoint-initdb.d:ro
+    depends_on:
+      certs:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--quiet", "--tls", "--tlsCAFile", "/certs/ca.crt", "--tlsCertificateKeyFile", "/certs/db.pem", "--eval", "db.adminCommand('ping')"]
       interval: 2s
       timeout: 3s
       retries: 10
@@ -119,3 +161,9 @@ services:
 
 volumes:
   torr_db_data:
+  # One volume per service, so each container holds only its own private key.
+  certs_ca:
+  certs_frontend:
+  certs_backend:
+  certs_db:
+  certs_dev:

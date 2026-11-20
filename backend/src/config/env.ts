@@ -157,6 +157,17 @@ export const env = {
    */
   formMinSeconds: optionalNumber("FORM_MIN_SECONDS", 2),
   /**
+   * Mutual TLS between the services (ASVS 12.3.5; common/internal-tls.ts).
+   * All three files or none; `allowedClients` are the certificate common
+   * names that may call the API.
+   */
+  internalTls: {
+    certFile: process.env.INTERNAL_TLS_CERT_FILE ?? "",
+    keyFile: process.env.INTERNAL_TLS_KEY_FILE ?? "",
+    caFile: process.env.INTERNAL_TLS_CA_FILE ?? "",
+    allowedClients: (process.env.INTERNAL_TLS_ALLOWED_CLIENTS ?? "frontend").split(",").map((name) => name.trim()).filter(Boolean),
+  },
+  /**
    * Granting or removing the admin role waits for a second admin (ASVS 2.3.5);
    * an unapproved request is deleted after this many hours.
    */
