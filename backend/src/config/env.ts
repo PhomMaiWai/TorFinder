@@ -107,6 +107,13 @@ export const env = {
     stepUpMinutes: optionalNumber("STEP_UP_MINUTES", 10),
   },
   /**
+   * Granting or removing the admin role waits for a second admin (ASVS 2.3.5);
+   * an unapproved request is deleted after this many hours.
+   */
+  adminApproval: {
+    expiryHours: optionalNumber("ADMIN_APPROVAL_EXPIRY_HOURS", 48),
+  },
+  /**
    * A session unused for this long must sign in again (ASVS 7.3.1), even
    * within its 7-day absolute lifetime. Must match the frontend's value.
    */

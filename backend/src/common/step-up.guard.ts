@@ -21,7 +21,8 @@ export class StepUpRequiredException extends ForbiddenException {
 /**
  * Sensitive admin actions — approving or rejecting a company, changing a role,
  * suspending, deleting an announcement, assigning an announcement's owner,
- * clearing someone's passkeys — need a
+ * clearing someone's passkeys, deciding a request to grant or remove the
+ * admin role — need a
  * passkey check from the last STEP_UP_MINUTES (default 10), not just a session
  * (ASVS 7.5.3). A stolen session cookie alone can then read, but not change
  * who may do what.

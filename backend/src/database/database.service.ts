@@ -413,6 +413,25 @@ export type AuditLogEntryDoc = {
 };
 
 /**
+ * A change to who holds the admin role, waiting for a second admin (ASVS
+ * 2.3.5). Granting or removing the role only takes effect once an admin other
+ * than the one who asked approves it. MongoDB deletes a request at
+ * `expiresAt` (TTL index), and there is at most one open request per account.
+ */
+export type AdminApprovalDoc = {
+  targetId: ObjectId;
+  /** Copied at request time, so the list and audit log read without a join. */
+  targetEmail: string;
+  targetName: string;
+  /** The role when asked; approval is refused if it changed in the meantime. */
+  fromRole: Role;
+  toRole: Role;
+  requestedBy: { id: ObjectId; email: string };
+  createdAt: Date;
+  expiresAt: Date;
+};
+
+/**
  * One TOR's embedding for "find similar". Kept out of `tors` on purpose: a
  * vector is ~6 KB of numbers no listing reads, and every listing would carry
  * it. `textHash` is of the text that was embedded, so an edited title or a new
@@ -447,6 +466,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   authTokens!: Collection<AuthTokenDoc>;
   matchAlerts!: Collection<MatchAlertDoc>;
   torEmbeddings!: Collection<TorEmbeddingDoc>;
+  adminApprovals!: Collection<AdminApprovalDoc>;
   /** Scans companies attach to their certificates; only ever read by their owner. */
   certificateFiles!: GridFSBucket;
   /** Reference letters and CVs from the proposal library; only ever read by their owner. */
@@ -466,6 +486,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.authTokens = this.client.db().collection<AuthTokenDoc>("authTokens");
     this.matchAlerts = this.client.db().collection<MatchAlertDoc>("matchAlerts");
     this.torEmbeddings = this.client.db().collection<TorEmbeddingDoc>("torEmbeddings");
+    this.adminApprovals = this.client.db().collection<AdminApprovalDoc>("adminApprovals");
     this.certificateFiles = new GridFSBucket(this.client.db(), { bucketName: "certificateFiles" });
     this.libraryFiles = new GridFSBucket(this.client.db(), { bucketName: "libraryFiles" });
     await this.users.createIndex({ email: 1 }, { unique: true });
@@ -508,6 +529,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     // Doubles as the guard: two runs racing on one project can't both alert.
     await this.matchAlerts.createIndex({ userId: 1, projectKey: 1, phase: 1 }, { unique: true });
     await this.torEmbeddings.createIndex({ torId: 1, model: 1 }, { unique: true });
+    // One open admin-role request per account; a second ask gets a duplicate-key error.
+    await this.adminApprovals.createIndex({ targetId: 1 }, { unique: true });
+    // An unapproved request lapses on its own (env.adminApproval.expiryHours).
+    await this.adminApprovals.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     await this.applyRetention();
     await this.backfillAccountStatus();
     await this.backfillCmmiLevel();
