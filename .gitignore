@@ -51,3 +51,7 @@ CLAUDE.md
 
 # but do track the secret-free template
 !.env.example
+# GCP keys belong outside the repo (VERTEX_CREDENTIALS_FILE); these catch one dropped in by mistake.
+*service-account*.json
+*credentials*.json
+gcp-*.json

@@ -81,8 +81,21 @@ services:
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
       - ADMIN_APPROVAL_EXPIRY_HOURS=${ADMIN_APPROVAL_EXPIRY_HOURS:-48}
       - FORM_MIN_SECONDS=${FORM_MIN_SECONDS:-2}
+      # AI document reading (Vertex). Off while VERTEX_PROJECT_ID is empty.
+      # Values come from the root .env, never baked into the image.
+      - VERTEX_PROJECT_ID=${VERTEX_PROJECT_ID:-}
+      - VERTEX_LOCATION=${VERTEX_LOCATION:-asia-southeast1}
+      - VERTEX_MODEL=${VERTEX_MODEL:-gemini-2.5-flash}
+      - AI_POLL_MINUTES=${AI_POLL_MINUTES:-60}
+      - AI_POLL_ON_STARTUP=${AI_POLL_ON_STARTUP:-false}
+      # Points the SDK at the mounted key only when one was given; empty means
+      # the SDK never looks for one.
+      - GOOGLE_APPLICATION_CREDENTIALS=${VERTEX_CREDENTIALS_FILE:+/run/secrets/gcp-credentials.json}
     volumes:
       - certs_backend:/certs:ro
+      # The GCP service-account key (or ADC file) from a path outside the repo,
+      # read-only. Unset, an empty placeholder is mounted and never read.
+      - ${VERTEX_CREDENTIALS_FILE:-./docker/gcp/none.json}:/run/secrets/gcp-credentials.json:ro
     depends_on:
       db-users:
         condition: service_completed_successfully
