@@ -213,6 +213,11 @@ export class AccountsService {
     );
     if (!result) throw new NotFoundException("ไม่พบบัญชีนี้");
 
+    // A company whose approval is taken back loses its access now, not when
+    // its 7-day session runs out: the guards trust the session, so it is
+    // revoked here (ASVS 8.3.2).
+    if (status !== "approved") await this.revocation.revoke(id);
+
     const companyName = result.company?.companyName ?? result.name;
     await Promise.all([
       this.notifyReviewDecision(result._id, status, companyName),

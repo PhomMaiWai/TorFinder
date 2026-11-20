@@ -15,8 +15,13 @@ import { headers } from "next/headers";
  *
  * Server-side only (route handlers and server actions).
  */
+/** An IPv4 or IPv6 address as text: digits, hex letters, dots and colons, at most 45 characters. */
+const IP_LIKE = /^[0-9a-fA-F.:]{2,45}$/;
+
 export async function clientIpHeaders(): Promise<Record<string, string>> {
   const forwarded = (await headers()).get("x-forwarded-for");
   const ip = forwarded?.split(",").pop()?.trim();
-  return ip ? { "X-Forwarded-For": ip } : {};
+  // ASVS 4.2.5: only an address-shaped value is forwarded, so a client can't
+  // make this server send the backend an oversized or malformed header.
+  return ip && IP_LIKE.test(ip) ? { "X-Forwarded-For": ip } : {};
 }

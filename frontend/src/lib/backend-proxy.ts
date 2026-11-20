@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { isPlainPath } from "@/lib/backend-path";
+import { isBackendPathTooLong, isPlainPath } from "@/lib/backend-path";
 import { jsonResponse } from "@/lib/json-response";
 import { authHeaders } from "@/lib/session-headers";
 
@@ -30,8 +30,12 @@ export const notFound = async () =>
  * stream through untouched — a 5 MB upload is never read into this server's
  * memory — and the backend does all the validating.
  */
+/** ASVS 4.2.5: a path longer than the backend is sure to accept is refused here, never sent. */
+const uriTooLong = () => jsonResponse({ message: "URI too long" }, { status: 414 });
+
 export async function forwardToBackend({ method, path, request }: Forward): Promise<Response> {
   if (!isPlainPath(path)) return notFound();
+  if (isBackendPathTooLong(path)) return uriTooLong();
   const headers = new Headers(await authHeaders());
   const contentType = request?.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
@@ -59,6 +63,7 @@ export async function forwardToBackend({ method, path, request }: Forward): Prom
 /** A stored file (or a generated ZIP), streamed back as a download. */
 export async function downloadFromBackend(path: string, request: Request): Promise<Response> {
   if (!isPlainPath(path)) return notFound();
+  if (isBackendPathTooLong(path)) return uriTooLong();
   let res: Response;
   try {
     res = await fetch(`${BACKEND_URL}/api${path}`, {

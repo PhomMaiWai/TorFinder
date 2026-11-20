@@ -1,3 +1,14 @@
+/**
+ * The longest path (with its query string) the frontend sends to the backend
+ * (ASVS 4.2.5). Node refuses a request whose headers, URL included, pass
+ * 16 KB; every real call is far below this, so anything longer means a value
+ * from the browser grew past what the backend will take, and it is refused
+ * here with 414 rather than sent.
+ */
+export const MAX_BACKEND_PATH = 2048;
+
+export const isBackendPathTooLong = (path: string) => path.length > MAX_BACKEND_PATH;
+
 /** Every record id the backend issues is a MongoDB ObjectId: 24 hex characters. */
 const OBJECT_ID = /^[a-f0-9]{24}$/i;
 

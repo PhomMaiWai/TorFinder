@@ -41,12 +41,13 @@ const API = `${BASE_URL}/api`;
 // server booted with (the workflow sets the same value for the tests).
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-insecure-secret-change-me";
 
-function makeToken(role, sub, email) {
+function makeToken(role, sub, email, { iat } = {}) {
   const payload = {
     sub,
     email: email ?? `${role}@ci.test`,
     name: `CI ${role}`,
     role,
+    ...(iat !== undefined && { iat }),
     exp: Math.floor(Date.now() / 1000) + 3600,
   };
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -235,6 +236,12 @@ describe("account review -> notification lifecycle", () => {
 
   it("rejecting the same account later adds a second, differently-worded notification, newest first", async () => {
     await review(solo.id, "rejected");
+    // Taking back the approval ends the company's sessions at once (ASVS 8.3.2).
+    assert.equal((await list(solo.token)).status, 401);
+    // The rest of this suite reads with a session issued after the rejection;
+    // revocation compares whole seconds, so it starts in the next one.
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    solo.token = makeToken("org", solo.id, solo.org.email, { iat: Math.floor(Date.now() / 1000) });
     const res = await list(solo.token);
 
     assert.equal(res.body.length, 2);
