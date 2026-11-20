@@ -5,7 +5,8 @@
 // Google Chrome, and Playwright in some folder of your own:
 //   mkdir /tmp/pw && cd /tmp/pw && npm i playwright
 //   NODE_PATH=/tmp/pw/node_modules node docs/security/evidence/capture-screenshots.js headers cors
-// Shots: headers cors lockout passwords authz logs google
+// Shots: headers cors lockout passwords authz logs google adminsignout sessions mtls
+//   (run adminsignout before sessions: it clears the company's other sessions)
 //   idle      needs SESSION_IDLE_MINUTES=1 on frontend + backend (a compose override)
 //   error500  needs MongoDB stopped first: docker compose stop db (start it again after)
 // Run lockout and authz at least a minute apart: login is limited to 5 a minute per IP.
@@ -17,6 +18,9 @@ const REPO = path.resolve(__dirname, "../../..");
 const OUT = path.join(REPO, "docs/security/evidence/screenshots");
 const FE = "http://localhost:3000";
 const ORG = { email: "contact@arundigital.co.th", password: "Org12345!" };
+const ADMIN = { email: "admin@bma.go.th", password: "Admin1234!" };
+const MAC_CHROME = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1";
 const VIEWPORT = { width: 1280, height: 800 };
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -283,6 +287,111 @@ const shots = {
     await page.waitForTimeout(2500);
     await pageShot(page, "12a-google-sign-in-button.png", "Google sign-in (SSO) on the public login page");
     await page.close();
+  },
+
+  // 15: an admin ends one account's sessions (ASVS 7.4.5). The list is filtered to
+  // the demo company, so no other account's name or email is in the picture.
+  async adminsignout(browser) {
+    const ctx = await browser.newContext({ viewport: VIEWPORT });
+    const page = await ctx.newPage();
+    await login(page, ADMIN, "/login/admin");
+    await page.goto(FE + "/admin/users");
+    await page.fill("#user-search", "arundigital");
+    await page.waitForTimeout(500);
+    await pageShot(page, "15a-admin-sign-out-buttons.png", "Manage Users: Sign out (one account) and Sign out everyone");
+    await page.getByRole("button", { name: "ออกจากระบบทุกคน" }).click();
+    await pageShot(page, "15b-admin-sign-out-everyone-confirm.png", "Sign out everyone asks to confirm first (not confirmed here)");
+    await page.getByRole("button", { name: "ยกเลิก" }).first().click();
+    // By its tooltip: the sidebar's own logout button has the same label.
+    await page.locator('button[title="ปิดทุกเซสชันของบัญชีนี้ในทุกอุปกรณ์"]').click();
+    await page.getByText("ในทุกอุปกรณ์แล้ว").waitFor();
+    await pageShot(page, "15c-admin-signed-account-out.png", "Arun Digital signed out on every device");
+    await ctx.close();
+    const out = sh(`docker compose logs --no-log-prefix backend | grep '"admin.sessions.revoke"' | grep arundigital | tail -n 1`);
+    await renderCard(
+      browser,
+      "15d-admin-sign-out-logged.png",
+      card({
+        title: "Admin sign-out is logged as a security event (ASVS 7.4.5)",
+        source: "Backend log after 15c; the audit log gets the same action with the admin's email",
+        terminal: term(`docker compose logs --no-log-prefix backend | grep '"admin.sessions.revoke"' | grep arundigital | tail -n 1`, out, ['"admin.sessions.revoke"']),
+      }),
+    );
+  },
+
+  // 14: an account sees where it is signed in and ends other sessions after its password (ASVS 7.5.2).
+  // Run after adminsignout, so the company starts with no other sessions.
+  async sessions(browser) {
+    const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IPHONE });
+    await login(await phone.newPage(), ORG);
+    const ctx = await browser.newContext({ viewport: VIEWPORT, userAgent: MAC_CHROME });
+    const page = await ctx.newPage();
+    await login(page, ORG);
+    await page.goto(FE + "/account");
+    await page.getByText("อุปกรณ์ที่เข้าสู่ระบบอยู่").scrollIntoViewIfNeeded();
+    await pageShot(page, "14a-signed-in-devices.png", "/account lists each signed-in device; this one is marked");
+    await page.getByRole("button", { name: "ออกจากระบบอุปกรณ์อื่นทั้งหมด" }).first().click();
+    await page.getByText("ยืนยันด้วยรหัสผ่านปัจจุบัน").scrollIntoViewIfNeeded();
+    await pageShot(page, "14b-end-sessions-needs-password.png", "ending other sessions asks for the password again");
+    await page.fill('form input[type="password"]', "wrong-password-1");
+    await page.locator("form").getByRole("button", { name: "ออกจากระบบอุปกรณ์อื่นทั้งหมด" }).click();
+    await page.getByRole("status").waitFor();
+    await pageShot(page, "14c-wrong-password-refused.png", "a wrong password ends nothing");
+    await page.fill('form input[type="password"]', ORG.password);
+    await page.locator("form").getByRole("button", { name: "ออกจากระบบอุปกรณ์อื่นทั้งหมด" }).click();
+    await page.getByText("ออกจากระบบแล้ว").waitFor();
+    await page.waitForTimeout(800);
+    await pageShot(page, "14d-other-sessions-ended.png", "after the right password only this device is left");
+    // The phone asks for its account's data through the frontend, as its pages do.
+    const phonePage = await phone.newPage();
+    await phonePage.goto(FE + "/search");
+    const results = [];
+    for (const url of ["/api/notifications", "/api/saved-tors", "/api/saved-searches"]) {
+      const answer = await phonePage.evaluate(async (u) => {
+        const res = await fetch(u);
+        return `${res.status} ${(await res.text()).slice(0, 90)}`;
+      }, url);
+      results.push(`GET ${url}\n  → ${answer}`);
+    }
+    await renderCard(
+      browser,
+      "14e-ended-session-refused.png",
+      card({
+        title: "The ended session gets no account data (ASVS 7.5.2)",
+        source: "The phone from 14a, after 14d ended its session; requests sent from its browser through the frontend",
+        terminal: term("# the phone's next requests for its account's data", results.join("\n"), ["401"]),
+        note: "The backend checks the session on every request and refuses it. The frontend only checks the cookie's signature, so public pages still open until the phone signs in again.",
+      }),
+    );
+    await phone.close();
+    await ctx.close();
+  },
+
+  // 16: services authenticate each other with certificates (ASVS 12.3.3, 12.3.5).
+  async mtls(browser) {
+    const req = `printf "GET /api/health HTTP/1.1\\r\\nHost: backend\\r\\nConnection: close\\r\\n\\r\\n"`;
+    const run = (inner) => sh(`docker compose exec -T db sh -c '${inner} 2>&1' | grep -v SSL_get_servername | head -n 3 || true`);
+    const noCert = run(`${req} | timeout 5 openssl s_client -quiet -verify_quiet -connect backend:4000 -CAfile /certs/ca.crt`);
+    const dbCert = run(`${req} | timeout 5 openssl s_client -quiet -verify_quiet -connect backend:4000 -CAfile /certs/ca.crt -cert /certs/db.pem`);
+    const mongoPlain = run(`timeout 8 mongosh --quiet --host 127.0.0.1 --eval 1`);
+    const mongoNoCert = run(`timeout 8 mongosh --quiet --host 127.0.0.1 --tls --tlsCAFile /certs/ca.crt --eval 1`);
+    const boot = sh(`docker compose logs --no-log-prefix backend | grep -o 'torr-backend listening[^"]*' | tail -n 1; docker compose logs --no-log-prefix db-users | grep -E 'CN=torr_app|password account' | tail -n 2`);
+    await renderCard(
+      browser,
+      "16-mutual-tls.png",
+      card({
+        title: "Services authenticate each other with certificates (ASVS 12.3.3, 12.3.5)",
+        source: "Local stack, docker compose; each command runs inside the database container",
+        terminal: [
+          term("docker compose logs backend db-users   # how they started", boot, ["client certificates required", "CN=torr_app", "removed"]),
+          term("# backend over TLS with no client certificate", noCert, ["certificate required"]),
+          term("# backend with a certificate from our CA that isn't the frontend's (the database's)", dbCert, ["403"]),
+          term("# MongoDB without TLS", mongoPlain, ["closed"]),
+          term("# MongoDB over TLS without a client certificate", mongoNoCert, ["closed"]),
+        ].join(""),
+        note: "Only the frontend's certificate may call the backend, and the backend signs in to MongoDB with its own certificate (MONGODB-X509), so it has no database password.",
+      }),
+    );
   },
 };
 
