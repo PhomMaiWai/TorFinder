@@ -7,6 +7,7 @@
 
 import assert from "node:assert/strict";
 import { before, describe, it } from "node:test";
+import { formTimingHeaders } from "./helpers/form-token.mjs";
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:4000";
 const API = `${BASE_URL}/api`;
@@ -29,6 +30,7 @@ async function api(path, { method = "GET", body, token } = {}) {
   const headers = {};
   if (body !== undefined) headers["content-type"] = "application/json";
   if (token) headers.authorization = `Bearer ${token}`;
+  Object.assign(headers, formTimingHeaders(path, method));
 
   const res = await fetch(`${API}${path}`, {
     method,

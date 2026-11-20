@@ -14,6 +14,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 
 import { MongoClient } from "mongodb";
+import { formTimingHeaders } from "./helpers/form-token.mjs";
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:4000";
 const API = `${BASE_URL}/api`;
@@ -23,7 +24,7 @@ const db = () => mongo.db();
 async function api(path, body) {
   const res = await fetch(`${API}${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...formTimingHeaders(path, "POST") },
     body: JSON.stringify(body),
   });
   const text = await res.text();
