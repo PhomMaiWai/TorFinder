@@ -156,7 +156,10 @@ export class TorService {
       daysLeft: currentDaysLeft(rest),
       bidding: biddingOf({ ...rest, documentDeadline, documentDeadlineTime }, awarded),
       currentStage: rest.stage,
-      timeline: buildTimeline(rest),
+      timeline: buildTimeline({
+        ...rest,
+        awarded: rest.projectNumber != null && awarded.has(rest.projectNumber),
+      }),
       // The kinds of work its title names, as matching reads them: the
       // overview charts budget by them (#257).
       workTypes: workTypesOf(rest.title),
@@ -195,7 +198,10 @@ export class TorService {
         awarded,
       ),
       currentStage: rest.stage,
-      timeline: buildTimeline(rest),
+      timeline: buildTimeline({
+        ...rest,
+        awarded: rest.projectNumber != null && awarded.has(rest.projectNumber),
+      }),
     };
   }
 
