@@ -4,7 +4,7 @@ How TorFinder handles each category of the [OWASP Top 10:2025](https://owasp.org
 
 This file adds no new review. It maps work that is already done and documented:
 
-- ASVS 5.0: [Level 1](./asvs-l1.md) (0 Fail), [Level 2](./asvs-l2.md) (125 of 125 applicable items pass), [Level 3](./asvs-l3.md) (68 of 72 applicable items pass)
+- ASVS 5.0: [Level 1](./asvs-l1.md) (0 Fail), [Level 2](./asvs-l2.md) (125 of 125 applicable items pass), [Level 3](./asvs-l3.md) (68 of 72 applicable items pass, 94%; the 4 left need a production domain or hardware)
 - [Threat model](./threat-model.md): STRIDE, 36 threats, all mitigated. Threat IDs such as S1 or E3 below come from there.
 - [SAST](./sast-report.md) (CodeQL, Semgrep), [DAST](./dast-report.md) (OWASP ZAP), [logging and errors](./logging-and-errors.md), [evidence screenshots](./evidence/README.md)
 
@@ -98,7 +98,12 @@ ASVS IDs are written without the `V` prefix (`8.2.2` = ASVS 5.0 requirement V8.2
 - SAST: Semgrep `dockerfile.missing-user` fixed (containers no longer run as root).
 - Threats: S1, S3, E4, I2
 
-**Status: Covered.** Gaps outside the code, all listed as accepted risks in [asvs-l3.md](./asvs-l3.md#accepted-risks): the domain is not on the HSTS preload list (3.7.4), and Encrypted Client Hello is off (12.1.5). Both need a production domain. The egress proxy and vault run only in the opt-in hardened stack, not in the default `docker compose up`.
+**Status: Covered.** Gaps outside the code, listed as accepted risks in [asvs-l3.md](./asvs-l3.md#accepted-risks): the domain is not on the HSTS preload list (3.7.4), and Encrypted Client Hello is off (12.1.5). Both wait only on a production domain. Branch `feat-asvs-l3-domain-ready` makes them switch-on items:
+
+- **ECH:** one more compose file. It builds Caddy with a pinned DNS provider module and reads the DNS token at run time.
+- **HSTS preload:** a readiness check to run against the domain before submitting, plus a CI test that keeps the HSTS header preload-eligible.
+
+The egress proxy and vault run only in the opt-in hardened stack, not in the default `docker compose up`.
 
 ## A03:2025 Software Supply Chain Failures
 
@@ -154,7 +159,7 @@ ASVS IDs are written without the `V` prefix (`8.2.2` = ASVS 5.0 requirement V8.2
 - Screenshot: [16](./evidence/screenshots/16-mutual-tls.png) (mutual TLS)
 - Threats: S1, S6
 
-**Status: Covered.** Level 3 items still open, all needing hardware or hosting: keys in an HSM (13.3.3) and memory encryption (11.7.1). See [asvs-l3.md](./asvs-l3.md#accepted-risks).
+**Status: Covered.** Level 3 items still open, all needing hardware or hosting: keys in an HSM (13.3.3) and memory encryption (11.7.1). See [asvs-l3.md](./asvs-l3.md#accepted-risks). Branch `feat-asvs-l3-domain-ready` adds a step-by-step plan for each. Memory encryption needs only a confidential VM; the stack runs on one unchanged. A KMS for `SESSION_SECRET` and the CA key would bring 13.3.3 to Partial, not Pass: TLS private keys and scrypt still run in process, and the requirement covers *all* cryptographic operations.
 
 ## A05:2025 Injection
 
@@ -321,5 +326,5 @@ ASVS IDs are written without the `V` prefix (`8.2.2` = ASVS 5.0 requirement V8.2
 | Images not signed, no build provenance | A03 | Not needed for the course deployment | `cosign` signing and SLSA provenance in the image job |
 | Hardened services are opt-in (egress proxy, vault, ClamAV, separate log store) | A02, A08, A09 | They need extra containers; the demo stays light | Run `docker-compose.hardening.yml` on the production host |
 | Public viewers have no factor beyond Google | A07 | Viewers reach only public data and their own saved items | Offer passkeys to viewers too |
-| HSTS preload, Encrypted Client Hello | A02 | Need a production domain | Submit the domain; enable ECH in the Caddyfile |
-| HSM for keys, memory encryption | A04 | Need hardware or confidential VMs | Cloud KMS for `SESSION_SECRET` and the CA key |
+| HSTS preload, Encrypted Client Hello | A02 | Need a production domain. Ready to switch on (branch `feat-asvs-l3-domain-ready`) | Pass the preload readiness check, then submit the domain; add the ECH compose file with a DNS API token |
+| HSM for keys, memory encryption | A04 | Need hardware or confidential VMs | Deploy on a confidential VM; cloud KMS for `SESSION_SECRET` and the CA key (13.3.3 then reaches Partial) |
