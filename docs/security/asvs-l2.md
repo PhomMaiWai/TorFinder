@@ -2,7 +2,7 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 112 Pass, 5 Partial, 5 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 112 pass (90%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 115 Pass, 2 Partial, 5 Not done, 58 N/A, 3 not reviewed.** Of the 125 items that apply to TorFinder (excluding N/A), 115 pass (92%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
 
 **Update 19 Nov 2026 (branch `feat/asvs-l2-batch`):** nine items move to Pass. Announcement files are fetched only from the allowlisted portal hosts, and redirects are checked hop by hop (1.3.6, 13.2.4, 15.3.2; threat E3). Google sign-in is bound to the browser with a nonce (10.1.2, 10.5.1). Password hashes use stronger scrypt settings and store them, and old hashes are upgraded at sign-in (11.4.2, 11.2.2). The backend connects to MongoDB as a least-privilege account (13.2.2). Input refused by validation is logged (16.3.3).
 
@@ -16,8 +16,8 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 112 | Control exists, with evidence in code or in this file |
-| Partial | 5 | Control exists with a gap; the gap is named |
+| Pass | 115 | Control exists, with evidence in code or in this file |
+| Partial | 2 | Control exists with a gap; the gap is named |
 | Not done | 5 | Not implemented; out of scope for this deadline (below) |
 | N/A | 58 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 3 | Set by the hosting proxy, outside the repository |
@@ -35,13 +35,13 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 1 | 0 |
 | V10 OAuth and OIDC | 24 | 6 | 0 | 0 | 18 | 0 |
 | V11 Cryptography | 11 | 9 | 0 | 0 | 2 | 0 |
-| V12 Secure Communication | 6 | 1 | 2 | 0 | 2 | 1 |
-| V13 Configuration | 12 | 9 | 1 | 2 | 0 | 0 |
+| V12 Secure Communication | 6 | 3 | 0 | 0 | 2 | 1 |
+| V13 Configuration | 12 | 10 | 0 | 2 | 0 | 0 |
 | V14 Data Protection | 7 | 7 | 0 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 10 | 10 | 0 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 16 | 14 | 0 | 2 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **112** | **5** | **5** | **58** | **3** |
+| **Total** | **183** | **115** | **2** | **5** | **58** | **3** |
 
 ## Fixed after the triage (PR #343)
 
@@ -395,9 +395,9 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | --- | --- | --- | --- |
 | 12.1.2 | Only recommended cipher suites are enabled, with the strongest cipher suites set as preferred | Not reviewed | Cipher suites are set by the hosting proxy |
 | 12.1.3 | The application validates that mTLS client certificates are trusted before using the certificate identity for… | N/A | No mTLS |
-| 12.3.1 | An encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application,… | Partial | Outbound calls (portals, Google, Resend, Vertex) use HTTPS; MongoDB in the Docker network has no TLS (Atlas would) |
+| 12.3.1 | An encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application,… | Pass | Inbound: the Caddy edge serves HTTPS only and redirects plain HTTP (`docker/caddy/Caddyfile`, `docker-compose.edge.yml`). Outbound calls (portals, Google, Resend, Vertex) use HTTPS. MongoDB accepts TLS only, with a client certificate from the internal CA (`--tlsMode=requireTLS`, `docker-compose.yml`) |
 | 12.3.2 | TLS clients validate certificates received before communicating with a TLS server | Pass | Node's `fetch` validates certificates; no `rejectUnauthorized: false` or `NODE_TLS_REJECT_UNAUTHORIZED` anywhere |
-| 12.3.3 | TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP-based… | Partial | Frontend→backend and backend→MongoDB are plain HTTP inside one host's Docker network, with ports bound to 127.0.0.1 (accepted for a single host) |
+| 12.3.3 | TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP-based… | Pass | Frontend→backend is HTTPS with mutual TLS: the backend requires a client certificate from the internal CA and accepts only the frontend's (`backend/src/common/internal-tls.ts`, `frontend/src/lib/internal-tls.ts`). Backend→MongoDB is TLS with the backend's certificate as its login (MONGODB-X509). Tested in `backend/test/internal-tls.test.mjs` |
 | 12.3.4 | TLS connections between internal services use trusted certificates | N/A | No internal TLS |
 
 ### V13 Configuration
@@ -411,7 +411,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 13.2.4 | An allowlist is used to define the external resources or systems with which the application is permitted to… | Pass | Import and notification hosts are fixed in code; announcement files are fetched only from the allowlisted portal hosts (as V1.3.6) |
 | 13.2.5 | The web or application server is configured with an allowlist of resources or systems to which the server can send… | **Not done** | No network-level egress allowlist |
 | 13.3.1 | A secrets management solution, such as a key vault, is used to securely create, store, control access to, and… | **Not done** | Secrets come from environment variables and `.env`, not a vault (accepted for the course deployment) |
-| 13.3.2 | Access to secret assets adheres to the principle of least privilege | Partial | Secrets exist only in server environments, but anyone with access to the host can read them |
+| 13.3.2 | Access to secret assets adheres to the principle of least privilege | Pass | Each container gets only the secrets it uses. Each service's private key is in its own volume, readable only by that service's user, and the CA key only by the one-shot `certs` service (`docker/certs/generate.sh`). The backend has no database password (certificate login), and the generated root password is readable only by the database's user (`docker/db-secrets/init.sh`). The frontend gets only `SESSION_SECRET` and its own certificate, never the email or LINE keys. Server administrators can still read everything, as on any host ([key-management.md](../operations/key-management.md)) |
 | 13.4.2 | Debug modes are disabled for all components in production environments to prevent exposure of debugging features and… | Pass | `NODE_ENV=production` in both images: no debug output, no source maps served, demo data off |
 | 13.4.3 | Web servers do not expose directory listings to clients unless explicitly intended | Pass | No directory listing (no static file server) |
 | 13.4.4 | Using the HTTP TRACE method is not supported in production environments, to avoid potential information leakage | Pass | Neither Express nor Next.js implements TRACE; it gets 404 |
