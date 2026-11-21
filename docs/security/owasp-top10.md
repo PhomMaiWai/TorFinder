@@ -20,7 +20,7 @@ ASVS IDs are written without the `V` prefix (`8.2.2` = ASVS 5.0 requirement V8.2
 | A04:2025 | Cryptographic Failures | Covered | scrypt for passwords; HMAC-SHA256 sessions; TLS 1.3 + mutual TLS inside; hashed one-time links |
 | A05:2025 | Injection | Covered | DTO whitelist on every input; escaped `$regex`; React escaping; nonce CSP; no injection found by ZAP |
 | A06:2025 | Insecure Design | Covered | STRIDE threat model; written business rules; two-admin approval; step-up; atomic limits |
-| A07:2025 | Authentication Failures | Covered | Breached-password check; per-IP and per-email lockout; passkeys for staff and companies; 30-min idle timeout |
+| A07:2025 | Authentication Failures | Covered | Common/breached-password list check; 12-character minimum; per-IP and per-email lockout; passkeys for staff and companies; 30-min idle timeout |
 | A08:2025 | Software or Data Integrity Failures | Covered | Signed session tokens and LINE webhooks; no object deserialization; files typed by their bytes; audit log |
 | A09:2025 | Security Logging and Alerting Failures | Partly covered | JSON security events and an audit log; owner emails on lockout and new devices; no alert rules on the log yet |
 | A10:2025 | Mishandling of Exceptional Conditions | Covered | Generic 500 with an `errorId`; guards fail closed; transactions; timeouts and caps on every outside call |
@@ -218,7 +218,7 @@ The egress proxy and vault run only in the opt-in hardened stack, not in the def
 
 | Control | Where | ASVS |
 | --- | --- | --- |
-| Passwords 8–128 characters; refused if among the 10,000 most common breached passwords or built on context words (TorFinder, กรุงเทพ, the company name…) | `backend/src/common/password.ts`, `backend/src/common/common-passwords.ts` | 6.2.1, 6.2.4, 6.2.9, 6.2.11, 6.2.12 |
+| Passwords 12–128 characters; refused if among the 10,000 most common passwords from public breach data (SecLists NCSC list, checked offline; no live breach API such as Have I Been Pwned is called) or built on context words (TorFinder, กรุงเทพ, the company name…) | `backend/src/common/password.ts`, `backend/src/common/common-passwords.ts` | 6.2.1, 6.2.4, 6.2.9, 6.2.11, 6.2.12 |
 | 5 logins per minute per IP, plus 10 failures per email per 15 minutes; the owner is emailed when locked | `backend/src/auth/login-attempts.ts` | 6.3.1, 6.3.5 |
 | Same answer and the same scrypt work for unknown emails, so timing doesn't reveal which accounts exist (measured 25 ms either way) | `backend/src/auth/auth.service.ts` | 6.3.8 |
 | Passkeys required for staff and companies in production; staff can't skip them by choosing Google | `backend/src/auth/passkeys.service.ts`, `backend/src/common/passkey-policy.ts` | 6.3.3, 6.4.3, 6.4.4 |

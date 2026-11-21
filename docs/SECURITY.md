@@ -4,6 +4,8 @@ OWASP ASVS 4.0.3 Level 1 review, threat model and security test process, written
 
 Date: 21 Nov 2026
 
+> **How this document relates to the main report.** The main security report is [docs/security/project-document.md](security/project-document.md), which uses **ASVS 5.0** numbering, as do `asvs-l1.md`, `asvs-l2.md`, `asvs-l3.md` and `threat-model.md`. This document is a second, independent cross-check against **ASVS 4.0.3 Level 1**, so its requirement IDs use 4.0.3 numbering (for example 4.0.3's 2.1.1 is 5.0's 6.2.1). Its STRIDE table (§4.2) uses its own IDs (S-1, T-1…); the prioritised threat model with likelihood × impact scores is [threat-model.md](security/threat-model.md), which now includes the G1–G12 fixes from §3.1.
+
 ---
 
 ## 1. Application name and team members
@@ -18,9 +20,9 @@ Team members, from `git shortlog -sne HEAD` (aliases of the same person merged; 
 
 | Member | Commits | Git e-mail(s) | Student ID | Role |
 | --- | --- | --- | --- | --- |
-| Sai Khun Main | 187 | saikhunmain.s@ku.th, SKlv1ain (GitHub) | [TODO] | [TODO] |
-| Nisara Ploysuttipol | 222 | nisara.pl@ku.th | [TODO] | [TODO] |
-| Bhumipat Kusalatham | 101 | bhumipatwnt@gmail.com, OverCatX (GitHub) | [TODO] | [TODO] |
+| Sai Khun Main | 187 | saikhunmain.s@ku.th, SKlv1ain (GitHub) | [TODO] | ASVS L1/L2 review and fixes, threat model, SAST/DAST, CI audit, project document |
+| Nisara Ploysuttipol | 222 | nisara.pl@ku.th | [TODO] | CodeQL fixes (#350), OWASP Top 10 mapping (#348), evidence screenshots (#349) |
+| Bhumipat Kusalatham | 101 | bhumipatwnt@gmail.com, OverCatX (GitHub) | [TODO] | Presentation slides (#352) |
 
 Note: the existing `docs/security/project-document.md` names the course as 01219325. Please confirm which code is correct.
 
@@ -114,7 +116,7 @@ Status: **Implemented**, **Partial**, **Not implemented**, or **N/A**. A few Lev
 | V1 Architecture | 1.x | V1 has no Level 1 requirements in 4.0.3. Threat model and trust boundaries exist | `docs/security/threat-model.md`, section 4 of this document | N/A |
 | V2 Authentication | 2.1.1 | Passwords must be at least 12 characters | `@MinLength(12)` on sign-up, change and reset: `backend/src/auth/dto/signup.dto.ts:10`, `backend/src/auth/dto/change-password.dto.ts:12`, `backend/src/auth/dto/account-links.dto.ts:19`; same rule in the forms (`frontend/src/app/signup/organization/signup-form.tsx:58`, `frontend/src/components/profile/change-password.tsx:11`, `frontend/src/app/reset-password/reset-password-form.tsx:13`). Fixed G2 | Implemented |
 | V2 | 2.1.2 | At most 128 characters allowed | `backend/src/auth/dto/signup.dto.ts:11` | Implemented |
-| V2 | 2.1.7 | Reject breached / common passwords | 10,000 common-password list, `backend/src/common/password.ts:13-15`, `backend/src/common/common-passwords.ts`. No live breach API | Partial |
+| V2 | 2.1.7 | Reject breached / common passwords | 10,000 most common passwords from public breach data (SecLists NCSC list), checked offline: `backend/src/common/password.ts:13-15`, `backend/src/common/common-passwords.ts`. No live breach API such as Have I Been Pwned is called | Partial |
 | V2 | 2.1.12 | User can view the masked password | `frontend/src/components/ui/password-input.tsx` | Implemented |
 | V2 | 2.2.1 | Anti-automation: rate limit and lockout | Auth routes throttled (`backend/src/auth/auth.controller.ts:40-49`, limit `backend/src/config/env.ts:199`); per-email lockout after 10 failures (`backend/src/auth/login-attempts.ts:27-65`). Both counted in MongoDB `rateCounters`, shared by all processes (`backend/src/common/shared-counters.ts:19`, `backend/src/common/mongo-throttler.storage.ts:14`, `backend/src/app.module.ts:36`). Fixed G4 | Implemented |
 | V2 | 2.2.3 | Notify user after sensitive changes | Lockout and new-device notices: `backend/test/lockout-notice.test.mjs`, `backend/test/new-device-notice.test.mjs` | Implemented |
