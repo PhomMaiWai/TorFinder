@@ -102,7 +102,7 @@ Full mapping, with file paths, ASVS IDs, test evidence and gaps: [owasp-top10.md
 | --- | --- | --- | --- | --- |
 | A01:2025 | Broken Access Control | Covered | Role guard on every route; queries scoped to the session's account; portal host allowlist (SSRF) | E1, I1, I7, I8, T5, E3 |
 | A02:2025 | Security Misconfiguration | Covered | Weak secrets refused; strict CSP and headers; ports on 127.0.0.1; non-root containers | S1, S3, E4, I2 |
-| A03:2025 | Software Supply Chain Failures | Partly | CI blocks high/critical advisories; Dependabot cooldown; SHA-pinned actions; SBOMs | D4 |
+| A03:2025 | Software Supply Chain Failures | Partly | CI blocks high/critical advisories; Dependabot cooldown; SHA-pinned actions; SBOMs; secret scanning with push protection | D4 |
 | A04:2025 | Cryptographic Failures | Covered | scrypt; HMAC-SHA256 sessions; TLS 1.3 + mutual TLS inside; hashed one-time links | S1, S6 |
 | A05:2025 | Injection | Covered | DTO whitelist; escaped `$regex`; React escaping; nonce CSP | T1, S5 |
 | A06:2025 | Insecure Design | Covered | Threat model; business rules; two-admin approval; step-up; atomic limits | all |
@@ -111,7 +111,7 @@ Full mapping, with file paths, ASVS IDs, test evidence and gaps: [owasp-top10.md
 | A09:2025 | Security Logging and Alerting Failures | Partly | JSON security events; audit log; lockout and new-device emails | R1, R2 |
 | A10:2025 | Mishandling of Exceptional Conditions | Covered | Generic 500 with `errorId`; fail closed; transactions; timeouts and caps | I3, D3, D5 |
 
-The two Partly items: GitHub secret scanning is off and images aren't signed (A03), and no alert rule fires on the security log itself (A09).
+The two Partly items: images aren't signed and have no build provenance (A03), and no alert rule fires on the security log itself (A09). GitHub secret scanning and push protection are on.
 
 ## 4. Threat model
 
