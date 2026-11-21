@@ -8,7 +8,7 @@ import { Section } from "@/components/layout/app-page";
 import { PasswordInput } from "@/components/ui/password-input";
 import { resetSession } from "@/lib/use-session";
 
-const MIN_LENGTH = 8;
+const MIN_LENGTH = 12;
 
 /** ASVS 6.2.2 / 6.2.3: change the password while signed in, with the current one as proof. */
 export function ChangePasswordSection() {

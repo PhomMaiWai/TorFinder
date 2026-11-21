@@ -48,7 +48,7 @@ async function approvedOrg() {
   const unique = `${Date.now()}-${suffix}`;
   const org = {
     email: `ci+library-${unique}@example.com`,
-    password: "Str0ngPass!",
+    password: "Str0ngPass!2026",
     companyName: `CI Library Co ${unique}`,
     taxId: "0105563001236",
     contactName: "CI Runner",
@@ -114,7 +114,7 @@ after(async () => {
 
 describe("access", () => {
   it("refuses everyone but a company", async () => {
-    assert.equal((await api("/library")).status, 403);
+    assert.equal((await api("/library")).status, 401);
     assert.equal((await api("/library", { token: ADMIN_TOKEN })).status, 403);
   });
 

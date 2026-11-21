@@ -346,10 +346,10 @@ describe("POST /api/tor and PATCH /api/tor/:id — admin only", () => {
     target = await createTor();
   });
 
-  it("forbids creating without a token (403)", async () => {
+  it("forbids creating without a token (401)", async () => {
     const res = await api("/tor", { method: "POST", body: newTor() });
 
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids creating with an organization token (403)", async () => {
@@ -358,16 +358,16 @@ describe("POST /api/tor and PATCH /api/tor/:id — admin only", () => {
     assert.equal(res.status, 403);
   });
 
-  it("checks the session before the body — an invalid payload without a token is 403, not 400", async () => {
+  it("checks the session before the body — an invalid payload without a token is 401, not 400", async () => {
     const res = await api("/tor", { method: "POST", body: newTor({ title: "" }) });
 
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
-  it("forbids editing without a token (403)", async () => {
+  it("forbids editing without a token (401)", async () => {
     const res = await api(`/tor/${target.id}`, { method: "PATCH", body: { title: "แก้โดยไม่มีสิทธิ์" } });
 
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids editing with an organization token (403)", async () => {
@@ -395,10 +395,10 @@ describe("DELETE /api/tor/:id — soft delete, admin only", () => {
     target = await createTor();
   });
 
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api(`/tor/${target.id}`, { method: "DELETE" });
 
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403)", async () => {

@@ -77,24 +77,24 @@ for (const { name, Guard, role } of GUARDS) {
       });
     }
 
-    it("refuses a request with no Authorization header (403)", () => {
-      assert.equal(run(Guard, undefined).error.getStatus(), 403);
+    it("refuses a request with no Authorization header (401)", () => {
+      assert.equal(run(Guard, undefined).error.getStatus(), 401);
     });
 
-    it("refuses a scheme other than Bearer (403)", () => {
-      assert.equal(run(Guard, `Basic ${tokenFor(role)}`).error.getStatus(), 403);
+    it("refuses a scheme other than Bearer (401)", () => {
+      assert.equal(run(Guard, `Basic ${tokenFor(role)}`).error.getStatus(), 401);
     });
 
-    it("refuses a token whose signature was tampered with (403)", () => {
-      assert.equal(run(Guard, `Bearer ${tokenFor(role)}x`).error.getStatus(), 403);
+    it("refuses a token whose signature was tampered with (401)", () => {
+      assert.equal(run(Guard, `Bearer ${tokenFor(role)}x`).error.getStatus(), 401);
     });
 
-    it("refuses a token whose payload was swapped for another role's (403)", () => {
+    it("refuses a token whose payload was swapped for another role's (401)", () => {
       // Keep this role's signature, graft on a different role's payload.
       const [, signature] = tokenFor(role).split(".");
       const [otherPayload] = tokenFor(role === "admin" ? "org" : "admin").split(".");
 
-      assert.equal(run(Guard, `Bearer ${otherPayload}.${signature}`).error.getStatus(), 403);
+      assert.equal(run(Guard, `Bearer ${otherPayload}.${signature}`).error.getStatus(), 401);
     });
   });
 }

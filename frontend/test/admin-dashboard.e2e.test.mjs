@@ -98,7 +98,7 @@ async function signupOrg(overrides = {}) {
   const unique = `${Date.now()}-${orgSuffix}`;
   const org = {
     email: `ci+dashboard-${unique}@example.com`,
-    password: "Str0ngPass!",
+    password: "Str0ngPass!2026",
     companyName: `CI Dashboard Rendering Co ${unique}`,
     taxId: "0105563001236",
     contactName: "CI Runner",

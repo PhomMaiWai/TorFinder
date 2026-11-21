@@ -85,9 +85,9 @@ after(async () => {
 });
 
 describe("GET /api/tor/flagged — auditor only", () => {
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api("/tor/flagged");
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403)", async () => {

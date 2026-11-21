@@ -51,9 +51,9 @@ async function api(path, { method = "GET", token } = {}) {
 }
 
 describe("POST /api/datagov/sync — admin only", () => {
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api("/datagov/sync", { method: "POST" });
-    assert.equal(res.status, 403, "starting an import must take an admin session");
+    assert.equal(res.status, 401, "starting an import must take an admin session");
   });
 
   it("forbids an organization token (403)", async () => {

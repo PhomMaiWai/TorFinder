@@ -155,7 +155,7 @@ after(async () => {
 
 describe("GET /api/owner/tors", () => {
   it("is for owners only", async () => {
-    assert.equal((await api("/owner/tors")).status, 403);
+    assert.equal((await api("/owner/tors")).status, 401);
     assert.equal(
       (await api("/owner/tors", { token: ADMIN_TOKEN })).status,
       403,

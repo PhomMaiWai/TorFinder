@@ -58,7 +58,7 @@ after(() => mongo.close());
 describe("POST /api/accounts/:id/password-reset (ASVS 6.4.6)", () => {
   it("is for admins only", async () => {
     const user = await plantUser();
-    assert.equal((await sendReset(user._id.toString(), null)).status, 403);
+    assert.equal((await sendReset(user._id.toString(), null)).status, 401);
     const orgToken = makeToken("org", user._id.toString(), user.email);
     assert.equal((await sendReset(user._id.toString(), orgToken)).status, 403);
     assert.equal(await resetLinks(user._id), 0);

@@ -7,7 +7,9 @@ import { AuditModule } from "./audit/audit.module";
 import { AuthModule } from "./auth/auth.module";
 import { CertificatesModule } from "./certificates/certificates.module";
 import { AllExceptionsFilter } from "./common/all-exceptions.filter";
+import { DatabaseService } from "./database/database.service";
 import { LoggingThrottlerGuard } from "./common/logging-throttler.guard";
+import { MongoThrottlerStorage } from "./common/mongo-throttler.storage";
 import { env } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
 import { AiModule } from "./ai/ai.module";
@@ -30,9 +32,15 @@ import { TorModule } from "./tor/tor.module";
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([
-      { name: "default", ttl: env.throttle.ttlMs, limit: env.throttle.limit },
-    ]),
+    // Limits are counted in MongoDB, so they hold across restarts and replicas (docs/SECURITY.md G4).
+    ThrottlerModule.forRootAsync({
+      imports: [DatabaseModule],
+      inject: [DatabaseService],
+      useFactory: (db: DatabaseService) => ({
+        throttlers: [{ name: "default", ttl: env.throttle.ttlMs, limit: env.throttle.limit }],
+        storage: new MongoThrottlerStorage(db),
+      }),
+    }),
     DatabaseModule,
     AuthModule,
     AuditModule,

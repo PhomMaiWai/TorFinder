@@ -30,9 +30,10 @@ const tryLogin = (service, email) =>
   );
 
 describe("LoginAttempts.recordFailure", () => {
-  it("reports the lock exactly once, on the failure that reaches the limit", () => {
+  it("reports the lock exactly once, on the failure that reaches the limit", async () => {
     const attempts = new LoginAttempts();
-    const results = Array.from({ length: LIMIT + 2 }, () => attempts.recordFailure("someone@example.com"));
+    const results = [];
+    for (let i = 0; i < LIMIT + 2; i += 1) results.push(await attempts.recordFailure("someone@example.com"));
     assert.deepEqual(
       results.map((locked, i) => (locked ? i + 1 : null)).filter(Boolean),
       [LIMIT],

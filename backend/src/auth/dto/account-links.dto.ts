@@ -16,7 +16,7 @@ export class EmailOnlyDto {
 export class ResetPasswordDto extends LinkTokenDto {
   // Same rule as sign-up.
   @IsString()
-  @MinLength(8, { message: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" })
+  @MinLength(12, { message: "รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร" })
   @MaxLength(128)
   password!: string;
 }

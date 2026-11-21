@@ -73,7 +73,7 @@ async function signupOrg() {
   const unique = `${Date.now()}-${orgSuffix}`;
   const org = {
     email: `ci+admindash-${unique}@example.com`,
-    password: "Str0ngPass!",
+    password: "Str0ngPass!2026",
     companyName: `CI Admin Dashboard Co ${unique}`,
     taxId: "0105563001236",
     contactName: "CI Runner",
@@ -94,9 +94,9 @@ async function findInAccountsList(email) {
 }
 
 describe("GET /api/accounts/directory — admin only, every account regardless of role", () => {
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api("/accounts/directory");
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403)", async () => {
@@ -173,9 +173,9 @@ describe("GET /api/accounts/directory — admin only, every account regardless o
 });
 
 describe("GET /api/egp/metrics — admin only, the pipeline card", () => {
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api("/egp/metrics");
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403)", async () => {
@@ -224,9 +224,9 @@ describe("GET /api/egp/metrics — admin only, the pipeline card", () => {
 });
 
 describe("GET /api/audit — admin only, the admin dashboard's activity log", () => {
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api("/audit");
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403)", async () => {
