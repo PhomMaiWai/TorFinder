@@ -310,8 +310,8 @@ Trust boundaries:
 
 | Tool | Command | Result |
 | --- | --- | --- |
-| npm audit (backend) | `node ../.github/scripts/npm-audit.mjs backend` | 0 vulnerabilities at any severity |
-| npm audit (frontend) | `node ../.github/scripts/npm-audit.mjs frontend` | 0 vulnerabilities; 1 dated exception on file (picomatch, until 2026-12-31) |
+| npm audit (backend) | `node ../.github/scripts/npm-audit.mjs backend` (production dependencies) | 0 vulnerabilities at any severity. With dev dependencies (`npm audit`): 9 moderate entries from 2 advisories, `glob` and `minimatch`, reached only through build and lint tools (`@nestjs/cli`, `typescript-eslint`); not shipped, left to Dependabot |
+| npm audit (frontend) | `node ../.github/scripts/npm-audit.mjs frontend` (production dependencies) | 0 vulnerabilities; 1 dated exception on file (picomatch, until 2026-12-31). With dev dependencies: 7 moderate entries from the same `minimatch` advisory through `typescript-eslint`; not shipped |
 | gitleaks v8.21.2 | `gitleaks detect --source . --redact` (full history) | 4 findings, all false positives: 2 are Next.js form field names (`$ACTION_KEY`) inside ZAP HTML reports, 2 are throwaway test-account passwords in e2e tests. Fingerprints recorded in `.gitleaksignore`. New files on this branch add no finding |
 | eslint-plugin-security 3.0.1 | `eslint -c .github/linters/eslint-security.config.mjs backend/src frontend/src` | 0 errors, 143 warnings: 127 `detect-object-injection` (indexing with typed keys), 6 `detect-non-literal-fs-filename` (TLS cert paths from operator env, `backend/src/common/internal-tls.ts:45-47`, `frontend/src/lib/internal-tls.ts:34-36`), 5 `detect-unsafe-regex` and 4 `detect-non-literal-regexp` (constant patterns or input passed through `escapeRegex`), 1 `detect-possible-timing-attacks` (client-side form compare, `frontend/src/app/reset-password/reset-password-form.tsx:60`). No real issue found |
 | Backend test suite | `npm run test:e2e` against a fresh backend + MongoDB 7, `auth.yml` settings | 912 tests: 909 passed, 3 skipped, 0 failed (includes all security tests) |
