@@ -19,11 +19,11 @@ const THROTTLE_LIMIT = Number(process.env.AUTH_THROTTLE_LIMIT ?? "30");
 
 /** Seeded by backend/src/database/seed-data.ts when SEED_DEMO_DATA=true. */
 const SEED = {
-  admin: { email: "admin@bma.go.th", password: "Admin1234!" },
-  owner: { email: "owner@bma.go.th", password: "Owner1234!" },
-  auditor: { email: "auditor@bma.go.th", password: "Auditor1234!" },
-  approvedOrg: { email: "contact@arundigital.co.th", password: "Org12345!" },
-  pendingOrg: { email: "contact@techworks.co.th", password: "Tech12345!" },
+  admin: { email: "admin@bma.go.th", password: "Admin-Demo-2026!" },
+  owner: { email: "owner@bma.go.th", password: "Owner-Demo-2026!" },
+  auditor: { email: "auditor@bma.go.th", password: "Auditor-Demo-2026!" },
+  approvedOrg: { email: "contact@arundigital.co.th", password: "Arun-Demo-2026!" },
+  pendingOrg: { email: "contact@techworks.co.th", password: "Tech-Demo-2026!" },
 };
 
 async function api(path, { method = "GET", body, token } = {}) {

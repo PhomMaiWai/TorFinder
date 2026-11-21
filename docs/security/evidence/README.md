@@ -63,4 +63,5 @@ Chrome received, shown as a table rather than the DevTools panel.
   rules are compiled into `.next`, so only this setting was lost. Retake 01 from a rebuilt
   image to show the header gone.
 - `hello@datacraft.co.th` (README, "Demo accounts") is not in a freshly seeded database. Shot 05
-  locked that address anyway, which shows the lock works for unknown emails.
+  locked that address anyway, which shows the lock works for unknown emails. **Fixed afterwards:** the account is
+  seeded again as the second pending company, so a retake would lock a real account.

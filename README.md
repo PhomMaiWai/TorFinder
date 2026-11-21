@@ -116,13 +116,17 @@ Seeded automatically on startup: any demo account that doesn't exist yet is adde
 
 | Role                            | Email                       | Password       | Signs in at           | Lands on   |
 | ------------------------------- | --------------------------- | -------------- | --------------------- | ---------- |
-| Administrator                   | `admin@bma.go.th`           | `Admin1234!`   | `/login/admin`        | `/admin`   |
-| Administrator (second)          | `admin2@bma.go.th`          | `Admin2345!`   | `/login/admin`        | `/admin`   |
-| Project owner                   | `owner@bma.go.th`           | `Owner1234!`   | `/login/admin`        | `/owner`   |
-| Auditor                         | `auditor@bma.go.th`         | `Auditor1234!` | `/login/admin`        | `/auditor` |
-| Organization (approved)         | `contact@arundigital.co.th` | `Org12345!`    | `/login/organization` | `/dashboard` |
-| Organization (pending approval) | `contact@techworks.co.th`   | `Tech12345!`   | `/login/organization` | —          |
-| Organization (pending approval) | `hello@datacraft.co.th`     | `Data12345!`   | `/login/organization` | —          |
+| Administrator                   | `admin@bma.go.th`           | `Admin-Demo-2026!`   | `/login/admin`        | `/admin`   |
+| Administrator (second)          | `admin2@bma.go.th`          | `Admin2-Demo-2026!`   | `/login/admin`        | `/admin`   |
+| Project owner                   | `owner@bma.go.th`           | `Owner-Demo-2026!`   | `/login/admin`        | `/owner`   |
+| Auditor                         | `auditor@bma.go.th`         | `Auditor-Demo-2026!` | `/login/admin`        | `/auditor` |
+| Organization (approved)         | `contact@arundigital.co.th` | `Arun-Demo-2026!`    | `/login/organization` | `/dashboard` |
+| Organization (approved)         | `sales@siamnetwork.co.th` | `Siam-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Organization (approved)         | `contact@itsupply.co.th` | `Supply-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Organization (approved)         | `hello@helpdeskpro.co.th` | `Help-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Organization (approved)         | `contact@softstart.co.th` | `Start-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Organization (pending approval) | `contact@techworks.co.th`   | `Tech-Demo-2026!`   | `/login/organization` | —          |
+| Organization (pending approval) | `hello@datacraft.co.th`     | `Data-Demo-2026!`   | `/login/organization` | —          |
 
 A member of the public can also sign in with Google at `/login/public` to keep
 bookmarks and saved searches.
@@ -145,7 +149,9 @@ What each role can do is described in
 Seeding runs on backend startup and is **idempotent**: a demo account is inserted only
 when no account has its email yet, so restarting never duplicates anything, a demo
 account you changed (password, role) is left as it is, and accounts you create by
-hand are never touched. A demo account added to `seed-data.ts` later also reaches an
+hand are never touched. One exception: a demo account still on a password it was
+seeded with before (listed in `previousPasswords`) is moved to the current one, so a new
+demo password reaches an existing database without a reset. A demo account added to `seed-data.ts` later also reaches an
 existing database on the next start. TOR records are never seeded by the
 backend; in Docker they come from the snapshot in `docker/mongo-seed/`, otherwise from
 the importers.

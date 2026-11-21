@@ -81,7 +81,7 @@ Two things ride on the same flag:
 - `SEED_DEMO_DATA` defaults to `true` whenever `NODE_ENV` isn't exactly
   `production`. The demo accounts and their passwords are committed in
   plaintext in this repo's own `README.md`
-  (`admin@bma.go.th` / `Admin1234!`, and five more). The seeder only runs
+  (`admin@bma.go.th` / `Admin-Demo-2026!`, and five more). The seeder only runs
   when the `users` collection is completely empty
   (`database.service.ts`'s `seedUsers()`), so the dangerous moment is
   specifically **first boot against a fresh production database** — exactly

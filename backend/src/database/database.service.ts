@@ -8,7 +8,7 @@ import { CERTIFICATIONS, Certification } from "../matching/requirements";
 import { WorkType } from "../matching/work-types";
 import { FeedbackStatus } from "../feedback/feedback.constants";
 import { ReportReason, ReportStatus } from "../reports/reports.constants";
-import { PasswordParams, passwordFields } from "../common/password";
+import { PasswordParams, passwordFields, verifyPassword } from "../common/password";
 import { Role } from "../common/roles";
 import { env } from "../config/env";
 import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES, TorClassification } from "../tor/tor.constants";
@@ -754,18 +754,27 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
    * role and approval may have been changed on purpose.
    */
   private async seedUsers(): Promise<void> {
-    const existing = new Set(
-      (await this.users.find({ email: { $in: SEED_USERS.map((u) => u.email) } }, { projection: { email: 1 } }).toArray()).map(
-        (u) => u.email,
-      ),
-    );
+    const found = await this.users
+      .find(
+        { email: { $in: SEED_USERS.map((u) => u.email) } },
+        { projection: { email: 1, passwordHash: 1, passwordSalt: 1, passwordParams: 1 } },
+      )
+      .toArray();
+    await this.upgradeDemoPasswords(found);
+    const existing = new Set(found.map((u) => u.email));
     const missing = SEED_USERS.filter((u) => !existing.has(u.email));
     if (missing.length === 0) return;
 
     const docs = await Promise.all(
-      missing.map(async ({ password, ...user }) => {
-        return { ...user, ...(await passwordFields(password)), createdAt: new Date() };
-      }),
+      missing.map(async ({ email, name, role, status, company, password }) => ({
+        email,
+        name,
+        role,
+        status,
+        ...(company && { company }),
+        ...(await passwordFields(password)),
+        createdAt: new Date(),
+      })),
     );
 
     // ordered: false — another backend booting at the same moment may insert
@@ -782,5 +791,31 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         "SEED_DEMO_DATA=true in production: demo accounts with published passwords now exist — only acceptable on a private local machine (ASVS 6.3.2)",
       );
     }
+  }
+
+  /**
+   * A demo account still on a password it was seeded with before gets the
+   * current one, so a changed demo password (README) reaches an existing local
+   * database. Anything else, such as a password changed by hand, is left alone.
+   */
+  private async upgradeDemoPasswords(
+    found: { _id: ObjectId; email: string; passwordHash?: string; passwordSalt?: string; passwordParams?: PasswordParams }[],
+  ): Promise<void> {
+    let upgraded = 0;
+    for (const account of found) {
+      const seed = SEED_USERS.find((u) => u.email === account.email);
+      if (!seed?.previousPasswords?.length || !account.passwordHash || !account.passwordSalt) continue;
+      for (const old of seed.previousPasswords) {
+        if (!(await verifyPassword(old, account.passwordSalt, account.passwordHash, account.passwordParams))) continue;
+        // Matched on the old hash too, so a password changed meanwhile isn't overwritten.
+        const result = await this.users.updateOne(
+          { _id: account._id, passwordHash: account.passwordHash },
+          { $set: await passwordFields(seed.password) },
+        );
+        upgraded += result.modifiedCount;
+        break;
+      }
+    }
+    if (upgraded > 0) this.logger.log(`Updated the password of ${upgraded} demo users`);
   }
 }
