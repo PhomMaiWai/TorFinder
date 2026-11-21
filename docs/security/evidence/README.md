@@ -18,9 +18,9 @@ Chrome received, shown as a table rather than the DevTools panel.
 
 | File | Criterion | What it proves |
 | --- | --- | --- |
-| [01-headers-search-page.png](screenshots/01-headers-search-page.png) | 13 HTTP headers | `/search` is served with a per-request nonce CSP (`'nonce-…' 'strict-dynamic'`, `object-src 'none'`, `base-uri 'none'`, `frame-ancestors 'self'`), `strict-transport-security`, `x-content-type-options: nosniff`, `referrer-policy`, and `cache-control: private, no-cache, no-store`. |
+| [01-headers-search-page.png](screenshots/01-headers-search-page.png) | 13 HTTP headers | `/search` is served with a per-request nonce CSP (`'nonce-…' 'strict-dynamic'`, `object-src 'none'`, `base-uri 'none'`, `frame-ancestors 'self'`), `strict-transport-security`, `x-content-type-options: nosniff`, `referrer-policy`, and `cache-control: private, no-cache, no-store`. Retaken 21 Nov 2026 from an image built from `main`: no `x-powered-by` header. |
 | [02-headers-api-auth-me.png](screenshots/02-headers-api-auth-me.png) | 13 HTTP headers | An API answer carrying account data is `cache-control: no-store` with `content-type: application/json; charset=utf-8`. |
-| [03-session-cookie-flags.png](screenshots/03-session-cookie-flags.png) | 9 Session cookie (ASVS 3.3) | The session cookie is `__Host-torr_session`, with HttpOnly ✓, Secure ✓, SameSite=Lax and Path=/ and no Domain. The `__Host-` prefix makes the browser enforce the last three. |
+| [03-session-cookie-flags.png](screenshots/03-session-cookie-flags.png) | 9 Session cookie (ASVS 3.3) | The session cookie is `__Host-torr_session`, with HttpOnly ✓, Secure ✓, SameSite=Lax and Path=/ and no Domain. The `__Host-` prefix makes the browser enforce the last three. The other TorFinder cookies (`__Host-torr_device`, `__Host-torr_gnonce`) have the same flags. `g_state` is set by Google's sign-in script in the browser, not by TorFinder; it holds only the one-tap prompt's state, no session. Retaken 21 Nov 2026. |
 | [04-cors-allowlist.png](screenshots/04-cors-allowlist.png) | 10 CORS | The backend allows exactly one origin (`enableCors({ origin: env.frontendOrigin })`). A request from `https://evil.example` is still answered with `Access-Control-Allow-Origin: http://localhost:3000`, which doesn't match, so the browser refuses to hand the response to the foreign page. |
 | [05-login-lockout.png](screenshots/05-login-lockout.png) | 18 Rate limiting | Repeated wrong passwords for one email lock it for 15 minutes with `ลองเข้าสู่ระบบผิดหลายครั้งเกินไป…`. The lock applies to unknown emails too, so it doesn't reveal which accounts exist (see 08: `unknown_account`). |
 | [06-idle-session-timeout.png](screenshots/06-idle-session-timeout.png) | 18 Session timeout | After the idle limit, opening `/matches` lands on `/login?next=%2Fmatches`. **Taken with `SESSION_IDLE_MINUTES=1` and 75 s idle** so it fits a screenshot; the default is 30 minutes. |
@@ -55,12 +55,11 @@ Chrome received, shown as a table rather than the DevTools panel.
 
 ## Observed while collecting
 
-- The company sidebar header always says "Arun Digital" (`frontend/src/components/layout/app-sidebar.tsx`), whichever company is signed in; visible in 12b. It's a display bug only: the data on the page is the signed-in company's own.
+- The company sidebar header always says "Arun Digital" (`frontend/src/components/layout/app-sidebar.tsx`), whichever company is signed in; visible in 12b. It was a display bug only: the data on the page is the signed-in company's own. **Fixed in #388:** the sidebar now shows the signed-in company's name.
 
-- `/search` still sends `x-powered-by: Next.js` (visible in 01), even though `next.config.ts`
+- `/search` sent `x-powered-by: Next.js` (visible in the first 01), even though `next.config.ts`
   sets `poweredByHeader: false`. **Fixed afterwards:** the Docker image didn't copy
   `next.config.ts` into its final stage, so `next start` ran on Next's defaults. The header
-  rules are compiled into `.next`, so only this setting was lost. Retake 01 from a rebuilt
-  image to show the header gone.
+  rules are compiled into `.next`, so only this setting was lost. 01 was retaken on 21 Nov from a rebuilt image: the header is gone.
 - `hello@datacraft.co.th` (README, "Demo accounts") is not in a freshly seeded database. Shot 05
   locked that address anyway, which shows the lock works for unknown emails.
