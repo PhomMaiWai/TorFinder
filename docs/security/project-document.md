@@ -4,7 +4,7 @@ Software Development Security (01219325), group project, semester 1/2026. Submit
 
 This document follows the six sections the assignment asks for. Each section is short and links to the detailed report in this folder that holds the evidence. Where a graded criterion (1–18) is covered, its number is shown as **[C*n*]**.
 
-> **Draft (18 Nov 2026).** Still to fill: student IDs (§1), marked **TODO**, and two screenshots noted as missing in §6 (the ZAP summary and a cross-company file request).
+> **Draft (18 Nov 2026).** Still to fill: student IDs (§1), marked **TODO**.
 
 ## Contents
 
@@ -205,7 +205,7 @@ All screenshots, with what each one proves, are listed in [evidence/README.md](.
 | --- | --- |
 | **[C13]** Security headers | [01](./evidence/screenshots/01-headers-search-page.png) page headers and nonce CSP, [02](./evidence/screenshots/02-headers-api-auth-me.png) API answer with `no-store` |
 | **[C14]** CodeQL at 0 open | [10](./evidence/screenshots/10-code-scanning.png) |
-| **[C15]** ZAP report | [zap-full.html](./evidence/zap-full.html) (signed-in active scan), [zap-baseline.html](./evidence/zap-baseline.html) (after the fix). No screenshot of the summary yet |
+| **[C15]** ZAP report | [19](./evidence/screenshots/19-zap-summary.png) summary of the signed-in active scan; full reports [zap-full.html](./evidence/zap-full.html) and [zap-baseline.html](./evidence/zap-baseline.html) (after the fix) |
 | **[C12]**, **[C18]** Lockout and its log line | [05](./evidence/screenshots/05-login-lockout.png) lockout message, [08](./evidence/screenshots/08-security-log-json.png) `auth.login.locked` in the JSON log |
 | **[C6]** Org refused on an admin route | [11a](./evidence/screenshots/11a-org-opens-admin-redirected.png) page redirect, [11b](./evidence/screenshots/11b-api-accounts-forbidden.png) backend 403 |
-| **[C7]** One company asking for another's file | **Missing.** Covered by `backend/test/certificates.e2e.test.mjs` and `library.e2e.test.mjs`; no screenshot yet |
+| **[C7]** One company asking for another's file | [20](./evidence/screenshots/20-cross-company-file-refused.png): the owner gets the file (200), another company 404, no session 401. Also tested in `backend/test/certificates.e2e.test.mjs` and `library.e2e.test.mjs` |
