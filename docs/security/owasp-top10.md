@@ -129,6 +129,7 @@ The egress proxy and vault run only in the opt-in hardened stack, not in the def
 - SAST: CodeQL `actions/missing-workflow-permissions` and unpinned-action alerts, and Semgrep `dependabot-missing-cooldown`, all fixed ([sast-report.md](./sast-report.md))
 - Screenshot: [10](./evidence/screenshots/10-code-scanning.png) (0 open code-scanning alerts)
 - GitHub secret scanning and push protection are on for the repository (since 21 Nov 2026), with 0 open alerts: a secret in a new commit is refused at `git push` ([logging-and-errors.md](./logging-and-errors.md#secret-scan-of-the-git-history))
+- GitHub's dependency graph is on, so Dependabot alerts cover every package (about 1,000) and GitHub can export an SBOM of the whole project. Private vulnerability reporting is on, and [SECURITY.md](../../SECURITY.md) tells reporters to use it
 - Threat: D4
 
 **Status: Partly covered.** What is missing:
