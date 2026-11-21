@@ -14,6 +14,7 @@ import { env } from "../config/env";
 import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES, TorClassification } from "../tor/tor.constants";
 import { SEED_USERS } from "./seed-data";
 import type { KnownDevice } from "../auth/known-devices";
+import type { RateCounterDoc } from "../common/shared-counters";
 
 export const ACCOUNT_STATUSES = ["pending", "approved", "rejected"] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
@@ -505,6 +506,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
    */
   locks!: Collection<{ _id: string; at: Date }>;
   savedSearchCounts!: Collection<SavedSearchCountDoc>;
+  /** Rate limits, failed sign-ins and AI quotas shared by every process (common/shared-counters.ts). */
+  rateCounters!: Collection<RateCounterDoc>;
   /** Scans companies attach to their certificates; only ever read by their owner. */
   certificateFiles!: GridFSBucket;
   /** Reference letters and CVs from the proposal library; only ever read by their owner. */
@@ -551,9 +554,11 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.sessions = this.client.db().collection<SessionDoc>("sessions");
     this.locks = this.client.db().collection<{ _id: string; at: Date }>("locks");
     this.savedSearchCounts = this.client.db().collection<SavedSearchCountDoc>("savedSearchCounts");
+    this.rateCounters = this.client.db().collection<RateCounterDoc>("rateCounters");
     this.certificateFiles = new GridFSBucket(this.client.db(), { bucketName: "certificateFiles" });
     this.libraryFiles = new GridFSBucket(this.client.db(), { bucketName: "libraryFiles" });
     await this.users.createIndex({ email: 1 }, { unique: true });
+    await this.rateCounters.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     await this.users.createIndex({ status: 1, createdAt: -1 });
     await this.users.createIndex({ googleId: 1 }, { unique: true, sparse: true });
     // A credential belongs to one account. Partial rather than sparse: an

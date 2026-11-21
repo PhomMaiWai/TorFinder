@@ -54,7 +54,7 @@ function newOrg(overrides = {}) {
   const unique = `${Date.now()}-${orgSuffix}`;
   return {
     email: `ci+${unique}@example.com`,
-    password: "Str0ngPass!",
+    password: "Str0ngPass!2026",
     companyName: `CI Test Co ${unique}`,
     taxId: "0105563001236",
     contactName: "CI Runner",
@@ -105,13 +105,15 @@ describe("POST /api/auth/signup", () => {
     assert.equal(res.status, 400);
   });
 
-  it("rejects a password shorter than 8 characters", async () => {
+  it("rejects a password shorter than 12 characters (ASVS 4.0.3 2.1.1, docs/SECURITY.md G2)", async () => {
+    // 11 characters, not a common password: only the length rule can refuse it.
     const res = await api("/auth/signup", {
       method: "POST",
-      body: newOrg({ password: "short1" }),
+      body: newOrg({ password: "Zq7!mPw2#Lk" }),
     });
 
     assert.equal(res.status, 400);
+    assert.match(JSON.stringify(res.body), /12/);
   });
 
   it("rejects a tax id that is not 13 digits", async () => {
@@ -239,16 +241,16 @@ describe("session token from login", () => {
     assert.equal(res.status, 403);
   });
 
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api("/accounts");
 
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
-  it("forbids a tampered token (403)", async () => {
+  it("forbids a tampered token (401)", async () => {
     const res = await api("/accounts", { token: `${orgToken}tampered` });
 
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 });
 

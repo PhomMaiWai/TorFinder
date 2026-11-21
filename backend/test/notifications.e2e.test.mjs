@@ -99,7 +99,7 @@ function newOrg(overrides = {}) {
   const unique = `${Date.now()}-${orgSuffix}`;
   return {
     email: `ci+notifications-${unique}@example.com`,
-    password: "Str0ngPass!",
+    password: "Str0ngPass!2026",
     companyName: `CI Notifications Co ${unique}`,
     taxId: "0105563001236",
     contactName: "CI Runner",

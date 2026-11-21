@@ -56,7 +56,7 @@ async function approvedOrg() {
   const unique = `${Date.now()}-${suffix}`;
   const org = {
     email: `ci+certs-${unique}@example.com`,
-    password: "Str0ngPass!",
+    password: "Str0ngPass!2026",
     companyName: `CI Certs Co ${unique}`,
     taxId: "0105563001236",
     contactName: "CI Runner",
@@ -101,7 +101,7 @@ before(async () => {
 
 describe("access", () => {
   it("refuses a request with no token, and every role but a company", async () => {
-    assert.equal((await api("/certificates")).status, 403);
+    assert.equal((await api("/certificates")).status, 401);
     assert.equal((await api("/certificates", { token: ADMIN_TOKEN })).status, 403);
     assert.equal((await api("/certificates", { token: makeToken("viewer", GHOST_ID) })).status, 403);
   });

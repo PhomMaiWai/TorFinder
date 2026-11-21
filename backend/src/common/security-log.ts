@@ -41,6 +41,8 @@ export type SecurityEvent =
   | "config.internal_tls_off"
   | "config.virus_scan_off"
   | "file.malware"
+  | "file.unscanned"
+  | "ai.quota.exceeded"
   | "admin.approval.request"
   | "admin.approval.approve"
   | "admin.approval.reject";

@@ -29,6 +29,7 @@ services:
       - NODE_USE_ENV_PROXY=1
       # ASVS 5.4.3: every upload and portal document is scanned.
       - CLAMAV_HOST=clamav
+      - VIRUS_SCAN_REQUIRED=true
       # ASVS 13.3.1: emptied here, so the vault's file below is the only source.
       - SESSION_SECRET=
       - SESSION_SECRET_PREVIOUS=

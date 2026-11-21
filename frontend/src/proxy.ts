@@ -14,6 +14,8 @@ import { jsonResponse } from "@/lib/json-response";
 import { type Role, homeFor } from "@/lib/roles";
 import { newCspNonce, pageContentSecurityPolicy } from "@/lib/csp";
 import { isSessionOpen } from "@/lib/session-check";
+import { httpsRedirectTarget } from "@/lib/https-redirect";
+import { isCrossSiteWrite } from "@/lib/request-origin";
 import { isUnexpectedFile } from "@/lib/served-files";
 
 /** Pages only a signed-in account may see. */
@@ -108,6 +110,10 @@ function forwardedHeaders(request: NextRequest, refreshedToken: string | null, c
  * `verifySessionToken`), gates the request, and sets the CSP on pages.
  */
 export async function proxy(request: NextRequest) {
+  // Plain HTTP through a proxy goes to HTTPS before anything else (docs/SECURITY.md G9).
+  const secure = httpsRedirectTarget(request.nextUrl, request.headers);
+  if (secure) return NextResponse.redirect(secure, 308);
+
   const isApi = request.nextUrl.pathname.startsWith("/api/");
   const rawToken = request.cookies.get(SESSION_COOKIE)?.value;
   let session = await verifySessionToken(rawToken);
@@ -156,6 +162,10 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
   if (isUnexpectedFile(pathname)) return new NextResponse("Not found", { status: 404 });
 
   if (pathname.startsWith("/api/")) {
+    // A write another site started is refused before anything else (docs/SECURITY.md G5).
+    if (isCrossSiteWrite(request.method, pathname, request.headers)) {
+      return jsonResponse({ error: "Cross-site request refused." }, { status: 403 });
+    }
     if (PUBLIC_API_ROUTES.includes(pathname) || PUBLIC_API_PATTERNS.some((pattern) => pattern.test(pathname))) {
       return null;
     }

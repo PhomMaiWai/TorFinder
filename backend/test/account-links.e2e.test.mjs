@@ -36,7 +36,7 @@ async function signup() {
   suffix += 1;
   const org = {
     email: `ci+links-${Date.now()}-${suffix}@example.com`,
-    password: "Str0ngPass!",
+    password: "Str0ngPass!2026",
     companyName: `CI Links Co ${suffix}`,
     taxId: "0105563001236",
     contactName: "CI Runner",

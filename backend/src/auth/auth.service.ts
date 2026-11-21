@@ -49,7 +49,7 @@ const REAUTH_MINUTES = 10;
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly loginAttempts = new LoginAttempts();
+  private readonly loginAttempts = new LoginAttempts(() => this.db.rateCounters);
 
   constructor(
     private readonly db: DatabaseService,
@@ -101,7 +101,7 @@ export class AuthService {
 
   async login({ email, password }: LoginDto, ip?: string, device: ClientDevice = {}) {
     const address = email.trim().toLowerCase();
-    this.assertNotLocked(address, ip);
+    await this.assertNotLocked(address, ip);
     const user = await this.db.users.findOne({ email: address }, { projection: SIGN_IN_FIELDS });
 
     // No passwordHash means the account was created via Google and never set
@@ -113,7 +113,7 @@ export class AuthService {
         ? await verifyPassword(password, user.passwordSalt, user.passwordHash, user.passwordParams)
         : await spendPasswordCheck(password);
     if (!user || !valid) {
-      this.recordPasswordFailure(address, user, ip);
+      await this.recordPasswordFailure(address, user, ip);
       logSecurityEvent("auth.login", {
         outcome: "failure",
         email: address,
@@ -122,7 +122,7 @@ export class AuthService {
       });
       throw new UnauthorizedException("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     }
-    this.loginAttempts.recordSuccess(address);
+    await this.loginAttempts.recordSuccess(address);
     // ASVS 11.4.2: a hash made with older, weaker settings is redone now, while
     // the plain password is in hand; it can't be upgraded any other way.
     if (needsRehash(user.passwordParams)) {
@@ -264,11 +264,11 @@ export class AuthService {
     const user = ObjectId.isValid(session.sub) ? await this.db.users.findOne({ _id: new ObjectId(session.sub) }) : null;
     if (!user) throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
     if (user.passwordHash && user.passwordSalt) {
-      this.assertNotLocked(user.email, ip);
+      await this.assertNotLocked(user.email, ip);
       if (typeof password === "string" && password && (await verifyPassword(password, user.passwordSalt, user.passwordHash, user.passwordParams))) {
         return;
       }
-      if (password) this.recordPasswordFailure(user.email, user, ip);
+      if (password) await this.recordPasswordFailure(user.email, user, ip);
       logSecurityEvent("auth.session.revoke", { outcome: "failure", userId: session.sub, ip, reason: password ? "wrong_password" : "reauth_required" });
       throw new ForbiddenException({ statusCode: 403, code: "reauth-required", message: "กรุณายืนยันรหัสผ่านปัจจุบันก่อนออกจากระบบอุปกรณ์อื่น" });
     }
@@ -287,9 +287,9 @@ export class AuthService {
       throw new BadRequestException("บัญชีนี้ยังไม่มีรหัสผ่าน กรุณาใช้ \"ลืมรหัสผ่าน\" เพื่อตั้งรหัสผ่าน");
     }
 
-    this.assertNotLocked(user.email, ip);
+    await this.assertNotLocked(user.email, ip);
     if (!(await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash, user.passwordParams))) {
-      this.recordPasswordFailure(user.email, user, ip);
+      await this.recordPasswordFailure(user.email, user, ip);
       logSecurityEvent("auth.password.change", {
         outcome: "failure",
         userId,
@@ -300,7 +300,7 @@ export class AuthService {
       // 400 rather than 401: the session is fine, only the typed password is wrong.
       throw new BadRequestException("รหัสผ่านปัจจุบันไม่ถูกต้อง");
     }
-    this.loginAttempts.recordSuccess(user.email);
+    await this.loginAttempts.recordSuccess(user.email);
 
     if (newPassword === currentPassword) {
       throw new BadRequestException("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านปัจจุบัน");
@@ -498,16 +498,16 @@ export class AuthService {
    * address sends nothing, so waiting would let the response time tell which
    * addresses have accounts (ASVS 6.3.8). notify() never throws.
    */
-  private recordPasswordFailure(address: string, user: { _id: ObjectId; email: string } | null, ip?: string): void {
-    const justLocked = this.loginAttempts.recordFailure(address);
+  private async recordPasswordFailure(address: string, user: { _id: ObjectId; email: string } | null, ip?: string): Promise<void> {
+    const justLocked = await this.loginAttempts.recordFailure(address);
     if (!justLocked || !user) return;
     logSecurityEvent("auth.login.lockout", { outcome: "failure", userId: user._id.toString(), email: address, ip, reason: "owner_notified" });
     void this.links.notify(user.email, "login-locked");
   }
 
-  private assertNotLocked(email: string, ip?: string): void {
+  private async assertNotLocked(email: string, ip?: string): Promise<void> {
     try {
-      this.loginAttempts.assertAllowed(email);
+      await this.loginAttempts.assertAllowed(email);
     } catch (error) {
       logSecurityEvent("auth.login.locked", { outcome: "failure", email, ip, reason: "too_many_failures" });
       throw error;

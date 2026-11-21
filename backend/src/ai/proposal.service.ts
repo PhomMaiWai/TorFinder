@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 
+import { env } from "../config/env";
 import { DatabaseService } from "../database/database.service";
+import { takeDailyAiQuota } from "./ai-quota";
 import { PROPOSAL_INSTRUCTION, PROPOSAL_SCHEMA, ProposalDraft, proposalPrompt, sanitizeDraft } from "./proposal-draft";
 import { VertexClient } from "./vertex.client";
 
@@ -49,6 +51,19 @@ export class ProposalService {
         : null,
     ]);
     if (!tor) throw new NotFoundException("ไม่พบรายการ TOR");
+
+    // Every draft is a long, paid model answer: capped per account and in
+    // total per day, on top of the per-address throttle (docs/SECURITY.md G1).
+    const { proposalDraftsPerAccount, proposalDraftsTotal } = env.ai.quota;
+    if (!(await takeDailyAiQuota(this.db.rateCounters, `proposal-account:${userId}`, proposalDraftsPerAccount, { userId }))) {
+      throw new HttpException(
+        `ร่างข้อเสนอได้ไม่เกิน ${proposalDraftsPerAccount} ครั้งต่อวัน กรุณาลองใหม่พรุ่งนี้`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    if (!(await takeDailyAiQuota(this.db.rateCounters, "proposal-total", proposalDraftsTotal, { userId }))) {
+      throw new ServiceUnavailableException("ระบบร่างข้อเสนอถูกใช้งานครบโควตาของวันนี้แล้ว กรุณาลองใหม่พรุ่งนี้");
+    }
 
     const raw = await this.vertex.extractJson<Partial<ProposalDraft>>(
       PROPOSAL_INSTRUCTION,

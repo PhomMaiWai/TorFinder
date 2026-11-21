@@ -97,7 +97,7 @@ describe("connecting LINE", { skip: !LINE_SECRET && "LINE_CHANNEL_SECRET not set
       method: "POST",
       body: {
         email,
-        password: "Str0ngPass!",
+        password: "Str0ngPass!2026",
         companyName: `CI LINE Co ${Date.now()}`,
         taxId: "0105563001236",
         contactName: "CI Runner",

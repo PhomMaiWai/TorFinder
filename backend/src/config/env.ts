@@ -217,6 +217,11 @@ export const env = {
     host: process.env.CLAMAV_HOST ?? "",
     port: optionalNumber("CLAMAV_PORT", 3310),
     timeoutMs: optionalNumber("CLAMAV_TIMEOUT_MS", 60_000),
+    /**
+     * Fail closed: with no scanner configured, refuse files rather than store
+     * or serve them unscanned. On by default in production (docs/SECURITY.md G6).
+     */
+    required: (process.env.VIRUS_SCAN_REQUIRED ?? String(isProduction)) === "true",
   },
   /**
    * Where notifications go besides the in-app list. Each channel switches
@@ -257,6 +262,16 @@ export const env = {
     // would pay for it each time. Ignored entirely without a project id.
     pollMinutes: optionalNumber("AI_POLL_MINUTES", 60),
     pollOnStartup: process.env.AI_POLL_ON_STARTUP === "true",
+    // Daily caps on model calls that visitors can trigger (docs/SECURITY.md G1).
+    // Background extraction is capped per run instead (ai.constants.ts).
+    quota: {
+      /** Proposal drafts one company account may ask for per day. */
+      proposalDraftsPerAccount: optionalNumber("AI_PROPOSAL_DRAFTS_PER_ACCOUNT_PER_DAY", 20),
+      /** Proposal drafts across all accounts per day. */
+      proposalDraftsTotal: optionalNumber("AI_PROPOSAL_DRAFTS_PER_DAY", 300),
+      /** Pasted-text "find similar" queries embedded per day; past it the search ranks by keywords. */
+      similarQueryEmbeds: optionalNumber("AI_SIMILAR_EMBEDS_PER_DAY", 2_000),
+    },
   },
   /**
    * Only the knobs an operator would turn without a redeploy. Everything else

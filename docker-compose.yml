@@ -83,6 +83,10 @@ services:
       - STEP_UP_MINUTES=${STEP_UP_MINUTES:-10}
       - ADMIN_APPROVAL_EXPIRY_HOURS=${ADMIN_APPROVAL_EXPIRY_HOURS:-48}
       - FORM_MIN_SECONDS=${FORM_MIN_SECONDS:-2}
+      # The backend refuses uploads in production unless ClamAV checks them
+      # (docs/SECURITY.md G6). This stack has no ClamAV, so a local demo opts out
+      # here; docker-compose.hardening.yml adds ClamAV and turns it back on.
+      - VIRUS_SCAN_REQUIRED=${VIRUS_SCAN_REQUIRED:-false}
       # AI document reading (Vertex). Off while VERTEX_PROJECT_ID is empty.
       # Values come from the root .env, never baked into the image.
       - VERTEX_PROJECT_ID=${VERTEX_PROJECT_ID:-}
@@ -90,6 +94,10 @@ services:
       - VERTEX_MODEL=${VERTEX_MODEL:-gemini-2.5-flash}
       - AI_POLL_MINUTES=${AI_POLL_MINUTES:-60}
       - AI_POLL_ON_STARTUP=${AI_POLL_ON_STARTUP:-false}
+      # Daily caps on model calls visitors can trigger (docs/SECURITY.md G1).
+      - AI_PROPOSAL_DRAFTS_PER_ACCOUNT_PER_DAY=${AI_PROPOSAL_DRAFTS_PER_ACCOUNT_PER_DAY:-20}
+      - AI_PROPOSAL_DRAFTS_PER_DAY=${AI_PROPOSAL_DRAFTS_PER_DAY:-300}
+      - AI_SIMILAR_EMBEDS_PER_DAY=${AI_SIMILAR_EMBEDS_PER_DAY:-2000}
       # Points the SDK at the mounted key only when one was given; empty means
       # the SDK never looks for one.
       - GOOGLE_APPLICATION_CREDENTIALS=${VERTEX_CREDENTIALS_FILE:+/run/secrets/gcp-credentials.json}
@@ -107,7 +115,15 @@ services:
   # then exits (docker/certs/generate.sh). Runs on every `up`; idempotent.
   certs:
     image: mongo:7
+    # Root only because each key is chown'ed to the uid of the service that
+    # reads it (node 1000, mongodb 999, vault 100). Everything else root could
+    # do is taken away (docs/SECURITY.md G10): only the file-ownership
+    # capabilities remain, no network, and no way to gain more privileges.
     user: root
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    security_opt: ["no-new-privileges:true"]
+    network_mode: none
     volumes:
       - certs_ca:/certs/ca
       - certs_frontend:/certs/frontend

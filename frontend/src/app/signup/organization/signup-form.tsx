@@ -55,7 +55,7 @@ function validate(values: Values, t: (key: string) => string): Partial<Record<Fi
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
     errors.email = t("errorEmail");
   }
-  if (values.password && values.password.length < 8) {
+  if (values.password && values.password.length < 12) {
     errors.password = t("errorPasswordLength");
   }
   if (values.confirmPassword && values.confirmPassword !== values.password) {

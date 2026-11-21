@@ -9,7 +9,7 @@ export class ChangePasswordDto {
 
   // Same rule as sign-up and reset.
   @IsString()
-  @MinLength(8, { message: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" })
+  @MinLength(12, { message: "รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร" })
   @MaxLength(128)
   newPassword!: string;
 }

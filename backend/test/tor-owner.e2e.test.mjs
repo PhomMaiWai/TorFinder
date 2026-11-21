@@ -98,7 +98,7 @@ after(async () => {
 describe("PUT /api/tor/:id/owner — linking an announcement to its owner", () => {
   it("is admin-only", async () => {
     const tor = await createTor();
-    assert.equal((await setOwner(tor.id, OWNER._id.toString(), "")).status, 403);
+    assert.equal((await setOwner(tor.id, OWNER._id.toString(), "")).status, 401);
     assert.equal((await setOwner(tor.id, OWNER._id.toString(), ownerToken)).status, 403);
   });
 
