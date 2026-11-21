@@ -5,7 +5,7 @@
 // Google Chrome, and Playwright in some folder of your own:
 //   mkdir /tmp/pw && cd /tmp/pw && npm i playwright
 //   NODE_PATH=/tmp/pw/node_modules node docs/security/evidence/capture-screenshots.js headers cors
-// Shots: headers cors lockout passwords authz logs google adminsignout sessions mtls edge hardening
+// Shots: headers cors lockout passwords authz logs google adminsignout sessions mtls edge hardening zap crosscompany
 //   (run adminsignout before sessions: it clears the company's other sessions)
 //   idle      needs SESSION_IDLE_MINUTES=1 on frontend + backend (a compose override)
 //   error500  needs MongoDB stopped first: docker compose stop db (start it again after)
@@ -436,6 +436,81 @@ done'`);
         note: "Secret values are never shown. The vault's unseal key stays in a volume only vault-init mounts; a real server would use auto-unseal instead.",
       }),
     );
+  },
+
+  // 19: the ZAP report's summary (criterion 15): the signed-in active scan,
+  // from its own HTML report, down to where the per-alert detail starts.
+  async zap(browser) {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
+    await page.goto("file://" + path.join(REPO, "docs/security/evidence/zap-full.html"));
+    const end = await page.locator("h3", { hasText: "Alert Detail" }).first().boundingBox();
+    const height = Math.min(Math.ceil(end.y), 4000);
+    await page.setViewportSize({ width: 1280, height });
+    await page.screenshot({ path: path.join(OUT, "19-zap-summary.png"), clip: { x: 0, y: 0, width: 1280, height } });
+    await page.close();
+    console.log("wrote 19-zap-summary.png");
+  },
+
+  // 20: one company can't open another company's file (criterion 7; ASVS 8.2.2).
+  // Arun Digital uploads a small test certificate; a throwaway second company
+  // (temp-company.js) asks for the same file. Both are removed afterwards.
+  async crosscompany(browser) {
+    const helper = (action) =>
+      sh(`docker compose exec -T -e ACTION=${action} backend node - < docs/security/evidence/temp-company.js`).trim().split("\n").pop();
+    const other = JSON.parse(helper("create"));
+    const owner = await browser.newContext({ viewport: VIEWPORT });
+    const stranger = await browser.newContext({ viewport: VIEWPORT });
+    const ownerPage = await owner.newPage();
+    const strangerPage = await stranger.newPage();
+    let certificateId;
+    try {
+      await login(ownerPage, ORG);
+      await login(strangerPage, other);
+      // Through the frontend, as the Certificates page does it.
+      certificateId = await ownerPage.evaluate(async () => {
+        const created = await fetch("/api/certificates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: "ISO 27001 (evidence test)", standard: "iso27001" }),
+        }).then((r) => r.json());
+        const form = new FormData();
+        form.append("file", new Blob(["%PDF-1.7\n% a test certificate\n"], { type: "application/pdf" }), "iso27001.pdf");
+        const uploaded = await fetch(`/api/certificates/${created.id}/file`, { method: "PUT", body: form });
+        if (!uploaded.ok) throw new Error(`upload failed: ${uploaded.status}`);
+        return created.id;
+      });
+      const ask = (page) =>
+        page.evaluate(async (id) => {
+          const res = await fetch(`/api/certificates/${id}/file`);
+          const type = res.headers.get("content-type") ?? "";
+          return `${res.status} ${type.startsWith("application/pdf") ? "application/pdf (the file)" : (await res.text()).slice(0, 80)}`;
+        }, certificateId);
+      const anonymous = await browser.newContext();
+      const anonymousPage = await anonymous.newPage();
+      await anonymousPage.goto(FE + "/search");
+      const lines = [
+        `GET /api/certificates/${certificateId}/file`,
+        `  as Arun Digital (the owner)   → ${await ask(ownerPage)}`,
+        `  as Evidence Other Co          → ${await ask(strangerPage)}`,
+        `  with no session               → ${await ask(anonymousPage)}`,
+      ];
+      await anonymous.close();
+      await renderCard(
+        browser,
+        "20-cross-company-file-refused.png",
+        card({
+          title: "One company can't open another company's file (ASVS 8.2.2, criterion 7)",
+          source: "Local stack: Arun Digital uploads a test certificate, then a second company asks for the same URL",
+          terminal: term("# the same file, asked for by three callers through the frontend", lines.join("\n"), ["200", "404", "401", "403"]),
+          note: "Each file is looked up together with the caller's own account (certificates.service.ts), so another company's id is simply not found: the answer gives away nothing about whether the file exists.",
+        }),
+      );
+    } finally {
+      if (certificateId) await ownerPage.evaluate((id) => fetch(`/api/certificates/${id}`, { method: "DELETE" }), certificateId);
+      await owner.close();
+      await stranger.close();
+      console.log(helper("remove"));
+    }
   },
 
   // 16: services authenticate each other with certificates (ASVS 12.3.3, 12.3.5).
