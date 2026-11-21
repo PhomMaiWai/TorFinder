@@ -487,3 +487,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 17.2.4 | The media server is able to continue processing incoming media traffic when encountering malformed Secure Real-time… | N/A | No WebRTC |
 | 17.3.1 | The signaling server is able to continue processing legitimate incoming signaling messages during a flood attack | N/A | No WebRTC |
 | 17.3.2 | The signaling server is able to continue processing legitimate signaling messages when encountering malformed… | N/A | No WebRTC |
+
+---
+
+The same controls, grouped by OWASP Top 10 (2025) category, are in [owasp-top10.md](./owasp-top10.md).
