@@ -63,6 +63,10 @@ export class VertexClient {
         if (vectors.length !== texts.length || vectors.some((v) => v.length === 0)) {
           throw new Error(`Vertex returned ${vectors.length} embeddings for ${texts.length} texts`);
         }
+        // One line per call, like generation below, so embedding spend can be
+        // reconciled against the bill too (billed per input character).
+        const characters = texts.reduce((sum, text) => sum + text.length, 0);
+        this.logger.log(`Vertex ${env.ai.embeddingModel}: ${JSON.stringify({ texts: texts.length, characters })}`);
         return vectors;
       } catch (error) {
         lastError = error;

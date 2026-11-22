@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from "@nes
 import { createHash } from "node:crypto";
 import { ObjectId } from "mongodb";
 
+import { takeDailyAiQuota } from "../ai/ai-quota";
 import { VertexClient } from "../ai/vertex.client";
 import { mapWithLimit } from "../common/concurrency";
 import { env } from "../config/env";
@@ -168,13 +169,23 @@ export class SimilarService {
 
     const queryVector = source
       ? (await this.embedAndStore([{ id: source._id, text: query }], true)).get(source._id.toString())
-      : (await this.vertex.embed([query.slice(0, SIMILAR.embedTextChars * 2)]))[0];
+      : await this.embedQuery(query);
     if (!queryVector) return null;
 
     return candidates.map((tor) => {
       const vector = vectors.get(tor._id.toString());
       return vector ? denseCosine(queryVector, vector) : 0;
     });
+  }
+
+  /**
+   * A pasted query costs one embedding call, and anyone can send one: past the
+   * daily cap (docs/SECURITY.md G1) this returns null and the search ranks by
+   * keywords instead, so the feature stays up while the spend stops.
+   */
+  private async embedQuery(query: string): Promise<number[] | undefined> {
+    if (!(await takeDailyAiQuota(this.db.rateCounters, "similar-query", env.ai.quota.similarQueryEmbeds))) return undefined;
+    return (await this.vertex.embed([query.slice(0, SIMILAR.embedTextChars * 2)]))[0];
   }
 
   /** Stored vectors still made from the TOR's current text by the current model. */

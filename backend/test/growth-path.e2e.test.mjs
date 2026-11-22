@@ -90,7 +90,7 @@ before(async () => {
     method: "POST",
     body: {
       email,
-      password: "Str0ngPass!",
+      password: "Str0ngPass!2026",
       companyName: `CI Growth Co ${RUN}`,
       taxId: "0105563001236",
       contactName: "CI Runner",
@@ -127,8 +127,8 @@ after(async () => {
 
 describe("GET /api/insights/growth", () => {
   it("is for company accounts only", async () => {
-    // A role guard refuses a missing token and the wrong role alike.
-    assert.equal((await api("/insights/growth")).status, 403);
+    // No session is 401 (sign in); a session with the wrong role is 403.
+    assert.equal((await api("/insights/growth")).status, 401);
     assert.equal((await api("/insights/growth", { token: ADMIN_TOKEN })).status, 403);
   });
 

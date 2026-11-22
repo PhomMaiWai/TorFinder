@@ -281,10 +281,10 @@ describe("GET /api/matching/tor/:id/companies — admin only", () => {
     tor = await createTor({ title: `จ้างพัฒนาเว็บไซต์องค์กร ${RUN}` });
   });
 
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api(`/matching/tor/${tor.id}/companies`);
 
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403) — one company can't read the others' scores", async () => {
@@ -295,10 +295,10 @@ describe("GET /api/matching/tor/:id/companies — admin only", () => {
 });
 
 describe("POST /api/matching/budget/refresh — admin only", () => {
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api("/matching/budget/refresh", { method: "POST" });
 
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403)", async () => {

@@ -134,7 +134,7 @@ describe("POST /api/tor/:torId/reports — reporting a problem", () => {
 
 describe("GET /api/reports — the admins' list", () => {
   it("is admin-only", async () => {
-    assert.equal((await api("/reports")).status, 403);
+    assert.equal((await api("/reports")).status, 401);
     assert.equal((await api("/reports", { token: ORG_TOKEN })).status, 403);
   });
 
@@ -173,7 +173,7 @@ describe("PATCH /api/reports/:id — resolving and reopening (#163)", () => {
   it("is admin-only", async () => {
     const tor = await createTor();
     const filed = await report(tor.id);
-    assert.equal((await setStatus(filed.body.id, "resolved", "")).status, 403);
+    assert.equal((await setStatus(filed.body.id, "resolved", "")).status, 401);
     assert.equal((await setStatus(filed.body.id, "resolved", ORG_TOKEN)).status, 403);
     assert.equal((await stored(filed.body.id)).status, "open");
   });
@@ -240,7 +240,7 @@ describe("Fix this TOR — fixing a record from a report (#227)", () => {
     assert.equal(res.body.message, REPORT.message);
     assert.equal(res.body.reporter.email, REPORTER_EMAIL);
 
-    assert.equal((await api(`/reports/${filed.body.id}`)).status, 403);
+    assert.equal((await api(`/reports/${filed.body.id}`)).status, 401);
     assert.equal((await api(`/reports/${filed.body.id}`, { token: ORG_TOKEN })).status, 403);
     assert.equal((await api(`/reports/${new ObjectId()}`, { token: ADMIN_TOKEN })).status, 404);
   });

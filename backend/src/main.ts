@@ -79,7 +79,10 @@ async function bootstrap() {
     logSecurityEvent("config.internal_tls_off", { outcome: "failure", reason: "backend_serves_plain_http" });
   }
   if (env.isProduction && !env.virusScan.host) {
-    logSecurityEvent("config.virus_scan_off", { outcome: "failure", reason: "clamav_host_unset" });
+    logSecurityEvent("config.virus_scan_off", {
+      outcome: "failure",
+      reason: env.virusScan.required ? "clamav_host_unset_uploads_refused" : "clamav_host_unset_scan_disabled",
+    });
   }
 }
 

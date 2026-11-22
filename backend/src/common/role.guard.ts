@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Optional } from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Optional, UnauthorizedException } from "@nestjs/common";
 
 import { Role } from "./roles";
 import { SessionRevocationService } from "./session-revocation.service";
@@ -8,9 +8,10 @@ import { verifySessionToken } from "./token";
 /**
  * A route open to exactly the roles a subclass names. The caller presents the
  * session token in the Authorization header — the frontend forwards it from
- * its session cookie. No token, a forged one, the wrong role, and a revoked
- * token are all refused the same way, so a response never says which of them
- * it was.
+ * its session cookie. No token, a forged, expired or revoked one is 401 (sign
+ * in again), the same answer SessionGuard gives; a valid session with the
+ * wrong role is 403. The body is the same refusal text either way, and the
+ * caller only learns what it already knows: whether its own token is valid.
  *
  * A guard admits one role, not "admin or better": an admin is not implicitly
  * an owner or an auditor, and neither of those can reach an admin route. A
@@ -48,8 +49,12 @@ export abstract class RoleGuard implements CanActivate {
     const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
     const session = scheme === "Bearer" ? verifySessionToken(token) : null;
 
-    if (!session || !this.roles.includes(session.role)) {
-      logDenied(request, !session ? (token ? "invalid_token" : "no_token") : "wrong_role", session?.sub, session?.role);
+    if (!session) {
+      logDenied(request, token ? "invalid_token" : "no_token");
+      throw new UnauthorizedException(this.refusal);
+    }
+    if (!this.roles.includes(session.role)) {
+      logDenied(request, "wrong_role", session.sub, session.role);
       throw new ForbiddenException(this.refusal);
     }
 
@@ -72,7 +77,7 @@ export abstract class RoleGuard implements CanActivate {
     return this.revocation.isValid(session.sub, session.iat, session.sid).then((valid) => {
       if (!valid) {
         logDenied(request, "revoked_token", session.sub, session.role);
-        throw new ForbiddenException(this.refusal);
+        throw new UnauthorizedException(this.refusal);
       }
       request.session = session;
       logGranted(request, `role:${this.roles.join("|")}`, session.sub, session.role);

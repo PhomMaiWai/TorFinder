@@ -88,7 +88,7 @@ function newOrg(overrides = {}) {
   const unique = `${Date.now()}-${orgSuffix}`;
   return {
     email: `ci+accounts-${unique}@example.com`,
-    password: "Str0ngPass!",
+    password: "Str0ngPass!2026",
     companyName: `CI Accounts Co ${unique}`,
     taxId: "0105563001236",
     contactName: "CI Runner",
@@ -138,9 +138,9 @@ before(async () => {
 });
 
 describe("GET /api/accounts — list, admin only", () => {
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api("/accounts");
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403)", async () => {
@@ -403,9 +403,9 @@ describe("PATCH /api/accounts/me — update own profile", () => {
 });
 
 describe("PATCH /api/accounts/:id — review, admin only", () => {
-  it("forbids a request with no token (403)", async () => {
+  it("forbids a request with no token (401)", async () => {
     const res = await api(`/accounts/${GHOST_ID}`, { method: "PATCH", body: { status: "approved" } });
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 401);
   });
 
   it("forbids an organization token (403)", async () => {

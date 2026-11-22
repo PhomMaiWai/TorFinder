@@ -38,6 +38,15 @@ const SECURITY_HEADERS = [
   // ASVS 3.5.8: other sites can't embed our responses — including a signed-in
   // user's certificate and library files — as images, scripts or media.
   { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+  // docs/SECURITY.md G12 (ZAP 10063): no page here uses these browser
+  // features, so none of them may be used, by us or by anything embedded.
+  // Passkeys (publickey-credentials-get/create) keep their default: this origin.
+  {
+    key: "Permissions-Policy",
+    value:
+      "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), " +
+      "magnetometer=(), microphone=(), midi=(), payment=(), usb=(), interest-cohort=()",
+  },
 ];
 
 const nextConfig: NextConfig = {

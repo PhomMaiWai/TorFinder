@@ -1,0 +1,9 @@
+# Reviewed gitleaks false positives (docs/SECURITY.md §6). One fingerprint per
+# line; anything new still fails .github/workflows/security.yml.
+#
+# Next.js server-action form field names ("$ACTION_KEY") captured in the ZAP report HTML, not a key:
+35ac711b808dfb1f5cd1b11e945119f265425dc4:docs/security/evidence/zap-baseline.html:generic-api-key:5638
+35ac711b808dfb1f5cd1b11e945119f265425dc4:docs/security/evidence/zap-baseline-before.html:generic-api-key:8020
+# Throwaway passwords for made-up test accounts against a local CI database:
+002e676655cc61ca1757170a41eba68d5237a00b:backend/test/asvs-l2-regressions.e2e.test.mjs:generic-api-key:112
+4d6966cb4506cf55708a3a76143f2e72b5d5aa39:backend/test/asvs-l1-regressions.e2e.test.mjs:generic-api-key:108

@@ -10,7 +10,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { resetPassword } from "@/lib/account-links";
 
 /** Same rule as sign-up and the backend's ResetPasswordDto. */
-const MIN_PASSWORD = 8;
+const MIN_PASSWORD = 12;
 
 export function ResetPasswordForm({ token }: { token: string | null }) {
   const t = useTranslations("AccountLinks");

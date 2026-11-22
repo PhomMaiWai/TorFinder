@@ -1,0 +1,170 @@
+name: Security checks
+
+# docs/SECURITY.md §6, layers 1 and 2: dependency audit, secret scan,
+# security lint and the security regression tests (auth, IDOR, NoSQL
+# injection, AI cost limits, prompt-injection output gate). Layer 3 (OWASP ZAP
+# baseline) runs weekly and on demand against a production build.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Mondays 02:00 UTC: new advisories appear without any code change.
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-audit:
+    name: npm audit (production deps)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [backend, frontend]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
+      - run: npm ci --ignore-scripts
+      # High/critical fails the build unless excepted, with a reason and an
+      # expiry, in .github/audit-exceptions.json.
+      - run: node ../.github/scripts/npm-audit.mjs ${{ matrix.project }}
+
+  secret-scan:
+    name: gitleaks (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      # Reviewed false positives are listed by fingerprint in .gitleaksignore.
+      - name: Run gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2 \
+            detect --source /repo --redact --no-banner -v
+
+  security-lint:
+    name: eslint-plugin-security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+      - name: Install linter into a scratch folder
+        run: |
+          mkdir -p "$RUNNER_TEMP/seclint"
+          cp .github/linters/eslint-security.config.mjs "$RUNNER_TEMP/seclint/"
+          cd "$RUNNER_TEMP/seclint"
+          npm init -y > /dev/null
+          npm install --ignore-scripts eslint@9.17.0 typescript-eslint@8.18.0 \
+            eslint-plugin-security@3.0.1 eslint-plugin-react-hooks@5.1.0
+      # Warnings are triaged in docs/SECURITY.md §6; an error fails the job.
+      - name: Lint backend and frontend sources
+        run: |
+          "$RUNNER_TEMP/seclint/node_modules/.bin/eslint" \
+            -c "$RUNNER_TEMP/seclint/eslint-security.config.mjs" backend/src frontend/src
+
+  security-tests:
+    name: Security regression tests (API)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://localhost:27017/torr_sec
+      SESSION_SECRET: ci-test-secret-not-for-production
+      SEED_DEMO_DATA: "true"
+      FRONTEND_ORIGIN: http://localhost:3000
+      EGP_POLL_MINUTES: "0"
+      EGP_POLL_ON_STARTUP: "false"
+      MEA_POLL_MINUTES: "0"
+      DATAGOV_POLL_MINUTES: "0"
+      GPROC_POLL_MINUTES: "0"
+      AI_POLL_MINUTES: "0"
+      VERTEX_PROJECT_ID: ""
+      THROTTLE_LIMIT: "300"
+      AUTH_THROTTLE_LIMIT: "5"
+      AUTH_THROTTLE_TTL_MS: "60000"
+      E2E_BASE_URL: http://localhost:4000
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Start backend
+        run: |
+          nohup node dist/main.js > backend.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:4000/health && exit 0; sleep 2; done
+          cat backend.log; exit 1
+      - name: Run security tests
+        run: node --test --test-reporter=spec test/security-owasp.e2e.test.mjs
+      - name: Backend log
+        if: always()
+        run: cat backend.log || true
+
+  zap-baseline:
+    name: OWASP ZAP baseline (weekly / manual)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      SESSION_SECRET: ci-zap-secret-not-for-production-0123456789
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build and start the frontend (production mode)
+        working-directory: frontend
+        env:
+          BACKEND_URL: http://localhost:4000
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          npm ci
+          npm run build
+          nohup npm start > ../frontend.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:3000/ && exit 0; sleep 2; done
+          cat ../frontend.log; exit 1
+      # Passive scan only; -I keeps warnings from failing the job, the report is
+      # triaged by hand (docs/security/dast-report.md).
+      - name: ZAP baseline
+        run: |
+          mkdir -p zap && chmod 777 zap
+          docker run --rm --network host -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:2.16.1 \
+            zap-baseline.py -t http://localhost:3000 -J zap-baseline.json -r zap-baseline.html -I
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: zap-baseline
+          path: zap/

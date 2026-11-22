@@ -40,11 +40,16 @@ function clamdVerdict(data: Buffer): Promise<string> {
  * from a procurement portal — is scanned before it is stored or served. A
  * file with a known signature is refused; so is any file while the scanner,
  * once configured, can't answer, because serving it unscanned would defeat
- * the point. With CLAMAV_HOST unset, nothing is scanned (a production start
- * logs `config.virus_scan_off`).
+ * the point. With CLAMAV_HOST unset the file is refused while
+ * VIRUS_SCAN_REQUIRED is on (the production default, docs/SECURITY.md G6) and
+ * passed unscanned only when an operator has turned it off.
  */
 export async function scanForViruses(data: Buffer, context: { source: string; userId?: string }): Promise<void> {
-  if (!env.virusScan.host) return;
+  if (!env.virusScan.host) {
+    if (!env.virusScan.required) return;
+    logSecurityEvent("file.unscanned", { outcome: "failure", userId: context.userId, reason: `${context.source}:scanner_not_configured` });
+    throw new ServiceUnavailableException("ระบบตรวจไวรัสยังไม่พร้อม จึงยังรับไฟล์ไม่ได้ กรุณาติดต่อผู้ดูแลระบบ");
+  }
   let verdict: string;
   try {
     verdict = await clamdVerdict(data);
