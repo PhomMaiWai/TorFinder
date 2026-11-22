@@ -13,6 +13,100 @@ TOR's PDF to pull out scope, qualifications, price and deadlines.
 Full documentation, including design diagrams and the API reference, is in
 [docs/](docs/README.md).
 
+## Software Development Security (01219325) project
+
+TorFinder is our existing web application from Collaborative Software Process
+(01219346). For Software Development Security we made it more secure by following
+**OWASP ASVS 5.0**: all of Level 1, all of Level 2, and as much of Level 3 as fits.
+
+### Team
+
+| Member | GitHub |
+| --- | --- |
+| Sai Khun Main | [SKlv1ain](https://github.com/SKlv1ain) |
+| Nisara Ploysuttipol | [fcxbsyo](https://github.com/fcxbsyo) |
+| Bhumipat Kusalatham | [OverCatX](https://github.com/OverCatX) |
+
+### What we submit
+
+| Deliverable | Where |
+| --- | --- |
+| Source code | This repository (public; no secrets in it or its history, see C9 below) |
+| How to install and run | [Quick start](#quick-start-docker--recommended) and [Running without Docker](#running-without-docker) below |
+| Project document | [docs/security/project-document.md](docs/security/project-document.md) (the full version with appendices goes to Google Classroom) |
+| Presentation slides | [docs/slides/](docs/slides/) |
+
+### ASVS result
+
+| Level | Requirements | Pass | Partial | Fail | Accepted risk | N/A | Report |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Level 1 | 70 | 56 | 0 | 0 | 0 | 12 (+2 set by hosting) | [asvs-l1.md](docs/security/asvs-l1.md) |
+| Level 2 | 183 | 125 | 0 | 0 | 0 | 58 | [asvs-l2.md](docs/security/asvs-l2.md) |
+| Level 3 | 92 | 68 | 0 | 0 | 4 | 20 | [asvs-l3.md](docs/security/asvs-l3.md) |
+
+Every Level 1 and Level 2 requirement that applies to TorFinder passes. At Level 3,
+68 of the 72 that apply pass. The other 4 need a production domain, DNS or
+hardware the project doesn't have yet (HSTS preload, Encrypted Client Hello,
+memory encryption, an HSM). They are listed as accepted risks, with what would
+close each one, in [asvs-l3.md](docs/security/asvs-l3.md#accepted-risks).
+
+### Project document: the six sections
+
+| # | Section | Where |
+| --- | --- | --- |
+| 1 | Application name and team members | [project-document.md §1](docs/security/project-document.md#1-application-and-team) |
+| 2 | Functional features | [project-document.md §2](docs/security/project-document.md#2-functional-features), [roles-and-features.md](docs/project/roles-and-features.md) |
+| 3 | Security features mapped to OWASP ASVS | [project-document.md §3](docs/security/project-document.md#3-security-features-mapped-to-asvs), [asvs-l1.md](docs/security/asvs-l1.md), [asvs-l2.md](docs/security/asvs-l2.md), [asvs-l3.md](docs/security/asvs-l3.md) |
+| 4 | Threat modeling | [threat-model.md](docs/security/threat-model.md) (STRIDE, 36 threats, prioritised) |
+| 5 | Security principles | [threat-model.md § Security design principles](docs/security/threat-model.md#security-design-principles) |
+| 6 | Security test process | [project-document.md §6](docs/security/project-document.md#6-security-test-process) |
+
+### Grading criteria
+
+| # | Criterion | What TorFinder does | Evidence |
+| --- | --- | --- | --- |
+| 1 | OWASP ASVS requirements we follow | ASVS 5.0 L1, L2 and L3 reviewed requirement by requirement | [asvs-l1.md](docs/security/asvs-l1.md), [asvs-l2.md](docs/security/asvs-l2.md), [asvs-l3.md](docs/security/asvs-l3.md) |
+| 2 | Threat model with priorities | STRIDE on a data-flow diagram; each threat scored likelihood × impact, fixed in priority order (Critical first) | [threat-model.md](docs/security/threat-model.md#priorities) |
+| 3 | Security design principles | 12 principles, each mapped to the code that applies it | [threat-model.md](docs/security/threat-model.md#security-design-principles) |
+| 4 | Password authentication | scrypt hashes; 8–128 characters; email must be verified; lockout | `backend/src/auth/` |
+| 5 | Social SSO (OAuth/OpenID) | Google sign-in; ID token signature, audience and expiry checked | `backend/src/auth/auth.service.ts` |
+| 6 | Authorization (roles) | Six roles; every backend route has a role guard; pages are gated by role too | `backend/src/common/*.guard.ts`, `frontend/src/proxy.ts` |
+| 7 | Access control (own data only) | Queries filter on the session's user id, never a request field; files re-checked for ownership on every read | `backend/test/certificates.e2e.test.mjs`, `library.e2e.test.mjs` |
+| 8 | Input validation, SQL/NoSQL injection | Whitelisting DTOs drop unknown fields; typed `$eq` filters; escaped `$regex`; uploads typed by their bytes | `backend/src/common/regex.ts`, DTOs in each module |
+| 9 | Environment variables and credentials | Secrets only from the environment; production refuses a missing, published or short `SESSION_SECRET`; `.env` ignored by git; history scanned; GitHub secret scanning and push protection on | `backend/src/config/env.ts`, `.env.example` |
+| 10 | CORS (not `*`) | The backend allows exactly one origin, the frontend's | `backend/src/main.ts` |
+| 11 | Error handling | Generic message plus an `errorId` for unexpected errors; details only in the server log | `backend/src/common/all-exceptions.filter.ts` |
+| 12 | Logging | JSON security events for sign-in, lockout, logout, password changes, refused access and more, never with passwords or tokens; audit log of admin actions | [logging-and-errors.md](docs/security/logging-and-errors.md) |
+| 13 | HTTP security headers | Nonce CSP with `strict-dynamic`, HSTS, `nosniff`, `frame-ancestors`, Referrer-Policy; `helmet()` on the backend. Set in our own code | `frontend/src/proxy.ts`, `frontend/src/lib/csp.ts`, `frontend/next.config.ts` |
+| 14 | SAST | CodeQL on every PR, Semgrep (8 rule packs) | [sast-report.md](docs/security/sast-report.md) |
+| 15 | DAST | OWASP ZAP baseline and signed-in active scan | [dast-report.md](docs/security/dast-report.md), [evidence/](docs/security/evidence/) |
+| 16 | Implementation mapped back to the threat model | Done / not done checklist for every threat | [threat-model.md § Mitigation checklist](docs/security/threat-model.md#mitigation-checklist) |
+| 17 | Mapped to OWASP ASVS and OWASP Top 10 | Every Top 10 (2025) category with its code, ASVS ids and tests | [owasp-top10.md](docs/security/owasp-top10.md) |
+| 18 | Advanced features (4 required, 6 done) | Email verification; login rate limit; backend API rate limit; login timeout (30 min idle, 7 days absolute); token expiry and revocation; breached-password check at sign-up. Also staff passkeys | [project-document.md §3.2](docs/security/project-document.md#32-advanced-features-self-studied-c18) |
+
+### Checking the security yourself
+
+After `docker compose up` (see below):
+
+```bash
+# security headers (C13); or open DevTools → Network on http://localhost:3000
+curl -sI http://localhost:3000/ | grep -iE 'content-security|strict-transport|x-content-type|referrer|x-frame'
+
+# CORS (C10), with the backend on `npm run dev` (in Docker only the frontend may call it):
+# whoever asks, the one allowed origin is the frontend's, never * or the caller's
+curl -sI -H 'Origin: https://evil.example' http://localhost:4000/api/tor | grep -i access-control-allow-origin
+
+# the security regression tests (needs MongoDB; see docs/process/testing.md)
+cd backend && npm install && npm run test:e2e
+```
+
+How we ran Semgrep and ZAP, with the exact commands, is in
+[sast-report.md](docs/security/sast-report.md) and
+[dast-report.md](docs/security/dast-report.md). Screenshots for each criterion are
+listed in [docs/security/evidence/README.md](docs/security/evidence/README.md).
+
+---
+
 ## Tech Stack
 
 |          |                                                                  |
@@ -49,8 +143,7 @@ The database is created and filled with a snapshot of real TOR records
 |              | URL                          |
 | ------------ | ---------------------------- |
 | Web app      | http://localhost:3000        |
-| API          | http://localhost:4000/api    |
-| Health check | http://localhost:4000/health |
+| API          | https://localhost:4000/api (callable by the frontend only: TLS 1.3 with its client certificate) |
 
 Useful commands:
 
@@ -301,8 +394,8 @@ Branches, commit messages and pull requests are described in
 
 ## Course context
 
-Built for Collaborative Software Process and Project Management (01219346),
-Kasetsart University.
+Built for Collaborative Software Process and Project Management (01219346) and
+made more secure for Software Development Security (01219325), Kasetsart University.
 
 ## Documentation
 
