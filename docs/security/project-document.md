@@ -61,10 +61,10 @@ We reviewed TorFinder against **OWASP ASVS 5.0**, all of Level 1 and all of Leve
 | Level | Requirements | Pass | Partial | Fail / Not done | N/A | Not reviewed | Report |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Level 1 | 70 | 56 | 0 | 0 | 12 | 2 (TLS, set by hosting) | [asvs-l1.md](./asvs-l1.md) |
-| Level 2 | 183 | 125 | 0 | 0 | 58 | 0 | [asvs-l2.md](./asvs-l2.md) |
+| Level 2 | 183 | 127 | 0 | 0 | 56 | 0 | [asvs-l2.md](./asvs-l2.md) |
 | Level 3 (triage, not claimed) | 92 | 68 | 0 | 4 | 20 | 0 | [asvs-l3.md](./asvs-l3.md) |
 
-Level 1 has no Fail and no Partial. At Level 2, all 125 requirements that apply pass (100%), the last seven with an opt-in hardening setup for production ([hardening.md](../operations/hardening.md)). Level 3 is not a target; the triage on 19 Nov records which of its controls fit TorFinder, and 68 of the 72 that apply pass (94%), with no Partial left; the four still open need a production domain or hardware and are listed as accepted risks, including passkeys for staff ([passkeys.md](./passkeys.md)), a second admin's approval to grant or remove the admin role, a lockout email to the account's owner, an admin "send reset link" action, and documented limits, data retention and secret rotation ([limits-and-retention.md](../operations/limits-and-retention.md)). Every Partial and Not done item names its gap in the report.
+Level 1 has no Fail and no Partial. At Level 2, all 127 requirements that apply pass (100%), the last seven with an opt-in hardening setup for production ([hardening.md](../operations/hardening.md)). Level 3 is not a target; the triage on 19 Nov records which of its controls fit TorFinder, and 68 of the 72 that apply pass (94%), with no Partial left; the four still open need a production domain or hardware and are listed as accepted risks, including passkeys for staff ([passkeys.md](./passkeys.md)), a second admin's approval to grant or remove the admin role, a lockout email to the account's owner, an admin "send reset link" action, and documented limits, data retention and secret rotation ([limits-and-retention.md](../operations/limits-and-retention.md)). Every Partial and Not done item names its gap in the report.
 
 ### 3.1 Graded security features
 
@@ -205,7 +205,7 @@ Each principle is mapped to where the code applies it **[C3]**. The full table i
 
 | Step | Tool | When | Result | Report |
 | --- | --- | --- | --- | --- |
-| Source review against ASVS | Manual, by requirement | 16–18 Nov | L1: 0 Fail; L2: all 125 applicable requirements pass | [asvs-l1.md](./asvs-l1.md), [asvs-l2.md](./asvs-l2.md) |
+| Source review against ASVS | Manual, by requirement | 16–18 Nov | L1: 0 Fail; L2: all 127 applicable requirements pass | [asvs-l1.md](./asvs-l1.md), [asvs-l2.md](./asvs-l2.md) |
 | Cross-check against ASVS 4.0.3 L1 | Manual, by requirement | 21 Nov | 12 gaps found, all 12 fixed (§3.4) | [../SECURITY.md](../SECURITY.md) |
 | Threat modeling | STRIDE | 16 Nov, revised 18 and 21 Nov | 37 threats, 37 mitigated | [threat-model.md](./threat-model.md) |
 | SAST **[C14]** | CodeQL 2.27.4 (on every PR), Semgrep 1.185.0 | 17 Nov | 44 findings: 34 real and fixed, 10 false positives explained; 0 open after the fixes | [sast-report.md](./sast-report.md) |
