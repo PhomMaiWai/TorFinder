@@ -65,4 +65,4 @@ Run on 2026-11-16 over all 372 commits on every branch (`git log --all -p`), thr
 
 **Result: no real secret has ever been committed.** The repository is public, so this matters: anything committed stays in history even after deletion.
 
-GitHub secret scanning and push protection are currently **off** for this repository. Turning them on (Settings → Code security) would block a secret at push time.
+GitHub secret scanning and push protection are **on** for this repository (since 21 Nov 2026), with 0 open alerts. GitHub scans every commit for known secret formats, and push protection refuses a push that contains one.

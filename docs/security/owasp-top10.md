@@ -16,7 +16,7 @@ ASVS IDs are written without the `V` prefix (`8.2.2` = ASVS 5.0 requirement V8.2
 | --- | --- | --- | --- |
 | A01:2025 | Broken Access Control | Covered | A role guard on every route; every query is scoped to the session's own account; portal host allowlist against SSRF |
 | A02:2025 | Security Misconfiguration | Covered | Production refuses weak secrets; strict CSP and security headers; ports on 127.0.0.1; containers run as non-root |
-| A03:2025 | Software Supply Chain Failures | Partly covered | CI blocks high/critical advisories; Dependabot with a 7-day cooldown; actions pinned by SHA; SBOMs |
+| A03:2025 | Software Supply Chain Failures | Partly covered | CI blocks high/critical advisories; Dependabot with a 7-day cooldown; actions pinned by SHA; SBOMs; secret scanning with push protection |
 | A04:2025 | Cryptographic Failures | Covered | scrypt for passwords; HMAC-SHA256 sessions; TLS 1.3 + mutual TLS inside; hashed one-time links |
 | A05:2025 | Injection | Covered | DTO whitelist on every input; escaped `$regex`; React escaping; nonce CSP; no injection found by ZAP |
 | A06:2025 | Insecure Design | Covered | STRIDE threat model; written business rules; two-admin approval; step-up; atomic limits |
@@ -128,11 +128,12 @@ The egress proxy and vault run only in the opt-in hardened stack, not in the def
 - `npm audit --omit=dev`: 0 in backend and frontend (asvs-l1.md, 15.2.1)
 - SAST: CodeQL `actions/missing-workflow-permissions` and unpinned-action alerts, and Semgrep `dependabot-missing-cooldown`, all fixed ([sast-report.md](./sast-report.md))
 - Screenshot: [10](./evidence/screenshots/10-code-scanning.png) (0 open code-scanning alerts)
+- GitHub secret scanning and push protection are on for the repository (since 21 Nov 2026), with 0 open alerts: a secret in a new commit is refused at `git push` ([logging-and-errors.md](./logging-and-errors.md#secret-scan-of-the-git-history))
+- GitHub's dependency graph is on, so Dependabot alerts cover every package (about 1,000) and GitHub can export an SBOM of the whole project. Private vulnerability reporting is on, and [SECURITY.md](../../SECURITY.md) tells reporters to use it
 - Threat: D4
 
 **Status: Partly covered.** What is missing:
 
-- GitHub secret scanning and push protection are off for the repository ([logging-and-errors.md](./logging-and-errors.md#secret-scan-of-the-git-history)). A one-time scan of all commits found no secret, but nothing blocks a new one at push time.
 - Docker images are built in CI but not signed, and no build provenance (SLSA) is published.
 - The SBOMs are files checked in by hand, not regenerated on each build.
 
@@ -322,7 +323,6 @@ The egress proxy and vault run only in the opt-in hardened stack, not in the def
 | Gap | Category | Why it is still open | What would close it |
 | --- | --- | --- | --- |
 | No alert rules on security events | A09 | Logs are collected, but no one is paged on a burst of failures | Alert rules in the log store (Fluent Bit output to email or LINE) on `auth.login` failures and `access.denied` per IP |
-| GitHub secret scanning and push protection off | A03 | Repository setting, not code | Turn on in Settings → Code security |
 | Images not signed, no build provenance | A03 | Not needed for the course deployment | `cosign` signing and SLSA provenance in the image job |
 | Hardened services are opt-in (egress proxy, vault, ClamAV, separate log store) | A02, A08, A09 | They need extra containers; the demo stays light | Run `docker-compose.hardening.yml` on the production host |
 | Public viewers have no factor beyond Google | A07 | Viewers reach only public data and their own saved items | Offer passkeys to viewers too |
