@@ -134,7 +134,7 @@ export const env = {
   seedDemoData: (process.env.SEED_DEMO_DATA ?? String(!isProduction)) === "true",
   frontendOrigin,
   /**
-   * Passkeys (WebAuthn) for staff accounts — admin, owner, auditor (ASVS 6.3.3
+   * Passkeys (WebAuthn) for staff accounts — admin and owner (ASVS 6.3.3
    * at Level 3, 7.5.3). See docs/security/passkeys.md.
    */
   passkeys: {

@@ -11,7 +11,6 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { AdminGuard } from "../dist/common/admin.guard.js";
-import { AuditorGuard } from "../dist/common/auditor.guard.js";
 import { OrgGuard } from "../dist/common/org.guard.js";
 import { OwnerGuard } from "../dist/common/owner.guard.js";
 import { ROLES } from "../dist/common/roles.js";
@@ -20,7 +19,6 @@ import { createSessionToken } from "../dist/common/token.js";
 const GUARDS = [
   { name: "AdminGuard", Guard: AdminGuard, role: "admin" },
   { name: "OwnerGuard", Guard: OwnerGuard, role: "owner" },
-  { name: "AuditorGuard", Guard: AuditorGuard, role: "auditor" },
   { name: "OrgGuard", Guard: OrgGuard, role: "org" },
 ];
 
@@ -47,8 +45,8 @@ function run(Guard, authorization) {
 }
 
 describe("every role the system knows", () => {
-  it("is exactly admin, org, owner, auditor and viewer", () => {
-    assert.deepEqual([...ROLES].sort(), ["admin", "auditor", "org", "owner", "viewer"]);
+  it("is exactly admin, org, owner and viewer", () => {
+    assert.deepEqual([...ROLES].sort(), ["admin", "org", "owner", "viewer"]);
   });
 });
 

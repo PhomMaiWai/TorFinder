@@ -119,7 +119,6 @@ Seeded automatically on startup: any demo account that doesn't exist yet is adde
 | Administrator                   | `admin@bma.go.th`           | `Admin-Demo-2026!`   | `/login/admin`        | `/admin`   |
 | Administrator (second)          | `admin2@bma.go.th`          | `Admin2-Demo-2026!`   | `/login/admin`        | `/admin`   |
 | Project owner                   | `owner@bma.go.th`           | `Owner-Demo-2026!`   | `/login/admin`        | `/owner`   |
-| Auditor                         | `auditor@bma.go.th`         | `Auditor-Demo-2026!` | `/login/admin`        | `/auditor` |
 | Organization (approved)         | `contact@arundigital.co.th` | `Arun-Demo-2026!`    | `/login/organization` | `/dashboard` |
 | Organization (approved)         | `sales@siamnetwork.co.th` | `Siam-Demo-2026!` | `/login/organization` | `/dashboard` |
 | Organization (approved)         | `contact@itsupply.co.th` | `Supply-Demo-2026!` | `/login/organization` | `/dashboard` |
@@ -265,7 +264,6 @@ frontend/src/
 ├── app/             # Routes (App Router)
 │   ├── admin/       # Admin: TORs, accounts, users, moderation, reports, audit, notifications
 │   ├── api/         # Route handlers: session cookie and proxies to the backend
-│   ├── auditor/     # Flagged TORs for the Auditor Office
 │   ├── dashboard/   # Overview
 │   ├── login/       # Sign-in for admin/staff, organizations, public (Google)
 │   ├── matches/     # A company's matched TORs

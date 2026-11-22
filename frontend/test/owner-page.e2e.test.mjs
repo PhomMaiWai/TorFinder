@@ -11,7 +11,7 @@
 //
 // Node's built-in runner + fetch against a running `next build && next start`
 // (server components have no rendered HTML to assert on from source alone).
-// Session cookie minted the same way auditor.e2e.test.mjs does.
+// Session cookie minted the same way workspace-separation.e2e.test.mjs does.
 //
 // Requires, all pointed at the same database:
 //   - E2E_BACKEND_URL   a running backend (default http://localhost:4000)
@@ -48,7 +48,6 @@ const OWNER_TOKEN = makeToken("owner", OWNER.toString());
 const OTHER_OWNER_TOKEN = makeToken("owner", OTHER_OWNER.toString());
 const ADMIN_TOKEN = makeToken("admin", new ObjectId().toString());
 const ORG_TOKEN = makeToken("org", new ObjectId().toString());
-const AUDITOR_TOKEN = makeToken("auditor", new ObjectId().toString());
 const VIEWER_TOKEN = makeToken("viewer", new ObjectId().toString());
 
 /** Fetches a path with an optional session cookie, never following redirects. */
@@ -126,12 +125,6 @@ describe("/owner — route access", () => {
 
   it("redirects an org session away", async () => {
     const res = await fetchPage("/owner", ORG_TOKEN);
-    assert.equal(res.status, 307);
-    assert.doesNotMatch(res.location, /\/owner/);
-  });
-
-  it("redirects an auditor session away", async () => {
-    const res = await fetchPage("/owner", AUDITOR_TOKEN);
     assert.equal(res.status, 307);
     assert.doesNotMatch(res.location, /\/owner/);
   });

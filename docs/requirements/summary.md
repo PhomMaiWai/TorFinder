@@ -31,7 +31,7 @@ SRS Section 2 scopes the product to:
 - Match notifications, bookmarks, and saved searches
 - Status tracking across the TOR lifecycle (plan → draft → price → invite → winner) and feedback-window tracking
 - Public feedback on draft TORs, plus error reporting and admin correction
-- Price-anomaly / low-competition flagging for the Auditor Office
+- Price-anomaly / low-competition flagging for the Auditor Office (built, then removed on 22 Nov 2026)
 - Pipeline monitoring, moderation, and an audit trail for admins
 
 Hard boundary: automated collection only covers BMA-affiliated agencies,
@@ -53,7 +53,7 @@ here's both:
 - **BMA / Project Owner** — wants a dashboard of TOR status, match count, and collected feedback for their own announcements. Role: `owner`.
 - **Software Company (Bidder)** — wants a filtered, matched, notified list of TORs with qualifications already pulled out. Role: `org`.
 - **Public / People** — wants an easy way to check TOR status, the feedback window, and price info, without an account. Browses unauthenticated, or as `viewer` once signed in with Google.
-- **สตง. (Auditor Office)** — wants unusual pricing or low-competition deals flagged automatically, out of a volume too large to review by hand. Role: `auditor`.
+- **สตง. (Auditor Office)** — wants unusual pricing or low-competition deals flagged automatically, out of a volume too large to review by hand. The `auditor` role that served them was removed on 22 Nov 2026.
 - **Admin** — wants a pipeline health view, correction tools, and moderation controls. Role: `admin`.
 
 ## Where each screen lives
@@ -72,7 +72,6 @@ before relying on it for anything load-bearing:
 | Any authenticated account | Notifications, bookmarks/saved searches | `/notifications`, `/saved` |
 | Owner | Project owner dashboard | `/owner` |
 | Admin | Admin panel | `/admin/{accounts,audit,companies,moderation,notifications,reports,tor,users}` |
-| Auditor | Flagged-TOR view | `/auditor` |
 
 Two external systems round out the picture: **e-GP / BMA agency sites**
 (announcements in, structured records out) and the **Vertex AI** service
@@ -120,8 +119,8 @@ FR-20 (Must) show the owner their match count and collected feedback.
 **Quality, oversight, admin**
 FR-21 (Must) report an error on a listing · FR-22 (Must) Admin corrects a
 wrong classification/record · FR-23 (Must) Admin hides spam/abusive feedback
-· FR-24 (**Could**) flag unusual pricing or low competition for the Auditor
-Office · FR-25 (Must) audit trail of admin-relevant actions.
+· FR-24 (**Could**, removed 22 Nov 2026) flag unusual pricing or low
+competition for the Auditor Office · FR-25 (Must) audit trail of admin-relevant actions.
 
 ## Non-functional requirements
 
@@ -187,11 +186,11 @@ this list to still be accurate:
 project scopes its data to. **TOR** (Terms of Reference) is the document a
 TOR describes. **e-GP** is the Electronic Government Procurement system
 agencies publish through. **สตง. / SAO** (State Audit Office) is the
-oversight body behind the `auditor` role. A **match score** is the numeric
+oversight body the removed `auditor` role was meant for. A **match score** is the numeric
 fit between a company profile and a TOR. **Sole-source procurement** —
 awarded without competitive bidding — is what FR-24's low-competition flag
-exists to catch. **RBAC** (role-based access control) is what keeps
-Admin/Owner/Org/Auditor/Public capabilities separate.
+was meant to catch. **RBAC** (role-based access control) is what keeps
+Admin/Owner/Org/Public capabilities separate.
 
 Related reading: [specs/srs.md](./srs.md) for the full document this
 one condenses, [project-plan.md](../project/project-plan.md) for the as-built role

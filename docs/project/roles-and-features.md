@@ -15,11 +15,10 @@ feature see [api.md](../design/api.md); for the diagram version see
 | Viewer | `viewer` | A member of the public who wants to keep a list | Google sign-in at `/login/public` | `/dashboard` |
 | Organization | `org` | A software company looking for TORs to bid on | Sign up at `/signup/organization`, verify email, wait for admin approval | `/dashboard` |
 | Project Owner | `owner` | The agency (BMA department) that publishes a TOR | An admin changes an existing account's role | `/owner` |
-| Auditor | `auditor` | สตง. (State Audit Office) | An admin changes an existing account's role | `/auditor` |
 | Administrator | `admin` | The TorFinder team | Seeded, or an admin changes an existing account's role | `/admin` |
 
 Each backend guard admits exactly one role, so an admin cannot use the
-owner or auditor screens, and the other way round. A company account's role
+owner screens, and the other way round. A company account's role
 cannot be changed.
 
 Demo accounts for every role are in the [root README](../../README.md#demo-accounts).
@@ -79,11 +78,6 @@ Everything a viewer can do, plus:
   the top score, and how many comments are approved, pending or rejected
   (`/owner`).
 
-### Auditor
-
-- Review TORs flagged for a budget that is unusually high or low, or for a
-  low-competition procurement method (`/auditor`).
-
 ### Administrator
 
 - Approve or reject company sign-ups (`/admin/accounts`).
@@ -141,7 +135,7 @@ FR numbers are from [summary.md](../requirements/summary.md).
 | FR-21 | Report an error on a listing | ✅ Done | |
 | FR-22 | Admin corrects a record or classification | ✅ Done | Corrected fields are locked |
 | FR-23 | Admin hides spam or abusive feedback | ✅ Done | |
-| FR-24 | Flag unusual pricing or low competition | ✅ Done | `/auditor` |
+| FR-24 | Flag unusual pricing or low competition | ❌ Removed | The Auditor Office role and its `/auditor` list were removed on 22 Nov 2026 |
 | FR-25 | Audit trail | ✅ Done | Admin actions and sync runs in one feed |
 | FR-26 | Only BMA, only 2022 onward | ✅ Done | Bangkok locality rules; `TOR_LISTED_SINCE` |
 

@@ -16,7 +16,6 @@ export const ROLE_LABEL = {
   admin: "roleAdmin",
   org: "roleOrg",
   owner: "roleProjectOwner",
-  auditor: "roleAuditor",
   viewer: "roleViewer",
 } as const satisfies Record<Role, string>;
 
@@ -64,7 +63,6 @@ export function useStepUpMessage() {
 const EDITABLE_ROLES = [
   "admin",
   "owner",
-  "auditor",
   "viewer",
 ] as const satisfies readonly NonNullable<UserEdit["role"]>[];
 type EditableRole = (typeof EDITABLE_ROLES)[number];

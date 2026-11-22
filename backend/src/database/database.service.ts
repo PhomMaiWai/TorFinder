@@ -9,7 +9,7 @@ import { WorkType } from "../matching/work-types";
 import { FeedbackStatus } from "../feedback/feedback.constants";
 import { ReportReason, ReportStatus } from "../reports/reports.constants";
 import { PasswordParams, passwordFields, verifyPassword } from "../common/password";
-import { Role } from "../common/roles";
+import { ROLES, Role } from "../common/roles";
 import { env } from "../config/env";
 import { ProcurementStage, TOR_BUDGET_STATUSES, TOR_STAGES, TorClassification } from "../tor/tor.constants";
 import { SEED_USERS } from "./seed-data";
@@ -608,6 +608,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.applyRetention();
     await this.recountSavedSearches();
     await this.backfillAccountStatus();
+    await this.removeRetiredRoleAccounts();
     await this.backfillCmmiLevel();
     await this.seed();
     // After seeding, so the demo companies start out with records too.
@@ -676,6 +677,35 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         counts.map(({ _id, count }) => ({ updateOne: { filter: { _id }, update: { $set: { count } }, upsert: true } })),
       );
     }
+  }
+
+  /**
+   * Accounts whose role no longer exists (the Auditor Office role, retired with
+   * its flagged-announcements list) are deleted with everything keyed to them,
+   * so no session, link or alert outlives the account. Runs on every start and
+   * finds nothing once they are gone. An account with no role at all is left
+   * alone.
+   */
+  private async removeRetiredRoleAccounts(): Promise<void> {
+    const retired = await this.users
+      .find({ role: { $exists: true, $nin: [...ROLES] } }, { projection: { _id: 1, email: 1, role: 1 } })
+      .toArray();
+    if (retired.length === 0) return;
+    const ids = retired.map((u) => u._id);
+    await Promise.all([
+      this.sessions.deleteMany({ userId: { $in: ids } }),
+      this.authTokens.deleteMany({ userId: { $in: ids } }),
+      this.notifications.deleteMany({ userId: { $in: ids } }),
+      this.savedTors.deleteMany({ userId: { $in: ids } }),
+      this.savedSearches.deleteMany({ userId: { $in: ids } }),
+      this.matchAlerts.deleteMany({ userId: { $in: ids } }),
+      this.adminApprovals.deleteMany({ targetId: { $in: ids } }),
+    ]);
+    await this.users.deleteMany({ _id: { $in: ids } });
+    await this.savedSearchCounts.deleteMany({ _id: { $in: ids } });
+    this.logger.warn(
+      `Deleted ${retired.length} account(s) with a retired role: ${retired.map((u) => `${u.email} (${u.role})`).join(", ")}`,
+    );
   }
 
   private async backfillAccountStatus(): Promise<void> {

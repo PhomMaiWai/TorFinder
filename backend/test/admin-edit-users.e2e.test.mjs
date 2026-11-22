@@ -125,9 +125,9 @@ describe("admin edits a user", () => {
 
   it("changes a role, signs the account out and writes one entry per changed field", async () => {
     const viewer = await insertUser("viewer");
-    const res = await edit(viewer.id, { name: "ผู้ตรวจ", role: "auditor" });
+    const res = await edit(viewer.id, { name: "เจ้าของโครงการ", role: "owner" });
     assert.equal(res.status, 200);
-    assert.equal(res.body.role, "auditor");
+    assert.equal(res.body.role, "owner");
 
     const stored = await users().findOne({ _id: new ObjectId(viewer.id) });
     assert.ok(stored.sessionMinIssuedAt, "old sessions are revoked");
@@ -221,7 +221,7 @@ describe("admin edits a user", () => {
       const viewer = await insertUser("viewer");
       [a, b] = await Promise.all([
         edit(viewer.id, { role: "owner" }),
-        edit(viewer.id, { role: "auditor" }),
+        edit(viewer.id, { role: "owner", name: "Race" }),
       ]);
 
       if (a.status !== b.status) break;

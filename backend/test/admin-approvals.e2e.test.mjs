@@ -111,12 +111,12 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
   });
 
   it("can't be approved by the admin who asked", async () => {
-    const target = await insertUser("auditor");
+    const target = await insertUser("owner");
     const { body } = await edit(target.id, { role: "admin" }, alice);
     const res = await approve(body.pendingApproval.id, alice);
     assert.equal(res.status, 403);
     assert.match(res.body.message, /ผู้ดูแลระบบคนอื่น/);
-    assert.equal(await roleOf(target), "auditor");
+    assert.equal(await roleOf(target), "owner");
     assert.ok(await approvals().findOne({ _id: new ObjectId(body.pendingApproval.id) }), "the request is still open");
   });
 
@@ -209,11 +209,11 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
   it("is void if the account's role moved since it was asked", async () => {
     const target = await insertUser("owner");
     const { body } = await edit(target.id, { role: "admin" }, alice);
-    await users().updateOne({ _id: new ObjectId(target.id) }, { $set: { role: "auditor" } });
+    await users().updateOne({ _id: new ObjectId(target.id) }, { $set: { role: "viewer" } });
 
     const res = await approve(body.pendingApproval.id, bob);
     assert.equal(res.status, 409);
-    assert.equal(await roleOf(target), "auditor");
+    assert.equal(await roleOf(target), "viewer");
   });
 
   it("is admin-only", async () => {
@@ -250,7 +250,7 @@ describe("removing the admin role", () => {
     assert.equal(await roleOf(erin), "owner");
 
     const plain = await insertUser("owner");
-    assert.equal((await edit(plain.id, { role: "auditor" }, alice)).status, 200, "owner → auditor is applied at once");
+    assert.equal((await edit(plain.id, { role: "viewer" }, alice)).status, 200, "owner → viewer is applied at once");
   });
 });
 

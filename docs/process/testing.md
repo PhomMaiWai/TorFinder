@@ -113,7 +113,7 @@ them (it needs the backend and `next start` running, like the steps above).
 | Area | Files | What they check |
 | --- | --- | --- |
 | Sign-in and accounts | `auth.e2e`, `oauth.e2e`, `account-links.e2e`, `accounts.e2e`, `admin-edit-users.e2e`, `roles.e2e`, `role-guards` | Sign-up, login and its rate limit, Google sign-in, reset and verify links, company profile, approval, roles, suspension, every guard |
-| TORs | `tor.e2e`, `tor-integration.e2e`, `tor-corrections.e2e`, `tor-corrections`, `tor-owner.e2e`, `tor-flagged.e2e`, `tor-stages` | CRUD, soft delete, manual vs imported records, locked fields, owner link, auditor list, stage model |
+| TORs | `tor.e2e`, `tor-integration.e2e`, `tor-corrections.e2e`, `tor-corrections`, `tor-owner.e2e`, `tor-stages` | CRUD, soft delete, manual vs imported records, locked fields, owner link, stage model |
 | Importers | `tor-normalize-dedup`, `scope-filter`, `mea-client`, `mea.e2e`, `datagov.e2e`, `admin-alerts` | Normalising and de-duplicating records, the Bangkok scope rule, MEA page parsing, data.go.th import, sync failure alerts |
 | Matching | `matching-scoring`, `matching.e2e`, `match-alerts`, `match-alerts.e2e`, `bid-insight` | Score rules, ranking, which alerts are sent and when, bid suggestion |
 | AI | `extraction-confidence`, `proposal-draft`, `feedback-deadline` | Confidence assessment, proposal prompt, cleaning dates read by the model. No model is ever called |
@@ -127,7 +127,6 @@ them (it needs the backend and `next start` running, like the steps above).
 | --- | --- |
 | `admin-dashboard.e2e` | Admin dashboard pages render the backend's real numbers |
 | `admin-reports.e2e` | `/admin/reports` and the "Report a problem" button |
-| `auditor.e2e` | `/auditor` access by role and its content |
 | `owner-page.e2e` | `/owner` access by role and its content |
 | `saved-searches-api.e2e` | The `/api/saved-searches` route handlers forward the session |
 | `tor-search-sort.e2e` | Search result order for each `?sort=` |

@@ -24,8 +24,8 @@ import {
 } from "./role-changes.service";
 
 /**
- * Who an admin may suspend: self-serve accounts. Staff roles (admin, owner,
- * auditor) are seeded and managed outside the app, so they stay untouchable.
+ * Who an admin may suspend: self-serve accounts. Staff roles (admin, owner)
+ * are seeded and managed outside the app, so they stay untouchable.
  */
 const SUSPENDABLE_ROLES = ["org", "viewer"] as const;
 

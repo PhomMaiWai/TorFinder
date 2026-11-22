@@ -111,7 +111,6 @@ function content(title, section, crit) {
       ["LuEye", "Viewer", "Google sign-in only; bookmarks and saved searches"],
       ["LuBuilding2", "Organization", "Company profile, ranked matches, alerts, proposal library"],
       ["LuLandmark", "Project owner", "Agency dashboard: its TORs, match counts, feedback"],
-      ["LuSearchCheck", "Auditor", "TORs flagged for unusual budget or low competition"],
       ["LuUserCog", "Admin", "Approve companies, manage roles, moderate, audit log"],
     ];
     const cw = 3.85, ch = 1.95, gx = 0.28, gy = 0.3, x0 = 0.6, y0 = 2.35;
@@ -219,14 +218,13 @@ function content(title, section, crit) {
   // ================= 7. Authorization =================
   {
     const s = content("Each role sees only its own pages and data", "Security features", ["C6", "C7"]);
-    const head = ["", "Public pages", "Company workspace", "Owner console", "Auditor console", "Admin console"];
+    const head = ["", "Public pages", "Company workspace", "Owner console", "Admin console"];
     const rows = [
-      ["Guest", "✓", "–", "–", "–", "–"],
-      ["Viewer", "✓", "–", "–", "–", "–"],
-      ["Organization", "✓", "✓", "–", "–", "–"],
-      ["Project owner", "✓", "search only", "✓", "–", "–"],
-      ["Auditor", "✓", "–", "–", "✓", "–"],
-      ["Admin", "✓", "–", "–", "–", "✓"],
+      ["Guest", "✓", "–", "–", "–"],
+      ["Viewer", "✓", "–", "–", "–"],
+      ["Organization", "✓", "✓", "–", "–"],
+      ["Project owner", "✓", "search only", "✓", "–"],
+      ["Admin", "✓", "–", "–", "✓"],
     ];
     const cell = (t, isHead, col) => ({
       text: t,
@@ -237,12 +235,12 @@ function content(title, section, crit) {
       },
     });
     s.addTable([head.map((t, i) => cell(t, true, i)), ...rows.map((r) => r.map((t, i) => cell(t, false, i)))], {
-      x: 0.6, y: 1.6, w: 7.4, colW: [1.6, 1.1, 1.3, 1.1, 1.1, 1.2], rowH: 0.56, border: { type: "solid", pt: 0.75, color: HEX.lt2 }, margin: 0.06,
+      x: 0.6, y: 1.6, w: 7.4, colW: [1.8, 1.3, 1.5, 1.4, 1.4], rowH: 0.56, border: { type: "solid", pt: 0.75, color: HEX.lt2 }, margin: 0.06,
     });
     card(s, 8.35, 1.6, 4.38, 4.95);
     s.addText(bullets([
       "One role guard per backend route; a guard admits only the roles it names",
-      "Admin is not implicitly owner or auditor",
+      "Admin is not implicitly owner",
       "Account data is always filtered by the session's user id, never a request field",
       "Company files re-checked for ownership on every download",
       "Frontend redirects mirror the backend; the backend stays the authority",

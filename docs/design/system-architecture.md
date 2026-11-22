@@ -19,7 +19,7 @@ flowchart LR
             MW["proxy.ts<br/>verifies the HMAC cookie locally,<br/>guards pages by role"]
         end
         subgraph BE["backend · NestJS 11 · :4000"]
-            Guards["Guards<br/>Session / Admin / Org / Owner / Auditor<br/>Throttler"]
+            Guards["Guards<br/>Session / Admin / Org / Owner<br/>Throttler"]
             Controllers["REST controllers<br/>/api/*"]
             Services["Domain services<br/>tor · matching · accounts · feedback<br/>reports · notifications · audit · owner"]
             Importers["Importers + schedulers<br/>egp · mea · datagov · gproc · ai"]
@@ -138,7 +138,6 @@ Every module also uses `DatabaseModule`; those arrows are left out.
 | Sign-in and sign-up | `/login/*`, `/signup/*`, `/forgot-password`, `/reset-password`, `/verify-email` | Route handlers set or clear the cookie |
 | Signed-in | `/matches`, `/profile`, `/saved`, `/notifications` | A Viewer only gets `/saved` |
 | Owner | `/owner` | |
-| Auditor | `/auditor` | |
 | Admin | `/admin/{tor,accounts,users,moderation,reports,audit,notifications,companies}` | `/admin/companies` still uses mock data |
 | Route handlers | `frontend/src/app/api/*` | Thin proxies for calls made from client components (see [api.md](./api.md#frontend-route-handlers)) |
 | Translations | `frontend/messages/{th,en}.json` | next-intl |

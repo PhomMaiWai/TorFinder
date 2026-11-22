@@ -51,7 +51,6 @@ There is no root `package.json` and no root `src/` folder: the app is `backend/`
 | Notifications | Signed in | `frontend/src/app/notifications/page.tsx` |
 | Account, passkeys, signed-in devices | Signed in | `frontend/src/app/account/page.tsx` |
 | Project owner dashboard | Owner | `frontend/src/app/owner/page.tsx` |
-| Auditor flagged TORs | Auditor | `frontend/src/app/auditor/page.tsx` |
 | Admin console (accounts, users, companies, TOR edit, moderation, reports, audit, notifications) | Admin | `frontend/src/app/admin/**/page.tsx` |
 | Off-site link warning | Anyone | `frontend/src/app/leaving/page.tsx` |
 
@@ -61,7 +60,7 @@ There is no root `package.json` and no root `src/` folder: the app is `backend/`
 | --- | --- | --- | --- |
 | Sign-up, login, logout, Google sign-in, password change/forgot/reset, e-mail verify, passkeys, step-up, sessions | `/api/auth/*` | Throttle; SessionGuard on account routes | `backend/src/auth/auth.controller.ts` |
 | Account self-service and admin account management | `/api/accounts/*` | SessionGuard (`me`), AdminGuard + StepUpGuard | `backend/src/accounts/accounts.controller.ts` |
-| TOR list, detail, documents, admin CRUD, owner assignment, flagged list | `/api/tor/*` | Public read; AdminGuard, AuditorGuard | `backend/src/tor/tor.controller.ts` |
+| TOR list, detail, documents, admin CRUD, owner assignment | `/api/tor/*` | Public read; AdminGuard | `backend/src/tor/tor.controller.ts` |
 | e-GP document entries | `/api/tor/:id/egp-documents/*` | Public read | `backend/src/gproc/egp-documents.controller.ts` |
 | Find similar TORs (AI embeddings or TF-IDF) | `POST /api/tor/similar` | Public, throttle 30/min | `backend/src/similar/similar.controller.ts` |
 | Matching, budget and bid insight, score a profile | `/api/matching/*` | SessionGuard, AdminGuard, public | `backend/src/matching/matching.controller.ts` |
@@ -134,7 +133,7 @@ Status: **Implemented**, **Partial**, **Not implemented**, or **N/A**. A few Lev
 | V3 | 3.4.4 | `__Host-` prefix | `frontend/src/lib/auth.ts:64` (production) | Implemented |
 | V3 | 3.5.3 | Signed stateless tokens | HMAC-SHA256 with timing-safe compare and key rotation: `backend/src/common/token.ts:37-48`, `backend/src/common/session-keys.ts:9-12`. Custom format, not JWT | Implemented |
 | V3 | 3.7.1 | Re-auth before sensitive actions | Change password needs current password (`backend/src/auth/dto/change-password.dto.ts:6`); admin actions need recent passkey (`backend/src/common/step-up.guard.ts`, `backend/src/accounts/accounts.controller.ts:48-141`) | Implemented |
-| V4 Access control | 4.1.1 | Access rules enforced on the server | NestJS guards on each controller (table 2.2); `backend/src/common/role.guard.ts`, `admin.guard.ts`, `org.guard.ts`, `owner.guard.ts`, `auditor.guard.ts` | Implemented |
+| V4 Access control | 4.1.1 | Access rules enforced on the server | NestJS guards on each controller (table 2.2); `backend/src/common/role.guard.ts`, `admin.guard.ts`, `org.guard.ts`, `owner.guard.ts` | Implemented |
 | V4 | 4.1.2 | Users can't change access attributes | Role comes from signed token (`backend/src/common/token.ts:85`); DTO whitelist drops unknown fields such as `role` (`backend/src/main.ts:69`) | Implemented |
 | V4 | 4.1.3 | Least privilege | Six roles, each route limited to the roles that need it (`backend/src/common/roles.ts`) | Implemented |
 | V4 | 4.1.5 | Fail securely | Guards throw 401 on a missing, invalid or revoked token and 403 on the wrong role (`backend/src/common/session.guard.ts:81-99`, `backend/src/common/role.guard.ts:52-58,80`). Fixed G8 | Implemented |
@@ -212,7 +211,7 @@ The first review (commit `07bbd5b`) found the 12 gaps below. All 12 are fixed on
 flowchart LR
   subgraph Internet["Untrusted: Internet"]
     U[Public visitor / Viewer]
-    O[Org user / Owner / Auditor]
+    O[Org user / Owner]
     A[Admin]
     P[(Gov portals: e-GP BMA egp2.bangkok.go.th,<br/>MEA, data.go.th, gprocurement.go.th)]
     G[Google sign-in / LINE / Resend]
@@ -271,7 +270,7 @@ Trust boundaries:
 | D-1 | Flood of requests exhausts API or Mongo | Backend API | Throttler shared through MongoDB (`backend/src/app.module.ts:36`), Mongo pool limits (`backend/src/config/env.ts:105-107`), async scrypt (`backend/src/common/password.ts:100-105`) | None remaining (G4 fixed) | 11.1.4 |
 | D-2 | Cost abuse of Vertex AI: scripted calls to find-similar or proposal draft, or huge PDFs fed to extraction | Backend → Vertex AI | find-similar 30/min/IP and 5,000-char cap (`backend/src/similar/similar.controller.ts:18`, `backend/src/similar/similar.constants.ts:4`); proposal 5/min/IP, OrgGuard (`backend/src/ai/ai.controller.ts:63-65`); 25 calls/run, 3 concurrent, 10-minute run budget, 15 MB cap, 8,192 output tokens (`backend/src/ai/ai.constants.ts:7-46`); daily quotas per account and in total (`backend/src/ai/ai-quota.ts:18`, `backend/src/ai/proposal.service.ts:58-66`, `backend/src/similar/similar.service.ts:186`); usage logged for every call (`backend/src/ai/vertex.client.ts:69,122`) | Residual: set a GCP billing budget alert as an outside backstop (not code) | 11.1.4, 11.1.2 |
 | D-3 | Malicious portal response (huge file, redirect to internal host) stalls the importer or causes SSRF | Schedulers → portals | Host allowlist, manual redirect check (`backend/src/common/portal-fetch.ts:13-51`); content-length and size checks (`backend/src/ai/extraction.service.ts:374-391`); 120 s timeout (`backend/src/ai/ai.constants.ts:9`) | None found | 12.6.1, 5.2.6 |
-| E-1 | Org or viewer calls an admin or auditor route | Role-guarded routes | `RoleGuard` subclasses (`backend/src/common/role.guard.ts`, `admin.guard.ts`, `auditor.guard.ts`); step-up passkey for critical admin actions (`backend/src/common/step-up.guard.ts`) | None found | 4.1.1, 4.1.3, 4.3.1 |
+| E-1 | Org or viewer calls an admin or owner route | Role-guarded routes | `RoleGuard` subclasses (`backend/src/common/role.guard.ts`, `admin.guard.ts`, `owner.guard.ts`); step-up passkey for critical admin actions (`backend/src/common/step-up.guard.ts`) | None found | 4.1.1, 4.1.3, 4.3.1 |
 | E-2 | Mass assignment: sign-up or profile update includes `role: "admin"` | Account DTOs | `whitelist: true` (`backend/src/main.ts:69`); explicit DTO fields (`backend/src/auth/dto/signup.dto.ts`, `backend/src/accounts/dto/update-user.dto.ts`) | None found | 5.1.2, 4.1.2 |
 
 ---

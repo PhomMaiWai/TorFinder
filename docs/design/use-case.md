@@ -12,7 +12,6 @@ to a real route; the guard named in brackets is what the backend checks
 | Viewer | `viewer` | Google sign-in from `/login/public` |
 | Organization (software company) | `org` | Signs up at `/signup/organization`, then waits for an admin to approve |
 | Project Owner (agency) | `owner` | An admin moves an existing non-company account to this role |
-| Auditor (สตง.) | `auditor` | Same as Project Owner |
 | Administrator | `admin` | Same as Project Owner; the first admin is seeded |
 | Scheduler | — | Timers inside the backend (`SyncScheduler` subclasses) |
 
@@ -29,15 +28,13 @@ boundary. The model is split into three diagrams so each stays readable.
 ### Actor hierarchy
 
 Signed-in actors can also do everything a public visitor can. Viewer,
-Organization, Project Owner, Auditor and Administrator all count as "signed
-in" to the backend (`SessionGuard`).
+Organization, Project Owner and Administrator all count as "signed in" to the backend (`SessionGuard`).
 
 ```mermaid
 flowchart BT
     Viewer(["👤 Viewer"]) --> Public(["👤 Public visitor"])
     Org(["👤 Organization"]) --> Public
     Owner(["👤 Project Owner"]) --> Public
-    Auditor(["👤 Auditor"]) --> Public
     Admin(["👤 Administrator"]) --> Public
 ```
 
@@ -80,17 +77,15 @@ but the frontend only gives a Viewer the `/saved` page
 (`frontend/src/proxy.ts`), so Viewer is drawn to bookmarks and saved
 searches only.
 
-### Agency, auditor and administrator
+### Agency and administrator
 
 ```mermaid
 flowchart LR
     Owner(["👤 Project Owner"])
-    Auditor(["👤 Auditor"])
     Admin(["👤 Administrator"])
 
     subgraph TorFinder["TorFinder"]
         UC15(["UC15 Track own TORs: match count and feedback"])
-        UC16(["UC16 Review flagged TORs (budget, low competition)"])
         UC17(["UC17 Approve or reject company sign-ups"])
         UC18(["UC18 Manage users: role, name, suspend"])
         UC19(["UC19 Create, edit, hide and restore TORs"])
@@ -103,7 +98,6 @@ flowchart LR
     end
 
     Owner --- UC15
-    Auditor --- UC16
     Admin --- UC17 & UC18 & UC19 & UC20 & UC21 & UC22 & UC23 & UC24 & UC25
     UC22 -. extend .-> UC19
     UC20 -. enables .-> UC15
@@ -153,7 +147,6 @@ flowchart LR
 | UC13 | See matched TORs | Organization | `GET /api/matching/opportunities` | FR-13 |
 | UC14 | Draft a proposal with AI | Organization | `POST /api/ai/proposal-draft/:torId` | — |
 | UC15 | Track own TORs | Project Owner | `GET /api/owner/tors` | FR-20 |
-| UC16 | Review flagged TORs | Auditor | `GET /api/tor/flagged` | FR-24 |
 | UC17 | Approve company sign-ups | Admin | `GET /api/accounts`, `PATCH /api/accounts/:id` | FR-03 |
 | UC18 | Manage users | Admin | `/api/accounts/directory`, `/:id/details`, `/:id/suspend`, `/:id/reactivate` | FR-03 |
 | UC19 | Create, edit, hide, restore TORs | Admin | `POST/PATCH/DELETE /api/tor`, `/:id/restore` | FR-22 |
@@ -174,5 +167,5 @@ closest match, not an official mapping from the SRS.
 
 - `/admin/companies` in the frontend still runs on mock data, so there is
   no real "manage companies" use case beyond UC17 and UC18.
-- An admin is not automatically an owner or an auditor. Each guard admits
+- An admin is not automatically an owner. Each guard admits
   exactly one role (`backend/src/common/role.guard.ts`).

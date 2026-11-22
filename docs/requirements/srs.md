@@ -8,7 +8,8 @@ August 21, 2026
 > describes the product as planned (role names like "Software Company" and
 > "สตง./Auditor Office", and features like AI classification/matching). The
 > as-built system uses slightly different terminology in places (e.g. the
-> app calls the bidder role "Organization") — see
+> app calls the bidder role "Organization"), and the Auditor Office role
+> with its flagged-TOR list (FR-24) was built and later removed — see
 > [project-plan.md](../project/project-plan.md) and
 > [docs/iterations/](../project/iterations/) for how delivery actually mapped onto
 > this spec, tracked against the team's GitHub Projects backlog.

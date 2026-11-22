@@ -6,7 +6,7 @@ import { IsIn, IsOptional, IsString, Length } from "class-validator";
  * organization carries a company profile and an approval that only its own
  * sign-up creates, so it can't be made from (or turned into) another role.
  */
-export const EDITABLE_ROLES = ["admin", "owner", "auditor", "viewer"] as const;
+export const EDITABLE_ROLES = ["admin", "owner", "viewer"] as const;
 export type EditableRole = (typeof EDITABLE_ROLES)[number];
 
 export class UpdateUserDto {

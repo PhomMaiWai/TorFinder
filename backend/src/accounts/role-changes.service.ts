@@ -11,7 +11,6 @@ export const ROLE_LABELS: Record<Role, string> = {
   admin: "ผู้ดูแลระบบ",
   org: "บริษัท",
   owner: "เจ้าของโครงการ",
-  auditor: "ผู้ตรวจสอบ",
   viewer: "ประชาชนทั่วไป",
 };
 
