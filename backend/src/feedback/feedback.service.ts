@@ -5,7 +5,7 @@ import { AuditService } from "../audit/audit.service";
 import { DatabaseService, FeedbackDoc } from "../database/database.service";
 import { bangkokDay } from "../tor/tor-normalize";
 import { CreateFeedbackDto } from "./dto/create-feedback.dto";
-import { FEEDBACK_STATUSES, FeedbackStatus } from "./feedback.constants";
+import { FeedbackStatus } from "./feedback.constants";
 
 /** Shown in place of a name when someone comments without giving one. */
 const ANONYMOUS = "ประชาชนทั่วไป";
@@ -98,28 +98,6 @@ export class FeedbackService {
       .toArray();
 
     return Object.fromEntries(rows.map((row) => [row._id.toString(), row.count]));
-  }
-
-  /** Every status's count for each of these announcements, zeros included. */
-  async statusCountsFor(torIds: ObjectId[]): Promise<Map<string, Record<FeedbackStatus, number>>> {
-    const rows = await this.db.feedback
-      .aggregate<{ _id: { torId: ObjectId; status: FeedbackStatus }; count: number }>([
-        { $match: { torId: { $in: torIds } } },
-        { $group: { _id: { torId: "$torId", status: "$status" }, count: { $sum: 1 } } },
-      ])
-      .toArray();
-
-    const counts = new Map(
-      torIds.map((id) => [
-        id.toString(),
-        Object.fromEntries(FEEDBACK_STATUSES.map((status) => [status, 0])) as Record<FeedbackStatus, number>,
-      ]),
-    );
-    for (const { _id, count } of rows) {
-      const forTor = counts.get(_id.torId.toString());
-      if (forTor) forTor[_id.status] = count;
-    }
-    return counts;
   }
 
   private async list(filter: Filter<FeedbackDoc>) {

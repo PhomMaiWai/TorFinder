@@ -5,20 +5,18 @@
 //
 // The property that matters is the whole table, not any one cell: each guard
 // admits exactly one role. A new entry in ROLES that a guard starts letting
-// through, or an admin that quietly passes an owner route, fails here.
+// through, or an admin that quietly passes a company route, fails here.
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { AdminGuard } from "../dist/common/admin.guard.js";
 import { OrgGuard } from "../dist/common/org.guard.js";
-import { OwnerGuard } from "../dist/common/owner.guard.js";
 import { ROLES } from "../dist/common/roles.js";
 import { createSessionToken } from "../dist/common/token.js";
 
 const GUARDS = [
   { name: "AdminGuard", Guard: AdminGuard, role: "admin" },
-  { name: "OwnerGuard", Guard: OwnerGuard, role: "owner" },
   { name: "OrgGuard", Guard: OrgGuard, role: "org" },
 ];
 
@@ -45,8 +43,8 @@ function run(Guard, authorization) {
 }
 
 describe("every role the system knows", () => {
-  it("is exactly admin, org, owner and viewer", () => {
-    assert.deepEqual([...ROLES].sort(), ["admin", "org", "owner", "viewer"]);
+  it("is exactly admin, org and viewer", () => {
+    assert.deepEqual([...ROLES].sort(), ["admin", "org", "viewer"]);
   });
 });
 

@@ -80,7 +80,6 @@ const CLIENT_NAMESPACES = [
   "Navbar",
   "NotificationsPage",
   "Overview",
-  "OwnerPage",
   // Passkey sign-in step, account section, step-up prompts (client components).
   "Passkeys",
   "ProfilePage",

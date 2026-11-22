@@ -15,7 +15,6 @@ import { type PasskeyFailureResult, withStepUp } from "@/lib/passkeys-client";
 export const ROLE_LABEL = {
   admin: "roleAdmin",
   org: "roleOrg",
-  owner: "roleProjectOwner",
   viewer: "roleViewer",
 } as const satisfies Record<Role, string>;
 
@@ -62,7 +61,6 @@ export function useStepUpMessage() {
 /** Mirrors the backend's EDITABLE_ROLES (backend/src/accounts/dto/update-user.dto.ts). */
 const EDITABLE_ROLES = [
   "admin",
-  "owner",
   "viewer",
 ] as const satisfies readonly NonNullable<UserEdit["role"]>[];
 type EditableRole = (typeof EDITABLE_ROLES)[number];

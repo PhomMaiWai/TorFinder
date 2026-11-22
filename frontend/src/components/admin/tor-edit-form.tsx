@@ -8,8 +8,8 @@ import { withStepUp } from "@/lib/passkeys-client";
 
 /**
  * The TOR edit form, submitted from the browser rather than as a full-page
- * post, so a save that changes the announcement's owner can stop for a fresh
- * passkey check and then retry (ASVS 7.5.3). The fields stay server-rendered
+ * post, so a save the backend answers with a step-up request can stop for a
+ * fresh passkey check and then retry (ASVS 7.5.3). The fields stay server-rendered
  * and are passed in as children; while the save runs they are disabled, not
  * reset, so a refusal leaves the admin's edits in place.
  */

@@ -3,7 +3,6 @@ import { authHeaders } from "@/lib/session-headers";
 import type {
   BidInsight,
   BudgetAssessment,
-  MatchedCompany,
   TorFeedback,
   TorRecord,
   TorSource,
@@ -51,20 +50,6 @@ export function fetchBudgetAssessment(id: string): Promise<BudgetAssessment | nu
 /** A suggested bid from past awards — supplementary, like the budget verdict. */
 export function fetchBidInsight(id: string): Promise<BidInsight | null> {
   return orFallback<BidInsight | null>(fetchJson<BidInsight>(`/api/matching/tor/${id}/bid-insight`), null);
-}
-
-/**
- * Approved organizations ranked against this announcement — supplementary, and
- * admin-only on the backend, so the caller's session travels with the request.
- * Anyone else gets the fallback, and the page simply has no such section.
- */
-export async function fetchMatchedCompanies(id: string): Promise<MatchedCompany[]> {
-  return orFallback<MatchedCompany[]>(
-    fetchJson<MatchedCompany[]>(`/api/matching/tor/${id}/companies`, {
-      headers: await authHeaders(),
-    }),
-    [],
-  );
 }
 
 /** Comments a moderator has published on one announcement — supplementary. */

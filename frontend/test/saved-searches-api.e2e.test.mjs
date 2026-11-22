@@ -9,13 +9,13 @@
 //
 // SavedSearches (frontend/src/components/saved/saved-searches.tsx) fetches
 // and renders client-side, so there's nothing for a plain SSR-HTML fetch to
-// assert on for the list/apply/delete UI itself (see owner-page.e2e.test.mjs
+// assert on for the list/apply/delete UI itself (see admin-dashboard.e2e.test.mjs
 // for that pattern, used elsewhere). This file instead calls the frontend's
 // own route handlers directly, the same way a signed-in browser's fetch()
 // would, and checks what comes back.
 //
 // Node's built-in runner + fetch against a running `next build && next start`.
-// Session cookie minted the same way owner-page.e2e.test.mjs does.
+// Session cookie minted the same way admin-dashboard.e2e.test.mjs does.
 //
 // Requires, all pointed at the same database:
 //   - E2E_BACKEND_URL   a running backend (default http://localhost:4000)

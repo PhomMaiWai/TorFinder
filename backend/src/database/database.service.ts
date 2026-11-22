@@ -277,8 +277,6 @@ export type TorDoc = {
    * and a record with any is never purged or superseded by an import.
    */
   lockedFields?: string[];
-  /** The project owner account responsible for this announcement; what /api/owner reads by. */
-  ownerId?: ObjectId;
 };
 
 /** A public comment on one announcement, shown only once it is approved. */
@@ -568,8 +566,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       { unique: true, partialFilterExpression: { "passkeys.id": { $exists: true } } },
     );
     await this.tors.createIndex({ createdAt: -1 });
-    // An owner's dashboard lists only their own announcements, newest first.
-    await this.tors.createIndex({ ownerId: 1, createdAt: -1 });
     // Makes the e-GP import idempotent: re-running it updates instead of duplicating.
     await this.tors.createIndex({ sourceRef: 1 }, { unique: true, sparse: true });
     // Serves the "which projects already have a winner" lookup every listing makes.
@@ -609,6 +605,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.recountSavedSearches();
     await this.backfillAccountStatus();
     await this.removeRetiredRoleAccounts();
+    await this.removeTorOwnerLinks();
     await this.backfillCmmiLevel();
     await this.seed();
     // After seeding, so the demo companies start out with records too.
@@ -681,7 +678,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * Accounts whose role no longer exists (the Auditor Office role, retired with
-   * its flagged-announcements list) are deleted with everything keyed to them,
+   * its flagged-announcements list, and the Project Owner role, retired with
+   * its /owner dashboard) are deleted with everything keyed to them,
    * so no session, link or alert outlives the account. Runs on every start and
    * finds nothing once they are gone. An account with no role at all is left
    * alone.
@@ -706,6 +704,18 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.logger.warn(
       `Deleted ${retired.length} account(s) with a retired role: ${retired.map((u) => `${u.email} (${u.role})`).join(", ")}`,
     );
+  }
+
+  /**
+   * Announcements used to carry the project owner account they belonged to
+   * (ownerId, read by the retired /owner dashboard). The link and its index
+   * are removed; runs on every start and finds nothing once they are gone.
+   */
+  private async removeTorOwnerLinks(): Promise<void> {
+    const { modifiedCount } = await this.tors.updateMany({ ownerId: { $exists: true } } as Document, { $unset: { ownerId: "" } } as Document);
+    if (modifiedCount > 0) this.logger.log(`Removed the owner link from ${modifiedCount} announcements`);
+    const indexes = await this.tors.listIndexes().toArray();
+    if (indexes.some((index) => index.name === "ownerId_1_createdAt_-1")) await this.tors.dropIndex("ownerId_1_createdAt_-1");
   }
 
   private async backfillAccountStatus(): Promise<void> {

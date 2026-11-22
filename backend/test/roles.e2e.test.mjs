@@ -1,4 +1,4 @@
-// Owner sessions against the running server: they are real,
+// Non-admin (viewer) sessions against the running server: they are real,
 // accepted sessions, but they open no admin route.
 //
 // Tokens are minted here rather than obtained from /auth/login — the auth suite
@@ -33,7 +33,7 @@ function makeToken(role) {
 
 const TOKENS = {
   admin: makeToken("admin"),
-  owner: makeToken("owner"),
+  viewer: makeToken("viewer"),
 };
 
 // A well-formed ObjectId nothing has.
@@ -88,14 +88,14 @@ describe("the tokens themselves are good", () => {
     assert.equal(await api("/accounts", { token: TOKENS.admin }), 200);
   });
 
-  for (const role of ["owner"]) {
+  for (const role of ["viewer"]) {
     it(`${an(role)} session is accepted where any signed-in account may go`, async () => {
       assert.equal(await api("/notifications", { token: TOKENS[role] }), 200);
     });
   }
 });
 
-for (const role of ["owner"]) {
+for (const role of ["viewer"]) {
   describe(`${an(role)} session on admin-only routes`, () => {
     for (const [method, path] of ADMIN_ONLY) {
       it(`${method} /api${path} is refused (403)`, async () => {

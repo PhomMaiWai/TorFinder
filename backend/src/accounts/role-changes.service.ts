@@ -10,7 +10,6 @@ import { NotificationsService } from "../notifications/notifications.service";
 export const ROLE_LABELS: Record<Role, string> = {
   admin: "ผู้ดูแลระบบ",
   org: "บริษัท",
-  owner: "เจ้าของโครงการ",
   viewer: "ประชาชนทั่วไป",
 };
 

@@ -157,12 +157,10 @@ classDiagram
         +findAll(page, pageSize, source)
         +findOne(id)
         +update(id, dto, editor)
-        +setOwner(id, ownerId, actor)
         +softDelete(id, actor)
         +restore(id, actor)
         +findDeleted()
         +findNotSoftware()
-        +findFlagged(page, pageSize, flag)
     }
     class FeedbackService {
         +create(torId, dto)
@@ -176,9 +174,6 @@ classDiagram
         +findAll(query)
         +findOne(id)
         +setStatus(id, status, actor, fixed)
-    }
-    class OwnerService {
-        +ownTors(ownerId)
     }
     class ProposalService {
         +draft(userId, torId, previousProposal) ProposalDraft

@@ -52,7 +52,7 @@ ASVS IDs are written without the `V` prefix (`8.2.2` = ASVS 5.0 requirement V8.2
 
 | Control | Where | ASVS |
 | --- | --- | --- |
-| One guard per route; a guard admits only the roles it names. The frontend page gate is never the only check | `backend/src/common/session.guard.ts`, `role.guard.ts`, `admin.guard.ts`, `org.guard.ts`, `owner.guard.ts` | 8.1.1, 8.2.1, 8.3.1 |
+| One guard per route; a guard admits only the roles it names. The frontend page gate is never the only check | `backend/src/common/session.guard.ts`, `role.guard.ts`, `admin.guard.ts`, `org.guard.ts` | 8.1.1, 8.2.1, 8.3.1 |
 | Saved TORs, searches, notifications, certificates and library records are always filtered on the session's user id, never a request field | `backend/src/certificates/certificates.service.ts`, `backend/src/library/library.service.ts` | 8.2.2, 8.4.1 |
 | Field-level rules: `role`, `status` and `email` can't be set through `/accounts/me`; company name and tax id are write-once | `backend/src/accounts/accounts.service.ts` | 8.1.2, 8.2.3 |
 | Revocation is read from the database on every request, so a role change or suspension applies to the next request | `backend/src/common/session-revocation.service.ts` | 7.4.2, 8.3.2 |

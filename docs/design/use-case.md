@@ -11,8 +11,7 @@ to a real route; the guard named in brackets is what the backend checks
 | Public visitor | none | No account |
 | Viewer | `viewer` | Google sign-in from `/login/public` |
 | Organization (software company) | `org` | Signs up at `/signup/organization`, then waits for an admin to approve |
-| Project Owner (agency) | `owner` | An admin moves an existing non-company account to this role |
-| Administrator | `admin` | Same as Project Owner; the first admin is seeded |
+| Administrator | `admin` | An admin moves an existing non-company account to this role (a second admin approves); the first admin is seeded |
 | Scheduler | — | Timers inside the backend (`SyncScheduler` subclasses) |
 
 External systems: Bangkok e-GP, national e-GP (process5), MEA procurement
@@ -28,13 +27,12 @@ boundary. The model is split into three diagrams so each stays readable.
 ### Actor hierarchy
 
 Signed-in actors can also do everything a public visitor can. Viewer,
-Organization, Project Owner and Administrator all count as "signed in" to the backend (`SessionGuard`).
+Organization and Administrator all count as "signed in" to the backend (`SessionGuard`).
 
 ```mermaid
 flowchart BT
     Viewer(["👤 Viewer"]) --> Public(["👤 Public visitor"])
     Org(["👤 Organization"]) --> Public
-    Owner(["👤 Project Owner"]) --> Public
     Admin(["👤 Administrator"]) --> Public
 ```
 
@@ -77,19 +75,16 @@ but the frontend only gives a Viewer the `/saved` page
 (`frontend/src/proxy.ts`), so Viewer is drawn to bookmarks and saved
 searches only.
 
-### Agency and administrator
+### Administrator
 
 ```mermaid
 flowchart LR
-    Owner(["👤 Project Owner"])
     Admin(["👤 Administrator"])
 
     subgraph TorFinder["TorFinder"]
-        UC15(["UC15 Track own TORs: match count and feedback"])
         UC17(["UC17 Approve or reject company sign-ups"])
         UC18(["UC18 Manage users: role, name, suspend"])
         UC19(["UC19 Create, edit, hide and restore TORs"])
-        UC20(["UC20 Assign a TOR to an owner"])
         UC21(["UC21 Moderate public comments"])
         UC22(["UC22 Resolve reports and fix the TOR"])
         UC23(["UC23 Run imports and AI extraction by hand"])
@@ -97,10 +92,8 @@ flowchart LR
         UC25(["UC25 See which companies fit a TOR"])
     end
 
-    Owner --- UC15
-    Admin --- UC17 & UC18 & UC19 & UC20 & UC21 & UC22 & UC23 & UC24 & UC25
+    Admin --- UC17 & UC18 & UC19 & UC21 & UC22 & UC23 & UC24 & UC25
     UC22 -. extend .-> UC19
-    UC20 -. enables .-> UC15
 ```
 
 ### Automatic jobs
@@ -146,11 +139,9 @@ flowchart LR
 | UC12 | Maintain company profile | Organization | `GET/PATCH /api/accounts/me` | FR-12 |
 | UC13 | See matched TORs | Organization | `GET /api/matching/opportunities` | FR-13 |
 | UC14 | Draft a proposal with AI | Organization | `POST /api/ai/proposal-draft/:torId` | — |
-| UC15 | Track own TORs | Project Owner | `GET /api/owner/tors` | FR-20 |
 | UC17 | Approve company sign-ups | Admin | `GET /api/accounts`, `PATCH /api/accounts/:id` | FR-03 |
 | UC18 | Manage users | Admin | `/api/accounts/directory`, `/:id/details`, `/:id/suspend`, `/:id/reactivate` | FR-03 |
 | UC19 | Create, edit, hide, restore TORs | Admin | `POST/PATCH/DELETE /api/tor`, `/:id/restore` | FR-22 |
-| UC20 | Assign a TOR to an owner | Admin | `PUT /api/tor/:id/owner` | FR-20 |
 | UC21 | Moderate comments | Admin | `GET /api/feedback`, `PATCH /api/feedback/:id` | FR-23 |
 | UC22 | Resolve reports and fix the TOR | Admin | `/api/reports` | FR-21, FR-22 |
 | UC23 | Run imports and AI by hand | Admin | `POST /api/{egp,mea,datagov}/sync`, `/gproc/capture`, `/ai/extract` | FR-04, FR-08 |

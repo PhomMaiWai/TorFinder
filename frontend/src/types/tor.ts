@@ -117,8 +117,6 @@ export type TorRecord = {
    * portal when it publishes one, else read off the draft document.
    */
   feedbackDeadline?: string;
-  /** The project owner account an admin linked it to; absent when nobody is. */
-  ownerId?: string;
   /** Present once a model has read the announcement document. */
   extraction?: TorExtraction;
   /** Sent by the backend; absent on the showcase records. */

@@ -50,7 +50,7 @@ SRS Section 3 names five stakeholder groups. The app's own role names
 (`backend/src/common/roles.ts`) don't match the SRS's labels one-for-one, so
 here's both:
 
-- **BMA / Project Owner** — wants a dashboard of TOR status, match count, and collected feedback for their own announcements. Role: `owner`.
+- **BMA / Project Owner** — wants a dashboard of TOR status, match count, and collected feedback for their own announcements. The `owner` role that served them was removed on 22 Nov 2026.
 - **Software Company (Bidder)** — wants a filtered, matched, notified list of TORs with qualifications already pulled out. Role: `org`.
 - **Public / People** — wants an easy way to check TOR status, the feedback window, and price info, without an account. Browses unauthenticated, or as `viewer` once signed in with Google.
 - **สตง. (Auditor Office)** — wants unusual pricing or low-competition deals flagged automatically, out of a volume too large to review by hand. The `auditor` role that served them was removed on 22 Nov 2026.
@@ -70,7 +70,6 @@ before relying on it for anything load-bearing:
 | Public | Login, registration | `/login/{admin,organization,public}`, `/signup`, `/signup/organization` |
 | Org (logged in) | Company profile, matched TORs | `/profile`, `/matches` |
 | Any authenticated account | Notifications, bookmarks/saved searches | `/notifications`, `/saved` |
-| Owner | Project owner dashboard | `/owner` |
 | Admin | Admin panel | `/admin/{accounts,audit,companies,moderation,notifications,reports,tor,users}` |
 
 Two external systems round out the picture: **e-GP / BMA agency sites**
@@ -114,7 +113,7 @@ a search query.
 **Status & public feedback**
 FR-17 (Must) show the current lifecycle stage · FR-18 (Must) flag TORs open
 for feedback · FR-19 (Should) let the public submit feedback on a draft ·
-FR-20 (Must) show the owner their match count and collected feedback.
+FR-20 (Must, removed 22 Nov 2026) show the owner their match count and collected feedback.
 
 **Quality, oversight, admin**
 FR-21 (Must) report an error on a listing · FR-22 (Must) Admin corrects a
@@ -142,7 +141,7 @@ goes to an Admin for review instead of publishing unchecked.
 
 Under **security**: passwords are hashed with a standard algorithm, all
 client-server traffic runs over TLS, role-based access control keeps Admin
-and Project Owner capabilities away from standard accounts, sessions expire
+capabilities away from standard accounts, sessions expire
 after inactivity, a user's own data (profile, searches, bookmarks, feedback
 history) is visible only to them or to an Admin moderating it, and account
 data handling follows Thailand's PDPA.
@@ -190,7 +189,7 @@ oversight body the removed `auditor` role was meant for. A **match score** is th
 fit between a company profile and a TOR. **Sole-source procurement** —
 awarded without competitive bidding — is what FR-24's low-competition flag
 was meant to catch. **RBAC** (role-based access control) is what keeps
-Admin/Owner/Org/Public capabilities separate.
+Admin/Org/Public capabilities separate.
 
 Related reading: [specs/srs.md](./srs.md) for the full document this
 one condenses, [project-plan.md](../project/project-plan.md) for the as-built role

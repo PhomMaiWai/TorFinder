@@ -6,7 +6,7 @@ import { TorCorrectionInfo } from "@/components/admin/tor-correction-info";
 import { TorEditForm } from "@/components/admin/tor-edit-form";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
-import { fetchReport, fetchUserDirectory } from "@/lib/admin-api";
+import { fetchReport } from "@/lib/admin-api";
 import { fetchTor } from "@/lib/tor-api";
 import { valueLabel } from "@/lib/value-labels";
 import { TOR_CLASSIFICATIONS, TOR_STAGES } from "@/types/tor";
@@ -25,9 +25,8 @@ export default async function AdminEditTorPage({
   searchParams: Promise<{ report?: string }>;
 }) {
   const [{ id }, { report: reportId }] = await Promise.all([params, searchParams]);
-  const [tor, users, found, reasons, t, tv] = await Promise.all([
+  const [tor, found, reasons, t, tv] = await Promise.all([
     fetchTor(id),
-    fetchUserDirectory(),
     reportId ? fetchReport(reportId) : Promise.resolve(null),
     getTranslations("ReportProblem"),
     getTranslations("AdminTor"),
@@ -36,10 +35,6 @@ export default async function AdminEditTorPage({
   if (!tor) notFound();
   // Only an open report about this TOR is worth fixing from; anything else is a stale link.
   const report = found && found.torId === id && found.status === "open" ? found : null;
-  // Only an owner account has an owner dashboard to see the record on.
-  const owners = users.filter((user) => user.role === "owner");
-  // A linked account that is no longer an owner still shows, so a save doesn't silently unlink it.
-  const linkedElsewhere = tor.ownerId && !owners.some((owner) => owner.id === tor.ownerId);
 
   const updateWithId = updateTorEntry.bind(null, id);
   // An imported record's agency is often outside the BMA list; without its own
@@ -88,28 +83,6 @@ export default async function AdminEditTorPage({
             </select>
             <span className="mt-1.5 block text-xs text-ink-muted">
               {t("classificationHint", { notSoftware: valueLabel(tv, "classification", "not-software") })}
-            </span>
-          </Field>
-
-          <Field label={t("ownerLabel")}>
-            <input type="hidden" name="currentOwnerId" value={tor.ownerId ?? ""} />
-            <select name="ownerId" defaultValue={tor.ownerId ?? ""} className={inputCls}>
-              <option value="">{t("noOwner")}</option>
-              {linkedElsewhere && (
-                <option value={tor.ownerId}>
-                  {t("formerOwner")}
-                </option>
-              )}
-              {owners.map((owner) => (
-                <option key={owner.id} value={owner.id}>
-                  {owner.name} ({owner.email}){owner.suspended ? t("suspendedSuffix") : ""}
-                </option>
-              ))}
-            </select>
-            <span className="mt-1.5 block text-xs text-ink-muted">
-              {owners.length === 0
-                ? t("noOwnerAccounts")
-                : t("ownerHint")}
             </span>
           </Field>
 

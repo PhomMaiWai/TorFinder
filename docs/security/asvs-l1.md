@@ -220,7 +220,7 @@ The client IP is the right-most `X-Forwarded-For` entry the frontend forwards (`
 
 ## Access rules (ASVS 8.1.1)
 
-Roles: `viewer` (public Google sign-in), `org` (company), `admin`, `owner` (project owner). A guard admits exactly the roles it names; an admin is not implicitly an owner. Every guarded route also checks token revocation.
+Roles: `viewer` (public Google sign-in), `org` (company), `admin`. A guard admits exactly the roles it names; an admin is not implicitly a company. Every guarded route also checks token revocation.
 
 | Access | Routes |
 | --- | --- |
@@ -228,8 +228,7 @@ Roles: `viewer` (public Google sign-in), `org` (company), `admin`, `owner` (proj
 | Public, signed by the caller | `POST /line/webhook`: no session, but refused unless `X-Line-Signature` is LINE's HMAC of the raw body with the channel secret; 300/min per client IP |
 | Any signed-in account (own data only) | `POST /auth/logout`, `POST /auth/password`, `GET/PATCH /accounts/me`, `GET /matching/opportunities`, `/notifications/*` (including LINE link/unlink and channel settings), `/saved-searches/*`, `/saved-tors/*` |
 | `org` (own company's records only) | `POST /ai/proposal-draft/:torId`; `GET /insights/growth`; `/certificates/*` (records and their files); `/library/*` (team, references, past projects, their files, coverage and the starter-pack ZIP) |
-| `owner` | `GET /owner/tors` |
-| `admin` | `/accounts` (list, directory, edit, suspend, reactivate), `GET /audit`, `POST /tor`, `PATCH/DELETE /tor/:id`, `PUT /tor/:id/owner`, `POST /tor/:id/restore`, `GET /tor/deleted`, `/tor/not-software`, `GET /feedback`, `PATCH /feedback/:id`, `GET/PATCH /reports*`, `PATCH /accounts/:id/details`, `GET /matching/tor/:id/companies`, `POST /matching/budget/refresh`, `POST /ai/extract*`, `/egp/*` (sync, near-misses, metrics), `/mea/sync`, `/datagov/sync`, `/gproc/*` |
+| `admin` | `/accounts` (list, directory, edit, suspend, reactivate), `GET /audit`, `POST /tor`, `PATCH/DELETE /tor/:id`, `POST /tor/:id/restore`, `GET /tor/deleted`, `/tor/not-software`, `GET /feedback`, `PATCH /feedback/:id`, `GET/PATCH /reports*`, `PATCH /accounts/:id/details`, `GET /matching/tor/:id/companies`, `POST /matching/budget/refresh`, `POST /ai/extract*`, `/egp/*` (sync, near-misses, metrics), `/mea/sync`, `/datagov/sync`, `/gproc/*` |
 
 Data-level rule: a route that serves a caller's own data takes the user id from the session token, never from the request. Certificate and library records and files are looked up inside the signed-in company's own profile, so another company's record id is simply not found.
 

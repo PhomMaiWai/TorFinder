@@ -90,13 +90,13 @@ after(async () => {
 
 describe("granting the admin role (ASVS 2.3.5)", () => {
   it("files a request instead of changing the role, and tells the other admins", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const res = await edit(target.id, { role: "admin" }, alice);
     assert.equal(res.status, 202, JSON.stringify(res.body));
-    assert.equal(res.body.role, "owner");
+    assert.equal(res.body.role, "viewer");
     assert.equal(res.body.pendingApproval.toRole, "admin");
     assert.equal(res.body.pendingApproval.requestedBy, alice.email);
-    assert.equal(await roleOf(target), "owner");
+    assert.equal(await roleOf(target), "viewer");
 
     const listed = (await list(bob)).body.find((r) => r.targetId === target.id);
     assert.ok(listed, "the request is listed for other admins");
@@ -111,17 +111,17 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
   });
 
   it("can't be approved by the admin who asked", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const { body } = await edit(target.id, { role: "admin" }, alice);
     const res = await approve(body.pendingApproval.id, alice);
     assert.equal(res.status, 403);
     assert.match(res.body.message, /ผู้ดูแลระบบคนอื่น/);
-    assert.equal(await roleOf(target), "owner");
+    assert.equal(await roleOf(target), "viewer");
     assert.ok(await approvals().findOne({ _id: new ObjectId(body.pendingApproval.id) }), "the request is still open");
   });
 
   it("applies once a second admin approves: role changed, sessions revoked, every step logged", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const { body } = await edit(target.id, { role: "admin" }, alice);
 
     const res = await approve(body.pendingApproval.id, bob);
@@ -143,7 +143,7 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
   });
 
   it("can't be approved twice", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const { body } = await edit(target.id, { role: "admin" }, alice);
     const carol = await insertUser("admin");
     const [a, b] = await Promise.all([approve(body.pendingApproval.id, bob), approve(body.pendingApproval.id, carol)]);
@@ -151,7 +151,7 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
   });
 
   it("allows only one open request per account", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     assert.equal((await edit(target.id, { role: "admin" }, alice)).status, 202);
     const second = await edit(target.id, { role: "admin" }, bob);
     assert.equal(second.status, 409);
@@ -159,23 +159,23 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
   });
 
   it("applies a rename in the same edit at once, and leaves the role waiting", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const res = await edit(target.id, { name: "ชื่อใหม่", role: "admin" }, alice);
     assert.equal(res.status, 202);
     assert.equal(res.body.name, "ชื่อใหม่");
-    assert.equal(res.body.role, "owner");
+    assert.equal(res.body.role, "viewer");
   });
 
   it("is rejected by another admin, or cancelled by the one who asked; nothing changes", async () => {
-    const first = await insertUser("owner");
-    const second = await insertUser("owner");
+    const first = await insertUser("viewer");
+    const second = await insertUser("viewer");
     const a = await edit(first.id, { role: "admin" }, alice);
     const b = await edit(second.id, { role: "admin" }, alice);
 
     assert.equal((await reject(a.body.pendingApproval.id, bob)).status, 200);
     assert.equal((await reject(b.body.pendingApproval.id, alice)).status, 200);
-    assert.equal(await roleOf(first), "owner");
-    assert.equal(await roleOf(second), "owner");
+    assert.equal(await roleOf(first), "viewer");
+    assert.equal(await roleOf(second), "viewer");
 
     assert.ok((await actionsFor(first.email)).includes("ปฏิเสธคำขอเปลี่ยนบทบาทผู้ดูแลระบบ"));
     assert.ok((await actionsFor(second.email)).includes("ยกเลิกคำขอเปลี่ยนบทบาทผู้ดูแลระบบ"));
@@ -183,12 +183,12 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
   });
 
   it("can't be approved once it has expired", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const { body } = await edit(target.id, { role: "admin" }, alice);
     await approvals().updateOne({ _id: new ObjectId(body.pendingApproval.id) }, { $set: { expiresAt: new Date(Date.now() - 1000) } });
 
     assert.equal((await approve(body.pendingApproval.id, bob)).status, 404);
-    assert.equal(await roleOf(target), "owner");
+    assert.equal(await roleOf(target), "viewer");
     assert.ok(!(await list(bob)).body.some((r) => r.targetId === target.id), "an expired request isn't listed");
     // And a new request for the same account isn't blocked by the lapsed one.
     assert.equal((await edit(target.id, { role: "admin" }, alice)).status, 202);
@@ -196,38 +196,38 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
 
   it("is void if the requester stopped being an admin", async () => {
     const dave = await insertUser("admin");
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const { body } = await edit(target.id, { role: "admin" }, dave);
-    await users().updateOne({ _id: new ObjectId(dave.id) }, { $set: { role: "owner" } });
-
-    const res = await approve(body.pendingApproval.id, bob);
-    assert.equal(res.status, 409);
-    assert.equal(await roleOf(target), "owner");
-    assert.equal(await approvals().countDocuments({ _id: new ObjectId(body.pendingApproval.id) }), 0);
-  });
-
-  it("is void if the account's role moved since it was asked", async () => {
-    const target = await insertUser("owner");
-    const { body } = await edit(target.id, { role: "admin" }, alice);
-    await users().updateOne({ _id: new ObjectId(target.id) }, { $set: { role: "viewer" } });
+    await users().updateOne({ _id: new ObjectId(dave.id) }, { $set: { role: "viewer" } });
 
     const res = await approve(body.pendingApproval.id, bob);
     assert.equal(res.status, 409);
     assert.equal(await roleOf(target), "viewer");
+    assert.equal(await approvals().countDocuments({ _id: new ObjectId(body.pendingApproval.id) }), 0);
+  });
+
+  it("is void if the account's role moved since it was asked", async () => {
+    const target = await insertUser("viewer");
+    const { body } = await edit(target.id, { role: "admin" }, alice);
+    await users().updateOne({ _id: new ObjectId(target.id) }, { $set: { role: "org" } });
+
+    const res = await approve(body.pendingApproval.id, bob);
+    assert.equal(res.status, 409);
+    assert.equal(await roleOf(target), "org");
   });
 
   it("is admin-only", async () => {
-    const owner = await insertUser("owner");
-    const target = await insertUser("owner");
+    const outsider = await insertUser("viewer");
+    const target = await insertUser("viewer");
     const { body } = await edit(target.id, { role: "admin" }, alice);
-    assert.equal((await list(owner)).status, 403);
-    assert.equal((await approve(body.pendingApproval.id, owner)).status, 403);
-    assert.equal((await reject(body.pendingApproval.id, owner)).status, 403);
-    assert.equal(await roleOf(target), "owner");
+    assert.equal((await list(outsider)).status, 403);
+    assert.equal((await approve(body.pendingApproval.id, outsider)).status, 403);
+    assert.equal((await reject(body.pendingApproval.id, outsider)).status, 403);
+    assert.equal(await roleOf(target), "viewer");
   });
 
   it("needs a fresh passkey check to approve when the approver uses passkeys", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const { body } = await edit(target.id, { role: "admin" }, alice);
     const stale = makeToken(bob, { amr: ["pwd", "passkey"], pkt: Math.floor(Date.now() / 1000) - 3600 });
     const res = await fetch(`${API}/accounts/admin-approvals/${body.pendingApproval.id}/approve`, {
@@ -236,21 +236,18 @@ describe("granting the admin role (ASVS 2.3.5)", () => {
     });
     assert.equal(res.status, 403);
     assert.equal((await res.json()).code, "step-up-required");
-    assert.equal(await roleOf(target), "owner");
+    assert.equal(await roleOf(target), "viewer");
   });
 });
 
 describe("removing the admin role", () => {
-  it("waits for a second admin too, and other role changes don't", async () => {
+  it("waits for a second admin too", async () => {
     const erin = await insertUser("admin");
-    const res = await edit(erin.id, { role: "owner" }, alice);
+    const res = await edit(erin.id, { role: "viewer" }, alice);
     assert.equal(res.status, 202);
     assert.equal(await roleOf(erin), "admin");
     assert.equal((await approve(res.body.pendingApproval.id, bob)).status, 200);
-    assert.equal(await roleOf(erin), "owner");
-
-    const plain = await insertUser("owner");
-    assert.equal((await edit(plain.id, { role: "viewer" }, alice)).status, 200, "owner → viewer is applied at once");
+    assert.equal(await roleOf(erin), "viewer");
   });
 });
 
@@ -261,13 +258,13 @@ describe("the only admin", () => {
   before(async () => {
     solo = await insertUser("admin");
     others = (await users().find({ role: "admin", _id: { $ne: new ObjectId(solo.id) } }).toArray()).map((u) => u._id);
-    await users().updateMany({ _id: { $in: others } }, { $set: { role: "owner" } });
+    await users().updateMany({ _id: { $in: others } }, { $set: { role: "viewer" } });
   });
 
   after(() => users().updateMany({ _id: { $in: others } }, { $set: { role: "admin" } }));
 
   it("can make the first extra admin directly, since no one else could approve", async () => {
-    const target = await insertUser("owner");
+    const target = await insertUser("viewer");
     const res = await edit(target.id, { role: "admin" }, solo);
     assert.equal(res.status, 200, JSON.stringify(res.body));
     assert.equal(res.body.role, "admin");

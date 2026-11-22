@@ -117,23 +117,23 @@ after(async () => {
 });
 
 describe("staff passkeys", () => {
-  let owner;
+  let staff;
   let device;
 
   before(async () => {
-    owner = await insertUser("owner");
+    staff = await insertUser("admin");
     device = new SoftwareAuthenticator(ORIGIN);
   });
 
   it("a staff account without a passkey signs in with its password, as before", async () => {
-    const res = await login(owner.email);
+    const res = await login(staff.email);
     assert.equal(res.status, 200);
     assert.ok(res.body.token);
     assert.deepEqual(claims(res.body.token).amr, ["pwd"]);
   });
 
   it("adds a first passkey, and the session comes back passkey-verified", async () => {
-    const { body } = await login(owner.email);
+    const { body } = await login(staff.email);
     const added = await enrol(body.token, device);
     assert.equal(added.passkeys.length, 1);
     assert.equal(added.passkeys[0].name, "CI laptop");
@@ -146,7 +146,7 @@ describe("staff passkeys", () => {
   });
 
   it("then asks for the passkey after the password, instead of a session", async () => {
-    const res = await login(owner.email);
+    const res = await login(staff.email);
     assert.equal(res.status, 200);
     assert.equal(res.body.token, undefined);
     assert.equal(res.body.status, "passkey-required");
@@ -154,15 +154,15 @@ describe("staff passkeys", () => {
   });
 
   it("signs in once the passkey signs the challenge", async () => {
-    const token = await signInWithPasskey(owner.email, device);
+    const token = await signInWithPasskey(staff.email, device);
     const session = claims(token);
     assert.deepEqual(session.amr, ["pwd", "passkey"]);
-    assert.equal(session.role, "owner");
-    assert.equal((await api("/owner/tors", { token })).status, 200);
+    assert.equal(session.role, "admin");
+    assert.equal((await api("/accounts", { token })).status, 200);
   });
 
   it("refuses a replayed answer: each challenge works once", async () => {
-    const first = await login(owner.email);
+    const first = await login(staff.email);
     const response = device.authenticate(first.body.options);
     const ok = await api("/auth/passkey/login", { method: "POST", body: { response } });
     assert.equal(ok.status, 200);
@@ -171,7 +171,7 @@ describe("staff passkeys", () => {
   });
 
   it("refuses a key that isn't registered to the account", async () => {
-    const first = await login(owner.email);
+    const first = await login(staff.email);
     const stranger = new SoftwareAuthenticator(ORIGIN);
     const res = await api("/auth/passkey/login", {
       method: "POST",
@@ -181,7 +181,7 @@ describe("staff passkeys", () => {
   });
 
   it("refuses an answer made for another site (phishing)", async () => {
-    const first = await login(owner.email);
+    const first = await login(staff.email);
     const res = await api("/auth/passkey/login", {
       method: "POST",
       body: { response: device.authenticate(first.body.options, { origin: "https://torfinder.example.evil" }) },
@@ -190,7 +190,7 @@ describe("staff passkeys", () => {
   });
 
   it("refuses a signature counter that went backwards (a cloned key)", async () => {
-    const first = await login(owner.email);
+    const first = await login(staff.email);
     const res = await api("/auth/passkey/login", {
       method: "POST",
       body: { response: device.authenticate(first.body.options, { counter: 1 }) },
@@ -199,7 +199,7 @@ describe("staff passkeys", () => {
   });
 
   it("doesn't accept a step-up challenge as a sign-in", async () => {
-    const token = await signInWithPasskey(owner.email, device);
+    const token = await signInWithPasskey(staff.email, device);
     const options = await api("/auth/step-up/options", { method: "POST", token });
     assert.equal(options.status, 200);
     const res = await api("/auth/passkey/login", {
@@ -210,7 +210,7 @@ describe("staff passkeys", () => {
   });
 
   it("a second passkey needs a recent passkey check, not just the password", async () => {
-    const token = await signInWithPasskey(owner.email, device);
+    const token = await signInWithPasskey(staff.email, device);
     const stale = mintToken({
       ...claims(token),
       pkt: Math.floor(Date.now() / 1000) - 3600,
@@ -225,7 +225,7 @@ describe("staff passkeys", () => {
   });
 
   it("step-up re-signs the session with a fresh check", async () => {
-    const token = await signInWithPasskey(owner.email, device);
+    const token = await signInWithPasskey(staff.email, device);
     const options = await api("/auth/step-up/options", { method: "POST", token });
     const res = await api("/auth/step-up", {
       method: "POST",
@@ -238,7 +238,7 @@ describe("staff passkeys", () => {
   });
 
   it("removing a passkey needs a recent check; the account keeps the other", async () => {
-    const token = await signInWithPasskey(owner.email, device);
+    const token = await signInWithPasskey(staff.email, device);
     const list = await api("/auth/passkeys", { token });
     const phone = list.body.find((passkey) => passkey.name === "CI phone");
     const stale = mintToken({ ...claims(token), pkt: Math.floor(Date.now() / 1000) - 3600 });
@@ -296,67 +296,28 @@ describe("step-up on sensitive admin actions", () => {
   });
 });
 
-describe("step-up on assigning an announcement's owner", () => {
-  const tors = () => mongo.db().collection("tors");
-  let torId;
-  let owner;
-
-  before(async () => {
-    owner = await insertUser("owner");
-    const { insertedId } = await tors().insertOne({
-      title: "CI step-up owner TOR",
-      agency: "CI",
-      budget: "1",
-      deadline: "-",
-      stage: "ประกาศ",
-      tags: [],
-      summary: "-",
-      createdAt: new Date(),
-    });
-    torId = insertedId;
-  });
-  after(() => tors().deleteOne({ _id: torId }));
-
-  it("refuses a passkey admin whose last check is too old, and changes nothing", async () => {
-    const token = mintToken({ amr: ["pwd", "passkey"], pkt: Math.floor(Date.now() / 1000) - 3600 });
-    const res = await api(`/tor/${torId}/owner`, { method: "PUT", token, body: { ownerId: owner.id } });
-    assert.equal(res.status, 403);
-    assert.equal(res.body.code, "step-up-required");
-    assert.equal((await tors().findOne({ _id: torId })).ownerId, undefined);
-  });
-
-  it("assigns and unassigns right after a passkey check", async () => {
-    const token = mintToken({ amr: ["pwd", "passkey"], pkt: Math.floor(Date.now() / 1000) });
-    const set = await api(`/tor/${torId}/owner`, { method: "PUT", token, body: { ownerId: owner.id } });
-    assert.equal(set.status, 200, JSON.stringify(set.body));
-    assert.equal((await tors().findOne({ _id: torId })).ownerId.toString(), owner.id);
-    const unset = await api(`/tor/${torId}/owner`, { method: "PUT", token, body: { ownerId: null } });
-    assert.equal(unset.status, 200, JSON.stringify(unset.body));
-  });
-});
-
 describe("admin passkey reset", () => {
   it("clears the passkeys and ends the staff member's sessions", async () => {
-    const owner = await insertUser("owner");
+    const staff = await insertUser("admin");
     const device = new SoftwareAuthenticator(ORIGIN);
-    const { body } = await login(owner.email);
+    const { body } = await login(staff.email);
     await enrol(body.token, device);
-    const session = await signInWithPasskey(owner.email, device);
+    const session = await signInWithPasskey(staff.email, device);
 
     const admin = mintToken({ amr: ["pwd", "passkey"], pkt: Math.floor(Date.now() / 1000) });
-    const reset = await api(`/accounts/${owner.id}/passkeys/reset`, { method: "POST", token: admin });
+    const reset = await api(`/accounts/${staff.id}/passkeys/reset`, { method: "POST", token: admin });
     assert.equal(reset.status, 200, JSON.stringify(reset.body));
 
     assert.equal((await api("/auth/passkeys", { token: session })).status, 401, "old sessions are revoked");
     // Revocation is per second; the next sign-in must come after it.
     await new Promise((resolve) => setTimeout(resolve, 1100));
-    const again = await login(owner.email);
+    const again = await login(staff.email);
     assert.ok(again.body.token, "signs in with the password and can add a new passkey");
     assert.deepEqual((await api("/auth/passkeys", { token: again.body.token })).body, []);
   });
 
   it("needs step-up, and nobody can reset their own", async () => {
-    const someone = await insertUser("owner");
+    const someone = await insertUser("admin");
     const stale = mintToken({ amr: ["pwd", "passkey"], pkt: Math.floor(Date.now() / 1000) - 3600 });
     assert.equal((await api(`/accounts/${someone.id}/passkeys/reset`, { method: "POST", token: stale })).status, 403);
 

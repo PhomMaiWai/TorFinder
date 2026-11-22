@@ -13,22 +13,6 @@ export async function updateTorEntry(id: string, formData: FormData): Promise<Ac
   const values = parseTorFormData(formData);
   assertTorFormValid(values);
 
-  // The owner link is its own call: it isn't a correction, so it locks nothing.
-  // It goes first because it may ask for a fresh passkey check (ASVS 7.5.3):
-  // a refused or cancelled check then leaves the record untouched, and the
-  // retry after it saves everything at once.
-  const ownerId = String(formData.get("ownerId") ?? "");
-  if (ownerId !== String(formData.get("currentOwnerId") ?? "")) {
-    const owner = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(id)}/owner`, {
-      method: "PUT",
-      headers: { ...(await authHeaders()), "Content-Type": "application/json" },
-      body: JSON.stringify({ ownerId: ownerId || null }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!owner.ok) return actionResultFrom(owner, "กำหนดเจ้าของโครงการไม่สำเร็จ");
-  }
-
   const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(id)}`, {
     method: "PATCH",
     headers: { ...(await authHeaders()), "Content-Type": "application/json" },

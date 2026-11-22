@@ -41,14 +41,6 @@ export const SEED_USERS: SeedUser[] = [
     previousPasswords: ["Admin2345!"],
   },
   {
-    email: "owner@bma.go.th",
-    name: "เจ้าของโครงการ",
-    role: "owner",
-    status: "approved",
-    password: "Owner-Demo-2026!",
-    previousPasswords: ["Owner1234!"],
-  },
-  {
     email: "contact@arundigital.co.th",
     name: "Arun Digital",
     role: "org",

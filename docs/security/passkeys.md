@@ -1,6 +1,6 @@
 # Staff passkeys
 
-Staff accounts (admin, owner) confirm every sign-in with a **passkey**, and confirm again before sensitive admin actions. This is the Level 3 form of ASVS 5.0 **6.3.3** (a phishing-resistant, hardware-based factor that needs a user action) and **7.5.3** (re-authentication before highly sensitive operations). Companies follow the same rule (below); public viewers sign in only through Google.
+Staff accounts (admins) confirm every sign-in with a **passkey**, and confirm again before sensitive admin actions. This is the Level 3 form of ASVS 5.0 **6.3.3** (a phishing-resistant, hardware-based factor that needs a user action) and **7.5.3** (re-authentication before highly sensitive operations). Companies follow the same rule (below); public viewers sign in only through Google.
 
 A passkey is a key pair made by a phone, laptop (Touch ID, Windows Hello) or security key. The private key never leaves the device. The browser only lets it sign for this site's own domain, so a look-alike phishing page gets nothing it can replay, and a stolen password alone no longer opens a staff account.
 
@@ -20,7 +20,6 @@ A passkey is a key pair made by a phone, laptop (Touch ID, Windows Hello) or sec
 | Rename an account or change its role | `PATCH /accounts/:id/details` |
 | Suspend or reactivate an account | `PATCH /accounts/:id/suspend`, `/reactivate` |
 | Delete an announcement | `DELETE /tor/:id` |
-| Assign or change an announcement's owner | `PUT /tor/:id/owner` |
 | Clear someone's passkeys | `POST /accounts/:id/passkeys/reset` |
 | Approve, reject or cancel a request to grant or remove the admin role | `POST /accounts/admin-approvals/:id/approve`, `/reject` |
 | Add a second passkey, or remove one | `POST /auth/passkeys/options`, `DELETE /auth/passkeys/:id` |

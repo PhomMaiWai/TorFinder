@@ -234,8 +234,7 @@ function AgencyTable({ rows, delay }: { rows: SiteOverview["agencies"]; delay: n
 
 /**
  * The public overview of everything TorFinder holds (see lib/site-stats.ts).
- * `matchesLink`: a company account also gets a way to its matches; an owner
- * shares the workspace layout but /matches is org-only (proxy.ts).
+ * `matchesLink`: a company account also gets a way to its matches.
  */
 export function Overview({
   data,

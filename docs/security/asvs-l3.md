@@ -212,7 +212,7 @@ The secrets, where each is held, and when and how each is rotated are in [limits
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 7.5.3 | Further authentication before highly sensitive operations | Pass | Approving or rejecting a company, editing a role, suspending, deleting an announcement, assigning an announcement's owner and clearing passkeys need a passkey check from the last 10 minutes (`StepUpGuard`; list in [passkeys.md](./passkeys.md)) |
+| 7.5.3 | Further authentication before highly sensitive operations | Pass | Approving or rejecting a company, editing a role, suspending, deleting an announcement and clearing passkeys need a passkey check from the last 10 minutes (`StepUpGuard`; list in [passkeys.md](./passkeys.md)) |
 
 ### V8 Authorization
 

@@ -15,7 +15,7 @@ erDiagram
         ObjectId _id PK
         string email UK "lower-case"
         string name
-        string role "admin | org | owner | viewer"
+        string role "admin | org | viewer"
         string status "pending | approved | rejected"
         string passwordHash "absent for Google-only accounts"
         string passwordSalt
@@ -74,7 +74,6 @@ erDiagram
         string goodsCategory
         string contractStatus
         string_array lockedFields "fields an admin corrected"
-        ObjectId ownerId FK "users._id"
         date createdAt
         date importedAt
         date enrichedAt
@@ -198,7 +197,6 @@ erDiagram
 
     users ||--o| company_profile : "embedded (org only)"
     users ||--o| notification_channels : embedded
-    users |o--o{ tors : "owns (ownerId)"
     tors ||--o{ tor_document : "embedded documents[]"
     tors ||--o| tor_extraction : "embedded extraction"
     tors ||--o{ tor_contract : "embedded contracts[]"
@@ -227,7 +225,6 @@ admin audit page merges both collections into one feed.
 | `users` | `{ status: 1, createdAt: -1 }` | Approval queue |
 | `users` | `{ googleId: 1 }` unique, sparse | Google sign-in lookup |
 | `tors` | `{ createdAt: -1 }` | Default listing order |
-| `tors` | `{ ownerId: 1, createdAt: -1 }` | Owner dashboard |
 | `tors` | `{ sourceRef: 1 }` unique, sparse | Re-importing updates instead of duplicating |
 | `tors` | `{ stage: 1, projectNumber: 1 }` | Finding other stages of the same project |
 | `feedback` | `{ torId: 1, createdAt: -1 }`, `{ status: 1, createdAt: -1 }` | Comments per TOR; moderation queue |

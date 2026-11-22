@@ -23,7 +23,6 @@ import { isUnexpectedFile } from "@/lib/served-files";
 const PROTECTED_PREFIXES = [
   "/matches",
   "/admin",
-  "/owner",
   "/profile",
   "/library",
   "/growth",
@@ -37,8 +36,6 @@ const PROTECTED_PREFIXES = [
 const ADMIN_ONLY_PREFIXES = ["/admin"];
 /** The company's own workspace; staff have their own consoles and a viewer has none. */
 const ORG_ONLY_PREFIXES = ["/matches", "/profile", "/library", "/growth", "/notifications"];
-/** The project owner's own announcements; the data behind it is owner-only too. */
-const OWNER_ONLY_PREFIXES = ["/owner"];
 /** The protected pages a public viewer has: their own saved list, and their signed-in devices on /account. */
 const VIEWER_PREFIXES = ["/saved", "/account"];
 /** Pages that make no sense once you are signed in. */
@@ -70,7 +67,7 @@ const PUBLIC_API_ROUTES = [
  * profile, matches, library…). /search and a TOR opened with `?in=app` are that
  * workspace's view of public pages; anyone else gets the public view.
  */
-const WORKSPACE_ROLES: readonly Role[] = ["org", "owner"];
+const WORKSPACE_ROLES: readonly Role[] = ["org"];
 
 /** Announcement files are as public as the announcement pages that show them. */
 const PUBLIC_API_PATTERNS = [
@@ -212,10 +209,6 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
   }
 
   if (matches(pathname, ORG_ONLY_PREFIXES) && session.role !== "org") {
-    return NextResponse.redirect(new URL(homeFor(session.role), request.url));
-  }
-
-  if (matches(pathname, OWNER_ONLY_PREFIXES) && session.role !== "owner") {
     return NextResponse.redirect(new URL(homeFor(session.role), request.url));
   }
 
