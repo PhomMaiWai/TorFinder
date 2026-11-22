@@ -2,7 +2,7 @@
 
 Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/docs_en) Level 2 requirements, on top of Level 1 (see [asvs-l1.md](./asvs-l1.md), 0 Fail). Done on 17 Nov 2026 against `main` at `4d75e48`, plus PR #341 (SAST fixes) and PR #343 (the Level 2 fixes below), both in review. Like Level 1 this is a code read-through, not a pentest.
 
-**Result: 126 Pass, 0 Partial, 0 Not done, 57 N/A, 0 not reviewed.** All 126 items that apply to TorFinder (excluding N/A) pass (100%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
+**Result: 127 Pass, 0 Partial, 0 Not done, 56 N/A, 0 not reviewed.** All 127 items that apply to TorFinder (excluding N/A) pass (100%). The triage first found 82 Pass and 9 Planned; PR #343 fixed all 9 and closed the gap in V14.2.2.
 
 **Update 19 Nov 2026 (branch `feat/asvs-l2-batch`):** nine items move to Pass. Announcement files are fetched only from the allowlisted portal hosts, and redirects are checked hop by hop (1.3.6, 13.2.4, 15.3.2; threat E3). Google sign-in is bound to the browser with a nonce (10.1.2, 10.5.1). Password hashes use stronger scrypt settings and store them, and old hashes are upgraded at sign-in (11.4.2, 11.2.2). The backend connects to MongoDB as a least-privilege account (13.2.2). Input refused by validation is logged (16.3.3).
 
@@ -16,10 +16,10 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 
 | Status | Count | Meaning |
 | --- | --- | --- |
-| Pass | 126 | Control exists, with evidence in code or in this file |
+| Pass | 127 | Control exists, with evidence in code or in this file |
 | Partial | 0 | Control exists with a gap; the gap is named |
 | Not done | 0 | Not implemented (the five left were closed on 20 Nov, below) |
-| N/A | 57 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
+| N/A | 56 | The feature doesn't exist in TorFinder (no WebRTC, GraphQL, WebSockets, MFA codes, OAuth server…) |
 | Not reviewed | 0 | The three set by the hosting proxy were reviewed once the Caddy edge joined the repository (PR #401) |
 
 | Chapter | L2 items | Pass | Partial | Not done | N/A | Not reviewed |
@@ -35,13 +35,13 @@ Triage of TorFinder against all 183 [OWASP ASVS 5.0](https://github.com/OWASP/AS
 | V9 Self-contained Tokens | 3 | 2 | 0 | 0 | 1 | 0 |
 | V10 OAuth and OIDC | 24 | 6 | 0 | 0 | 18 | 0 |
 | V11 Cryptography | 11 | 9 | 0 | 0 | 2 | 0 |
-| V12 Secure Communication | 6 | 5 | 0 | 0 | 1 | 0 |
+| V12 Secure Communication | 6 | 6 | 0 | 0 | 0 | 0 |
 | V13 Configuration | 12 | 12 | 0 | 0 | 0 | 0 |
 | V14 Data Protection | 7 | 7 | 0 | 0 | 0 | 0 |
 | V15 Secure Coding and Architecture | 10 | 10 | 0 | 0 | 0 | 0 |
 | V16 Security Logging and Error Handling | 16 | 16 | 0 | 0 | 0 | 0 |
 | V17 WebRTC | 7 | 0 | 0 | 0 | 7 | 0 |
-| **Total** | **183** | **126** | **0** | **0** | **57** | **0** |
+| **Total** | **183** | **127** | **0** | **0** | **56** | **0** |
 
 ## Fixed after the triage (PR #343)
 
@@ -402,7 +402,7 @@ Security events and errors are described in [logging-and-errors.md](./logging-an
 | 12.3.1 | An encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application,… | Pass | Inbound: the Caddy edge serves HTTPS only and redirects plain HTTP (`docker/caddy/Caddyfile`, `docker-compose.edge.yml`). Outbound calls (portals, Google, Resend, Vertex) use HTTPS. MongoDB accepts TLS only, with a client certificate from the internal CA (`--tlsMode=requireTLS`, `docker-compose.yml`) |
 | 12.3.2 | TLS clients validate certificates received before communicating with a TLS server | Pass | Node's `fetch` validates certificates; no `rejectUnauthorized: false` or `NODE_TLS_REJECT_UNAUTHORIZED` anywhere |
 | 12.3.3 | TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP-based… | Pass | Frontend→backend is HTTPS with mutual TLS: the backend requires a client certificate from the internal CA and accepts only the frontend's (`backend/src/common/internal-tls.ts`, `frontend/src/lib/internal-tls.ts`). Backend→MongoDB is TLS with the backend's certificate as its login (MONGODB-X509). Tested in `backend/test/internal-tls.test.mjs` |
-| 12.3.4 | TLS connections between internal services use trusted certificates | N/A | No internal TLS |
+| 12.3.4 | TLS connections between internal services use trusted certificates | Pass | Every internal TLS connection trusts only the private CA made by `docker/certs/generate.sh`, never a public or self-signed one: the frontend's client to the backend sets `ca` to that CA with `rejectUnauthorized: true` (`frontend/src/lib/internal-tls.ts`); the backend serves HTTPS with the same CA and requires a client certificate from it (`backend/src/common/internal-tls.ts`); the backend's MongoDB connection uses `tlsCAFile=/certs/ca.crt`, and mongod requires TLS with `--tlsCAFile` (`docker-compose.yml`). Tested in `backend/test/internal-tls.test.mjs` |
 
 ### V13 Configuration
 

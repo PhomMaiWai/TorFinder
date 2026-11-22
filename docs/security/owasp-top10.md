@@ -4,7 +4,7 @@ How TorFinder handles each category of the [OWASP Top 10:2025](https://owasp.org
 
 This file adds no new review. It maps work that is already done and documented:
 
-- ASVS 5.0: [Level 1](./asvs-l1.md) (0 Fail), [Level 2](./asvs-l2.md) (126 of 126 applicable items pass), [Level 3](./asvs-l3.md) (68 of 72 applicable items pass, 94%; the 4 left need a production domain or hardware)
+- ASVS 5.0: [Level 1](./asvs-l1.md) (0 Fail), [Level 2](./asvs-l2.md) (127 of 127 applicable items pass), [Level 3](./asvs-l3.md) (68 of 72 applicable items pass, 94%; the 4 left need a production domain or hardware)
 - [Threat model](./threat-model.md): STRIDE, 37 threats, all mitigated. Threat IDs such as S1 or E3 below come from there.
 - [SAST](./sast-report.md) (CodeQL, Semgrep), [DAST](./dast-report.md) (OWASP ZAP), [logging and errors](./logging-and-errors.md), [evidence screenshots](./evidence/README.md)
 
