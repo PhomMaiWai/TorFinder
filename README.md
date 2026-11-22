@@ -71,13 +71,15 @@ docker compose down -v           # stop and wipe the data; the next start re-see
 
 ### Running without Docker
 
-Requires Node.js 22+ and a MongoDB 7 instance.
+Requires Node.js 22+ and a MongoDB 7 server.
 
 ```bash
 # terminal 1: API on http://localhost:4000
 cd backend
 npm install
 cp .env.example .env
+#   in .env, point MONGODB_URI at your MongoDB, e.g.
+#   MONGODB_URI=mongodb://localhost:27017/torfinder
 npm run dev
 
 # terminal 2: web app on http://localhost:3000
@@ -87,8 +89,10 @@ cp .env.example .env.local
 npm run dev
 ```
 
-`SESSION_SECRET` must be the same in both files. To use the Docker database instead
-of your own, see [configuration.md](docs/operations/configuration.md#backend-outside-docker-database-in-docker).
+The example `MONGODB_URI` is for the Docker database, which needs TLS
+certificates; [configuration.md](docs/operations/configuration.md#backend-outside-docker-database-in-docker)
+shows how to use it. Both example files share the same development
+`SESSION_SECRET`; if you change it, change it in both.
 
 ## Demo accounts
 
@@ -146,15 +150,59 @@ The ASVS reports, threat model, OWASP Top 10 mapping and scan reports are in
 [docs/security/](docs/security/project-document.md). To report a vulnerability,
 see [SECURITY.md](SECURITY.md).
 
-## Testing
+## Running the security checks
+
+These are the checks CI runs in
+[`.github/workflows/security.yml`](.github/workflows/security.yml).
+
+**Security regression tests** (authentication, access control, NoSQL injection,
+rate limits). They need a MongoDB you can throw away and a backend started with
+the test settings:
 
 ```bash
-cd backend && npm run test:e2e       # API end-to-end tests against a real MongoDB
-cd ../frontend && npm run test:e2e   # frontend tests
-npm run lint                         # in either folder
+cd backend
+npm ci && npm run build
+export NODE_ENV=development SEED_DEMO_DATA=true VERTEX_PROJECT_ID= \
+  MONGODB_URI=mongodb://localhost:27017/torr_sec \
+  SESSION_SECRET=ci-test-secret-not-for-production \
+  FRONTEND_ORIGIN=http://localhost:3000 \
+  EGP_POLL_MINUTES=0 EGP_POLL_ON_STARTUP=false MEA_POLL_MINUTES=0 \
+  DATAGOV_POLL_MINUTES=0 GPROC_POLL_MINUTES=0 AI_POLL_MINUTES=0 \
+  THROTTLE_LIMIT=300 AUTH_THROTTLE_LIMIT=5 AUTH_THROTTLE_TTL_MS=60000 \
+  E2E_BASE_URL=http://localhost:4000
+node dist/main.js &
+until curl -sf http://localhost:4000/health; do sleep 1; done   # wait for the backend
+node --test --test-reporter=spec test/security-owasp.e2e.test.mjs
 ```
 
-What the tests need and what CI runs: [testing.md](docs/process/testing.md).
+**Dependency audit**: fails on high or critical advisories in production
+dependencies.
+
+```bash
+(cd backend  && npm ci --ignore-scripts && node ../.github/scripts/npm-audit.mjs backend)
+(cd frontend && npm ci --ignore-scripts && node ../.github/scripts/npm-audit.mjs frontend)
+```
+
+**Secret scan of the whole git history** (needs a full clone, not `--depth 1`):
+
+```bash
+docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2 detect --source /repo --redact --no-banner -v
+```
+
+**HTTP security headers**, with the app running:
+
+```bash
+curl -sI http://localhost:3000/ | grep -iE 'content-security|strict-transport|x-content-type|referrer'
+```
+
+**SAST and DAST**: CodeQL runs on every pull request (GitHub → Security → Code
+scanning). The Semgrep and OWASP ZAP commands we used, with their results, are in
+[sast-report.md](docs/security/sast-report.md#how-to-reproduce) and
+[dast-report.md](docs/security/dast-report.md#how-to-reproduce). Only scan your
+own local copy: the ZAP active scan sends attack payloads.
+
+**The full test suite** (about 900 backend tests) needs more settings; follow
+[testing.md](docs/process/testing.md).
 
 ## Project structure
 
