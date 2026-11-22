@@ -18,7 +18,7 @@ companies that could bid on it.
 - **Market insights**: who wins, at what discount, and how contested each agency is.
 - **Admin tools**: approve companies, curate and import TORs, moderate comments,
   review reports, read the audit log.
-- **Roles** for administrators, project owners, auditors, companies and the public.
+- **Roles** for administrators, project owners, companies and the public.
   Details: [roles-and-features.md](docs/project/roles-and-features.md).
 
 Announcements are imported from the agencies' public APIs (Bangkok e-GP, national
@@ -37,9 +37,25 @@ e-GP, data.go.th) and the MEA procurement site.
 
 ## Getting started
 
-### With Docker (recommended)
+The quickest way to run TorFinder is Docker: one command starts the frontend,
+the backend and the database, on macOS and Windows alike. You only need one
+secret to fill in; everything else is optional.
 
-Requires Docker with Compose.
+### 1. Install the tools
+
+| | macOS | Windows 10/11 |
+| --- | --- | --- |
+| Git | `xcode-select --install`, or [git-scm.com](https://git-scm.com/download/mac) | [git-scm.com](https://git-scm.com/download/win) (Git for Windows, includes Git Bash) |
+| Docker | [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/) (Apple silicon or Intel) | [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) with the **WSL 2** backend (the installer offers it) |
+| Node.js 22+ | Only for running without Docker: [nodejs.org](https://nodejs.org/) or `brew install node@22` | Only for running without Docker: [nodejs.org](https://nodejs.org/) |
+
+Start Docker Desktop and wait until it says it is running. Check with
+`docker compose version`. Give Docker at least 4 GB of memory
+(Docker Desktop → Settings → Resources).
+
+### 2. Get the code and create `.env`
+
+macOS (Terminal):
 
 ```bash
 git clone https://github.com/PhomMaiWai/TorFinder.git
@@ -47,89 +63,176 @@ cd TorFinder
 cp .env.example .env
 ```
 
-Edit `.env`:
+Windows (PowerShell):
 
-```bash
-SESSION_SECRET=<output of: openssl rand -base64 32>   # required, 32+ characters
-SEED_DEMO_DATA=true                                    # demo accounts, your own machine only
+```powershell
+git clone https://github.com/PhomMaiWai/TorFinder.git
+cd TorFinder
+Copy-Item .env.example .env
 ```
 
-Then start everything:
+`.env` is ignored by git, so the values you put in it stay on your machine.
+Never commit it. `.gitattributes` keeps the scripts the containers run in LF line
+endings, so a Windows checkout works without changing any Git setting.
+
+### 3. Fill in `.env`
+
+Open `.env` in any editor (`open -e .env` on macOS, `notepad .env` on Windows).
+Only `SESSION_SECRET` is required. For a local run, also turn on the demo
+accounts:
+
+```bash
+SESSION_SECRET=<a random value of 32+ characters, see below>
+SEED_DEMO_DATA=true
+```
+
+Make the `SESSION_SECRET` value with:
+
+| macOS | Windows (PowerShell) |
+| --- | --- |
+| `openssl rand -base64 32` | `$b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)` |
+
+(Git Bash on Windows has `openssl` too.) Paste the output after
+`SESSION_SECRET=` with no quotes or spaces.
+
+Every other value can stay as it is: the app runs without them and simply
+leaves that feature off. [Getting each value](#getting-each-env-value) below says
+where to find them if you want the extra features.
+
+### 4. Start it
 
 ```bash
 docker compose up -d --build
 ```
 
-Open <http://localhost:3000>. The database starts with a snapshot of real TOR
-records.
+The same command works in Terminal and PowerShell. The first start takes a few
+minutes: it builds both images, makes the internal TLS certificates and the
+database password, and loads a snapshot of real TOR records. Then open
+<http://localhost:3000>.
 
 ```bash
-docker compose logs -f backend   # follow the backend log
-docker compose down              # stop, keep the data
-docker compose down -v           # stop and wipe the data; the next start re-seeds
+docker compose ps                  # every service should be "running"
+docker compose logs -f backend     # follow the backend log (Ctrl+C to stop following)
+docker compose down                # stop, keep the data
+docker compose down -v             # stop and wipe the data; the next start loads the snapshot again
 ```
+
+After you change `.env`, run `docker compose up -d` again (add `--build` for the
+`NEXT_PUBLIC_…` values, which are built into the frontend).
+
+**If something goes wrong**
+
+- *Port is already allocated*: something else uses 3000, 4000 or 27017. Stop it,
+  or change the left-hand port in `docker-compose.yml`.
+- *The backend exits with `SESSION_SECRET must be a private random value of at
+  least 32 characters`*: `SESSION_SECRET` in `.env` is empty, too short, or the
+  example value.
+- *Windows: `set: illegal option -` or `\r: not found`*: the clone was made before
+  `.gitattributes` existed. Run `git rm --cached -r . -q` then `git reset --hard`
+  to check the files out again with LF endings.
+- *Everyone is signed out after a change*: `SESSION_SECRET` changed. Sign in again.
 
 ### Running without Docker
 
-Requires Node.js 22+ and a MongoDB 7 server.
+Requires Node.js 22+ and a MongoDB 7 server. The commands are the same on macOS
+and Windows, except for copying the example files (`cp` on macOS, `Copy-Item`
+in PowerShell).
 
 ```bash
 # terminal 1: API on http://localhost:4000
 cd backend
 npm install
-cp .env.example .env
-#   in .env, point MONGODB_URI at your MongoDB, e.g.
-#   MONGODB_URI=mongodb://localhost:27017/torfinder
+cp .env.example .env          # Windows: Copy-Item .env.example .env
 npm run dev
 
 # terminal 2: web app on http://localhost:3000
 cd frontend
 npm install
-cp .env.example .env.local
+cp .env.example .env.local    # Windows: Copy-Item .env.example .env.local
 npm run dev
 ```
 
-The example `MONGODB_URI` is for the Docker database, which needs TLS
-certificates; [configuration.md](docs/operations/configuration.md#backend-outside-docker-database-in-docker)
-shows how to use it. Both example files share the same development
-`SESSION_SECRET`; if you change it, change it in both.
+In `backend/.env`, `MONGODB_URI` must point at your database:
+
+- **Your own MongoDB without a password:** `MONGODB_URI=mongodb://localhost:27017/torfinder`
+- **The Docker database** (`docker compose up -d db`): it only accepts TLS with a
+  client certificate. Copy the development certificate out and read its
+  password:
+
+  ```bash
+  docker compose run --rm certs export                               # writes docker/certs/dev/ (git-ignored)
+  docker compose run --rm db-secrets cat /secrets/root-password      # the generated root password
+  ```
+
+  Then put that password in place of `<root-password>` in the example
+  `MONGODB_URI` in `backend/.env`. Details:
+  [configuration.md](docs/operations/configuration.md#backend-outside-docker-database-in-docker).
+
+Both example files use the same development `SESSION_SECRET`. If you change it,
+change it in both, or every signed-in request fails. `npm run dev` creates the
+demo accounts by default (`SEED_DEMO_DATA=true` in `backend/.env.example`).
 
 ## Demo accounts
 
-`npm run dev` creates these by default; Docker creates them when `.env` sets
-`SEED_DEMO_DATA=true`. The passwords are public, so never enable them on a server
-other people can reach.
+Created when `SEED_DEMO_DATA=true` (Docker) or by `npm run dev`. The passwords
+are published here, so only turn them on for your own machine, never on a
+server other people can reach.
 
-| Role | Email | Password | Sign in at |
-| --- | --- | --- | --- |
-| Administrator | `admin@bma.go.th` | `Admin1234!` | `/login/admin` |
-| Administrator (second) | `admin2@bma.go.th` | `Admin2345!` | `/login/admin` |
-| Project owner | `owner@bma.go.th` | `Owner1234!` | `/login/admin` |
-| Auditor | `auditor@bma.go.th` | `Auditor1234!` | `/login/admin` |
-| Company (approved) | `contact@arundigital.co.th` | `Org12345!` | `/login/organization` |
-| Company (pending) | `contact@techworks.co.th` | `Tech12345!` | `/login/organization` |
-| Company (pending) | `hello@datacraft.co.th` | `Data12345!` | `/login/organization` |
+| Role | Email | Password | Sign in at | Lands on |
+| --- | --- | --- | --- | --- |
+| Administrator | `admin@bma.go.th` | `Admin-Demo-2026!` | `/login/admin` | `/admin` |
+| Administrator (second) | `admin2@bma.go.th` | `Admin2-Demo-2026!` | `/login/admin` | `/admin` |
+| Project owner | `owner@bma.go.th` | `Owner-Demo-2026!` | `/login/admin` | `/owner` |
+| Company (approved) | `contact@arundigital.co.th` | `Arun-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Company (approved) | `sales@siamnetwork.co.th` | `Siam-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Company (approved) | `contact@itsupply.co.th` | `Supply-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Company (approved) | `hello@helpdeskpro.co.th` | `Help-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Company (approved) | `contact@softstart.co.th` | `Start-Demo-2026!` | `/login/organization` | `/dashboard` |
+| Company (pending) | `contact@techworks.co.th` | `Tech-Demo-2026!` | `/login/organization` | refused until approved |
+| Company (pending) | `hello@datacraft.co.th` | `Data-Demo-2026!` | `/login/organization` | refused until approved |
 
-Members of the public sign in with Google at `/login/public`. A pending company
-can sign in only after an administrator approves it at `/admin/accounts`.
+- A pending company is refused ("waiting for admin review") until an
+  administrator approves it at `/admin/accounts`.
+- Members of the public sign in with Google at `/login/public`, which needs a
+  Google client ID (see below).
+- Two administrators exist because granting or removing the admin role needs a
+  second admin's approval.
+- Staff can add a passkey at `/account`. Locally it is optional; on a real
+  server, `STAFF_PASSKEYS_REQUIRED=true` makes it required.
+- An older local database is fine: on start, demo accounts still on an old
+  seeded password get the one above, and missing ones are added.
 
-## Configuration
+## Getting each `.env` value
 
-All settings are environment variables; nothing secret is in the code. The ones
-you are most likely to set:
+With Docker, everything goes in the root `.env`. Without Docker, the backend
+values go in `backend/.env` and the frontend ones (`SESSION_SECRET`,
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `BACKEND_URL`) in `frontend/.env.local`. Keep
+every key and token out of git: only the `.env.example` files are committed,
+and they hold no secrets.
 
-| Variable | Where | Purpose |
+| Variable | Needed? | Where to get it |
 | --- | --- | --- |
-| `SESSION_SECRET` | backend, frontend | Signs sessions. Required in production, 32+ characters, same value in both |
-| `MONGODB_URI` | backend | Database connection |
-| `FRONTEND_ORIGIN` | backend | The only origin CORS allows |
-| `GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | backend / frontend | Google sign-in; empty hides the button |
-| `VERTEX_PROJECT_ID` | backend | Turns on AI extraction; empty turns it off |
-| `RESEND_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN` | backend | Email and LINE notifications; empty turns them off |
+| `SESSION_SECRET` | **Required** | Generate it (step 3 above). Same value in frontend and backend |
+| `SEED_DEMO_DATA` | Local only | `true` for the demo accounts; `false` (the default) on any shared server |
+| `MONGO_ROOT_PASSWORD` | No | Leave empty: the first start generates one. Read it with `docker compose run --rm db-secrets cat /secrets/root-password` |
+| `FRONTEND_ORIGIN` | Only on a server | The site's public address, e.g. `https://torfinder.example.com`. Default `http://localhost:3000` |
+| `GOOGLE_CLIENT_ID`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | No (Google sign-in) | Already set to the team's client ID. If the Google button reports an origin or client error, make your own: [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → OAuth consent screen (External, add yourself as a test user) → Credentials → **Create credentials → OAuth client ID** → *Web application* → Authorized JavaScript origins `http://localhost:3000` (and your domain). Copy the **Client ID** into both variables. There is no client secret to keep: the ID is public by design |
+| `RESEND_API_KEY` | No (email alerts) | Sign up at [resend.com](https://resend.com) → **API Keys → Create API key** (Sending access). Starts with `re_`. Without a verified domain, Resend only delivers to your own address |
+| `NOTIFY_EMAIL_FROM` | With Resend | Keep `TOR Finder <onboarding@resend.dev>`, or an address on a domain you verified in Resend → Domains |
+| `LINE_CHANNEL_ACCESS_TOKEN` | No (LINE alerts) | [LINE Developers Console](https://developers.line.biz/console/) → your Messaging API channel → **Messaging API** tab → *Channel access token (long-lived)* → **Issue** |
+| `LINE_CHANNEL_SECRET` | With LINE | Same channel → **Basic settings** → *Channel secret* |
+| `LINE_BOT_ID` | With LINE | [LINE Official Account Manager](https://manager.line.biz) → Settings → the basic ID, with the `@`. Full setup, including the webhook (it needs a public HTTPS address): [line-notifications.md](docs/operations/line-notifications.md) |
+| `VERTEX_PROJECT_ID` | No (AI reading of TOR PDFs, proposal drafts, find-similar) | A Google Cloud project with billing on and the **Vertex AI API** enabled ([console](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com)). The project **ID**, not its name |
+| `VERTEX_CREDENTIALS_FILE` | With Vertex (Docker) | Console → IAM & Admin → Service accounts → **Create** → role *Vertex AI User* → Keys → **Add key → JSON**. Save the file **outside this repository** and give its absolute path: macOS `/Users/you/.config/torfinder/gcp-vertex.json`, Windows `C:/Users/you/.config/torfinder/gcp-vertex.json` (forward slashes). Without Docker, run `gcloud auth application-default login` instead |
+| `VERTEX_LOCATION`, `VERTEX_MODEL` | No | Defaults `asia-southeast1`, `gemini-2.5-flash` |
+| `AI_*_PER_DAY` | No | Daily caps on AI calls visitors can trigger; 0 turns a cap off |
 
-The full list with defaults is in
-[configuration.md](docs/operations/configuration.md#environment-variables) and the
-`.env.example` files.
+Slack alerts need nothing in `.env`: each company pastes its own Slack
+incoming-webhook URL on its Notifications page.
+
+The full list of settings, with defaults, is in
+[configuration.md](docs/operations/configuration.md#environment-variables) and
+the three `.env.example` files.
 
 ## Security
 
