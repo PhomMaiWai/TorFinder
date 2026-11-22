@@ -17,7 +17,6 @@ import {
   MessageSquare,
   Plus,
   Search,
-  SearchCheck,
   Sprout,
   Trophy,
   UserCheck,
@@ -118,15 +117,6 @@ function getOwnerNav(t: (key: string) => string): { section: string | null; link
   ];
 }
 
-function getAuditorNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
-  return [
-    {
-      section: null,
-      links: [{ label: t("navFlaggedTors"), href: "/auditor", icon: SearchCheck }],
-    },
-  ];
-}
-
 function NavLinks({
   nav,
   onNavigate,
@@ -201,15 +191,8 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
   const router = useRouter();
   // A page every role shares (/account) says whose menu to show; elsewhere the path does.
   const isAdmin = role ? role === "admin" : pathname.startsWith("/admin");
-  const isAuditor = role ? role === "auditor" : pathname.startsWith("/auditor");
   const isOwner = role ? role === "owner" : pathname.startsWith("/owner");
-  const nav = isAdmin
-    ? getAdminNav(t)
-    : isAuditor
-      ? getAuditorNav(t)
-      : isOwner
-        ? getOwnerNav(t)
-        : getOrgNav(t);
+  const nav = isAdmin ? getAdminNav(t) : isOwner ? getOwnerNav(t) : getOrgNav(t);
 
   const [user, setUser] = useState<SessionUser | null>(null);
   // A company's workspace is named after the company on its profile. The
@@ -256,13 +239,13 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
         <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-border/50">
           <span
             className={`flex size-7 items-center justify-center rounded-md text-2xs font-bold text-white ${
-              isAdmin ? "bg-danger" : isAuditor ? "bg-warn" : "bg-accent"
+              isAdmin ? "bg-danger" : "bg-accent"
             }`}
           >
             T
           </span>
           <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-ink">
-            {isAdmin ? "Torr Admin" : isAuditor ? "Torr Auditor" : isOwner ? "Torr Owner" : (companyName ?? user?.name ?? "")}
+            {isAdmin ? "Torr Admin" : isOwner ? "Torr Owner" : (companyName ?? user?.name ?? "")}
           </span>
           <ChevronDown size={14} className="shrink-0 text-ink-subtle" />
         </button>
@@ -292,11 +275,11 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
             className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-border/50"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-ink-muted ring-1 ring-border">
-              {(user?.name ?? (isAdmin ? t("adminFallbackName") : isAuditor ? t("auditorFallbackName") : "..."))[0]}
+              {(user?.name ?? (isAdmin ? t("adminFallbackName") : "..."))[0]}
             </span>
             <div className="min-w-0 flex-1 text-left">
               <p className="truncate text-sm font-medium text-ink">
-                {user?.name ?? (isAdmin ? t("adminFallbackName") : isAuditor ? t("auditorFallbackName") : t("loadingName"))}
+                {user?.name ?? (isAdmin ? t("adminFallbackName") : t("loadingName"))}
               </p>
               <p className="truncate text-xs text-ink-muted">{user?.email ?? t("accountSettings")}</p>
             </div>

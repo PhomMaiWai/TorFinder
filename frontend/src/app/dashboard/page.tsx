@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   ]);
 
   // Only company accounts get the workspace sidebar: its menu is the company's
-  // (profile, matches). Admins and auditors have their own consoles, and a
+  // (profile, matches). Admins and project owners have their own consoles, and a
   // viewer has none, so they all see the public navbar here.
   const audience: Audience = !session
     ? "guest"

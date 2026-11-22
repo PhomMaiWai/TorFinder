@@ -21,7 +21,6 @@ const THROTTLE_LIMIT = Number(process.env.AUTH_THROTTLE_LIMIT ?? "30");
 const SEED = {
   admin: { email: "admin@bma.go.th", password: "Admin-Demo-2026!" },
   owner: { email: "owner@bma.go.th", password: "Owner-Demo-2026!" },
-  auditor: { email: "auditor@bma.go.th", password: "Auditor-Demo-2026!" },
   approvedOrg: { email: "contact@arundigital.co.th", password: "Arun-Demo-2026!" },
   pendingOrg: { email: "contact@techworks.co.th", password: "Tech-Demo-2026!" },
 };
@@ -168,7 +167,7 @@ describe("POST /api/auth/login", () => {
     assert.equal(res.body.user.role, "admin");
   });
 
-  for (const role of ["owner", "auditor"]) {
+  for (const role of ["owner"]) {
     it(`signs in the seeded ${role}, and the session token carries that role`, async () => {
       const res = await login(SEED[role]);
 

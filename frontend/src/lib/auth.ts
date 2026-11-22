@@ -19,7 +19,7 @@ export type SessionPayload = {
 };
 
 /** The agency's own accounts, which sign in with a passkey too (backend common/roles.ts STAFF_ROLES). */
-export const STAFF_ROLES: readonly Role[] = ["admin", "owner", "auditor"];
+export const STAFF_ROLES: readonly Role[] = ["admin", "owner"];
 export const isStaffRole = (role: Role | undefined) => role !== undefined && STAFF_ROLES.includes(role);
 
 /**

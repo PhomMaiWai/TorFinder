@@ -49,19 +49,8 @@ export type TorClassification = (typeof TOR_CLASSIFICATIONS)[number];
 /** Listed, matched and scored: not hidden, and not marked as outside software work. */
 export const LISTED_TOR = { deletedAt: { $exists: false }, classification: { $ne: "not-software" } } as const;
 
-/** The two TOR_BUDGET_STATUSES worth an auditor's attention — "ปกติ" isn't a flag. */
+/** The two TOR_BUDGET_STATUSES that stand out — "ปกติ" isn't a flag. */
 export const TOR_BUDGET_FLAGS = ["สูงกว่าปกติ", "ต่ำกว่าปกติ"] as const;
-
-/**
- * Procurement methods the Auditor Office agreed are worth a second look:
- * "เฉพาะเจาะจง" (sole-source — the agency negotiates with one vendor directly,
- * no competition by design) and "คัดเลือก" (Selection — a small, agency-picked
- * shortlist, not the open field "e-bidding" gives everyone else). Matched as a
- * substring of `TorDoc.procurementMethod`, which is free text passed through
- * from three different portals with no shared vocabulary — e.g. e-GP's own
- * value is the bare "เฉพาะเจาะจง", not "วิธีเฉพาะเจาะจง".
- */
-export const LOW_COMPETITION_METHODS = ["เฉพาะเจาะจง", "คัดเลือก"] as const;
 
 /**
  * Where a project stands in the national e-GP's procurement flow, in the order

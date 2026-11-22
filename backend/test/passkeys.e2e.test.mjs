@@ -337,20 +337,20 @@ describe("step-up on assigning an announcement's owner", () => {
 
 describe("admin passkey reset", () => {
   it("clears the passkeys and ends the staff member's sessions", async () => {
-    const auditor = await insertUser("auditor");
+    const owner = await insertUser("owner");
     const device = new SoftwareAuthenticator(ORIGIN);
-    const { body } = await login(auditor.email);
+    const { body } = await login(owner.email);
     await enrol(body.token, device);
-    const session = await signInWithPasskey(auditor.email, device);
+    const session = await signInWithPasskey(owner.email, device);
 
     const admin = mintToken({ amr: ["pwd", "passkey"], pkt: Math.floor(Date.now() / 1000) });
-    const reset = await api(`/accounts/${auditor.id}/passkeys/reset`, { method: "POST", token: admin });
+    const reset = await api(`/accounts/${owner.id}/passkeys/reset`, { method: "POST", token: admin });
     assert.equal(reset.status, 200, JSON.stringify(reset.body));
 
     assert.equal((await api("/auth/passkeys", { token: session })).status, 401, "old sessions are revoked");
     // Revocation is per second; the next sign-in must come after it.
     await new Promise((resolve) => setTimeout(resolve, 1100));
-    const again = await login(auditor.email);
+    const again = await login(owner.email);
     assert.ok(again.body.token, "signs in with the password and can add a new passkey");
     assert.deepEqual((await api("/auth/passkeys", { token: again.body.token })).body, []);
   });

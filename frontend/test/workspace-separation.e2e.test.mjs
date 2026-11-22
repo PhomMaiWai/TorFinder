@@ -35,7 +35,6 @@ const TOKENS = {
   org: makeToken("org"),
   owner: makeToken("owner"),
   admin: makeToken("admin"),
-  auditor: makeToken("auditor"),
 };
 
 /** Where a request ends up after the proxy: the redirect target (path + query), or null when it isn't redirected. */
@@ -52,7 +51,7 @@ async function redirectOf(path, role) {
 const TOR = "/tor/0123456789abcdef01234567";
 
 describe("/search is the company workspace's search", () => {
-  for (const role of ["viewer", "admin", "auditor", undefined]) {
+  for (const role of ["viewer", "admin", undefined]) {
     it(`sends ${role ?? "a guest"} to /public, keeping the filters`, async () => {
       assert.equal(await redirectOf("/search?q=cloud&similar=abc", role), "/public?q=cloud&similar=abc");
     });
@@ -66,7 +65,7 @@ describe("/search is the company workspace's search", () => {
 });
 
 describe("a TOR opened with ?in=app", () => {
-  for (const role of ["viewer", "admin", "auditor", undefined]) {
+  for (const role of ["viewer", "admin", undefined]) {
     it(`opens in the public layout for ${role ?? "a guest"}`, async () => {
       assert.equal(await redirectOf(`${TOR}?in=app`, role), TOR);
     });
@@ -84,12 +83,11 @@ describe("a TOR opened with ?in=app", () => {
 });
 
 // Each role's own pages, and where everyone else is sent (their own home).
-const HOME = { viewer: "/dashboard", org: "/dashboard", owner: "/owner", admin: "/admin", auditor: "/auditor" };
+const HOME = { viewer: "/dashboard", org: "/dashboard", owner: "/owner", admin: "/admin" };
 const OWN_PAGES = {
   org: ["/matches", "/profile", "/library", "/growth", "/notifications"],
   owner: ["/owner"],
   admin: ["/admin", "/admin/users", "/admin/audit"],
-  auditor: ["/auditor"],
 };
 
 describe("each role's pages are its own", () => {
@@ -127,7 +125,7 @@ describe("the normal user's pages are open to every role", () => {
 });
 
 describe("/account is every password account's own settings", () => {
-  for (const role of ["org", "owner", "admin", "auditor"]) {
+  for (const role of ["org", "owner", "admin"]) {
     it(`opens for ${role}`, async () => {
       assert.equal(await redirectOf("/account", role), null);
     });

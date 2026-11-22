@@ -14,7 +14,7 @@ still an open decision**, not something this checklist can verify for you.
 
 ## Staff passkeys only work on the real address
 
-Staff (admin, owner, auditor) sign in with a password **and a passkey**
+Staff (admin, owner) sign in with a password **and a passkey**
 ([passkeys.md](../security/passkeys.md)). A passkey is bound to the site's
 origin, which the backend takes from `FRONTEND_ORIGIN`. If that is still
 `http://localhost:3000` on a server, every passkey ceremony fails, and with

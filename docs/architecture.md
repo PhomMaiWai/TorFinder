@@ -19,7 +19,7 @@ from four official sources, keeps only BMA software work from 2022 on, merges
 the copies of the same project, reads the attached PDFs with AI when it is
 switched on, scores each TOR against every company profile, and tells a
 company when one fits. Agencies see who matched their TORs and what the
-public said; the Auditor Office sees awards and pricing worth a second look.
+public said.
 Every record links back to the notice it came from.
 
 ## 2. Context
@@ -30,7 +30,6 @@ flowchart TB
         Public["Public visitor<br/>search, read, comment, report"]
         Org["Software company (org)<br/>profile, matches, alerts, saved"]
         Owner["Agency project owner<br/>own TORs, matches, feedback"]
-        Auditor["Auditor Office<br/>flagged pricing and methods"]
         Admin["Admin<br/>accounts, corrections, moderation, sync"]
     end
 
@@ -51,7 +50,7 @@ flowchart TB
         Slack["Slack"]
     end
 
-    Public & Org & Owner & Auditor & Admin --> TF
+    Public & Org & Owner & Admin --> TF
     TF --> EGP & GPROC & MEA & DATAGOV
     TF --> Vertex & Google
     TF --> Resend & Line & Slack
@@ -128,7 +127,7 @@ flowchart LR
     Q --> E["Extract fields from PDF<br/>with confidence"]
     E --> M2["Score again<br/>with richer data"]
     M1 & M2 --> A["Alert companies<br/>above their threshold"]
-    U --> V["Listed: search, detail page,<br/>owner and auditor views"]
+    U --> V["Listed: search, detail page,<br/>owner view"]
     V --> C["Public comments<br/>(moderated)"]
     V --> R["Problem reports"] --> K["Admin corrects<br/>fields get locked"]
     K --> U
@@ -193,7 +192,7 @@ flowchart LR
 | The browser never calls the backend | Keeps the API and its address private; one place to attach the session | `BACKEND_URL` is server-only; client code goes through `app/api/` or Server Actions |
 | `SESSION_SECRET` is identical in both services | The frontend checks the cookie itself on every navigation | Nothing checks it; see [deployment-checklist.md](./operations/deployment-checklist.md) |
 | Identity comes from the session, never from the request body or a parameter | A caller can write anything in a body | Guards set `request.session`; services take the user id from there |
-| One guard admits one role | An admin is not automatically an owner or an auditor | `RoleGuard` subclasses list their roles |
+| One guard admits one role | An admin is not automatically an owner | `RoleGuard` subclasses list their roles |
 | A revoked session stops working within 30 seconds | Logout, password reset, suspension and role changes must take effect | `SessionRevocationService` (`sessionMinIssuedAt`, 30 s cache) |
 | Only BMA software work from 2022 on is listed | SRS hard constraint (FR-26) | Each source's `isWanted`, re-applied by `purge` after every sync |
 | An admin's correction outlives every import | Otherwise the next sync undoes the fix | `lockedFields`; `purge` skips corrected records |

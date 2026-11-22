@@ -24,7 +24,6 @@ const PROTECTED_PREFIXES = [
   "/matches",
   "/admin",
   "/owner",
-  "/auditor",
   "/profile",
   "/library",
   "/growth",
@@ -40,8 +39,6 @@ const ADMIN_ONLY_PREFIXES = ["/admin"];
 const ORG_ONLY_PREFIXES = ["/matches", "/profile", "/library", "/growth", "/notifications"];
 /** The project owner's own announcements; the data behind it is owner-only too. */
 const OWNER_ONLY_PREFIXES = ["/owner"];
-/** Pages only the Auditor Office may see. */
-const AUDITOR_ONLY_PREFIXES = ["/auditor"];
 /** The protected pages a public viewer has: their own saved list, and their signed-in devices on /account. */
 const VIEWER_PREFIXES = ["/saved", "/account"];
 /** Pages that make no sense once you are signed in. */
@@ -219,10 +216,6 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
   }
 
   if (matches(pathname, OWNER_ONLY_PREFIXES) && session.role !== "owner") {
-    return NextResponse.redirect(new URL(homeFor(session.role), request.url));
-  }
-
-  if (matches(pathname, AUDITOR_ONLY_PREFIXES) && session.role !== "auditor") {
     return NextResponse.redirect(new URL(homeFor(session.role), request.url));
   }
 

@@ -79,15 +79,14 @@ Each protected route has one guard:
 | `Admin` | `role: admin` only | 403 |
 | `Org` | `role: org` only | 403 |
 | `Owner` | `role: owner` only | 403 |
-| `Auditor` | `role: auditor` only | 403 |
 
-A role guard admits exactly one role: an admin cannot call an `Owner` or
-`Auditor` route. Every guard also refuses a token issued before the
+A role guard admits exactly one role: an admin cannot call an `Owner`
+route. Every guard also refuses a token issued before the
 account's last logout, password reset, role change or suspension
 (`SessionRevocationService`, cached for 30 seconds).
 
-Roles: `admin`, `org` (software company), `owner` (agency), `auditor`
-(สตง.), `viewer` (public user signed in with Google).
+Roles: `admin`, `org` (software company), `owner` (agency), `viewer`
+(public user signed in with Google).
 
 ## Errors, status codes and rate limits
 
@@ -171,7 +170,7 @@ include password fields. Their shape is
 | GET | `/accounts/me` | Session | — | Own account |
 | PATCH | `/accounts/me` | Session | `UpdateCompanyProfileDto` | Own account, updated |
 | PATCH | `/accounts/:id` | Admin | `{ status: "approved" \| "rejected" }` | The company account; notifies it and writes the audit log |
-| PATCH | `/accounts/:id/details` | Admin | `{ name?, role?: "admin"\|"owner"\|"auditor"\|"viewer" }` | The account. A company's role can't be changed (400); the last admin can't be demoted (409) |
+| PATCH | `/accounts/:id/details` | Admin | `{ name?, role?: "admin"\|"owner"\|"viewer" }` | The account. A company's role can't be changed (400); the last admin can't be demoted (409) |
 | PATCH | `/accounts/:id/suspend` | Admin | — | The account; its sessions are revoked |
 | PATCH | `/accounts/:id/reactivate` | Admin | — | The account |
 
@@ -275,7 +274,6 @@ records and records marked `not-software`.
 | POST | `/tor/:id/restore` | Admin | — | Undoes the soft delete |
 | GET | `/tor/deleted` | Admin | — | Hidden TORs, newest first |
 | GET | `/tor/not-software` | Admin | — | TORs an admin marked `not-software` |
-| GET | `/tor/flagged` | Auditor | `?flag=budget-high\|budget-low\|competition&page&pageSize` | `{ total, page, pageSize, items }` |
 
 `CreateTorDto`: `title`, `agency`, `budget` (display text), `deadline`,
 `daysLeft` (int ≥ 0), `tags[]`, `stage`, `summary`, optional

@@ -14,12 +14,12 @@ import { verifySessionToken } from "./token";
  * caller only learns what it already knows: whether its own token is valid.
  *
  * A guard admits one role, not "admin or better": an admin is not implicitly
- * an owner or an auditor, and neither of those can reach an admin route. A
+ * an owner, and an owner can't reach an admin route. A
  * route that needs several roles takes a subclass that lists them.
  *
  * `@Injectable()` here (not just on the concrete subclasses) is what lets
- * Nest's DI resolve the constructor below for OwnerGuard/OrgGuard/AdminGuard/
- * AuditorGuard, none of which declare their own constructor.
+ * Nest's DI resolve the constructor below for OwnerGuard/OrgGuard/AdminGuard,
+ * none of which declare their own constructor.
  *
  * `revocation` is `@Optional()` for the same reason as in SessionGuard:
  * role-guards.test.mjs does `new AdminGuard()` directly, with no DI container

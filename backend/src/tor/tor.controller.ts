@@ -17,10 +17,8 @@ import type { Response } from "express";
 
 import { AdminGuard } from "../common/admin.guard";
 import { StepUpGuard } from "../common/step-up.guard";
-import { AuditorGuard } from "../common/auditor.guard";
 import { AuthenticatedRequest } from "../common/session.guard";
 import { CreateTorDto } from "./dto/create-tor.dto";
-import { ListFlaggedTorQueryDto } from "./dto/list-flagged-tor-query.dto";
 import { ListTorQueryDto } from "./dto/list-tor-query.dto";
 import { SetTorOwnerDto } from "./dto/set-tor-owner.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
@@ -62,16 +60,6 @@ export class TorController {
   @UseGuards(AdminGuard)
   findNotSoftware() {
     return this.torService.findNotSoftware();
-  }
-
-  /**
-   * Announcements the budget check flagged, for the Auditor Office. Auditor-only
-   * and declared before `:id` for the same reason `deleted` is.
-   */
-  @Get("flagged")
-  @UseGuards(AuditorGuard)
-  findFlagged(@Query() query: ListFlaggedTorQueryDto) {
-    return this.torService.findFlagged(query.page, query.pageSize, query.flag);
   }
 
   /**

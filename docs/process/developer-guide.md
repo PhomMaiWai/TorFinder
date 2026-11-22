@@ -142,7 +142,7 @@ resolve conflicts there.
   `ValidationPipe` drops unknown fields.
 - Protect every route that isn't public with a guard: `SessionGuard` for
   "any signed-in account", or exactly one of `AdminGuard`, `OrgGuard`,
-  `OwnerGuard`, `AuditorGuard`. Take the user's identity from
+  `OwnerGuard`. Take the user's identity from
   `request.session`, never from the body or a parameter.
 - Record admin actions with `AuditService.record(actor, action, detail)`.
 - Error messages a user can see are in Thai.

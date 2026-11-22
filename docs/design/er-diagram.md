@@ -15,7 +15,7 @@ erDiagram
         ObjectId _id PK
         string email UK "lower-case"
         string name
-        string role "admin | org | owner | auditor | viewer"
+        string role "admin | org | owner | viewer"
         string status "pending | approved | rejected"
         string passwordHash "absent for Google-only accounts"
         string passwordSalt

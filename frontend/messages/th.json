@@ -73,7 +73,6 @@
     "navTorList": "รายการ TOR",
     "navCreateTor": "เพิ่มรายการ TOR",
     "navMatches": "งานที่ตรงกับบริษัท",
-    "navFlaggedTors": "รายการที่ถูกตรวจสอบ",
     "navMyProjects": "โครงการของฉัน",
     "navReports": "แจ้งปัญหา TOR",
     "navInsights": "ข้อมูลเชิงลึกตลาด",
@@ -81,7 +80,6 @@
     "navGrowth": "เส้นทางเติบโต",
     "accountSettings": "ตั้งค่าบัญชี",
     "adminFallbackName": "ผู้ดูแลระบบ",
-    "auditorFallbackName": "ผู้ตรวจสอบ",
     "loadingName": "กำลังโหลด...",
     "logout": "ออกจากระบบ"
   },
@@ -1004,7 +1002,6 @@
     "resetLinkSent": "ส่งลิงก์ตั้งรหัสผ่านไปที่ {email} แล้ว",
     "roleOrg": "บริษัท",
     "roleProjectOwner": "เจ้าของโครงการ",
-    "roleAuditor": "ผู้ตรวจสอบ",
     "roleAdmin": "ผู้ดูแลระบบ",
     "statusActive": "ใช้งาน",
     "statusSuspended": "ระงับ",
@@ -1645,24 +1642,6 @@
       "done": "เสร็จสิ้น · ",
       "counts": "เพิ่มใหม่ {created} · อัปเดต {updated} · มีอยู่แล้ว {known} · ข้าม {skipped} · ผิดพลาด {failed}"
     }
-  },
-  "AuditorPage": {
-    "tabs": {
-      "all": "ทั้งหมด",
-      "budget-high": "ราคาสูงผิดปกติ",
-      "budget-low": "ราคาต่ำผิดปกติ",
-      "competition": "แข่งขันน้อยราย"
-    },
-    "title": "รายการที่ถูกตรวจสอบ",
-    "description": "โครงการที่วงเงินงบประมาณผิดปกติ หรือจัดซื้อจัดจ้างด้วยวิธีที่มีผู้เสนอราคาน้อยราย",
-    "empty": "ไม่พบรายการที่ถูกตรวจสอบ",
-    "colStatus": "สถานะ",
-    "colReason": "เหตุผล",
-    "viewDetails": "ดูรายละเอียด",
-    "previous": "ก่อนหน้า",
-    "pageN": "หน้า {page}",
-    "totalSuffix": " · ทั้งหมด {total} รายการ",
-    "next": "ถัดไป"
   },
   "Errors": {
     "connectionFailed": "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่",

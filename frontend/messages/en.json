@@ -73,7 +73,6 @@
     "navTorList": "TOR list",
     "navCreateTor": "Add TOR",
     "navMatches": "Matched TORs",
-    "navFlaggedTors": "Flagged TORs",
     "navMyProjects": "My projects",
     "navReports": "TOR reports",
     "navInsights": "Market insights",
@@ -81,7 +80,6 @@
     "navGrowth": "Growth path",
     "accountSettings": "Account settings",
     "adminFallbackName": "Administrator",
-    "auditorFallbackName": "Auditor",
     "loadingName": "Loading...",
     "logout": "Sign out"
   },
@@ -1004,7 +1002,6 @@
     "resetLinkSent": "Reset link sent to {email}.",
     "roleOrg": "Company",
     "roleProjectOwner": "Project owner",
-    "roleAuditor": "Auditor",
     "roleAdmin": "Administrator",
     "statusActive": "Active",
     "statusSuspended": "Suspended",
@@ -1645,24 +1642,6 @@
       "done": "Done · ",
       "counts": "{created} new · {updated} updated · {known} already here · {skipped} skipped · {failed} failed"
     }
-  },
-  "AuditorPage": {
-    "tabs": {
-      "all": "All",
-      "budget-high": "Unusually high price",
-      "budget-low": "Unusually low price",
-      "competition": "Little competition"
-    },
-    "title": "Flagged TORs",
-    "description": "Projects with an unusual budget, or bought through a method with few bidders",
-    "empty": "No flagged TORs",
-    "colStatus": "Status",
-    "colReason": "Reason",
-    "viewDetails": "View details",
-    "previous": "Previous",
-    "pageN": "Page {page}",
-    "totalSuffix": " · {total} in total",
-    "next": "Next"
   },
   "Errors": {
     "connectionFailed": "Couldn't reach the server. Please try again.",
