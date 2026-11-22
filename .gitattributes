@@ -1,0 +1,9 @@
+# Files that run inside the Linux containers must keep LF line endings, even
+# when the repository is checked out on Windows (Git for Windows converts to
+# CRLF by default, and `sh` then fails with "set: illegal option -").
+*.sh        text eol=lf
+*.conf      text eol=lf
+*.hcl       text eol=lf
+Caddyfile   text eol=lf
+Dockerfile  text eol=lf
+.env.example text eol=lf
