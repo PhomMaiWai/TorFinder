@@ -67,6 +67,7 @@ change must keep.
 | [deployment-checklist.md](./operations/deployment-checklist.md) | What to check before, during and after a deploy |
 | [maintenance.md](./operations/maintenance.md) | Keeping it running after release: monitoring, backups, updates, bug reports |
 | [limits-and-retention.md](./operations/limits-and-retention.md) | Connection limits, timeouts and retries, how long each kind of data is kept, secret rotation |
+| [configuration.md](./operations/configuration.md) | Every environment variable, demo-data seeding, data sources, backend against the Docker database |
 
 ## Research
 
