@@ -109,10 +109,10 @@ No requirement is open in code. Two things are left to whoever runs the server:
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 6.1.1 | Anti-automation controls documented | Pass | [Rate limits](#rate-limits-and-anti-automation-asvs-611) below |
-| 6.2.1 | Passwords ≥ 8 characters | Pass | `@MinLength(8)` on signup, reset and change |
+| 6.2.1 | Passwords ≥ 8 characters | Pass | `@MinLength(12)` on signup, reset and change (raised from 8 on 21 Nov to meet ASVS 4.0.3 2.1.1, G2) |
 | 6.2.2 | Users can change their password | Pass | Change-password form on `/profile` → `POST /auth/password` |
 | 6.2.3 | Change needs current and new password | Pass | `ChangePasswordDto`; wrong current password → 400 and counts toward the per-email limit; all sessions end on success |
-| 6.2.4 | Checked against ≥ 3,000 common passwords | Pass | `common/common-passwords.ts`: the 10,000 most common 8–128 character passwords (SecLists NCSC list); checked on signup, reset and change |
+| 6.2.4 | Checked against ≥ 3,000 common passwords | Pass | `common/common-passwords.ts`: the 10,000 most common passwords from public breach data (SecLists NCSC list, checked offline, no live breach API); checked on signup, reset and change |
 | 6.2.5 | No composition rules | Pass | Length only |
 | 6.2.6 | Password fields masked | Pass | `components/ui/password-input.tsx` (`type="password"` with a show toggle) |
 | 6.2.7 | Paste and password managers work | Pass | No paste blocking; `autocomplete` set on change-password fields |
@@ -198,7 +198,7 @@ All 5 items (10.4.1–10.4.5) are N/A: they apply to an authorization server. To
 
 - **Where**: every backend route that takes a body or query has a class-validator DTO. The global `ValidationPipe({ whitelist: true, transform: true })` drops unknown fields and rejects bad ones with 400 before any handler runs. Frontend checks are for usability only.
 - **Email**: `@IsEmail`, stored trimmed and lower-cased.
-- **Password**: 8–128 characters, no composition rules, not in the common-password list, never trimmed or case-changed.
+- **Password**: 12–128 characters, no composition rules, not in the common-password list, never trimmed or case-changed.
 - **Thai tax ID**: 13 digits (`@IsThaiTaxId`). The mod-11 check digit is a warning on the form, not a rejection.
 - **Thai phone**: `@IsThaiPhone`.
 - **Free text**: each field has a `@MaxLength` (e.g. company name 200, address 500, feedback 10–5,000).

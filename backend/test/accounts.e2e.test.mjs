@@ -57,7 +57,7 @@ const ORG_TOKEN_NO_ACCOUNT = makeToken("org", GHOST_ID, "ghost@ci.test");
 const SEED = {
   admin: { email: "admin@bma.go.th" },
   approvedOrg: { email: "contact@arundigital.co.th" },
-  pendingOrg: { email: "contact@techworks.co.th", password: "Tech12345!" },
+  pendingOrg: { email: "contact@techworks.co.th", password: "Tech-Demo-2026!" },
 };
 
 async function api(path, { method = "GET", body, token } = {}) {

@@ -64,4 +64,5 @@ Chrome received, shown as a table rather than the DevTools panel.
   `next.config.ts` into its final stage, so `next start` ran on Next's defaults. The header
   rules are compiled into `.next`, so only this setting was lost. 01 was retaken on 21 Nov from a rebuilt image: the header is gone.
 - `hello@datacraft.co.th` (README, "Demo accounts") is not in a freshly seeded database. Shot 05
-  locked that address anyway, which shows the lock works for unknown emails.
+  locked that address anyway, which shows the lock works for unknown emails. **Fixed afterwards:** the account is
+  seeded again as the second pending company, so a retake would lock a real account.

@@ -7,17 +7,28 @@ export type SeedUser = {
   role: Role;
   status: AccountStatus;
   password: string;
+  /**
+   * Passwords this demo account was seeded with before. One still in use is
+   * replaced with `password` on startup, so an existing local database picks
+   * up a new demo password without a reset; a password changed by hand is left alone.
+   */
+  previousPasswords?: string[];
   company?: CompanyProfile;
 };
 
-/** Demo credentials — documented in the README so everyone starts from the same state. */
+/**
+ * Demo credentials — documented in the README so everyone starts from the same state.
+ * Each password meets the sign-up policy (12+ characters, not common, not built on
+ * a context word); test/seed-passwords.test.mjs checks it.
+ */
 export const SEED_USERS: SeedUser[] = [
   {
     email: "admin@bma.go.th",
     name: "ผู้ดูแลระบบ",
     role: "admin",
     status: "approved",
-    password: "Admin1234!",
+    password: "Admin-Demo-2026!",
+    previousPasswords: ["Admin1234!"],
   },
   // A second admin, so the two-admin approval for granting or removing the
   // admin role (ASVS 2.3.5) can be tried locally: one asks, the other approves.
@@ -26,28 +37,32 @@ export const SEED_USERS: SeedUser[] = [
     name: "ผู้ดูแลระบบ 2",
     role: "admin",
     status: "approved",
-    password: "Admin2345!",
+    password: "Admin2-Demo-2026!",
+    previousPasswords: ["Admin2345!"],
   },
   {
     email: "owner@bma.go.th",
     name: "เจ้าของโครงการ",
     role: "owner",
     status: "approved",
-    password: "Owner1234!",
+    password: "Owner-Demo-2026!",
+    previousPasswords: ["Owner1234!"],
   },
   {
     email: "auditor@bma.go.th",
     name: "ผู้ตรวจสอบ",
     role: "auditor",
     status: "approved",
-    password: "Auditor1234!",
+    password: "Auditor-Demo-2026!",
+    previousPasswords: ["Auditor1234!"],
   },
   {
     email: "contact@arundigital.co.th",
     name: "Arun Digital",
     role: "org",
     status: "approved",
-    password: "Org12345!",
+    password: "Arun-Demo-2026!",
+    previousPasswords: ["Org12345!"],
     company: {
       companyName: "บริษัท อรุณ ดิจิทัล จำกัด",
       taxId: "0105563001236",
@@ -75,7 +90,8 @@ export const SEED_USERS: SeedUser[] = [
     name: "Siam Network Solution",
     role: "org",
     status: "approved",
-    password: "Siam12345!",
+    password: "Siam-Demo-2026!",
+    previousPasswords: ["Siam12345!"],
     company: {
       companyName: "บริษัท สยามเน็ตเวิร์ค โซลูชั่น จำกัด",
       taxId: "0105563001252",
@@ -99,7 +115,8 @@ export const SEED_USERS: SeedUser[] = [
     name: "IT Supply",
     role: "org",
     status: "approved",
-    password: "Supply12345!",
+    password: "Supply-Demo-2026!",
+    previousPasswords: ["Supply12345!"],
     company: {
       companyName: "บริษัท ไอที ซัพพลาย จำกัด",
       taxId: "0105564003186",
@@ -123,7 +140,8 @@ export const SEED_USERS: SeedUser[] = [
     name: "Helpdesk Pro",
     role: "org",
     status: "approved",
-    password: "Help12345!",
+    password: "Help-Demo-2026!",
+    previousPasswords: ["Help12345!"],
     company: {
       companyName: "บริษัท เฮลป์เดสก์ โปร จำกัด",
       taxId: "0105565002213",
@@ -150,7 +168,8 @@ export const SEED_USERS: SeedUser[] = [
     name: "Soft Start",
     role: "org",
     status: "approved",
-    password: "Start12345!",
+    password: "Start-Demo-2026!",
+    previousPasswords: ["Start12345!"],
     company: {
       companyName: "บริษัท ซอฟต์สตาร์ท จำกัด",
       taxId: "0105566004521",
@@ -176,7 +195,8 @@ export const SEED_USERS: SeedUser[] = [
     name: "บริษัท เทค เวิร์คส์ จำกัด",
     role: "org",
     status: "pending",
-    password: "Tech12345!",
+    password: "Tech-Demo-2026!",
+    previousPasswords: ["Tech12345!"],
     company: {
       companyName: "บริษัท เทค เวิร์คส์ จำกัด",
       taxId: "0105563001244",
@@ -193,6 +213,32 @@ export const SEED_USERS: SeedUser[] = [
       preferredBudgetMax: 30_000_000,
       pastExperience:
         "ย้ายระบบงานสารบรรณและระบบบริหารงบประมาณของหน่วยงานภาครัฐขึ้นคลาวด์ และดูแลงานด้านความมั่นคงปลอดภัยไซเบอร์",
+    },
+  },
+  // A second pending company: the e2e suites approve techworks, and this one
+  // keeps the approval queue from emptying after one approval (README).
+  {
+    email: "hello@datacraft.co.th",
+    name: "บริษัท ดาต้าคราฟท์ จำกัด",
+    role: "org",
+    status: "pending",
+    password: "Data-Demo-2026!",
+    previousPasswords: ["Data12345!"],
+    company: {
+      companyName: "บริษัท ดาต้าคราฟท์ จำกัด",
+      taxId: "0105564009871",
+      contactName: "ปวีณา ดาตาชัย",
+      phone: "092-888-1234",
+      address: "9 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310",
+      specialty: "",
+      size: "1-10 คน",
+      workTypes: ["development"],
+      largestPastContract: 800_000,
+      registeredCapital: 1_000_000,
+      certifications: [],
+      preferredBudgetMin: 200_000,
+      preferredBudgetMax: 2_000_000,
+      pastExperience: "พัฒนาแดชบอร์ดและระบบเชื่อมต่อข้อมูล (API) ให้หน่วยงานภาครัฐขนาดเล็ก",
     },
   },
 ];

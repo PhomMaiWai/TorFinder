@@ -56,7 +56,7 @@ Trying a route from the terminal:
 # Sign in as the seeded admin and keep the token
 TOKEN=$(curl -s localhost:4000/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@bma.go.th","password":"Admin1234!"}' | jq -r .token)
+  -d '{"email":"admin@bma.go.th","password":"Admin-Demo-2026!"}' | jq -r .token)
 
 curl -s localhost:4000/api/accounts?status=pending -H "Authorization: Bearer $TOKEN" | jq
 ```
