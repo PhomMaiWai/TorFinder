@@ -71,13 +71,6 @@ The triage marked these as Planned; all are now implemented and tested:
 
 The last four need services the application itself doesn't: they run in the opt-in `docker-compose.hardening.yml`, so a local stack and the demo stay light ([hardening.md](../operations/hardening.md)).
 
---- | --- | --- |
-| V5.4.3 | Relayed portal files are not virus-scanned | Needs a scanning service; files are limited to PDF/JPEG/PNG with magic-byte checks |
-| V13.2.5 | No network-level egress allowlist | Set at the host or firewall, not in the app |
-| V13.3.1 | No secrets vault | Environment variables are the accepted setup for the course deployment |
-| V16.4.2 | Logs are not write-once | Needs log storage outside the host |
-| V16.4.3 | Logs are not shipped to a separate system | Same |
-
 ---
 
 ## Authentication pathways
