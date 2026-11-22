@@ -3,7 +3,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Optional
 import { Role } from "./roles";
 import { SessionRevocationService } from "./session-revocation.service";
 import { AuthenticatedRequest, assertPasskeySetupDone, logDenied, logGranted } from "./session.guard";
-import { verifySessionToken } from "./token";
+import { bearerToken, verifySessionToken } from "./token";
 
 /**
  * A route open to exactly the roles a subclass names. The caller presents the
@@ -46,11 +46,11 @@ export abstract class RoleGuard implements CanActivate {
    */
   canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
-    const session = scheme === "Bearer" ? verifySessionToken(token) : null;
+    const token = bearerToken(request.headers.authorization);
+    const session = verifySessionToken(token);
 
     if (!session) {
-      logDenied(request, token ? "invalid_token" : "no_token");
+      logDenied(request, request.headers.authorization ? "invalid_token" : "no_token");
       throw new UnauthorizedException(this.refusal);
     }
     if (!this.roles.includes(session.role)) {

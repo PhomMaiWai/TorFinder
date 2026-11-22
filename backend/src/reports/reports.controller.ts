@@ -6,7 +6,7 @@ import { ObjectId } from "mongodb";
 import { AdminGuard } from "../common/admin.guard";
 import { AuthenticatedRequest } from "../common/session.guard";
 import { SessionRevocationService } from "../common/session-revocation.service";
-import { SessionPayload, verifySessionToken } from "../common/token";
+import { SessionPayload, bearerToken, verifySessionToken } from "../common/token";
 import { env } from "../config/env";
 import { CreateReportDto } from "./dto/create-report.dto";
 import { ReportQueryDto } from "./dto/report-query.dto";
@@ -59,8 +59,8 @@ export class ReportsController {
    * it just isn't attributed to anyone.
    */
   private async optionalSession(request: Request): Promise<SessionPayload | null> {
-    const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
-    const session = scheme === "Bearer" ? verifySessionToken(token) : null;
+    const token = bearerToken(request.headers.authorization);
+    const session = verifySessionToken(token);
     if (!session || !ObjectId.isValid(session.sub)) return null;
     return (await this.revocation.isValid(session.sub, session.iat, session.sid)) ? session : null;
   }

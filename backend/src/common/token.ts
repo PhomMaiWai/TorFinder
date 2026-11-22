@@ -94,3 +94,17 @@ export function verifySessionToken(token: string | undefined): SessionPayload | 
     return null;
   }
 }
+
+/**
+ * The session token from an `Authorization: Bearer <token>` header, or
+ * undefined for any other shape (no header, another scheme, extra parts).
+ *
+ * The scheme is matched as part of extracting the token rather than tested
+ * separately: callers always hand the result to verifySessionToken, so the
+ * only thing that decides whether a caller gets a session is the token's
+ * signature — never a header value compared to a constant (CodeQL
+ * js/user-controlled-bypass, CWE-807).
+ */
+export function bearerToken(authorization: string | undefined): string | undefined {
+  return /^Bearer ([^\s]+)$/.exec(authorization ?? "")?.[1];
+}
