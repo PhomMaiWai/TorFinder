@@ -236,46 +236,8 @@ describe("admin edits a user", () => {
     assert.deepEqual(actions, ["ขอเปลี่ยนบทบาทผู้ดูแลระบบ (รออนุมัติ)", "แก้ไขชื่อผู้ใช้"].sort());
   });
 
-  it("the loser of a concurrent edit gets 409, told to reload", async () => {
-    // Promise.all only guarantees both requests are *sent* together — not
-    // that they actually overlap once they reach the server. If request A's
-    // whole read-then-write round trip finishes before B's read even starts,
-    // B reads A's already-written role, its own conflict check matches
-    // cleanly, and both succeed: [200, 200] rather than [200, 409]. That is
-    // not a bug (optimistic locking still did its job — there was simply no
-    // conflict to catch that time), so a fresh pair is retried until the two
-    // requests genuinely race, bounded so a real regression still fails loudly.
-    //
-    // The race left is an approval landing the role while another edit renames
-    // the account: the rename read the old role, so it must not write. An
-    // approval does more reads before it writes than a rename does, so the
-    // rename is sent a little later on each attempt until the two overlap.
-    const { asker, approver } = await adminPair();
-    const ATTEMPTS = 30;
-    let a, b;
-    for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {
-      const viewer = await insertUser("viewer");
-      const asked = await edit(viewer.id, { role: "admin" }, asker);
-      assert.equal(asked.status, 202);
-      const delay = attempt % 15;
-      [a, b] = await Promise.all([
-        decide(asked.body.pendingApproval.id, "approve", approver),
-        new Promise((resolve) => setTimeout(resolve, delay)).then(() => edit(viewer.id, { name: "Race" })),
-      ]);
-
-      if (a.status !== b.status) break;
-      assert.notEqual(attempt, ATTEMPTS, `never observed a genuine race across ${ATTEMPTS} attempts`);
-    }
-
-    const statuses = [a.status, b.status].sort();
-    assert.deepEqual(statuses, [200, 409]);
-    const winner = a.status === 200 ? a : b;
-    const loser = a.status === 200 ? b : a;
-    assert.match(loser.body.message, /ถูกแก้ไขไปแล้ว/);
-
-    const stored = await users().findOne({ _id: new ObjectId(winner.body.id) });
-    assert.equal(stored.role, winner.body.role);
-  });
+  // The 409 for an edit that loses a race (the role moved after it was read)
+  // is covered without timing in user-edit-conflict.test.mjs.
 });
 
 describe("the last admin", () => {
