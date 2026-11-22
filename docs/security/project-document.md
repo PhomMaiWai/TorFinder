@@ -63,9 +63,9 @@ We reviewed TorFinder against **OWASP ASVS 5.0**, all of Level 1 and all of Leve
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Level 1 | 70 | 56 | 0 | 0 | 12 | 2 (TLS, set by hosting) | [asvs-l1.md](./asvs-l1.md) |
 | Level 2 | 183 | 125 | 0 | 0 | 58 | 0 | [asvs-l2.md](./asvs-l2.md) |
-| Level 3 (triage, not claimed) | 92 | 67 | 0 | 4 | 21 | 0 | [asvs-l3.md](./asvs-l3.md) |
+| Level 3 (triage, not claimed) | 92 | 68 | 0 | 4 | 20 | 0 | [asvs-l3.md](./asvs-l3.md) |
 
-Level 1 has no Fail and no Partial. At Level 2, all 125 requirements that apply pass (100%), the last seven with an opt-in hardening setup for production ([hardening.md](../operations/hardening.md)). Level 3 is not a target; the triage on 19 Nov records which of its controls fit TorFinder, and 67 of the 71 that apply pass (94%), with no Partial left; the four still open need a production domain or hardware and are listed as accepted risks, including passkeys for staff ([passkeys.md](./passkeys.md)), a second admin's approval to grant or remove the admin role, a lockout email to the account's owner, an admin "send reset link" action, and documented limits, data retention and secret rotation ([limits-and-retention.md](../operations/limits-and-retention.md)). Every Partial and Not done item names its gap in the report.
+Level 1 has no Fail and no Partial. At Level 2, all 125 requirements that apply pass (100%), the last seven with an opt-in hardening setup for production ([hardening.md](../operations/hardening.md)). Level 3 is not a target; the triage on 19 Nov records which of its controls fit TorFinder, and 68 of the 72 that apply pass (94%), with no Partial left; the four still open need a production domain or hardware and are listed as accepted risks, including passkeys for staff ([passkeys.md](./passkeys.md)), a second admin's approval to grant or remove the admin role, a lockout email to the account's owner, an admin "send reset link" action, and documented limits, data retention and secret rotation ([limits-and-retention.md](../operations/limits-and-retention.md)). Every Partial and Not done item names its gap in the report.
 
 ### 3.1 Graded security features
 
@@ -103,7 +103,7 @@ Full mapping, with file paths, ASVS IDs, test evidence and gaps: [owasp-top10.md
 | --- | --- | --- | --- | --- |
 | A01:2025 | Broken Access Control | Covered | Role guard on every route; queries scoped to the session's account; portal host allowlist (SSRF) | E1, I1, I7, I8, T5, E3 |
 | A02:2025 | Security Misconfiguration | Covered | Weak secrets refused; strict CSP and headers; ports on 127.0.0.1; non-root containers | S1, S3, E4, I2 |
-| A03:2025 | Software Supply Chain Failures | Partly | CI blocks high/critical advisories; Dependabot cooldown; SHA-pinned actions; SBOMs | D4 |
+| A03:2025 | Software Supply Chain Failures | Partly | CI blocks high/critical advisories; Dependabot cooldown; SHA-pinned actions; SBOMs; secret scanning with push protection | D4 |
 | A04:2025 | Cryptographic Failures | Covered | scrypt; HMAC-SHA256 sessions; TLS 1.3 + mutual TLS inside; hashed one-time links | S1, S6 |
 | A05:2025 | Injection | Covered | DTO whitelist; escaped `$regex`; React escaping; nonce CSP | T1, S5 |
 | A06:2025 | Insecure Design | Covered | Threat model; business rules; two-admin approval; step-up; atomic limits | all |
@@ -112,7 +112,7 @@ Full mapping, with file paths, ASVS IDs, test evidence and gaps: [owasp-top10.md
 | A09:2025 | Security Logging and Alerting Failures | Partly | JSON security events; audit log; lockout and new-device emails | R1, R2 |
 | A10:2025 | Mishandling of Exceptional Conditions | Covered | Generic 500 with `errorId`; fail closed; transactions; timeouts and caps | I3, D3, D5 |
 
-The two Partly items: GitHub secret scanning is off and images aren't signed (A03), and no alert rule fires on the security log itself (A09).
+The two Partly items: images aren't signed and have no build provenance (A03), and no alert rule fires on the security log itself (A09). GitHub secret scanning and push protection are on.
 
 ### 3.4 ASVS 4.0.3 cross-check (21 Nov)
 
@@ -231,4 +231,4 @@ All screenshots, with what each one proves, are listed in [evidence/README.md](.
 | **[C15]** ZAP report | [zap-full.html](./evidence/zap-full.html) (signed-in active scan), [zap-baseline.html](./evidence/zap-baseline.html) (after the fix), [zap-baseline-2026-11-21-after.html](./evidence/zap-baseline-2026-11-21-after.html) (after G1–G12). No screenshot of the summary yet |
 | **[C12]**, **[C18]** Lockout and its log line | [05](./evidence/screenshots/05-login-lockout.png) lockout message, [08](./evidence/screenshots/08-security-log-json.png) `auth.login.locked` in the JSON log |
 | **[C6]** Org refused on an admin route | [11a](./evidence/screenshots/11a-org-opens-admin-redirected.png) page redirect, [11b](./evidence/screenshots/11b-api-accounts-forbidden.png) backend 403 |
-| **[C7]** One company asking for another's file | **Missing.** Covered by `backend/test/certificates.e2e.test.mjs` and `library.e2e.test.mjs`; no screenshot yet |
+| **[C7]** One company asking for another's file | [20](./evidence/screenshots/20-cross-company-file-refused.png): the owner gets the file (200), another company 404, no session 401. Also tested in `backend/test/certificates.e2e.test.mjs` and `library.e2e.test.mjs` |
