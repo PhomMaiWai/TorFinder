@@ -65,7 +65,7 @@ scope:
 | `style` | Formatting only |
 
 The scope is the area you touched, usually the backend module or frontend
-area: `auth`, `tor`, `matching`, `reports`, `feedback`, `owner`, `audit`,
+area: `auth`, `tor`, `matching`, `reports`, `feedback`, `audit`,
 `search`, `admin`, `i18n`, `deps`, `test`.
 
 Good examples from the history:
@@ -141,8 +141,8 @@ resolve conflicts there.
 - Validate every body and query with a DTO and `class-validator`. The global
   `ValidationPipe` drops unknown fields.
 - Protect every route that isn't public with a guard: `SessionGuard` for
-  "any signed-in account", or exactly one of `AdminGuard`, `OrgGuard`,
-  `OwnerGuard`. Take the user's identity from
+  "any signed-in account", or exactly one of `AdminGuard`, `OrgGuard`.
+  Take the user's identity from
   `request.session`, never from the body or a parameter.
 - Record admin actions with `AuditService.record(actor, action, detail)`.
 - Error messages a user can see are in Thai.

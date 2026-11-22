@@ -103,20 +103,6 @@ function getAdminNav(t: (key: string) => string): { section: string | null; link
   ];
 }
 
-function getOwnerNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
-  return [
-    {
-      section: null,
-      links: [
-        { label: t("navMyProjects"), href: "/owner", icon: FolderKanban },
-        { label: t("navOverview"), href: "/dashboard", icon: Activity },
-        { label: t("navInsights"), href: "/insights", icon: Trophy },
-        { label: t("navSearchTor"), href: "/search", icon: Search },
-      ],
-    },
-  ];
-}
-
 function NavLinks({
   nav,
   onNavigate,
@@ -191,8 +177,7 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
   const router = useRouter();
   // A page every role shares (/account) says whose menu to show; elsewhere the path does.
   const isAdmin = role ? role === "admin" : pathname.startsWith("/admin");
-  const isOwner = role ? role === "owner" : pathname.startsWith("/owner");
-  const nav = isAdmin ? getAdminNav(t) : isOwner ? getOwnerNav(t) : getOrgNav(t);
+  const nav = isAdmin ? getAdminNav(t) : getOrgNav(t);
 
   const [user, setUser] = useState<SessionUser | null>(null);
   // A company's workspace is named after the company on its profile. The
@@ -245,7 +230,7 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
             T
           </span>
           <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-ink">
-            {isAdmin ? "Torr Admin" : isOwner ? "Torr Owner" : (companyName ?? user?.name ?? "")}
+            {isAdmin ? "Torr Admin" : (companyName ?? user?.name ?? "")}
           </span>
           <ChevronDown size={14} className="shrink-0 text-ink-subtle" />
         </button>

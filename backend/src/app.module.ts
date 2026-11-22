@@ -23,7 +23,6 @@ import { HealthController } from "./health.controller";
 import { InsightsModule } from "./insights/insights.module";
 import { LibraryModule } from "./library/library.module";
 import { NotificationsModule } from "./notifications/notifications.module";
-import { OwnerModule } from "./owner/owner.module";
 import { ReportsModule } from "./reports/reports.module";
 import { SavedSearchesModule } from "./saved-searches/saved-searches.module";
 import { SavedTorsModule } from "./saved-tors/saved-tors.module";
@@ -57,7 +56,6 @@ import { TorModule } from "./tor/tor.module";
     FeedbackModule,
     ReportsModule,
     MatchingModule,
-    OwnerModule,
     SavedSearchesModule,
     SavedTorsModule,
     NotificationsModule,

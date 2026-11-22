@@ -7,7 +7,7 @@ other file.
 
 | Diagram | What it shows |
 | --- | --- |
-| [Use case model](./use-case.md) | Actors (Public, Viewer, Organization, Project Owner, Admin, Scheduler) and what each can do, mapped to routes and FRs |
+| [Use case model](./use-case.md) | Actors (Public, Viewer, Organization, Admin, Scheduler) and what each can do, mapped to routes and FRs |
 | [Domain model](./domain-model.md) | Business concepts and how they relate, plus TOR stage and account status state diagrams |
 | [System architecture](./system-architecture.md) | Containers, external systems, backend modules and frontend areas |
 | [ER diagram](./er-diagram.md) | MongoDB collections, fields, references and indexes |

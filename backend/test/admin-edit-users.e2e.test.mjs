@@ -3,7 +3,10 @@
 //
 // The accounts are inserted straight into `users` and the admin's token is
 // minted, to stay off the sign-up and login rate limiters. The last-admin
-// case briefly makes every other admin an owner and puts them back after.
+// case briefly makes every other admin a viewer and puts them back after.
+// With admin and viewer the only roles an admin can set, every role change
+// is granting or removing the admin role, so it goes through a second admin's
+// approval (admin-approvals.e2e.test.mjs covers that flow in full).
 
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
@@ -85,6 +88,22 @@ async function insertUser(role, extra = {}) {
   return { ...doc, id: insertedId.toString() };
 }
 
+/** Every audit entry about this account, whoever made it (an approval is the approver's). */
+const allEntriesFor = (email) =>
+  audit()
+    .find({ detail: { $regex: `^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:` } })
+    .toArray();
+
+/**
+ * Two real admins: one asks for a role change, the other approves it. An
+ * approval checks that the asker is still an admin, so ADMIN_TOKEN (no
+ * account behind it) can't be the one asking.
+ */
+async function adminPair() {
+  const [asker, approver] = [await insertUser("admin"), await insertUser("admin")];
+  return { asker: tokenFor(asker), approver: tokenFor(approver) };
+}
+
 const entriesFor = (email) =>
   audit()
     .find({
@@ -106,7 +125,7 @@ describe("admin edits a user", () => {
     const res = await edit(
       viewer.id,
       { name: "x" },
-      makeToken("owner", viewer.id, viewer.email),
+      makeToken("viewer", viewer.id, viewer.email),
     );
     assert.equal(res.status, 403);
   });
@@ -123,28 +142,35 @@ describe("admin edits a user", () => {
     assert.match(entries[0].detail, /CI Edit \d+ → ชื่อใหม่/);
   });
 
-  it("changes a role, signs the account out and writes one entry per changed field", async () => {
+  it("changes a role once approved, signs the account out and writes one entry per changed field", async () => {
+    const { asker, approver } = await adminPair();
     const viewer = await insertUser("viewer");
-    const res = await edit(viewer.id, { name: "เจ้าของโครงการ", role: "owner" });
-    assert.equal(res.status, 200);
-    assert.equal(res.body.role, "owner");
+    const asked = await edit(viewer.id, { name: "ผู้ดูแลคนใหม่", role: "admin" }, asker);
+    assert.equal(asked.status, 202, JSON.stringify(asked.body));
+    assert.equal(asked.body.name, "ผู้ดูแลคนใหม่", "the rename applies at once");
+    assert.equal(asked.body.role, "viewer", "the role waits for approval");
+
+    const approved = await decide(asked.body.pendingApproval.id, "approve", approver);
+    assert.equal(approved.status, 200, JSON.stringify(approved.body));
+    assert.equal(approved.body.role, "admin");
 
     const stored = await users().findOne({ _id: new ObjectId(viewer.id) });
     assert.ok(stored.sessionMinIssuedAt, "old sessions are revoked");
 
-    const actions = (await entriesFor(viewer.email))
-      .map((e) => e.action)
-      .sort();
-    assert.deepEqual(actions, ["เปลี่ยนบทบาทผู้ใช้", "แก้ไขชื่อผู้ใช้"].sort());
+    const actions = (await allEntriesFor(viewer.email)).map((e) => e.action).sort();
+    assert.deepEqual(
+      actions,
+      ["ขอเปลี่ยนบทบาทผู้ดูแลระบบ (รออนุมัติ)", "อนุมัติคำขอเปลี่ยนบทบาทผู้ดูแลระบบ", "เปลี่ยนบทบาทผู้ใช้", "แก้ไขชื่อผู้ใช้"].sort(),
+    );
   });
 
   it("records nothing when nothing changes", async () => {
-    const owner = await insertUser("owner");
+    const viewer = await insertUser("viewer");
     assert.equal(
-      (await edit(owner.id, { name: owner.name, role: "owner" })).status,
+      (await edit(viewer.id, { name: viewer.name, role: "viewer" })).status,
       200,
     );
-    assert.equal((await entriesFor(owner.email)).length, 0);
+    assert.equal((await entriesFor(viewer.email)).length, 0);
   });
 
   it("refuses org on either side, unknown roles and blank names", async () => {
@@ -168,21 +194,24 @@ describe("admin edits a user", () => {
   });
 
   it("notifies the account when its role changes", async () => {
+    const { asker, approver } = await adminPair();
     const viewer = await insertUser("viewer");
-    assert.equal((await edit(viewer.id, { role: "owner" })).status, 200);
+    const asked = await edit(viewer.id, { role: "admin" }, asker);
+    assert.equal(asked.status, 202);
+    assert.equal((await decide(asked.body.pendingApproval.id, "approve", approver)).status, 200);
 
     // A role change revokes every session already issued (sessionMinIssuedAt,
     // precise to the millisecond); `iat` is floored to the second, so a token
     // minted in the same second as the revoke can land just before it. A
     // near-1s wait keeps this token's whole issuing second safely after.
     await new Promise((resolve) => setTimeout(resolve, 1100));
-    const token = makeToken("owner", viewer.id, viewer.email);
+    const token = makeToken("admin", viewer.id, viewer.email);
     const res = await api("/notifications", token);
     assert.equal(res.status, 200);
     const notice = res.body.find((n) => n.title === "บทบาทของบัญชีคุณเปลี่ยนแล้ว");
     assert.ok(notice, "the account should hear about its own role change");
     assert.equal(notice.type, "system");
-    assert.match(notice.message, /เจ้าของโครงการ/);
+    assert.match(notice.message, /ผู้ดูแลระบบ/);
   });
 
   it("doesn't notify when only the name changes", async () => {
@@ -196,7 +225,7 @@ describe("admin edits a user", () => {
 
   it("surfaces the audit entries through the admin dashboard's feed, not just the collection", async () => {
     const viewer = await insertUser("viewer");
-    await edit(viewer.id, { name: "ปรากฏในฟีด", role: "owner" });
+    await edit(viewer.id, { name: "ปรากฏในฟีด", role: "admin" });
 
     const res = await api("/audit", ADMIN_TOKEN);
     assert.equal(res.status, 200);
@@ -204,7 +233,7 @@ describe("admin edits a user", () => {
       .filter((entry) => entry.detail.startsWith(`${viewer.email}:`))
       .map((entry) => entry.action)
       .sort();
-    assert.deepEqual(actions, ["เปลี่ยนบทบาทผู้ใช้", "แก้ไขชื่อผู้ใช้"].sort());
+    assert.deepEqual(actions, ["ขอเปลี่ยนบทบาทผู้ดูแลระบบ (รออนุมัติ)", "แก้ไขชื่อผู้ใช้"].sort());
   });
 
   it("the loser of a concurrent edit gets 409, told to reload", async () => {
@@ -216,16 +245,26 @@ describe("admin edits a user", () => {
     // not a bug (optimistic locking still did its job — there was simply no
     // conflict to catch that time), so a fresh pair is retried until the two
     // requests genuinely race, bounded so a real regression still fails loudly.
+    //
+    // The race left is an approval landing the role while another edit renames
+    // the account: the rename read the old role, so it must not write. An
+    // approval does more reads before it writes than a rename does, so the
+    // rename is sent a little later on each attempt until the two overlap.
+    const { asker, approver } = await adminPair();
+    const ATTEMPTS = 30;
     let a, b;
-    for (let attempt = 1; attempt <= 10; attempt += 1) {
+    for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {
       const viewer = await insertUser("viewer");
+      const asked = await edit(viewer.id, { role: "admin" }, asker);
+      assert.equal(asked.status, 202);
+      const delay = attempt % 15;
       [a, b] = await Promise.all([
-        edit(viewer.id, { role: "owner" }),
-        edit(viewer.id, { role: "owner", name: "Race" }),
+        decide(asked.body.pendingApproval.id, "approve", approver),
+        new Promise((resolve) => setTimeout(resolve, delay)).then(() => edit(viewer.id, { name: "Race" })),
       ]);
 
       if (a.status !== b.status) break;
-      assert.notEqual(attempt, 10, "never observed a genuine race across 10 attempts");
+      assert.notEqual(attempt, ATTEMPTS, `never observed a genuine race across ${ATTEMPTS} attempts`);
     }
 
     const statuses = [a.status, b.status].sort();
@@ -252,7 +291,7 @@ describe("the last admin", () => {
     ).map((u) => u._id);
     await users().updateMany(
       { _id: { $in: others } },
-      { $set: { role: "owner" } },
+      { $set: { role: "viewer" } },
     );
   });
 
@@ -261,7 +300,7 @@ describe("the last admin", () => {
   );
 
   it("can't be demoted, and nothing is recorded", async () => {
-    const res = await edit(last.id, { role: "owner" });
+    const res = await edit(last.id, { role: "viewer" });
     assert.equal(res.status, 409);
     assert.match(res.body.message, /อย่างน้อย 1 คน/);
     assert.equal(
@@ -280,14 +319,14 @@ describe("the last admin", () => {
 
   it("can be demoted once another admin exists, with that admin's approval", async () => {
     const second = await insertUser("admin");
-    const res = await edit(last.id, { role: "owner" }, tokenFor(second));
+    const res = await edit(last.id, { role: "viewer" }, tokenFor(second));
     assert.equal(res.status, 202);
     assert.equal(res.body.role, "admin", "nothing changes until it is approved");
 
     // The demoted admin agreeing is the second admin here: there are only two.
     const approved = await decide(res.body.pendingApproval.id, "approve", tokenFor(last));
     assert.equal(approved.status, 200, JSON.stringify(approved.body));
-    assert.equal(approved.body.role, "owner");
+    assert.equal(approved.body.role, "viewer");
   });
 });
 
@@ -307,14 +346,14 @@ describe("two admins demoted at the same moment", () => {
     others = (await users().find({ role: "admin", _id: { $nin: theseTwo } }).toArray()).map(
       (u) => u._id,
     );
-    await users().updateMany({ _id: { $in: others } }, { $set: { role: "owner" } });
+    await users().updateMany({ _id: { $in: others } }, { $set: { role: "viewer" } });
   });
 
   after(() => users().updateMany({ _id: { $in: others } }, { $set: { role: "admin" } }));
 
   it("never lets the count reach zero, however the two approvals interleave", async () => {
-    const askA = await edit(second.id, { role: "owner" }, tokenFor(first));
-    const askB = await edit(first.id, { role: "owner" }, tokenFor(second));
+    const askA = await edit(second.id, { role: "viewer" }, tokenFor(first));
+    const askB = await edit(first.id, { role: "viewer" }, tokenFor(second));
     assert.equal(askA.status, 202);
     assert.equal(askB.status, 202);
 

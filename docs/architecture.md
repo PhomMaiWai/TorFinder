@@ -29,7 +29,6 @@ flowchart TB
     subgraph People
         Public["Public visitor<br/>search, read, comment, report"]
         Org["Software company (org)<br/>profile, matches, alerts, saved"]
-        Owner["Agency project owner<br/>own TORs, matches, feedback"]
         Admin["Admin<br/>accounts, corrections, moderation, sync"]
     end
 
@@ -50,7 +49,7 @@ flowchart TB
         Slack["Slack"]
     end
 
-    Public & Org & Owner & Admin --> TF
+    Public & Org & Admin --> TF
     TF --> EGP & GPROC & MEA & DATAGOV
     TF --> Vertex & Google
     TF --> Resend & Line & Slack
@@ -192,7 +191,7 @@ flowchart LR
 | The browser never calls the backend | Keeps the API and its address private; one place to attach the session | `BACKEND_URL` is server-only; client code goes through `app/api/` or Server Actions |
 | `SESSION_SECRET` is identical in both services | The frontend checks the cookie itself on every navigation | Nothing checks it; see [deployment-checklist.md](./operations/deployment-checklist.md) |
 | Identity comes from the session, never from the request body or a parameter | A caller can write anything in a body | Guards set `request.session`; services take the user id from there |
-| One guard admits one role | An admin is not automatically an owner | `RoleGuard` subclasses list their roles |
+| One guard admits one role | An admin is not automatically a company | `RoleGuard` subclasses list their roles |
 | A revoked session stops working within 30 seconds | Logout, password reset, suspension and role changes must take effect | `SessionRevocationService` (`sessionMinIssuedAt`, 30 s cache) |
 | Only BMA software work from 2022 on is listed | SRS hard constraint (FR-26) | Each source's `isWanted`, re-applied by `purge` after every sync |
 | An admin's correction outlives every import | Otherwise the next sync undoes the fix | `lockedFields`; `purge` skips corrected records |

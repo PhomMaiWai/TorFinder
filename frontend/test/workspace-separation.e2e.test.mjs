@@ -4,8 +4,8 @@
 // to the public view of the same page instead, keeping the rest of the query.
 //
 // Node's built-in runner + fetch against a running `next start` of this app
-// (proxy redirects need the real server). Session cookies are minted the same
-// way owner-page.e2e.test.mjs does; the proxy checks them without the database.
+// (proxy redirects need the real server). Session cookies are minted here; the
+// proxy checks them without the database.
 //
 // Requires:
 //   - E2E_FRONTEND_URL  a running `next start` of this app (default http://localhost:3000)
@@ -33,7 +33,6 @@ function makeToken(role) {
 const TOKENS = {
   viewer: makeToken("viewer"),
   org: makeToken("org"),
-  owner: makeToken("owner"),
   admin: makeToken("admin"),
 };
 
@@ -57,7 +56,7 @@ describe("/search is the company workspace's search", () => {
     });
   }
 
-  for (const role of ["org", "owner"]) {
+  for (const role of ["org"]) {
     it(`lets ${role} in`, async () => {
       assert.equal(await redirectOf("/search?q=cloud", role), null);
     });
@@ -71,7 +70,7 @@ describe("a TOR opened with ?in=app", () => {
     });
   }
 
-  for (const role of ["org", "owner"]) {
+  for (const role of ["org"]) {
     it(`stays in the workspace for ${role}`, async () => {
       assert.equal(await redirectOf(`${TOR}?in=app`, role), null);
     });
@@ -83,24 +82,23 @@ describe("a TOR opened with ?in=app", () => {
 });
 
 // Each role's own pages, and where everyone else is sent (their own home).
-const HOME = { viewer: "/dashboard", org: "/dashboard", owner: "/owner", admin: "/admin" };
+const HOME = { viewer: "/dashboard", org: "/dashboard", admin: "/admin" };
 const OWN_PAGES = {
   org: ["/matches", "/profile", "/library", "/growth", "/notifications"],
-  owner: ["/owner"],
   admin: ["/admin", "/admin/users", "/admin/audit"],
 };
 
 describe("each role's pages are its own", () => {
-  for (const [owner, pages] of Object.entries(OWN_PAGES)) {
+  for (const [pageRole, pages] of Object.entries(OWN_PAGES)) {
     for (const page of pages) {
-      it(`${page} opens for ${owner}`, async () => {
-        assert.equal(await redirectOf(page, owner), null);
+      it(`${page} opens for ${pageRole}`, async () => {
+        assert.equal(await redirectOf(page, pageRole), null);
       });
 
-      for (const role of Object.keys(HOME).filter((r) => r !== owner)) {
+      for (const role of Object.keys(HOME).filter((r) => r !== pageRole)) {
         it(`${page} sends ${role} away`, async () => {
           // admin pages send other signed-in roles to the public overview, as before.
-          const expected = owner === "admin" ? "/dashboard" : HOME[role];
+          const expected = pageRole === "admin" ? "/dashboard" : HOME[role];
           assert.equal(await redirectOf(page, role), expected);
         });
       }
@@ -125,7 +123,7 @@ describe("the normal user's pages are open to every role", () => {
 });
 
 describe("/account is every password account's own settings", () => {
-  for (const role of ["org", "owner", "admin"]) {
+  for (const role of ["org", "admin"]) {
     it(`opens for ${role}`, async () => {
       assert.equal(await redirectOf("/account", role), null);
     });

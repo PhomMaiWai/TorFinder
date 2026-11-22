@@ -49,7 +49,6 @@ How the mitigations are checked:
 | Anonymous visitor | Untrusted; can search, read TORs, comment and report |
 | Public viewer (Google sign-in) | Low; approved automatically, can save TORs and searches |
 | Organization (`org`) | Medium; approved by an admin, sees its matches, keeps its certificates and library, drafts proposals |
-| Project owner | Staff; reads their own dashboard |
 | Admin | High; manages accounts, TORs, moderation and imports |
 | External attacker | Untrusted; may script requests, guess passwords or rotate IPs |
 | Procurement portals | Semi-trusted data sources; files and fields are checked before use |
@@ -98,7 +97,7 @@ L = likelihood and I = impact, each rated 1–3. Priority comes from L × I (see
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | S1 | Forge an admin session token with the public dev `SESSION_SECRET` | Compose, token signing | 3 | 3 | Critical | Production refuses a missing, published or short secret (`backend/src/config/env.ts`, `frontend/src/lib/auth.ts`); compose has no fallback | 9.1.3 | Done (#321) |
 | S3 | Sign in as a seeded demo admin whose password is in the README | Seed data, compose | 3 | 3 | Critical | Demo accounts opt-in only (`SEED_DEMO_DATA`), off by default, warned about in production | 6.3.2 | Done (#321) |
-| E1 | Reach admin or owner routes as an org or viewer | Backend routes | 3 | 3 | Critical | One role guard per route (`backend/src/common/*.guard.ts`); a guard admits only the roles it names | 8.2.1, 8.3.1 | Done |
+| E1 | Reach admin routes as an org or viewer | Backend routes | 3 | 3 | Critical | One role guard per route (`backend/src/common/*.guard.ts`); a guard admits only the roles it names | 8.2.1, 8.3.1 | Done |
 | S2 | Guess a password by brute force or credential stuffing | `POST /auth/login` | 3 | 2 | High | 5 per minute per client IP, plus 10 failures per email per 15 min (`backend/src/auth/login-attempts.ts`); both counters kept in MongoDB so every backend process shares them (`backend/src/common/mongo-throttler.storage.ts`, G4); 12-character minimum (G2) | 6.3.1, 6.2.1 | Done (#321, G2, G4) |
 | S4 | Take over an account by linking a Google identity with an unverified email | Google sign-in | 2 | 3 | High | Token audience checked; link only when Google marks the email verified | 6.8.1, 6.8.2 | Done |
 | S5 | Steal a session cookie through XSS or plain HTTP | Browser, frontend | 2 | 3 | High | httpOnly `__Host-` cookie, Secure, HSTS; React escaping, no `dangerouslySetInnerHTML`; strict nonce CSP with `'strict-dynamic'` (`frontend/src/proxy.ts`, #343) and a strict fallback CSP on every other response (`frontend/next.config.ts`, #357, from the DAST scan) | 3.3.1, 3.4.1, 3.4.3, 1.2.1 | Done |
@@ -171,7 +170,7 @@ Each principle (Saltzer and Schroeder, plus OWASP's secure-design list) is mappe
 
 | Principle | Where TorFinder applies it | Threats |
 | --- | --- | --- |
-| Least privilege | A guard admits only the roles it names; an admin is not implicitly owner. Viewers get read-only accounts. Compose binds ports to `127.0.0.1` only; containers run as `node`, not root (#341) | E1, E4 |
+| Least privilege | A guard admits only the roles it names; an admin is not implicitly a company. Viewers get read-only accounts. Compose binds ports to `127.0.0.1` only; containers run as `node`, not root (#341) | E1, E4 |
 | Complete mediation | Every guarded request re-checks signature, expiry, idle time, role and revocation; the frontend's page gate is never the only check. Company files are re-checked for ownership on every download | E1, E2, T3, I8 |
 | Fail securely (fail closed) | A missing, published or short secret stops startup in production; an unknown file type is refused; any token error means "not signed in"; the LINE webhook refuses everything while no secret is set | S1, T4, T6, S7 |
 | Secure defaults | Demo accounts off by default; Secure, httpOnly `__Host-` cookie in production; security headers and a CSP on every response; downloads always as attachments | S3, S5, T6 |

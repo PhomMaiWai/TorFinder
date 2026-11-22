@@ -85,12 +85,12 @@ describe("adaptive controls on a new device (ASVS 8.2.4, 8.4.2)", () => {
 
   it("emails every other admin when a staff account signs in from a new device", async () => {
     const { service, sent } = serviceWith([{ email: "boss@example.com" }, { email: "other@example.com" }]);
-    const staff = { ...user([known(1)]), role: "owner", name: "Owner One" };
+    const staff = { ...user([known(1)]), role: "admin", name: "Admin One" };
     await service.noteDevice(staff, { id: deviceId(2), userAgent: CHROME_MAC }, "203.0.113.7");
     await new Promise((resolve) => setImmediate(resolve));
     const toAdmins = sent.filter((mail) => mail.notice === "staff-new-device");
     assert.deepEqual(toAdmins.map((mail) => mail.email).sort(), ["boss@example.com", "other@example.com"]);
-    assert.match(toAdmins[0].details.join("\n"), /Owner One/);
+    assert.match(toAdmins[0].details.join("\n"), /Admin One/);
   });
 
   it("doesn't email admins about a company's new device", async () => {

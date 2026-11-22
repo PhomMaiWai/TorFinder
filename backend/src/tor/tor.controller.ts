@@ -7,7 +7,6 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Put,
   Query,
   Req,
   Res,
@@ -20,7 +19,6 @@ import { StepUpGuard } from "../common/step-up.guard";
 import { AuthenticatedRequest } from "../common/session.guard";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { ListTorQueryDto } from "./dto/list-tor-query.dto";
-import { SetTorOwnerDto } from "./dto/set-tor-owner.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
 import { TorArchiveService } from "./tor-archive.service";
 import { TorDocumentService } from "./tor-document.service";
@@ -122,17 +120,6 @@ export class TorController {
   @UseGuards(AdminGuard)
   update(@Param("id") id: string, @Body() dto: UpdateTorDto, @Req() request: AuthenticatedRequest) {
     return this.torService.update(id, dto, request.session);
-  }
-
-  /**
-   * Links the announcement to an owner account, or unlinks it with `{ ownerId: null }`.
-   * It decides whose dashboard the record appears on, so it takes a fresh
-   * passkey check like the other sensitive admin actions (ASVS 7.5.3).
-   */
-  @Put(":id/owner")
-  @UseGuards(AdminGuard, StepUpGuard)
-  setOwner(@Param("id") id: string, @Body() dto: SetTorOwnerDto, @Req() request: AuthenticatedRequest) {
-    return this.torService.setOwner(id, dto.ownerId, request.session.email);
   }
 
   /**

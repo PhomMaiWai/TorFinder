@@ -18,7 +18,7 @@ companies that could bid on it.
 - **Market insights**: who wins, at what discount, and how contested each agency is.
 - **Admin tools**: approve companies, curate and import TORs, moderate comments,
   review reports, read the audit log.
-- **Roles** for administrators, project owners, companies and the public.
+- **Roles** for administrators, companies and the public.
   Details: [roles-and-features.md](docs/project/roles-and-features.md).
 
 Announcements are imported from the agencies' public APIs (Bangkok e-GP, national
@@ -182,7 +182,6 @@ server other people can reach.
 | --- | --- | --- | --- | --- |
 | Administrator | `admin@bma.go.th` | `Admin-Demo-2026!` | `/login/admin` | `/admin` |
 | Administrator (second) | `admin2@bma.go.th` | `Admin2-Demo-2026!` | `/login/admin` | `/admin` |
-| Project owner | `owner@bma.go.th` | `Owner-Demo-2026!` | `/login/admin` | `/owner` |
 | Company (approved) | `contact@arundigital.co.th` | `Arun-Demo-2026!` | `/login/organization` | `/dashboard` |
 | Company (approved) | `sales@siamnetwork.co.th` | `Siam-Demo-2026!` | `/login/organization` | `/dashboard` |
 | Company (approved) | `contact@itsupply.co.th` | `Supply-Demo-2026!` | `/login/organization` | `/dashboard` |

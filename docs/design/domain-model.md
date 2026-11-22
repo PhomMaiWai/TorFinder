@@ -115,7 +115,6 @@ classDiagram
 
     Account "1" *-- "0..1" CompanyProfile : org has
     Account "1" *-- "0..1" NotificationChannels
-    Account "0..1" --> "*" TOR : owns (Project Owner)
     ProcurementSource "1" --> "*" TOR : publishes
     ProcurementSource "1" --> "*" SyncRun : imported by
     TOR "1" *-- "*" TorDocument
@@ -140,7 +139,7 @@ classDiagram
 
 | Concept | Meaning |
 | --- | --- |
-| Account | Anyone who signs in. `role` is one of `admin`, `org`, `owner`, `viewer`. `status` is `pending`, `approved` or `rejected`; only companies start as `pending`. |
+| Account | Anyone who signs in. `role` is one of `admin`, `org`, `viewer`. `status` is `pending`, `approved` or `rejected`; only companies start as `pending`. |
 | CompanyProfile | What a software company says about itself. It is the input to matching. Only `org` accounts have one. |
 | TOR | One procurement announcement at one stage. The same project shows up again at each stage (plan, draft for hearing, reference price, invitation, award). |
 | ProcurementSource | Where a TOR came from. When two sources publish the same project, the trust order is manual > Bangkok e-GP > MEA > data.go.th (see [pipeline.md](../operations/pipeline.md)). |

@@ -20,7 +20,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
   ]);
 
   // Same split as /dashboard: companies see it inside their workspace sidebar.
-  const workspace = session?.role === "org" || session?.role === "owner";
+  const workspace = session?.role === "org";
   const body = <MarketInsightsView data={insights} growthLink={session?.role === "org"} />;
 
   if (workspace) {

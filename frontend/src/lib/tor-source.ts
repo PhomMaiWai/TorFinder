@@ -12,7 +12,7 @@ const MAX_PAGES = 50;
 /**
  * Records still held in `data/opportunities.ts`. The public pages read the
  * database now; these only remain so links from the pages that haven't been
- * migrated yet (dashboard, owner, landing preview) still resolve.
+ * migrated yet (dashboard, landing preview) still resolve.
  */
 const MOCK_PREFIX = "mock-";
 

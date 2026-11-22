@@ -11,7 +11,7 @@ import { currentDaysLeft } from "../tor/tor-normalize";
 import { assessBid, BidInsight } from "./bid-insight";
 import { assessBudget, BudgetAssessment } from "./budget-analysis";
 import { alertText, planAlerts, projectKeyOf, sentKey } from "./match-alerts";
-import { rankCompanies, ScorableTor, scoreMatch } from "./matching.scoring";
+import { rankCompanies, scoreMatch } from "./matching.scoring";
 import { MatchCandidate, MatchResult, RankedCompany } from "./matching.types";
 
 const AWARD_STAGE = STAGE.award;
@@ -54,26 +54,6 @@ export class MatchingService {
         gaps,
         eligibility,
         eligible,
-      }),
-    );
-  }
-
-  /**
-   * For an owner's own announcements: how many approved companies fit each one
-   * at or above the alert threshold — the ones the system would tell about it —
-   * and the best score. Companies are loaded once for the whole list.
-   */
-  async matchSummaries(
-    tors: (ScorableTor & { _id: ObjectId })[],
-    threshold = env.notify.matchThreshold,
-  ): Promise<Map<string, { matchCount: number; topScore: number | null }>> {
-    const candidates = await this.approvedCandidates();
-    return new Map(
-      tors.map((tor) => {
-        const fits = rankCompanies(tor, candidates).filter(
-          ({ score, eligible }) => score >= threshold && eligible !== false,
-        );
-        return [tor._id.toString(), { matchCount: fits.length, topScore: fits[0]?.score ?? null }];
       }),
     );
   }

@@ -4,8 +4,7 @@
 // signed-in attribution, resolve/reopen + the audit entry each writes — is
 // already covered thoroughly in backend/test/reports.e2e.test.mjs. This file
 // only needs to prove the admin page actually renders what that endpoint
-// returns, the way owner-page.e2e.test.mjs and admin-dashboard.e2e.test.mjs
-// do for their own pages.
+// returns, the way admin-dashboard.e2e.test.mjs does for its own page.
 //
 // resolveReport/reopenReport (report-list.tsx) are React Server Actions bound
 // directly to a button's onClick, not a plain form POST or a frontend API
@@ -16,7 +15,7 @@
 // file only asserts the page renders that state correctly.
 //
 // Node's built-in runner + fetch against a running `next build && next start`.
-// Session cookie minted the same way owner-page.e2e.test.mjs does.
+// Session cookie minted the same way admin-dashboard.e2e.test.mjs does.
 //
 // Requires, all pointed at the same database:
 //   - E2E_BACKEND_URL   a running backend (default http://localhost:4000)

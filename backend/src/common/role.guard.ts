@@ -18,7 +18,7 @@ import { verifySessionToken } from "./token";
  * route that needs several roles takes a subclass that lists them.
  *
  * `@Injectable()` here (not just on the concrete subclasses) is what lets
- * Nest's DI resolve the constructor below for OwnerGuard/OrgGuard/AdminGuard,
+ * Nest's DI resolve the constructor below for OrgGuard/AdminGuard,
  * none of which declare their own constructor.
  *
  * `revocation` is `@Optional()` for the same reason as in SessionGuard:

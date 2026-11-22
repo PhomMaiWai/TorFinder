@@ -127,7 +127,6 @@ them (it needs the backend and `next start` running, like the steps above).
 | --- | --- |
 | `admin-dashboard.e2e` | Admin dashboard pages render the backend's real numbers |
 | `admin-reports.e2e` | `/admin/reports` and the "Report a problem" button |
-| `owner-page.e2e` | `/owner` access by role and its content |
 | `saved-searches-api.e2e` | The `/api/saved-searches` route handlers forward the session |
 | `tor-search-sort.e2e` | Search result order for each `?sort=` |
 | `tor-timeline.e2e` | The TOR page renders the stage timeline |

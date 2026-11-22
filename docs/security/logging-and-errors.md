@@ -47,7 +47,7 @@ Admin actions (approve, suspend, edit TOR, role change) are recorded separately 
   ```
 - Every 5xx is logged, including upstream portal failures (502).
 
-The frontend's error pages (`app/error.tsx`, `app/admin/error.tsx`, `app/owner/error.tsx`) never display the error message; Next.js production builds pass only a digest to the browser.
+The frontend's error pages (`app/error.tsx`, `app/admin/error.tsx`) never display the error message; Next.js production builds pass only a digest to the browser.
 
 Tests: `backend/test/security-logging.test.mjs`.
 

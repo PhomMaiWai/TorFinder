@@ -14,11 +14,10 @@ feature see [api.md](../design/api.md); for the diagram version see
 | Public visitor | — | Anyone reading procurement news | No account needed | — |
 | Viewer | `viewer` | A member of the public who wants to keep a list | Google sign-in at `/login/public` | `/dashboard` |
 | Organization | `org` | A software company looking for TORs to bid on | Sign up at `/signup/organization`, verify email, wait for admin approval | `/dashboard` |
-| Project Owner | `owner` | The agency (BMA department) that publishes a TOR | An admin changes an existing account's role | `/owner` |
-| Administrator | `admin` | The TorFinder team | Seeded, or an admin changes an existing account's role | `/admin` |
+| Administrator | `admin` | The TorFinder team | Seeded, or an admin changes an existing account's role (a second admin approves) | `/admin` |
 
 Each backend guard admits exactly one role, so an admin cannot use the
-owner screens, and the other way round. A company account's role
+company screens, and the other way round. A company account's role
 cannot be changed.
 
 Demo accounts for every role are in the [root README](../../README.md#demo-accounts).
@@ -72,20 +71,14 @@ Everything a viewer can do, plus:
 - Ask the AI to draft a proposal for a TOR from one of the company's old
   proposals (5 per minute).
 
-### Project Owner
-
-- See every TOR linked to their account, with how many companies match it,
-  the top score, and how many comments are approved, pending or rejected
-  (`/owner`).
-
 ### Administrator
 
 - Approve or reject company sign-ups (`/admin/accounts`).
 - See every user, rename them, change a non-company account's role, suspend
   and reactivate accounts (`/admin/users`). The last admin cannot be
   demoted.
-- Add, edit, hide and restore TORs; mark a TOR as not software; link a TOR
-  to a project owner (`/admin/tor`). Edited fields are locked so the next
+- Add, edit, hide and restore TORs; mark a TOR as not software
+  (`/admin/tor`). Edited fields are locked so the next
   import doesn't overwrite them.
 - Moderate public comments (`/admin/moderation`).
 - Work through problem reports and fix the TOR from the report
@@ -131,7 +124,7 @@ FR numbers are from [summary.md](../requirements/summary.md).
 | FR-17 | Show the lifecycle stage | ✅ Done | Five-stage timeline |
 | FR-18 | Flag TORs open for feedback | ✅ Done | Shows until when comments are open |
 | FR-19 | Public feedback on a draft | ✅ Done | Moderated before it is shown |
-| FR-20 | Owner sees match count and feedback | ✅ Done | `/owner` |
+| FR-20 | Owner sees match count and feedback | ❌ Removed | The Project Owner role and its `/owner` dashboard were removed on 22 Nov 2026 |
 | FR-21 | Report an error on a listing | ✅ Done | |
 | FR-22 | Admin corrects a record or classification | ✅ Done | Corrected fields are locked |
 | FR-23 | Admin hides spam or abusive feedback | ✅ Done | |

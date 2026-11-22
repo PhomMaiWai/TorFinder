@@ -78,14 +78,13 @@ Each protected route has one guard:
 | `Session` | Any signed-in account | 401 `กรุณาเข้าสู่ระบบ` |
 | `Admin` | `role: admin` only | 403 |
 | `Org` | `role: org` only | 403 |
-| `Owner` | `role: owner` only | 403 |
 
-A role guard admits exactly one role: an admin cannot call an `Owner`
+A role guard admits exactly one role: an admin cannot call an `Org`
 route. Every guard also refuses a token issued before the
 account's last logout, password reset, role change or suspension
 (`SessionRevocationService`, cached for 30 seconds).
 
-Roles: `admin`, `org` (software company), `owner` (agency), `viewer`
+Roles: `admin`, `org` (software company), `viewer`
 (public user signed in with Google).
 
 ## Errors, status codes and rate limits
@@ -170,7 +169,7 @@ include password fields. Their shape is
 | GET | `/accounts/me` | Session | — | Own account |
 | PATCH | `/accounts/me` | Session | `UpdateCompanyProfileDto` | Own account, updated |
 | PATCH | `/accounts/:id` | Admin | `{ status: "approved" \| "rejected" }` | The company account; notifies it and writes the audit log |
-| PATCH | `/accounts/:id/details` | Admin | `{ name?, role?: "admin"\|"owner"\|"viewer" }` | The account. A company's role can't be changed (400); the last admin can't be demoted (409) |
+| PATCH | `/accounts/:id/details` | Admin | `{ name?, role?: "admin"\|"viewer" }` | The account. A company's role can't be changed (400); the last admin can't be demoted (409) |
 | PATCH | `/accounts/:id/suspend` | Admin | — | The account; its sessions are revoked |
 | PATCH | `/accounts/:id/reactivate` | Admin | — | The account |
 
@@ -269,7 +268,6 @@ records and records marked `not-software`.
 | GET | `/tor/:id` | none | — | One TOR with `extraction` (plus `assessment` of its confidence), `documents[]` (with `viewable`, `archive`), `bidding`, `timeline` |
 | POST | `/tor` | Admin | `CreateTorDto` | 201 the new TOR. 409 if a similar title from the same agency exists. Sends match alerts |
 | PATCH | `/tor/:id` | Admin | `UpdateTorDto` | The TOR. Changed fields are added to `lockedFields`, so imports stop overwriting them |
-| PUT | `/tor/:id/owner` | Admin | `{ ownerId: "<user id>" \| null }` | Links the TOR to an `owner` account, or unlinks it |
 | DELETE | `/tor/:id` | Admin | — | Soft delete (sets `deletedAt`) |
 | POST | `/tor/:id/restore` | Admin | — | Undoes the soft delete |
 | GET | `/tor/deleted` | Admin | — | Hidden TORs, newest first |
@@ -392,12 +390,6 @@ when `VERTEX_PROJECT_ID` is not set.
 
 `reason`: `wrong-info`, `not-software`, `broken-link`, `duplicate`,
 `other`.
-
-### Owner
-
-| Method | Path | Guard | Response |
-| --- | --- | --- | --- |
-| GET | `/owner/tors` | Owner | `{ totals: { tors, matches, feedback: { approved, pending, rejected } }, items: [{ id, title, agency, budget, deadline, daysLeft, stage, createdAt, matchCount, topScore, feedback }] }` for TORs linked to the caller |
 
 ### Saved TORs
 

@@ -41,7 +41,7 @@ import { SIGN_IN_FIELDS } from "./sign-in-fields";
 const canUsePasskeys = (role: Role) => isStaffRole(role) || role === "org";
 
 /**
- * Passkeys (WebAuthn) for staff accounts (admin and owner), and,
+ * Passkeys (WebAuthn) for staff accounts (admins), and,
  * optionally, company accounts.
  *
  * A passkey is a key pair made by the user's device or security key. The

@@ -110,7 +110,6 @@ function content(title, section, crit) {
       ["LuSearch", "Public visitor", "Search TORs, AI summary, budget insight, comment on drafts"],
       ["LuEye", "Viewer", "Google sign-in only; bookmarks and saved searches"],
       ["LuBuilding2", "Organization", "Company profile, ranked matches, alerts, proposal library"],
-      ["LuLandmark", "Project owner", "Agency dashboard: its TORs, match counts, feedback"],
       ["LuUserCog", "Admin", "Approve companies, manage roles, moderate, audit log"],
     ];
     const cw = 3.85, ch = 1.95, gx = 0.28, gy = 0.3, x0 = 0.6, y0 = 2.35;
@@ -123,7 +122,7 @@ function content(title, section, crit) {
       s.addText(desc, { x: x + 0.3, y: y + 1.05, w: cw - 0.6, h: 0.75, fontSize: 14, color: C.text1, valign: "top", margin: 0, isTextBox: true });
     }
     s.addText("Next.js 16 · NestJS 11 · MongoDB 7 · Docker Compose · Google sign-in · Resend, LINE, Slack · Vertex AI", { x: 0.6, y: 6.6, w: 12.1, h: 0.3, fontSize: 12, color: C.accent6, margin: 0, isTextBox: true });
-    s.addNotes("Five kinds of user, four roles plus visitors, each with its own pages. That matters for security: most of our authorization work is about keeping these roles apart.");
+    s.addNotes("Four kinds of user, three roles plus visitors, each with its own pages. That matters for security: most of our authorization work is about keeping these roles apart.");
   }
 
   // ================= 3. Architecture =================
@@ -218,13 +217,12 @@ function content(title, section, crit) {
   // ================= 7. Authorization =================
   {
     const s = content("Each role sees only its own pages and data", "Security features", ["C6", "C7"]);
-    const head = ["", "Public pages", "Company workspace", "Owner console", "Admin console"];
+    const head = ["", "Public pages", "Company workspace", "Admin console"];
     const rows = [
-      ["Guest", "✓", "–", "–", "–"],
-      ["Viewer", "✓", "–", "–", "–"],
-      ["Organization", "✓", "✓", "–", "–"],
-      ["Project owner", "✓", "search only", "✓", "–"],
-      ["Admin", "✓", "–", "–", "✓"],
+      ["Guest", "✓", "–", "–"],
+      ["Viewer", "✓", "–", "–"],
+      ["Organization", "✓", "✓", "–"],
+      ["Admin", "✓", "–", "✓"],
     ];
     const cell = (t, isHead, col) => ({
       text: t,
