@@ -10,7 +10,7 @@ import { Request } from "express";
 import { PASSKEY_SETUP_PATHS, needsPasskeySetup, passkeySetupRequired } from "./passkey-policy";
 import { logSecurityEvent } from "./security-log";
 import { SessionRevocationService } from "./session-revocation.service";
-import { SessionPayload, verifySessionToken } from "./token";
+import { SessionPayload, bearerToken, verifySessionToken } from "./token";
 
 /** One `access.denied` line per refused request (ASVS 16.3.2); the path never carries its query string. */
 export function logDenied(request: Request, reason: string, userId?: string, role?: string): void {
@@ -75,11 +75,11 @@ export class SessionGuard implements CanActivate {
   /** See RoleGuard.canActivate for why this isn't declared `async`. */
   canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
-    const session = scheme === "Bearer" ? verifySessionToken(token) : null;
+    const token = bearerToken(request.headers.authorization);
+    const session = verifySessionToken(token);
 
     if (!session) {
-      logDenied(request, token ? "invalid_token" : "no_token");
+      logDenied(request, request.headers.authorization ? "invalid_token" : "no_token");
       throw new UnauthorizedException("กรุณาเข้าสู่ระบบ");
     }
 
