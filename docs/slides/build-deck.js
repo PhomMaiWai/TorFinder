@@ -123,7 +123,7 @@ function content(title, section, crit) {
       s.addText(desc, { x: x + 0.3, y: y + 1.05, w: cw - 0.6, h: 0.75, fontSize: 14, color: C.text1, valign: "top", margin: 0, isTextBox: true });
     }
     s.addText("Next.js 16 · NestJS 11 · MongoDB 7 · Docker Compose · Google sign-in · Resend, LINE, Slack · Vertex AI", { x: 0.6, y: 6.6, w: 12.1, h: 0.3, fontSize: 12, color: C.accent6, margin: 0, isTextBox: true });
-    s.addNotes("Six roles, each with its own pages. That matters for security: most of our authorization work is about keeping these roles apart.");
+    s.addNotes("Five kinds of user, four roles plus visitors, each with its own pages. That matters for security: most of our authorization work is about keeping these roles apart.");
   }
 
   // ================= 3. Architecture =================
