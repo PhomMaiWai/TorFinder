@@ -4,8 +4,8 @@ How TorFinder handles each category of the [OWASP Top 10:2025](https://owasp.org
 
 This file adds no new review. It maps work that is already done and documented:
 
-- ASVS 5.0: [Level 1](./asvs-l1.md) (0 Fail), [Level 2](./asvs-l2.md) (125 of 125 applicable items pass), [Level 3](./asvs-l3.md) (68 of 72 applicable items pass, 94%; the 4 left need a production domain or hardware)
-- [Threat model](./threat-model.md): STRIDE, 36 threats, all mitigated. Threat IDs such as S1 or E3 below come from there.
+- ASVS 5.0: [Level 1](./asvs-l1.md) (0 Fail), [Level 2](./asvs-l2.md) (126 of 126 applicable items pass), [Level 3](./asvs-l3.md) (68 of 72 applicable items pass, 94%; the 4 left need a production domain or hardware)
+- [Threat model](./threat-model.md): STRIDE, 37 threats, all mitigated. Threat IDs such as S1 or E3 below come from there.
 - [SAST](./sast-report.md) (CodeQL, Semgrep), [DAST](./dast-report.md) (OWASP ZAP), [logging and errors](./logging-and-errors.md), [evidence screenshots](./evidence/README.md)
 
 ASVS IDs are written without the `V` prefix (`8.2.2` = ASVS 5.0 requirement V8.2.2). File paths are relative to the repository root. Every path below was checked to exist.
@@ -195,7 +195,7 @@ The egress proxy and vault run only in the opt-in hardened stack, not in the def
 
 | Control | Where | ASVS |
 | --- | --- | --- |
-| STRIDE threat model with a data-flow diagram, 36 threats scored, and secure-design principles mapped | [threat-model.md](./threat-model.md) | 15.1.3 |
+| STRIDE threat model with a data-flow diagram, 37 threats scored, and secure-design principles mapped | [threat-model.md](./threat-model.md) | 15.1.3 |
 | Business rules and per-user limits written down | [asvs-l2.md](./asvs-l2.md#business-rules-and-limits) | 2.1.2, 2.1.3 |
 | Signup → verify email → admin approval before an org can sign in | `backend/src/auth/auth.service.ts` (`issueSession`) | 2.3.1 |
 | Admin role changes need a second admin; sensitive admin actions need a fresh passkey (step-up) | `backend/src/accounts/role-changes.service.ts`, `backend/src/common/step-up.guard.ts` | 2.3.5, 7.5.3 |
@@ -207,7 +207,7 @@ The egress proxy and vault run only in the opt-in hardened stack, not in the def
 
 - Tests: `backend/test/admin-approvals.e2e.test.mjs`, `form-timing.e2e.test.mjs`, `saved-searches.e2e.test.mjs`, `feedback-window.e2e.test.mjs`
 - Screenshots: [13a–13f](./evidence/screenshots/13a-admin-role-needs-approval.png)
-- Threat model: all 36 threats mitigated
+- Threat model: all 37 threats mitigated
 
 **Status: Covered.**
 
