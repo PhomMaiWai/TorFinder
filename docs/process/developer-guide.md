@@ -117,7 +117,7 @@ resolve conflicts there.
   `eslint-config-next` in the frontend).
 - Keep secrets and URLs out of code. New settings go in
   `backend/src/config/env.ts` with a safe default, plus `.env.example` and the
-  README's environment table.
+  environment table in [configuration.md](../operations/configuration.md).
 - Comments explain **why**, not what. Look at `role.guard.ts` or
   `tor.constants.ts` for the house style.
 - Never commit `.env`, `.env.local`, credentials, or database dumps other
@@ -172,4 +172,4 @@ Update the docs in the same PR as the code they describe:
 | A collection or its fields | [design/er-diagram.md](../design/er-diagram.md) |
 | A role or what it can do | [project/roles-and-features.md](../project/roles-and-features.md), [design/use-case.md](../design/use-case.md) |
 | An importer or schedule | [operations/pipeline.md](../operations/pipeline.md) |
-| An environment variable | Root [README](../../README.md#environment-variables) and `.env.example` |
+| An environment variable | [configuration.md](../operations/configuration.md#environment-variables) and `.env.example` |
