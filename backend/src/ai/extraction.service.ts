@@ -10,7 +10,9 @@ import { DatabaseService, TorDoc } from "../database/database.service";
 import { GprocClient } from "../gproc/gproc.client";
 import { PROJECT_NUMBER, gprocProjectUrl } from "../gproc/gproc.constants";
 import { MatchingService } from "../matching/matching.service";
-import { READABLE_DOCUMENT_PATTERN, isReadableDocument } from "../tor/tor-documents";
+import { pickTenderPdfs } from "../common/tender-bundle";
+import { readZip, ZipEntry } from "../common/zip";
+import { EXTRACTABLE_DOCUMENT_PATTERN, isArchiveDocument, isExtractableDocument } from "../tor/tor-documents";
 import { ACTIONABLE_WINDOW_MS, LISTED_TOR, STAGE } from "../tor/tor.constants";
 import { AI_REQUEST, EXTRACTION_INSTRUCTION, EXTRACTION_SCHEMA, EXTRACTION_VERSION } from "./ai.constants";
 import { ExtractionRunResult, StoredExtraction } from "./ai.types";
@@ -209,7 +211,8 @@ export class ExtractionService {
   }
 
   /**
-   * What is worth spending a model call on. Records with no downloadable file
+   * What is worth spending a model call on: a record with a file to read or an
+   * e-GP project number to fetch one by. Records with neither
    * are excluded here rather than tried and failed — e-GP leaves the file path
    * empty on most announcements, and letting those through would spend the
    * run's budget on nothing.
@@ -227,9 +230,13 @@ export class ExtractionService {
       $and: [
         {
           $or: [
-            { "documents.url": { $regex: READABLE_DOCUMENT_PATTERN, $options: "i" } },
+            // A PDF, or a bundle (MEA's) with the PDFs inside.
+            { "documents.url": { $regex: EXTRACTABLE_DOCUMENT_PATTERN, $options: "i" } },
             // process5 has no file URL; its invitation is fetched by project number.
             { sourceRef: { $regex: "^gproc:" }, stage: INVITATION_STAGE },
+            // Any portal's record that names its e-GP project: the national e-GP
+            // bundles the TOR for it, whatever the agency's own site attached.
+            { projectNumber: { $regex: PROJECT_NUMBER.source } },
           ],
         },
         {
@@ -306,12 +313,19 @@ export class ExtractionService {
     // With the invitation in hand, the detail is what is still missing.
     const ranking = loaded.length ? DETAIL_RANKING : documentRanking(tor.stage);
     const file = this.documentFor(tor, ranking);
-    // A second copy of the same notice adds cost and nothing else.
-    if (!file || (loaded.length && !isDraftDocument(file.label))) return loaded;
+    // A second copy of the same notice adds cost and nothing else; a bundle
+    // carries the TOR whatever it is named.
+    if (!file || (loaded.length && !isDraftDocument(file.label) && !isArchiveDocument(file.url))) return loaded;
 
     try {
-      const pdf = await this.fetchPdf(file.url);
-      if (pdf.byteLength <= room) loaded.push({ pdf, ...file });
+      if (isArchiveDocument(file.url)) {
+        const bundled = await this.bundleDocuments(tor, file, room);
+        if (bundled.length === 0) throw new NotFoundException("ไม่พบไฟล์ PDF ที่อ่านได้ในชุดเอกสาร");
+        loaded.push(...bundled);
+      } else {
+        const pdf = await this.fetchPdf(file.url);
+        if (pdf.byteLength <= room) loaded.push({ pdf, ...file });
+      }
     } catch (error) {
       // The invitation alone still yields the date; with nothing read, fail.
       if (loaded.length === 0) throw error;
@@ -320,8 +334,8 @@ export class ExtractionService {
   }
 
   /**
-   * The document to read. A project publishes several and only some of them are
-   * files at all — the rest point at a listing page, which has nothing to
+   * The document to read — a PDF, or a bundle to take the PDFs out of. A
+   * project publishes several and only some of them are files at all — the rest point at a listing page, which has nothing to
    * extract. The most useful file for this record's stage wins, and among
    * equals the newest, since `documents` is stored newest-first and the sort is
    * stable. `sourceUrl` is the fallback for records imported before the
@@ -332,11 +346,11 @@ export class ExtractionService {
     ranking: ((label: string) => boolean)[],
   ): { url: string; label: string } | null {
     const best = (tor.documents ?? [])
-      .filter((doc) => isReadableDocument(doc.url))
+      .filter((doc) => isExtractableDocument(doc.url))
       .sort((a, b) => documentRank(a.label, ranking) - documentRank(b.label, ranking))[0];
     if (best) return { url: best.url, label: best.label };
 
-    return tor.sourceUrl && isReadableDocument(tor.sourceUrl)
+    return tor.sourceUrl && isExtractableDocument(tor.sourceUrl)
       ? { url: tor.sourceUrl, label: tor.stage }
       : null;
   }
@@ -358,6 +372,53 @@ export class ExtractionService {
       "The attached PDFs are the announcement documents — any of them may be a scan.",
       "<tor_document>(see attached PDFs)</tor_document>",
     ].join("\n");
+  }
+
+  /**
+   * The bidding document and TOR out of a zipped bundle — MEA posts every
+   * announcement's documents as one zip of the same files e-GP generates. They
+   * are labelled by the stage the bundle belongs to, since the labels decide
+   * which deadline the answer is trusted for: a draft bundle's date ends public
+   * comment, an invitation's ends bidding.
+   */
+  private async bundleDocuments(
+    tor: TorDoc,
+    file: { url: string; label: string },
+    room: number,
+  ): Promise<LoadedDocument[]> {
+    const draft = tor.stage === DRAFT_STAGE || /ร่าง|WORK_DRAFT/i.test(`${file.label} ${file.url}`);
+    const prefix = draft ? "ร่าง" : "";
+    let entries: ZipEntry[];
+    try {
+      entries = readZip(await this.fetchBundle(file.url));
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new NotFoundException("เปิดชุดเอกสารนี้ไม่ได้");
+    }
+    const picked = await pickTenderPdfs(entries, room, {
+      bidding: `${prefix}เอกสารประกวดราคา (${file.label})`,
+      tor: `${prefix}ขอบเขตของงาน TOR (${file.label})`,
+    });
+    return picked.map(({ label, pdf }) => ({ label, pdf, url: file.url }));
+  }
+
+  private async fetchBundle(url: string): Promise<Buffer> {
+    // Allowlisted host, redirects checked hop by hop (ASVS 1.3.6, 15.3.2).
+    const res = await fetchPortalFile(url, {
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(AI_REQUEST.timeoutMs),
+    });
+    if (!res.ok) throw new NotFoundException(`ดาวน์โหลดชุดเอกสารไม่สำเร็จ (${res.status})`);
+    if (Number(res.headers.get("content-length") ?? 0) > AI_REQUEST.maxBundleBytes) {
+      await res.body?.cancel();
+      throw new NotFoundException("ชุดเอกสารใหญ่เกินกำหนด");
+    }
+
+    const zip = Buffer.from(await res.arrayBuffer());
+    if (zip.byteLength > AI_REQUEST.maxBundleBytes) throw new NotFoundException("ชุดเอกสารใหญ่เกินกำหนด");
+    // A portal error page arrives with a 200 too; only a real zip goes further.
+    if (zip.subarray(0, 4).toString("latin1") !== "PK\x03\x04") throw new NotFoundException("ลิงก์นี้ไม่ใช่ไฟล์ zip");
+    return zip;
   }
 
   private async fetchPdf(url: string): Promise<Buffer> {

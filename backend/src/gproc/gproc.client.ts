@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 
 import { HttpClient } from "../common/http-client";
+import { isPdf, pickTenderPdfs } from "../common/tender-bundle";
 import { readZip } from "../common/zip";
 import { ProcurementStage, STAGE } from "../tor/tor.constants";
 import {
@@ -20,19 +21,7 @@ import {
   GprocProjectDetail,
 } from "./gproc.types";
 
-const PDF_MAGIC = "%PDF-";
 const { draft: DRAFT_STAGE, invitation: INVITATION_STAGE } = STAGE;
-
-/** The bidding document e-GP generates: conditions, qualifications, payment, penalties. */
-const BIDDING_DOCUMENT = /^doc_.*\.pdf$/i;
-/**
- * The standard forms every bundle carries — bonds, price sheets, definitions,
- * the contract template — which say nothing about this project in particular.
- * What is left after them is the agency's own TOR.
- */
-const STANDARD_FORM = /quotation|bond|definition|document part|notice|noltice|domestic|performance|contract|annoudoc|payment|action_plan/i;
-
-const isPdf = (bytes: Buffer) => bytes.subarray(0, PDF_MAGIC.length).toString("latin1") === PDF_MAGIC;
 
 /**
  * Read-only access to one project at a time on the national e-GP. Every call
@@ -191,24 +180,10 @@ export class GprocClient {
       if (!zipId) continue;
 
       const zip = await this.http.getBytes(GPROC_ENDPOINTS.download, { fileId: zipId }, GPROC_REQUEST.maxBundleBytes);
-      const pdfs = readZip(zip).filter((entry) => /\.pdf$/i.test(entry.name) && entry.size > 0);
-      const bidding = pdfs.find((entry) => BIDDING_DOCUMENT.test(entry.name));
-      const tor = pdfs
-        .filter((entry) => entry !== bidding && !STANDARD_FORM.test(entry.name))
-        .sort((a, b) => b.size - a.size)[0];
-
-      const picked: GprocDocument[] = [];
-      let room = maxBytes;
-      for (const [entry, kind, label] of [
-        [bidding, "bidding", "เอกสารประกวดราคา (e-GP กรมบัญชีกลาง)"],
-        [tor, "tor", "ขอบเขตของงาน TOR (e-GP กรมบัญชีกลาง)"],
-      ] as const) {
-        if (!entry || entry.size > room) continue;
-        const pdf = await entry.readAsync();
-        if (!isPdf(pdf)) continue;
-        picked.push({ kind, label, pdf });
-        room -= pdf.byteLength;
-      }
+      const picked = await pickTenderPdfs(readZip(zip), maxBytes, {
+        bidding: "เอกสารประกวดราคา (e-GP กรมบัญชีกลาง)",
+        tor: "ขอบเขตของงาน TOR (e-GP กรมบัญชีกลาง)",
+      });
       if (picked.length) return picked;
     }
     return [];
