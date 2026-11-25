@@ -3,7 +3,9 @@
 How the three of us (Bhumipat, Nisara, Sai Khun) ran the project, starting
 from Scrum and adjusting it to a three-person course team. The numbers come
 from the GitHub repository and the team's GitHub Projects board as of
-November 11, 2026.
+November 25, 2026. What we changed after each retrospective, with the
+evidence, is in [retrospectives.md](./retrospectives.md); what we hand over
+is in [deliverables.md](../project/deliverables.md).
 
 > **Team to check:** the cadence and artifacts below are read from the board
 > and the git history. The meeting details (when stand-ups happened, who
@@ -79,15 +81,16 @@ other two roles were shared rather than held by one person.
 | Iteration planning | Start of each iteration | Pull epics and sub-issues into the iteration; estimate about 30 points; Must before Should before Could | Estimates in each iteration file |
 | Daily work / stand-up | Ongoing | Move cards Todo → In progress → Done; raise blockers in the team chat | Board status, PR activity |
 | Review | End of each iteration | Show what is Done; the October in-class review with the client was the big one | Epic #250 |
-| Retrospective | End of each iteration | Unfinished items carry over to the next iteration; scope is adjusted | Iterations 4 to 7 carry work forward |
+| Retrospective | End of each iteration, 30 min | Check last actions, look at the numbers, went well / to improve, vote, then 1 to 3 actions with one owner and a check date each; unfinished items carry over | [retrospectives.md](./retrospectives.md#how-we-run-a-retrospective) |
 
 ## Artifacts
 
 | Artifact | Where |
 | --- | --- |
-| Product backlog | GitHub Projects board "TORFinder": 188 issues so far (165 closed, 23 open), epics with sub-issues, each tagged with its FR and MoSCoW priority |
+| Deliverables | [deliverables.md](../project/deliverables.md): D1 to D12 with owner, acceptance criteria and evidence. Each is a [GitHub milestone](https://github.com/PhomMaiWai/TorFinder/milestones), and all 207 issues sit under one (25 Nov); new issues and PRs name their deliverable |
+| Product backlog | GitHub Projects board "TORFinder": 207 issues so far (186 closed, 21 open), epics with sub-issues, each tagged with its FR and MoSCoW priority. New issues start from the [task or bug template](../../.github/ISSUE_TEMPLATE/) (goal, acceptance criteria, deliverable, design reference) |
 | Iteration backlog | The board's Iteration view; written up in [project/iterations/](../project/iterations/) |
-| Increment | `main`, always runnable with `docker compose up`; 97 pull requests merged into it |
+| Increment | `main`, always runnable with `docker compose up`; 168 pull requests merged into it (plus 13 from Dependabot) |
 | Definition of Done | Below |
 
 ## Definition of Done
@@ -101,17 +104,23 @@ An item is Done when:
    [testing.md](./testing.md)).
 4. User-facing text exists in both Thai and English.
 5. The docs it affects are updated (see the table at the end of
-   [developer-guide.md](./developer-guide.md)).
-6. The card is moved to Done and the issue is closed.
+   [developer-guide.md](./developer-guide.md)). A change to an API route,
+   a collection, a role or a flow updates the matching file in
+   [design/](../design/README.md) in the same PR; the PR template has a
+   checkbox for it.
+6. A teammate other than the author has approved the PR (required by the
+   `main` ruleset since 3 Nov).
+7. The card is moved to Done and the issue is closed.
 
 ## What we would change
 
 Things the history shows we could do better, for the next project or the
 rest of this one:
 
-- **Reviews.** Only 9 of 97 pull requests have a recorded GitHub approval,
-  so most review happened outside GitHub or not at all. Requiring one
-  approval in branch protection would make review visible.
+- **Reviews (done).** Before 3 Nov only 5 of 92 pull requests had a
+  teammate's review on GitHub. On 3 Nov we made one approval a rule on
+  `main`, and all 76 PRs merged since then were reviewed (see
+  [retrospectives.md](./retrospectives.md)).
 - **Smaller iterations at the end.** Iterations 6 and 7 planned 4 and 13
   items and finished 1 each, while most of the work landed in one week at
   the end of October. Splitting epics into smaller sub-issues would keep the

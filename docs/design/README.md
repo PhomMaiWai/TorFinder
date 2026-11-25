@@ -1,5 +1,7 @@
 # Software design
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](../process/team-workflow.md#definition-of-done)).
+
 Design diagrams for TorFinder, drawn from the code as of November 2026.
 They are written in [Mermaid](https://mermaid.js.org/), which GitHub renders
 in place, so they live next to the code and can be edited in a PR like any

@@ -1,5 +1,7 @@
 # API reference
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](../process/team-workflow.md#definition-of-done)).
+
 Every HTTP route the TorFinder backend serves, checked against the
 controllers in `backend/src/**/*.controller.ts` and the DTOs next to them.
 When this page and the code disagree, the code wins; please fix this page
@@ -11,9 +13,9 @@ in the same PR.
 - [Endpoints](#endpoints): [Health](#health) · [Auth](#auth) ·
   [Accounts](#accounts) · [Certificates](#certificates) · [Library](#library) · [TORs](#tors) · [TOR documents](#tor-documents) ·
   [Matching](#matching) · [AI](#ai) · [Feedback](#feedback) ·
-  [Reports](#reports) · [Owner](#owner) · [Saved TORs](#saved-tors) ·
+  [Reports](#reports) · [Saved TORs](#saved-tors) ·
   [Saved searches](#saved-searches) · [Notifications](#notifications) ·
-  [Imports](#imports) · [Audit](#audit)
+  [LINE webhook](#line-webhook) · [Imports](#imports) · [Audit](#audit)
 - [Frontend route handlers](#frontend-route-handlers)
 - [Known issues](#known-issues)
 
@@ -68,7 +70,15 @@ Sign-in (`POST /api/auth/login`, `/auth/google`) returns
 (`backend/src/common/token.ts`) carrying `sub` (user id), `email`, `name`,
 `role`, `iat` and `exp` (7 days). Send it as
 `Authorization: Bearer <token>`. The frontend keeps it in the httpOnly
-`torr_session` cookie.
+`torr_session` cookie (`__Host-torr_session` in production). The token also
+carries `sid` (the session record, so one session can be listed and ended),
+`act` (last activity, for the idle timeout), `amr` (how the user signed in:
+`pwd`, `google`, `passkey`) and `pkt` (time of the last passkey check).
+
+Staff accounts with a passkey sign in in two steps: `/auth/login` or
+`/auth/google` answers `{ status: "passkey-required", options }` instead of a
+token, and `/auth/passkey/login` with the passkey's answer returns
+`{ user, token }`. See [passkeys.md](../security/passkeys.md).
 
 Each protected route has one guard:
 
@@ -78,9 +88,14 @@ Each protected route has one guard:
 | `Session` | Any signed-in account | 401 `กรุณาเข้าสู่ระบบ` |
 | `Admin` | `role: admin` only | 403 |
 | `Org` | `role: org` only | 403 |
+| `Admin + StepUp` | An admin whose session had a passkey check in the last `STEP_UP_MINUTES` (default 10) | 403 with a code the frontend uses to ask for the passkey and retry |
 
 A role guard admits exactly one role: an admin cannot call an `Org`
-route. Every guard also refuses a token issued before the
+route. `StepUp` (`backend/src/common/step-up.guard.ts`) guards the
+sensitive admin actions: reviewing a company, changing a role, suspending
+or reactivating, deleting an announcement, ending other people's sessions,
+sending a password reset, clearing passkeys and deciding admin-role
+requests. Every guard also refuses a token issued before the
 account's last logout, password reset, role change or suspension
 (`SessionRevocationService`, cached for 30 seconds).
 
@@ -145,6 +160,17 @@ has the 5-per-minute limit.
 | POST | `/auth/password/reset` | none | `{ token, password }` | 200 `{ ok: true }` |
 | POST | `/auth/email/verify` | none | `{ token }` | 200 `{ ok: true, status }` |
 | POST | `/auth/email/resend` | none | `{ email }` | 200 `{ ok: true }` |
+| POST | `/auth/passkey/login` | none | `PasskeyResponseDto` | 200 `{ user, token }`: step two of a staff sign-in |
+| GET | `/auth/session` | Session | — | 204 while this session is open, 401 once it was ended anywhere |
+| GET | `/auth/sessions` | Session | — | `{ needsPassword, sessions[] }`: this account's open sessions (device, last seen, current) |
+| POST | `/auth/sessions/end-others` | Session | `{ password? }` | 200; ends every other session. The password is needed unless the user signed in or passed a passkey check recently |
+| POST | `/auth/sessions/:id/end` | Session | `{ password? }` | 200; ends one session |
+| GET | `/auth/passkeys` | Session | — | Own passkeys |
+| POST | `/auth/passkeys/options` | Session | — | 200 WebAuthn registration options |
+| POST | `/auth/passkeys` | Session | `AddPasskeyDto` | 201 the passkey list and the session re-signed as passkey-verified |
+| DELETE | `/auth/passkeys/:id` | Session | — | 200; removes one passkey |
+| POST | `/auth/step-up/options` | Session | — | 200 a passkey challenge for a sensitive action |
+| POST | `/auth/step-up` | Session | `PasskeyResponseDto` | 200 the session re-signed with the time of the check |
 
 `SignupDto`: `email`, `password` (8-128, not a common password),
 `companyName` (1-200), `taxId` (valid Thai 13-digit tax id), `contactName`
@@ -172,6 +198,17 @@ include password fields. Their shape is
 | PATCH | `/accounts/:id/details` | Admin | `{ name?, role?: "admin"\|"viewer" }` | The account. A company's role can't be changed (400); the last admin can't be demoted (409) |
 | PATCH | `/accounts/:id/suspend` | Admin | — | The account; its sessions are revoked |
 | PATCH | `/accounts/:id/reactivate` | Admin | — | The account |
+| GET | `/accounts/admin-approvals` | Admin | — | Open requests to grant or remove the admin role |
+| POST | `/accounts/admin-approvals/:id/approve` | Admin + StepUp | — | 200; a second admin applies the request (the requester can't) |
+| POST | `/accounts/admin-approvals/:id/reject` | Admin + StepUp | — | 200; the requester cancels, or another admin rejects |
+| POST | `/accounts/sessions/end-all` | Admin + StepUp | — | 200; signs every account out |
+| POST | `/accounts/:id/password-reset` | Admin + StepUp | — | 200; emails the owner a reset link. The admin never sees the password |
+| POST | `/accounts/:id/sessions/end` | Admin + StepUp | — | 200; ends every session of that account |
+| POST | `/accounts/:id/passkeys/reset` | Admin + StepUp | — | 200; clears a staff member's passkeys and ends their sessions |
+
+The `PATCH` routes above that change status, role or suspension also need
+`StepUp`. Changing a role to or from `admin`, while another admin exists,
+files an admin-approval request instead of applying it.
 
 `UpdateCompanyProfileDto` (all optional): `companyName`, `taxId` (both can
 only be filled once, when still blank), `contactName`, `phone`, `address`,
@@ -424,8 +461,22 @@ All `Session`.
 | GET | `/notifications/channels` | — | `{ email, slackWebhookUrl?, lineUserId? }` |
 | PUT | `/notifications/channels` | `{ email?: bool, slackWebhookUrl?: "https://hooks.slack.com/services/..." \| "", lineUserId?: "U…32 hex" \| "" }` | The channels. An empty string turns a channel off |
 | POST | `/notifications/channels/test` | — | 200 `[{ channel, ok, error? }]` after sending a test to each channel that is on |
+| POST | `/notifications/channels/line/link` | — | 200 a one-time code the user sends to the LINE Official Account |
+| DELETE | `/notifications/channels/line` | — | Unlinks LINE |
 
 `type`: `match`, `approval`, `feedback`, `system`.
+
+### LINE webhook
+
+`backend/src/notifications/line-webhook.controller.ts`. Called by LINE, not
+by a browser, so it has no session guard. A call is accepted only when its
+`X-Line-Signature` matches the raw body signed with the channel secret.
+Rate limited per IP (`LINE_WEBHOOK_THROTTLE_LIMIT` a minute, default 300).
+See [line-notifications.md](../operations/line-notifications.md).
+
+| Method | Path | Guard | Body | Response |
+| --- | --- | --- | --- | --- |
+| POST | `/line/webhook` | signature | `{ events[] }` | 200; a text message carrying a valid link code connects that LINE user; an unfollow unlinks them |
 
 ### Imports
 
@@ -463,12 +514,18 @@ backend route of the same name. `frontend/src/proxy.ts` refuses every
 | `/api/auth/me` | GET | none; reads the cookie | ✓ |
 | `/api/auth/google` | POST | `/auth/google`; sets the cookie | ✓ |
 | `/api/auth/google/complete` | POST | `/auth/google/complete` | ✓ |
+| `/api/auth/google/nonce` | GET | none; sets a one-time nonce cookie for the Google button | ✓ |
+| `/api/auth/passkey/login` | POST | `/auth/passkey/login`; sets the cookie | ✓ |
+| `/api/auth/passkeys`, `/options`, `/[id]` | GET, POST, DELETE | `/auth/passkeys/…`; adding one re-sets the cookie | |
+| `/api/auth/step-up`, `/options` | POST | `/auth/step-up/…`; re-sets the cookie with the time of the check | |
+| `/api/line/webhook` | POST | `/line/webhook`; the raw body passes through unchanged so the signature still matches | ✓ |
+| `/api/csp-report` | POST | none; logs Content-Security-Policy violation reports | ✓ |
 | `/api/accounts/me` | GET, PATCH | `/accounts/me` | |
 | `/api/library`, `/api/library/[kind]`, `/api/library/[kind]/[id]`, `/api/library/[kind]/[id]/file`, `/api/library/coverage/[torId]`, `/api/library/starter-pack/[torId]` | GET, POST, PUT, DELETE | `/library/…` | Same streaming as the certificates routes; the starter pack comes back as a download |
 | `/api/certificates`, `/api/certificates/none`, `/api/certificates/[id]`, `/api/certificates/[id]/file` | GET, POST, PUT, DELETE | `/certificates/…` | Bodies (JSON and the multipart upload) stream through unread; the file comes back as a download |
 | `/api/ai/proposal-draft/[torId]` | POST | `/ai/proposal-draft/:torId` | |
 | `/api/gproc/capture`, `/[runId]` | POST, GET | `/gproc/capture` | |
-| `/api/notifications`, `/[id]/read`, `/read-all`, `/channels`, `/channels/test` | as backend | `/notifications/...` | |
+| `/api/notifications`, `/[id]/read`, `/read-all`, `/channels`, `/channels/test`, `/channels/line`, `/channels/line/link` | as backend | `/notifications/...` | |
 | `/api/saved-searches`, `/[id]` | GET, POST, DELETE | `/saved-searches` | |
 | `/api/saved-tors`, `/[torId]`, `/import` | GET, POST, DELETE | `/saved-tors` | |
 | `/api/tor/[id]/documents/...` | GET | `/tor/:id/documents/...` | ✓ |

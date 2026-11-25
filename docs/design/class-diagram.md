@@ -1,5 +1,7 @@
 # Class diagram
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](../process/team-workflow.md#definition-of-done)).
+
 The main backend classes (`backend/src`) and how they depend on each
 other. NestJS creates these classes and injects their constructor
 arguments, so an arrow here is a constructor dependency. Only the methods
@@ -128,6 +130,9 @@ classDiagram
         +authTokens Collection
         +syncRuns Collection
         +auditLogEntries Collection
+        +sessions Collection
+        +adminApprovals Collection
+        +rateCounters Collection
     }
     class AuthService {
         +signup(dto)
@@ -138,7 +143,29 @@ classDiagram
         +resetPassword(dto)
         +verifyEmail(dto)
         +logout(userId)
+        +completePasskeyLogin(response)
+        +listSessions(session)
+        +endSessions(session, target, password)
     }
+    class PasskeysService {
+        +startLogin(user, factor)
+        +finishLogin(response)
+        +list(userId)
+        +registrationOptions(session)
+        +finishRegistration(session, response)
+        +remove(session, id)
+        +stepUpOptions(session)
+        +finishStepUp(session, response) token
+        +resetFor(targetId, actor)
+    }
+    class AdminApprovalsService {
+        +needsApproval(from, to, actor)
+        +request(target, toRole, actor)
+        +list(actor)
+        +approve(id, actor)
+        +reject(id, actor)
+    }
+    class StepUpGuard
     class AccountLinksService {
         +send(user, purpose)
         +consume(token, purpose) ObjectId
@@ -151,6 +178,10 @@ classDiagram
         +setSuspended(id, suspended, actor)
         +findOwn(userId)
         +updateOwn(userId, dto)
+        +sendPasswordReset(id, actor)
+        +endUserSessions(id, actor)
+        +endEveryonesSessions(actor)
+        +resetPasskeys(id, actor)
     }
     class TorService {
         +create(dto, actor)
@@ -209,6 +240,10 @@ classDiagram
     AuthService --> DatabaseService
     AuthService --> AccountLinksService
     AuthService --> SessionRevocationService
+    AuthService --> PasskeysService
+    AccountsService --> AdminApprovalsService
+    AccountsService --> PasskeysService
+    StepUpGuard ..> PasskeysService : trusts the pkt that finishStepUp signed
     AccountsService --> NotificationsService
     AccountsService --> AuditService
     AccountsService --> SessionRevocationService
@@ -216,8 +251,6 @@ classDiagram
     TorService --> AuditService
     FeedbackService --> AuditService
     ReportsService --> AuditService
-    OwnerService --> MatchingService
-    OwnerService --> FeedbackService
     ProposalService --> VertexClient
     MatchingService --> NotificationsService
     AccountsService --> DatabaseService

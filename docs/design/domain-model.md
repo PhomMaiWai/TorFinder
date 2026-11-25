@@ -1,5 +1,7 @@
 # Domain model
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](../process/team-workflow.md#definition-of-done)).
+
 The business concepts TorFinder works with and how they relate, without
 database or code detail. For how these are stored, see
 [er-diagram.md](./er-diagram.md). For the classes that act on them, see

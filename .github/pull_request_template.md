@@ -4,6 +4,8 @@
 
 Closes #
 
+Deliverable: D<!-- number from docs/project/deliverables.md -->
+
 ## Type of change
 
 - [ ] New feature
@@ -36,6 +38,7 @@ Closes #
 - [ ] Tested manually against the steps above
 - [ ] No hardcoded secrets/API keys committed
 - [ ] Linked to correct Sprint/Milestone issue
+- [ ] Design docs updated in this PR if it changes an API route, a collection or field, a role, or a flow (`docs/design/`, `docs/architecture.md`), or not needed
 - [ ] Ready for review (not a draft)
 
 ## Notes for reviewer

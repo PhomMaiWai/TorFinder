@@ -113,12 +113,12 @@ them (it needs the backend and `next start` running, like the steps above).
 | Area | Files | What they check |
 | --- | --- | --- |
 | Sign-in and accounts | `auth.e2e`, `oauth.e2e`, `account-links.e2e`, `accounts.e2e`, `admin-edit-users.e2e`, `user-edit-conflict`, `roles.e2e`, `role-guards` | Sign-up, login and its rate limit, Google sign-in, reset and verify links, company profile, approval, roles, suspension, every guard |
-| TORs | `tor.e2e`, `tor-integration.e2e`, `tor-corrections.e2e`, `tor-corrections`, `tor-owner.e2e`, `tor-stages` | CRUD, soft delete, manual vs imported records, locked fields, owner link, stage model |
+| TORs | `tor.e2e`, `tor-integration.e2e`, `tor-corrections.e2e`, `tor-corrections`, `tor-stages` | CRUD, soft delete, manual vs imported records, locked fields, stage model |
 | Importers | `tor-normalize-dedup`, `scope-filter`, `mea-client`, `mea.e2e`, `datagov.e2e`, `admin-alerts` | Normalising and de-duplicating records, the Bangkok scope rule, MEA page parsing, data.go.th import, sync failure alerts |
 | Matching | `matching-scoring`, `matching.e2e`, `match-alerts`, `match-alerts.e2e`, `bid-insight` | Score rules, ranking, which alerts are sent and when, bid suggestion |
 | AI | `extraction-confidence`, `proposal-draft`, `feedback-deadline` | Confidence assessment, proposal prompt, cleaning dates read by the model. No model is ever called |
 | Public input | `feedback-window.e2e`, `feedback-deadline.e2e`, `reports.e2e` | Comment window, feedback deadline, reporting problems |
-| Signed-in features | `saved-tors.e2e`, `saved-searches.e2e`, `notifications.e2e`, `notification-delivery`, `owner-dashboard.e2e` | Bookmarks, saved searches, notifications and channels (fetch is faked), owner dashboard |
+| Signed-in features | `saved-tors.e2e`, `saved-searches.e2e`, `notifications.e2e`, `notification-delivery`, `line-link.e2e` | Bookmarks, saved searches, notifications and channels (fetch is faked), linking LINE |
 | Admin | `admin-dashboard.e2e`, `audit-hooks.e2e` | Dashboard data, audit entries for admin actions |
 
 ### Frontend
@@ -143,6 +143,58 @@ them (it needs the backend and `next start` running, like the steps above).
   `E2E_DATAGOV_LIVE=1` to run them against the real portals.
 - No load or performance tests for the NFR targets (page load under 2 s,
   100 concurrent users).
+- FR-07: the keyword filter that decides "software or not" at import
+  (`backend/src/common/software-filter.ts`) has no test of its own. Only
+  the admin override of the classification is tested.
+
+## Functional requirements: release check (v1.0)
+
+Every functional requirement in the [SRS](../requirements/srs.md) (#171),
+with the automated tests that cover it and a manual check on the release
+build. Feature status comes from
+[roles-and-features.md](../project/roles-and-features.md#feature-status-against-the-srs).
+
+**Automated:** every backend test passed in CI on `main` at `85d6251` (25
+Nov 2026, workflow "Auth flow CI/CD"). Frontend tests are run by hand (see
+[What CI runs](#what-ci-runs)).
+
+**Manual:** done on a fresh `docker compose up` of the release commit with
+the demo accounts. Write ✅ or ❌, with the date and initials. A ❌ gets an
+issue under milestone D11.
+
+| FR | Requirement | Status | Automated tests | Manual check |
+| --- | --- | --- | --- | --- |
+| FR-01 | Register and sign in (email/password, Google) | ✅ Done | `auth.e2e`, `oauth.e2e`, `account-links.e2e`, `password-rehash.e2e` | |
+| FR-02 | Profile, bookmarks, notifications need sign-in | ✅ Done | `role-guards`, `roles.e2e`; frontend `workspace-separation.e2e` | |
+| FR-03 | Admin manages accounts and permissions | ✅ Done | `accounts.e2e`, `admin-approvals.e2e`, `admin-edit-users.e2e` | |
+| FR-04 | Import TORs from e-GP for BMA | ✅ Done | `tor-integration.e2e`, `portal-fetch`, `mea.e2e`, `datagov.e2e` | |
+| FR-05 | De-duplicate across sources | ✅ Done | `tor-normalize-dedup` | |
+| FR-06 | Log and alert admin on sync failure | ✅ Done | `admin-alerts` | |
+| FR-07 | Classify software / not software | ✅ Done, changed on purpose: a keyword filter at import plus an admin override, instead of the AI classifier planned in #137 | Admin override only: `tor-corrections.e2e`. **No test for the import filter** | |
+| FR-08 | AI extracts scope, qualifications, price, deadline | ✅ Done (needs `VERTEX_PROJECT_ID`) | `extraction-confidence`, `tender-bundle`, `document-metadata`, `feedback-deadline` (model faked) | Skip without Vertex AI credentials |
+| FR-09 | Search by keyword, agency, category | ✅ Done | `tor.e2e`; frontend `tor-search-sort.e2e` | |
+| FR-10 | Filter by budget, deadline, tech stack | 🟡 Partial: no tech-stack filter | frontend `tor-deadline-filter` | |
+| FR-11 | Full detail and link to the original | ✅ Done | `tor.e2e`; frontend `leaving-link`, `served-files` | |
+| FR-12 | Company matching profile | ✅ Done | `accounts.e2e`, `matching.e2e` | |
+| FR-13 | Score each TOR against the profile | ✅ Done | `matching-scoring`, `matching.e2e`, `similar.e2e`, `similar-text` | |
+| FR-14 | Notify above a set score | ✅ Done | `match-alerts`, `match-alerts.e2e`, `notifications.e2e`, `notification-delivery`, `line-link.e2e` | |
+| FR-15 | Bookmark a TOR | ✅ Done | `saved-tors.e2e` | |
+| FR-16 | Save and reuse a search | ✅ Done | `saved-searches.e2e`; frontend `saved-searches-api.e2e` | |
+| FR-17 | Show the lifecycle stage | ✅ Done | `tor-stages`; frontend `tor-timeline.e2e` | |
+| FR-18 | Flag TORs open for feedback | ✅ Done | `feedback-deadline.e2e`; frontend `feedback-window` | |
+| FR-19 | Public feedback on a draft | ✅ Done | `feedback-window.e2e`, `form-timing.e2e` | |
+| FR-20 | Owner sees match count and feedback | ❌ Removed 22 Nov (PR #416) | — | — |
+| FR-21 | Report an error on a listing | ✅ Done | `reports.e2e`; frontend `admin-reports.e2e` | |
+| FR-22 | Admin corrects a record or classification | ✅ Done | `tor-corrections.e2e`, `tor-corrections` | |
+| FR-23 | Admin hides spam or abusive feedback | ✅ Done | `asvs-l1-regressions.e2e` (rejected comment hidden from the public) | |
+| FR-24 | Flag unusual pricing or low competition | ❌ Removed 22 Nov (PR #414) | — | — |
+| FR-25 | Audit trail of admin actions | ✅ Done | `audit-hooks.e2e`, `admin-dashboard.e2e`, `retention.e2e` | |
+| FR-26 | Only BMA, only 2022 onward | ✅ Done | `scope-filter` | |
+
+**Result:** 23 of the 24 in-scope FRs are done and FR-10 is partial. Every
+in-scope FR has at least one automated test, but for FR-07 only the admin
+override is tested, not the import filter. Manual check: _ of 24
+passed on _.
 
 ## Writing a new test
 

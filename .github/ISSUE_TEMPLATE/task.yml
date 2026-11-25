@@ -1,0 +1,92 @@
+name: Task
+description: A piece of work that moves one deliverable forward (feature, docs, process or infra).
+title: "<area>: <what will be true when this is done>"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One task = one pull request where possible. Split anything bigger into sub-issues under an epic.
+        Deliverables (D1–D12) are listed in [docs/project/deliverables.md](../blob/main/docs/project/deliverables.md);
+        set the matching **milestone** on the right after creating the issue.
+
+  - type: dropdown
+    id: deliverable
+    attributes:
+      label: Deliverable
+      description: Which deliverable this task belongs to (docs/project/deliverables.md).
+      options:
+        - D1 Working web application
+        - D2 Data import and AI pipeline
+        - D3 Requirements (SRS, summary, KPIs)
+        - D4 Design documents
+        - D5 Tests and CI
+        - D6 Process records
+        - D7 User feedback record
+        - D8 Security self-audit
+        - D9 Operations guide
+        - D10 Production deployment
+        - D11 Release
+        - D12 Final presentation and demo
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Why this task exists and what a user or the team gets from it.
+      placeholder: Companies can filter TORs by budget range so they only see projects they can bid on.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: The steps, as a checklist.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How a reviewer checks it is done. Testable statements.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: input
+    id: design
+    attributes:
+      label: Design reference
+      description: The design or requirements doc this follows or must update (write "none" if no design applies).
+      placeholder: docs/design/api.md#tors · docs/design/sequence-diagrams.md · docs/requirements/srs.md FR-10
+    validations:
+      required: true
+
+  - type: input
+    id: fr
+    attributes:
+      label: SRS requirement
+      description: FR or NFR id from docs/requirements/srs.md, or "process" / "n/a".
+      placeholder: FR-10
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (MoSCoW)
+      options:
+        - Must
+        - Should
+        - Could
+        - Won't (this release)
+    validations:
+      required: true

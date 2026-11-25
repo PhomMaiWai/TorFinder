@@ -1,5 +1,7 @@
 # System architecture
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](../process/team-workflow.md#definition-of-done)).
+
 How the pieces of TorFinder run and talk to each other. Pipeline detail
 (schedules, dedup order, the AI queue) is in [pipeline.md](../operations/pipeline.md);
 this page is the big picture.
@@ -19,9 +21,9 @@ flowchart LR
             MW["proxy.ts<br/>verifies the HMAC cookie locally,<br/>guards pages by role"]
         end
         subgraph BE["backend · NestJS 11 · :4000"]
-            Guards["Guards<br/>Session / Admin / Org / Owner<br/>Throttler"]
+            Guards["Guards<br/>Session / Admin / Org / StepUp<br/>Throttler"]
             Controllers["REST controllers<br/>/api/*"]
-            Services["Domain services<br/>tor · matching · accounts · feedback<br/>reports · notifications · audit · owner"]
+            Services["Domain services<br/>tor · matching · accounts · feedback<br/>reports · notifications · audit"]
             Importers["Importers + schedulers<br/>egp · mea · datagov · gproc · ai"]
         end
         DB[("MongoDB 7 · :27017<br/>db: torr")]
@@ -42,7 +44,7 @@ flowchart LR
         SLACK["Slack incoming webhooks"]
     end
 
-    Browser -- "HTTPS, httpOnly cookie torr_session" --> FE
+    Browser -- "HTTPS, httpOnly cookie torr_session<br/>(__Host- in production)" --> FE
     Browser -. "Google sign-in button" .-> GOOGLE
     FE -- "HTTP JSON<br/>Authorization: Bearer &lt;session token&gt;" --> Controllers
     Controllers --> Guards
@@ -106,7 +108,6 @@ flowchart TB
     Reports["ReportsModule"]
     Insights["InsightsModule"]
     Similar["SimilarModule"]
-    Owner["OwnerModule"]
     SavedTors["SavedTorsModule"]
     SavedSearches["SavedSearchesModule"]
     Notifications["NotificationsModule<br/>NotificationsService · AdminAlertsService"]
@@ -121,7 +122,6 @@ flowchart TB
     Mea --> Tor & Notifications & Audit
     DataGov --> Tor & Notifications & Audit
     Gproc --> Tor & Notifications & Audit
-    Owner --> Matching & Feedback
     Feedback --> Audit
     Reports --> Audit
     Similar --> Ai

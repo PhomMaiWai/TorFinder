@@ -16,11 +16,18 @@ through automated matching.
 - TOR management as full CRUD by administrators, with soft delete/restore
 - Organization signup and approval (signup → pending → approved)
 - Matching TORs against company profiles via AI extraction + match scoring
-- Four user roles: Administrator, Organization, Project Owner, Auditor (see
-  the SRS)
+- User roles: Administrator, Organization (software company) and Viewer,
+  plus public visitors. The SRS also had a Project Owner and an Auditor
+  role; both were removed on 22 Nov 2026 because neither was used (FR-20,
+  FR-24; PR #414, PR #416)
 - Multi-channel notifications (in-app, email, LINE, Slack)
 - Bilingual UI (Thai/English) and dark/light theme
 - Docker Compose deployment for local/dev
+
+What we hand over, who owns each piece and how we know it is done is in
+[deliverables.md](./deliverables.md) (D1 to D12). Each deliverable is a
+GitHub milestone with every board task under one, and new tasks name their
+deliverable in the issue template's Deliverable field.
 
 **Out of scope**
 - Rich-media file uploads (the system has no file-upload feature at all)
@@ -42,9 +49,11 @@ Per the team's SRS (see [specs/srs.md](../requirements/srs.md), Section 3):
 | สตง. (Auditor Office) | Automatic flags for unusual pricing or low-competition deals |
 | Admin | A pipeline health dashboard, correction tools, and moderation controls |
 
-The implemented app uses slightly different labels for the same roles:
-Administrator, Organization (= Software Company/Bidder), Project Owner,
-Auditor, and Public visitor. See per-endpoint permissions in
+The implemented app uses these roles: Administrator, Organization
+(= Software Company/Bidder), Viewer, and Public visitor. The BMA / Project
+Owner and สตง. (Auditor Office) rows above are SRS stakeholders whose roles
+were removed on 22 Nov 2026 (see [deliverables.md](./deliverables.md#decisions-that-changed-the-deliverables)).
+See per-endpoint permissions in [api.md](../design/api.md) and in
 [security-asvs-l1.md](../security/asvs-l1.md), section V8 —
 Authorization.
 
@@ -87,18 +96,17 @@ Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`,
 | 5 | Sep 24 – Sep 30 | Match scoring, roles, feedback moderation, status timeline — 6/10 epics Done |
 | 6 | Oct 01 – Oct 07 | Owner dashboard, error reporting, corrections, auditor flagging — 1/4 epics Done |
 | 7 | Oct 08 – Oct 14 | In-class review feedback (13-item epic) — 1/13 Done |
-| 8 | Oct 15 – Oct 21 | Not yet captured in full (see [iteration-8.md](./iterations/iteration-8.md)) |
+| 8 | Oct 15 – Oct 21 | In-class client review (16 comments → epic #250), stage timeline — 1 PR |
+| 9 | Oct 22 – Oct 28 | Feedback quick wins, accounts, admin governance, UI redesign — 38 PRs |
+| 10 | Oct 29 – Nov 04 | Quiet week; review required on `main` from 3 Nov — 1 PR |
+| 11 | Nov 05 – Nov 11 | Market insights, find similar, docs restructure — 11 PRs |
+| 12 | Nov 12 – Nov 18 | Last client features, security Level 1, SAST/DAST — 25 PRs |
+| 13 | Nov 19 – Nov 25 | Security Level 2, passkeys, sessions, role clean-up, process submission — 40 PRs |
 
-The board continues past iteration 8; git history shows active development
-through 2026-10-28.
+## 7. Sources
 
-## 7. Known Documentation Gap
-
-This project plan and the iteration write-ups in
-[docs/iterations/](./iterations/) are built directly from the team's
-GitHub Projects board, which is the source of truth for planned vs.
-delivered scope. The board snapshot used here only goes through iteration
-8; later iterations (covering notifications, security hardening, the UI
-redesign, and admin governance work visible in git history through
-2026-10-28) should be pulled from the live board and added as
-`iteration-9.md` onward.
+Iterations 1 to 7 were written from a GitHub Projects board export.
+Iterations 8 to 13 list what was merged each week, because the board export
+was not available for them; see the note at the top of each
+[iteration page](./iterations/). How the process changed between
+iterations is in [retrospectives.md](../process/retrospectives.md).
