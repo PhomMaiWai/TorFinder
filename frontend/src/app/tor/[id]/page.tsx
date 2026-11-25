@@ -302,6 +302,20 @@ export default async function TorDetailPage({
               }}
             />
           )}
+          {/* A draft whose window has closed says so, rather than the form silently not being there. */}
+          {tor.sourceRef && !feedback.open && tor.stage === "เปิดรับฟังความคิดเห็น" && (
+            <section className={CARD}>
+              <h2 className={HEADING}>
+                <MessageSquare size={18} className="text-ink-subtle" />
+                {t("shareFeedback")}
+              </h2>
+              <p className="text-sm text-ink-muted">
+                {feedback.until
+                  ? t("feedbackClosedOn", { date: dateOf(feedback.until) ?? "" })
+                  : t("feedbackClosed")}
+              </p>
+            </section>
+          )}
         </div>
 
         <aside className="min-w-0 space-y-6 lg:sticky lg:top-20 lg:h-fit">

@@ -117,4 +117,20 @@ describe("POST /api/tor/:torId/feedback — the comment window", () => {
   it("takes a comment as before when no deadline is known", async () => {
     assert.equal((await comment(await createDraft())).status, 201);
   });
+
+  it("refuses a comment on a TOR that is no longer a draft", async () => {
+    const id = await createDraft();
+    await db().collection("tors").updateOne({ _id: new ObjectId(id) }, { $set: { stage: "ประกาศ TOR" } });
+    const res = await comment(id);
+    assert.equal(res.status, 400);
+    assert.match(res.body.message, /ไม่ได้อยู่ในช่วงรับฟังความคิดเห็น/);
+  });
+
+  it("refuses a comment on a draft with no comment date once the project has a contract", async () => {
+    const id = await createDraft();
+    await db()
+      .collection("tors")
+      .updateOne({ _id: new ObjectId(id) }, { $set: { contracts: [{ vendor: "บริษัท ทดสอบ จำกัด", amount: 1_000_000 }] } });
+    assert.equal((await comment(id)).status, 400);
+  });
 });

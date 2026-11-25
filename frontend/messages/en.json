@@ -730,7 +730,9 @@
     "bidInsightNote": "Estimated from past winning bids against the reference price. It does not account for quality scoring, qualifications or the number of bidders — a guide, not a guarantee.",
     "lastEdited": "Last corrected by {by} on {date}",
     "reviewedBadge": "Checked by an administrator",
-    "bidBeats": "Under the winning price in {beaten} of {total} compared projects"
+    "bidBeats": "Under the winning price in {beaten} of {total} compared projects",
+    "feedbackClosed": "Public comment on this announcement has closed.",
+    "feedbackClosedOn": "Public comment closed on {date}."
   },
   "ProposalDraft": {
     "heading": "Draft a proposal from an earlier one",
