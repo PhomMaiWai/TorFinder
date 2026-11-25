@@ -33,7 +33,6 @@ classDiagram
     class NotificationChannels {
         email
         lineUserId
-        slackWebhookUrl
     }
     class TOR {
         title
@@ -143,7 +142,7 @@ classDiagram
 | MatchResult | How well one company fits one TOR. Worked out on request with fixed rules (`matching.scoring.ts`), not stored and not done by AI. |
 | BudgetAssessment | Whether a TOR's budget is unusually high or low compared with similar ones. The verdict is stored on the TOR as `budgetStatus`. |
 | ErrorReport | Someone saying a TOR is wrong (wrong info, not software, broken link, duplicate, other). An admin resolves it, often by editing the TOR. |
-| Notification | An in-app message (`match`, `approval`, `system`). It can also go out by email, LINE or Slack, depending on the account's channels. |
+| Notification | An in-app message (`match`, `approval`, `system`). It can also go out by email or LINE, depending on the account's channels. |
 | AuditEntry | A record of an admin action or an automatic job, for the audit log. |
 | SyncRun | One run of the Bangkok e-GP import, kept for the pipeline health card. |
 

@@ -1,4 +1,4 @@
-// Unit coverage for sending notifications to Email, Slack and LINE — imported
+// Unit coverage for sending notifications to Email and LINE — imported
 // from the compiled build (run after `npm run build`, as CI does). `fetch` is
 // replaced, so nothing leaves the machine.
 
@@ -9,7 +9,6 @@ process.env.RESEND_API_KEY = "re_test";
 process.env.LINE_CHANNEL_ACCESS_TOKEN = "line_test";
 const { activeChannels, deliver } = await import("../dist/notifications/notification-delivery.js");
 
-const SLACK = "https://hooks.slack.com/services/T000/B000/XXXX";
 const LINE = `U${"a".repeat(32)}`;
 const NOTE = {
   title: "TOR ใหม่",
@@ -44,22 +43,30 @@ describe("notification delivery", () => {
   it("sends to every channel the account turned on", async () => {
     const calls = stubFetch();
     const results = await deliver(
-      { email: "a@example.com", notificationChannels: { email: true, slackWebhookUrl: SLACK, lineUserId: LINE } },
+      { email: "a@example.com", notificationChannels: { email: true, lineUserId: LINE } },
       NOTE,
     );
 
-    assert.deepEqual(results.map((r) => [r.channel, r.ok]), [["email", true], ["slack", true], ["line", true]]);
+    assert.deepEqual(results.map((r) => [r.channel, r.ok]), [["email", true], ["line", true]]);
     const email = calls.find((c) => c.url.includes("resend"));
     assert.deepEqual(email.body.to, ["a@example.com"]);
     assert.equal(email.headers.Authorization, "Bearer re_test");
-    assert.ok(calls.find((c) => c.url === SLACK).body.text.includes(NOTE.link));
-    assert.equal(calls.find((c) => c.url.includes("line.me")).body.to, LINE);
+    const line = calls.find((c) => c.url.includes("line.me"));
+    assert.equal(line.body.to, LINE);
+    assert.ok(line.body.messages[0].text.includes(NOTE.link));
+  });
+
+  it("ignores a Slack webhook saved before Slack was dropped", async () => {
+    const calls = stubFetch();
+    const stale = { email: false, slackWebhookUrl: "https://hooks.slack.com/services/T000/B000/XXXX" };
+    assert.deepEqual(await deliver({ email: "a@example.com", notificationChannels: stale }, NOTE), []);
+    assert.equal(calls.length, 0);
   });
 
   it("reports a failed channel instead of throwing", async () => {
     stubFetch(500);
-    const [result] = await deliver({ email: "a@example.com", notificationChannels: { email: false, slackWebhookUrl: SLACK } }, NOTE);
-    assert.equal(result.channel, "slack");
+    const [result] = await deliver({ email: "a@example.com", notificationChannels: { email: false, lineUserId: LINE } }, NOTE);
+    assert.equal(result.channel, "line");
     assert.equal(result.ok, false);
     assert.match(result.error, /500/);
   });

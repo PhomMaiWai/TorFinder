@@ -256,4 +256,4 @@ database:
 | `assessBudget(target, peers)` | `matching/budget-analysis.ts` | Compares a budget with the median of similar TORs |
 | `assessBid(target, peers)` | `matching/bid-insight.ts` | Typical discount and competition from past awards |
 | `isSoftwareProject(name, category)` | `common/software-filter.ts` | Keyword filter that decides what gets imported (FR-07) |
-| `deliver(account, notification)` | `notifications/notification-delivery.ts` | Sends to email, LINE and Slack, whichever the account turned on |
+| `deliver(account, notification)` | `notifications/notification-delivery.ts` | Sends to email and LINE, whichever the account turned on |

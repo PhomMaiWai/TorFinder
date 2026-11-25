@@ -66,8 +66,7 @@ Everything a viewer can do, plus:
 - Find TORs similar to the company profile's past experience with one
   button on the search page.
 - Get an alert when a new TOR scores above the company's own threshold
-  (40-95), in the app and by email, LINE or Slack; send a test message to
-  check the channels (`/notifications`).
+  (40-95), in the app and by email or LINE (`/notifications`).
 - Ask the AI to draft a proposal for a TOR from one of the company's old
   proposals (5 per minute).
 
@@ -117,7 +116,7 @@ FR numbers are from [summary.md](../requirements/summary.md).
 | FR-11 | Full detail and link to the original document | ✅ Done | Documents open in the page |
 | FR-12 | Company matching profile | ✅ Done | |
 | FR-13 | Score each TOR against the profile | ✅ Done | Plus "find similar" from a pasted project or profile (#255): Vertex AI embeddings, keyword ranking without them |
-| FR-14 | Notify above a set score | ✅ Done | In-app, email, LINE, Slack |
+| FR-14 | Notify above a set score | ✅ Done | In-app, email, LINE |
 | FR-15 | Bookmark a TOR | ✅ Done | |
 | FR-16 | Save and reuse a search | ✅ Done | Up to 50 per account |
 | FR-17 | Show the lifecycle stage | ✅ Done | Five-stage timeline |

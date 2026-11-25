@@ -63,8 +63,6 @@ export type CompanyProfile = {
 export type NotificationChannels = {
   /** To the account's own sign-in address. */
   email: boolean;
-  /** A Slack incoming-webhook URL the company created for its own channel. */
-  slackWebhookUrl?: string;
   /** The LINE user id our official account pushes to — only ever set by the link flow. */
   lineUserId?: string;
 };

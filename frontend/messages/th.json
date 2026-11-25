@@ -458,7 +458,6 @@
     "channelsDescription": "รับแจ้งเตือนเมื่อมี TOR ใหม่ที่ตรงกับบริษัทของคุณ นอกเหนือจากในระบบ",
     "channelEmail": "อีเมล",
     "channelEmailHint": "ส่งไปที่อีเมลที่ใช้เข้าสู่ระบบ",
-    "channelSlackHint": "สร้าง Incoming Webhook ใน Slack แล้ววาง URL ที่นี่",
     "channelLineHint": "รับแจ้งเตือน TOR ใหม่ที่ตรงกับบริษัทผ่านข้อความ LINE จากบัญชีทางการของ TOR Finder",
     "lineConnect": "เชื่อมต่อ LINE",
     "lineConnectedBadge": "เชื่อมต่อแล้ว",

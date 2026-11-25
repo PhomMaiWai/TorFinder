@@ -138,7 +138,7 @@ them (it needs the backend and `next start` running, like the steps above).
 - No browser tests: nothing clicks through the UI, so client-side
   interactions (forms, filters in the browser) are only checked by hand.
 - By default no real call is made to e-GP, MEA, Vertex AI,
-  Resend, LINE or Slack; those clients are faked or skipped. Live import
+  Resend, SMTP or LINE; those clients are faked or skipped. Live import
   checks exist but are opt-in: set `E2E_EGP_LIVE=1` or `E2E_MEA_LIVE=1`
   to run them against the real portals.
 - No load or performance tests for the NFR targets (page load under 2 s,

@@ -58,7 +58,7 @@ ASVS IDs are written without the `V` prefix (`8.2.2` = ASVS 5.0 requirement V8.2
 | Revocation is read from the database on every request, so a role change or suspension applies to the next request | `backend/src/common/session-revocation.service.ts` | 7.4.2, 8.3.2 |
 | Frontend→backend paths take only a 24-hex ObjectId, so `..` can't reach another backend route | `frontend/src/lib/backend-path.ts` | 8.2.2 (threat T5) |
 | The sign-in `next` parameter allows only a same-site path | `frontend/src/lib/safe-redirect.ts` | 3.7.2, 1.5.3 |
-| SSRF: documents are fetched only from the allowlisted portal hosts over HTTPS, and every redirect hop is checked. The only user-supplied URL, a Slack webhook, must match `hooks.slack.com` | `backend/src/common/portal-fetch.ts`, `backend/src/notifications/notification-delivery.ts` | 1.3.6, 13.2.4, 15.3.2, 13.1.1 |
+| SSRF: documents are fetched only from the allowlisted portal hosts over HTTPS, and every redirect hop is checked. No user-supplied URL is fetched (Slack webhooks were removed on 26 Nov 2026) | `backend/src/common/portal-fetch.ts`, `backend/src/notifications/notification-delivery.ts` | 1.3.6, 13.2.4, 15.3.2, 13.1.1 |
 | CORS allows the frontend origin only | `backend/src/main.ts` | 3.4.2 |
 | Granting or removing the admin role needs a second admin | `backend/src/accounts/role-changes.service.ts`, `admin-approvals.service.ts` | 2.3.5 |
 

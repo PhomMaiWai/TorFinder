@@ -4,13 +4,13 @@ import { env } from "../config/env";
 import { NotificationChannels } from "../database/database.service";
 import { canLinkLine } from "./line-link";
 
-export type Channel = "email" | "slack" | "line";
+export type Channel = "email" | "line";
 
 /** A notification's words in one language. */
 export type NotificationText = { title: string; message: string };
 
 export type OutgoingNotification = {
-  /** Thai: the in-app record and the Slack/LINE text. */
+  /** Thai: the in-app record and the LINE text. */
   title: string;
   message: string;
   /** The English version, added under the Thai in the email. */
@@ -24,8 +24,6 @@ export type DeliveryResult = { channel: Channel; ok: boolean; error?: string };
 /** Each outside service gets this long before the attempt is given up on. */
 const TIMEOUT_MS = 8_000;
 
-/** Slack only ever issues incoming webhooks on this host. */
-export const SLACK_WEBHOOK = /^https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9/_-]+$/;
 
 function plainText({ title, message, link }: OutgoingNotification): string {
   return [title, message, link].filter(Boolean).join("\n\n");
@@ -51,17 +49,6 @@ function sendEmail(to: string, notification: OutgoingNotification): Promise<void
   return send({ to, subject: emailSubject(title, en.title), text, html });
 }
 
-function sendSlack(webhookUrl: string, notification: OutgoingNotification): Promise<void> {
-  const { title, message, link } = notification;
-  return post(webhookUrl, {
-    text: plainText(notification),
-    blocks: [
-      { type: "header", text: { type: "plain_text", text: title.slice(0, 150) } },
-      { type: "section", text: { type: "mrkdwn", text: link ? `${message}\n<${link}|เปิดดูใน TOR Finder>` : message } },
-    ],
-  });
-}
-
 function sendLine(to: string, notification: OutgoingNotification): Promise<void> {
   return post(
     "https://api.line.me/v2/bot/message/push",
@@ -75,7 +62,6 @@ export function activeChannels(channels: NotificationChannels | undefined): Chan
   if (!channels) return [];
   return [
     channels.email && canSendEmail() ? ("email" as const) : null,
-    channels.slackWebhookUrl ? ("slack" as const) : null,
     channels.lineUserId && env.notify.lineChannelAccessToken ? ("line" as const) : null,
   ].filter((channel): channel is Channel => channel !== null);
 }
@@ -84,7 +70,6 @@ export function activeChannels(channels: NotificationChannels | undefined): Chan
 export function availableChannels(): Record<Channel, boolean> {
   return {
     email: canSendEmail(),
-    slack: true,
     line: canLinkLine(),
   };
 }
@@ -102,7 +87,6 @@ export async function deliver(
   const sends = activeChannels(channels).map(async (channel): Promise<DeliveryResult> => {
     try {
       if (channel === "email") await sendEmail(account.email, notification);
-      if (channel === "slack") await sendSlack(channels!.slackWebhookUrl!, notification);
       if (channel === "line") await sendLine(channels!.lineUserId!, notification);
       return { channel, ok: true };
     } catch (error) {

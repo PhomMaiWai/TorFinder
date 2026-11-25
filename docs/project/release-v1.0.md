@@ -20,7 +20,7 @@ each company hears about the projects worth bidding on, early.
   deadline filters; "best time to prepare" sort; five-stage procurement
   timeline; the original document from each TOR.
 - **For companies:** matching profile with progress nudges, match scores,
-  alerts in the app and by email, LINE and Slack, saved TORs and searches,
+  alerts in the app and by email and LINE, saved TORs and searches,
   "find similar", market insights, a growth path, a proposal library with
   certificates as records, and an AI proposal draft.
 - **For the public:** which draft TORs are still open for public comment and

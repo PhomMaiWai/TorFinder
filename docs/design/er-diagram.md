@@ -50,7 +50,6 @@ erDiagram
     notification_channels {
         bool email
         string lineUserId
-        string slackWebhookUrl
     }
     tors {
         ObjectId _id PK

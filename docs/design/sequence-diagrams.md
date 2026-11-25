@@ -114,7 +114,7 @@ sequenceDiagram
     par
         Acc->>Notif: create(approval, "บัญชีของคุณได้รับการอนุมัติแล้ว")
         Notif->>DB: notifications.insertOne
-        Notif-->>C: email / LINE / Slack if turned on
+        Notif-->>C: email / LINE if turned on
     and
         Acc->>Audit: record(admin, อนุมัติบัญชีบริษัท)
     end

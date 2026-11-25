@@ -40,7 +40,6 @@ flowchart LR
         GOOGLE["Google Identity<br/>(OAuth ID token)"]
         RESEND["Resend<br/>email"]
         LINE["LINE Messaging API"]
-        SLACK["Slack incoming webhooks"]
     end
 
     Browser -- "HTTPS, httpOnly cookie torr_session<br/>(__Host- in production)" --> FE
@@ -54,7 +53,7 @@ flowchart LR
     Importers --> EGP & GPROC & MEA
     Importers -- "PDF + prompt, JSON schema" --> VERTEX
     Services -- "verify ID token" --> GOOGLE
-    Services --> RESEND & LINE & SLACK
+    Services --> RESEND & LINE
 ```
 
 ## The important decisions

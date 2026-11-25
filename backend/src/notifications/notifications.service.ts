@@ -85,12 +85,13 @@ export class NotificationsService {
 
   async updateChannels(userId: string, dto: UpdateChannelsDto) {
     const account = await this.findAccount(userId, { notificationChannels: 1 });
-    const next: NotificationChannels = { email: false, ...account.notificationChannels };
+    // Only the fields channels still have: a Slack webhook saved before Slack
+    // was dropped is cleared the next time the settings are saved.
+    const { email, lineUserId } = { email: false, ...account.notificationChannels };
+    const next: NotificationChannels = { email, ...(lineUserId && { lineUserId }) };
     if (dto.email !== undefined) next.email = dto.email;
     // LINE is not set here: its id only ever comes from the link flow below,
     // so nobody can point notifications at someone else's LINE.
-    if (dto.slackWebhookUrl === "") delete next.slackWebhookUrl;
-    else if (dto.slackWebhookUrl !== undefined) next.slackWebhookUrl = dto.slackWebhookUrl;
     await this.db.users.updateOne({ _id: new ObjectId(userId) }, { $set: { notificationChannels: next } });
     return this.getChannels(userId);
   }

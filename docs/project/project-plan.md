@@ -20,7 +20,7 @@ through automated matching.
   plus public visitors. The SRS also had a Project Owner and an Auditor
   role; both were removed on 22 Nov 2026 because neither was used (FR-20,
   FR-24; PR #414, PR #416)
-- Multi-channel notifications (in-app, email, LINE, Slack)
+- Multi-channel notifications (in-app, email, LINE)
 - Bilingual UI (Thai/English) and dark/light theme
 - Docker Compose deployment for local/dev
 
