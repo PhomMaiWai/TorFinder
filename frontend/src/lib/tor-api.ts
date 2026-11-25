@@ -3,7 +3,6 @@ import { authHeaders } from "@/lib/session-headers";
 import type {
   BidInsight,
   BudgetAssessment,
-  TorFeedback,
   TorRecord,
   TorSource,
 } from "@/types/tor";
@@ -55,7 +54,3 @@ export function fetchBidInsight(id: string): Promise<BidInsight | null> {
   return orFallback<BidInsight | null>(fetchJson<BidInsight>(`/api/matching/tor/${id}/bid-insight`), null);
 }
 
-/** Comments a moderator has published on one announcement — supplementary. */
-export function fetchFeedback(torId: string): Promise<TorFeedback[]> {
-  return orFallback<TorFeedback[]>(fetchJson<TorFeedback[]>(`/api/tor/${torId}/feedback`), []);
-}

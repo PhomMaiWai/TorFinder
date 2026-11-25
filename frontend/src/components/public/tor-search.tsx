@@ -278,11 +278,6 @@ function StatusFilter({
 function PublicTorCard({
   tor,
   detailHref,
-  isFeedbackOpen,
-  feedbackText,
-  onFeedbackChange,
-  onToggleFeedback,
-  onSubmitFeedback,
   isSaved,
   onToggleSave,
   similarity,
@@ -290,11 +285,6 @@ function PublicTorCard({
 }: {
   tor: TorRecord;
   detailHref: string;
-  isFeedbackOpen: boolean;
-  feedbackText: string;
-  onFeedbackChange: (val: string) => void;
-  onToggleFeedback: () => void;
-  onSubmitFeedback: () => void;
   isSaved: boolean;
   onToggleSave: () => void;
   /** Set while the list is ranked by "find similar". */
@@ -307,8 +297,8 @@ function PublicTorCard({
   const locale = useLocale() as Locale;
   const bidding = biddingOf(tor);
   const amount = torAmount(tor);
+  // Only the status: comments go to the agency, not through this site.
   const feedback = feedbackWindow(tor);
-  const isFeedbackStage = feedback.open;
   const daysLeft = daysUntilClose(tor);
   const isUrgent = isClosingSoon(tor);
   // The announcement's own page on the portal; a file only when there is no page.
@@ -439,15 +429,6 @@ function PublicTorCard({
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:mt-auto">
-            {isFeedbackStage && (
-              <button
-                onClick={onToggleFeedback}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-surface-alt py-2 text-sm font-medium text-ink transition-colors hover:bg-border"
-              >
-                <MessageSquare size={14} />
-                {isFeedbackOpen ? t("closeFeedbackButton") : t("openFeedbackButton")}
-              </button>
-            )}
             <Link
               href={detailHref}
               className="flex w-full items-center justify-center rounded-lg bg-ink py-2 text-sm font-medium text-surface transition-colors hover:bg-ink"
@@ -478,39 +459,6 @@ function PublicTorCard({
         </div>
       </div>
 
-      {isFeedbackOpen && (
-        <div className="border-t border-border bg-surface-alt/50 p-5 sm:p-6">
-          <label className="mb-2 block text-sm font-semibold text-ink">
-            {t("feedbackFormLabel")}
-          </label>
-          <textarea
-            className="w-full rounded-xl border border-border bg-surface p-3.5 text-sm text-ink shadow-sm outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
-            rows={3}
-            value={feedbackText}
-            onChange={(e) => onFeedbackChange(e.target.value)}
-            placeholder={t("feedbackPlaceholder")}
-          />
-          <div className="mt-3 flex items-center justify-between">
-            <p className="text-2xs text-ink-muted">
-              {t("feedbackDisclaimer")}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={onToggleFeedback}
-                className="rounded-lg px-4 py-2 text-xs font-medium text-ink-muted hover:bg-surface-alt hover:text-ink"
-              >
-                {t("cancelButton")}
-              </button>
-              <button
-                onClick={onSubmitFeedback}
-                className="rounded-lg bg-accent px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-accent-dark"
-              >
-                {t("submitFeedbackButton")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </article>
   );
 }
@@ -544,10 +492,8 @@ export function TorSearch({
   // Saving needs an account; a guest's list would have nowhere to live.
   const session = useSession();
   const signedIn = Boolean(session);
-  const [feedbackOpenId, setFeedbackOpenId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [lastQueryKey, setLastQueryKey] = useState("");
-  const [feedbackText, setFeedbackText] = useState("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const { savedIds, toggleSaved } = useSavedTors();
   const savedSet = useMemo(() => new Set(savedIds), [savedIds]);
@@ -674,12 +620,6 @@ export function TorSearch({
 
   const pageCount = Math.max(1, Math.ceil(results.length / PER_PAGE));
   const visible = results.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  function handleSubmitFeedback() {
-    if (!feedbackText.trim()) return;
-    setFeedbackOpenId(null);
-    setFeedbackText("");
-  }
 
   function clearAllFilters() {
     setSelectedStatuses([]);
@@ -917,18 +857,6 @@ export function TorSearch({
                 key={tor.id}
                 tor={tor}
                 detailHref={`/tor/${tor.id}${inApp ? "?in=app" : ""}`}
-                isFeedbackOpen={feedbackOpenId === tor.id}
-                feedbackText={feedbackText}
-                onFeedbackChange={setFeedbackText}
-                onToggleFeedback={() => {
-                  if (feedbackOpenId === tor.id) {
-                    setFeedbackOpenId(null);
-                  } else {
-                    setFeedbackOpenId(tor.id);
-                    setFeedbackText("");
-                  }
-                }}
-                onSubmitFeedback={handleSubmitFeedback}
                 isSaved={savedSet.has(tor.id)}
                 onToggleSave={() => toggleSaved(tor.id)}
                 similarity={hitById.get(tor.id)}
