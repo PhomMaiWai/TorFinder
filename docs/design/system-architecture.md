@@ -141,7 +141,7 @@ Every module also uses `DatabaseModule`; those arrows are left out.
 ## Deployment
 
 Three containers from `docker-compose.yml` (frontend, backend, MongoDB);
-v1.0 ships as a Docker Compose release ([ADR-011](./adr.md#adr-011-ship-as-docker-compose)).
+v1.0 ships as a Docker Compose release ([ADR-011](./adr.md#adr-011-ship-as-docker-compose-2026-11-25)).
 Ports, seeding and the edge and hardening files are in
 [architecture.md §8](../architecture.md#8-how-it-runs) and
 [deployment-checklist.md](../operations/deployment-checklist.md).

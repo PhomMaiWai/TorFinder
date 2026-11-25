@@ -1,112 +1,132 @@
 # Architectural Decision Records
 
-The main design decisions behind TorFinder. Each one says what we chose,
-why, and what it costs. To change a decision, add a new ADR; don't edit the
-old one.
+Short notes on the main design decisions. Dates are when the change was
+merged; the PR numbers show where.
 
-| ADR | Decision | Date |
-| --- | --- | --- |
-| [001](#adr-001-separate-backend) | Separate NestJS backend; the browser never calls it | 4 Sep 2026 |
-| [002](#adr-002-mongodb-without-an-orm) | MongoDB without an ORM | 29 Aug 2026 |
-| [003](#adr-003-our-own-signed-session-token) | Our own signed session token | 4 Sep 2026 |
-| [004](#adr-004-match-score-by-rules-not-ai) | Match score by rules, not AI | 10 Sep 2026 |
-| [005](#adr-005-ai-is-optional) | AI is optional | 10 Sep 2026 |
-| [006](#adr-006-imports-run-inside-the-backend) | Imports run inside the backend | 16 Sep 2026 |
-| [007](#adr-007-fixed-source-rank-for-duplicates) | Fixed source rank for duplicates | 16 Sep 2026 |
-| [008](#adr-008-stream-documents-dont-store-them) | Stream documents, don't store them | 26 Oct 2026 |
-| [009](#adr-009-docs-in-the-repo) | Docs in the repo | 11 Nov 2026 |
-| [010](#adr-010-drop-auditor-and-project-owner-roles) | Drop Auditor and Project Owner roles | 22 Nov 2026 |
-| [011](#adr-011-ship-as-docker-compose) | Ship as Docker Compose | 25 Nov 2026 |
+## ADR-001: A separate backend the browser never calls (2026-09-04)
 
-## ADR-001: Separate backend
+**Context.** Imports, schedulers, matching and AI calls were coming, and
+none of them belong in page code. Roles also had to be checked in one place.
 
-- **Decision:** All logic lives in a NestJS backend. The Next.js app only
-  calls it from the server, so the browser never sees `BACKEND_URL`.
-- **Why:** imports, schedulers and AI don't belong in page code, and roles
-  are checked in one place.
-- **Cost:** a new feature usually touches both services.
-- **Evidence:** PR #30
+**Decision.** All logic lives in a NestJS backend. The Next.js app calls it
+only from the server, so `BACKEND_URL` never reaches the browser (PR #30).
 
-## ADR-002: MongoDB without an ORM
+**Trade-offs.** A new feature usually touches both services, and some calls
+need a small proxy route in `frontend/src/app/api`.
 
-- **Decision:** MongoDB with the official driver, no Mongoose. Indexes are
-  made in code at start-up.
-- **Why:** each source gives different fields, and AI output is nested, so
-  the shape kept changing.
-- **Cost:** the database doesn't validate anything; DTOs and tests do.
-- **Evidence:** PR #28, PR #271 (moved from Atlas to the Compose database)
+## ADR-002: MongoDB without an ORM (2026-08-29)
 
-## ADR-003: Our own signed session token
+**Context.** Each source gives different fields and the AI adds a nested
+`extraction` object, so the data shape kept changing.
 
-- **Decision:** the backend signs the session with HMAC-SHA-256
-  (`SESSION_SECRET`); the frontend checks it from an httpOnly cookie.
-- **Why:** the frontend knows who is signed in without calling the backend,
-  and one fixed algorithm leaves nothing to misconfigure.
-- **Cost:** both services need the same secret, and logout needs a
-  revocation check (`sessionMinIssuedAt`, PR #278).
-- **Evidence:** PR #34, `backend/src/common/token.ts`
+**Decision.** MongoDB with the official driver, no Mongoose. Indexes are
+created in code when the backend starts (PR #28). Since PR #271 we use the
+`mongo:7` container from Docker Compose instead of Atlas.
 
-## ADR-004: Match score by rules, not AI
+**Trade-offs.** New fields need no migration, but the database checks
+nothing; DTOs and tests have to.
 
-- **Decision:** `scoreMatch()` scores work type, eligibility and project
-  size with fixed weights. Alerts go out at 70+.
-- **Why:** same input gives the same score, a company can see why, and it
-  can be unit tested.
-- **Cost:** it only knows the skills and work types we listed.
-- **Evidence:** PR #61, PR #75, `backend/src/matching/matching.scoring.ts`
+## ADR-003: Our own signed session token (2026-09-04)
 
-## ADR-005: AI is optional
+**Context.** The frontend has to know who is signed in on every page without
+asking the backend each time.
 
-- **Decision:** Vertex AI only reads TOR documents, drafts proposals and
-  ranks "find similar". Without `VERTEX_PROJECT_ID` all three turn off and
-  find similar falls back to keywords.
-- **Why:** the app, tests and demo must run without a GCP account.
-- **Cost:** without AI, TORs have only what the source gave.
-- **Evidence:** PR #61, PR #314
+**Decision.** The backend signs the session with HMAC-SHA-256 and
+`SESSION_SECRET`. The frontend keeps it in an httpOnly cookie, checks the
+signature itself and forwards it to the backend (PR #34). One fixed
+algorithm, so there is nothing to misconfigure.
 
-## ADR-006: Imports run inside the backend
+**Trade-offs.**
+- Both services need the same secret.
+- A signed token can't be taken back by itself, so logout and suspension
+  needed a revocation check, `sessionMinIssuedAt` (PR #278).
 
-- **Decision:** each source (Bangkok e-GP, national e-GP, MEA) has a timer
-  inside the backend process. No separate worker or queue.
-- **Why:** three containers are the whole system.
-- **Cost:** it assumes one backend instance.
-- **Evidence:** PR #57, PR #117, `backend/src/common/sync-scheduler.ts`
+## ADR-004: Match score by rules, not AI (2026-09-10)
 
-## ADR-007: Fixed source rank for duplicates
+**Context.** The score decides which company gets an alert, so it has to be
+explainable and the same every time.
 
-- **Decision:** when sources overlap, **manual > egp > gproc > mea**. An
-  import never overwrites an admin's record.
-- **Why:** admin corrections must survive every later import.
-- **Cost:** a reworded title can slip past the duplicate check.
-- **Evidence:** PR #72, `backend/src/tor/tor.constants.ts`
+**Decision.** `scoreMatch()` is a plain function over work type, eligibility
+(capital, past contracts, certificates) and project size, with fixed
+weights. Alerts go out at 70 or more (PR #61, tests in PR #75).
 
-## ADR-008: Stream documents, don't store them
+**Trade-offs.** Easy to test and explain, but it only knows the skills and
+work types we listed.
 
-- **Decision:** a TOR file is fetched from the portal and streamed to the
-  reader. Only files already on the announcement can be opened.
-- **Why:** no file storage to run, and the file is always the portal's own.
-- **Cost:** if the portal is down, the file can't be opened.
-- **Evidence:** PR #270, `backend/src/tor/tor-document.service.ts`
+## ADR-005: AI is optional (2026-09-10)
 
-## ADR-009: Docs in the repo
+**Context.** Reading long Thai TOR PDFs by hand doesn't scale, but Vertex AI
+needs a paid GCP project that laptops and CI don't have.
 
-- **Decision:** no wiki. Docs are Markdown with Mermaid diagrams in
-  `docs/`, updated in the same PR as the code.
-- **Why:** docs get reviewed with the code and stay up to date.
-- **Cost:** Mermaid limits layout.
-- **Evidence:** PR #308, PR #309
+**Decision.** Vertex AI only reads TOR documents, drafts proposals and ranks
+"find similar". Without `VERTEX_PROJECT_ID` all three switch off and find
+similar falls back to keyword ranking (PR #61, PR #314). The AI never
+decides an import, a score or an approval.
 
-## ADR-010: Drop Auditor and Project Owner roles
+**Trade-offs.** The app, tests and demo run without GCP, but without AI a
+TOR has only what its source gave.
 
-- **Decision:** remove both roles. Accounts are `admin`, `org` or `viewer`.
-- **Why:** each had one read-only page that nobody used.
-- **Cost:** FR-20 and FR-24 are removed from the SRS (24 active FRs).
-- **Evidence:** PR #414, PR #416
+## ADR-006: Imports run inside the backend (2026-09-16)
 
-## ADR-011: Ship as Docker Compose
+**Context.** TORs come from Bangkok e-GP, the national e-GP and MEA, and we
+had no budget for a separate queue or worker.
 
-- **Decision:** v1.0 is a release that runs with `docker compose up`, not a
-  hosted site.
-- **Why:** no hosting was chosen, and the demo runs locally.
-- **Cost:** no public URL yet.
-- **Evidence:** [deliverables.md](../project/deliverables.md) D10
+**Decision.** Each source has a timer inside the backend process
+(`SyncScheduler`). A keyword filter keeps only software projects (PR #57,
+PR #117).
+
+**Trade-offs.** Three containers are the whole system, but it assumes one
+backend instance: timers and rate limits live in memory.
+
+## ADR-007: Fixed source rank for duplicates (2026-09-16)
+
+**Context.** The same project is often published by several sources, and an
+admin may already have corrected it.
+
+**Decision.** When records overlap, **manual > egp > gproc > mea**. An
+import never overwrites or deletes an admin's record (PR #72).
+
+**Trade-offs.** Admin fixes survive every import, but a reworded title can
+slip past the duplicate check.
+
+## ADR-008: Stream documents, don't store them (2026-10-26)
+
+**Context.** People want to open the TOR PDF inside TorFinder, but keeping
+copies means storage and files we don't own.
+
+**Decision.** The backend fetches the file from the portal and streams it to
+the reader. Only files already listed on the announcement can be opened, not
+any URL (PR #270).
+
+**Trade-offs.** No file storage to run, but if the portal is down the file
+can't be opened.
+
+## ADR-009: Docs in the repo, not a wiki (2026-11-11)
+
+**Context.** The design diagrams have to stay true as the code changes.
+
+**Decision.** Docs are Markdown with Mermaid diagrams in `docs/`, updated in
+the same PR as the code (PR #308, PR #309).
+
+**Trade-offs.** Docs are reviewed with the code, but Mermaid limits layout.
+
+## ADR-010: Drop the Auditor and Project Owner roles (2026-11-22)
+
+**Context.** Each role had one read-only page that nobody used, but still
+added guards, routes and tests.
+
+**Decision.** Remove both. Accounts are now `admin`, `org` or `viewer`
+(PR #414, PR #416).
+
+**Trade-offs.** Less code to secure, but FR-20 and FR-24 are removed from
+the SRS (24 active FRs).
+
+## ADR-011: Ship as Docker Compose (2026-11-25)
+
+**Context.** No hosting was chosen and the demo runs on a local copy.
+
+**Decision.** v1.0 is a release that runs with `docker compose up` from a
+fresh clone ([deliverables.md](../project/deliverables.md) D10).
+
+**Trade-offs.** Anyone can run the presented version, but there is no public
+URL yet.
