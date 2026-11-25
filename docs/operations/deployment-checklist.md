@@ -7,8 +7,11 @@ answers `{"ok":true}` and the app looks fine to a developer who doesn't try
 to sign in from a second device. Read this before the first real deploy.
 
 No hosting target is decided anywhere in this repo — no Kubernetes
-manifests, no Terraform, no platform config. **Where this actually runs is
-still an open decision**, not something this checklist can verify for you.
+manifests, no Terraform, no platform config. On 25 Nov 2026 the team
+decided that **v1.0 ships as a Docker Compose release, not a hosted site**
+([deliverables.md](../project/deliverables.md#decisions-that-changed-the-deliverables),
+D10). Where a later hosted deploy runs is still open; this checklist is for
+that deploy.
 
 ---
 

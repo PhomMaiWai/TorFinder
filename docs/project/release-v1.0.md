@@ -5,7 +5,7 @@ The same text is used for the GitHub release.
 
 **Released:** 26 Nov 2026 (final presentation) · **Commit:** `_______`
 (the commit presented) · **Shipped as:** a Docker Compose release that runs
-from a fresh clone (see [D10](./deliverables.md))
+from a fresh clone (decided 25 Nov 2026, see [D10](./deliverables.md#decisions-that-changed-the-deliverables))
 
 ## What TorFinder does
 
