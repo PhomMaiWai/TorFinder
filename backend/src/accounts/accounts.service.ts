@@ -280,6 +280,12 @@ export class AccountsService {
     });
 
     await this.notifyReviewDecision(result._id, status, result.company?.companyName ?? result.name);
+    // Mailed outside notifications' channels: a pending company has had no way to turn email on.
+    await this.links.notify(
+      result.email,
+      status === "approved" ? "account-approved" : "account-rejected",
+      [`บริษัท: ${result.company?.companyName ?? result.name}`],
+    );
 
     const { _id, ...rest } = result;
     return { id: _id.toString(), ...rest };

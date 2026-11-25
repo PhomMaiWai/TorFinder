@@ -44,9 +44,27 @@ export type AccountNotice =
   | "passkeys-reset"
   | "login-locked"
   | "new-device"
-  | "staff-new-device";
+  | "staff-new-device"
+  | "account-approved"
+  | "account-rejected";
 
 const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) => string[] }> = {
+  // The company can't sign in while pending, so it can't have turned on email
+  // alerts yet — the review outcome is mailed directly, whatever its settings.
+  "account-approved": {
+    subject: "บัญชีบริษัทของคุณได้รับการอนุมัติแล้ว — TOR Finder",
+    body: (origin) => [
+      "ผู้ดูแลระบบอนุมัติบัญชีบริษัทของคุณใน TOR Finder เรียบร้อยแล้ว",
+      `เข้าสู่ระบบได้ทันทีที่ ${origin}/login`,
+    ],
+  },
+  "account-rejected": {
+    subject: "บัญชีบริษัทของคุณไม่ผ่านการอนุมัติ — TOR Finder",
+    body: () => [
+      "บัญชีบริษัทของคุณใน TOR Finder ไม่ผ่านการอนุมัติ",
+      "หากคิดว่าเป็นความผิดพลาดหรือต้องการข้อมูลเพิ่มเติม กรุณาติดต่อผู้ดูแลระบบ",
+    ],
+  },
   // ASVS 6.3.7
   "password-changed": {
     subject: "รหัสผ่านของคุณถูกเปลี่ยนแล้ว — TOR Finder",
