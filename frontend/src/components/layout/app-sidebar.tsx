@@ -31,7 +31,7 @@ import type { Role } from "@/lib/auth";
 import { resetAdminBadgeCounts, useAdminBadgeCounts } from "@/lib/use-admin-badge-counts";
 import { resetNotifications, useNotifications } from "@/lib/use-notifications";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
-import { resetSession } from "@/lib/use-session";
+import { homeFor, resetSession, useSession } from "@/lib/use-session";
 
 import { SiteNavbar } from "./site-navbar";
 
@@ -285,6 +285,7 @@ export function AppShell({ children, role }: { children: React.ReactNode; role?:
   const pathname = usePathname();
   // Same rule as the sidebar's own menu: a role says, else the path does.
   const isAdmin = role ? role === "admin" : pathname.startsWith("/admin");
+  const session = useSession();
 
   return (
     <div className="flex min-h-screen bg-surface">
@@ -303,7 +304,7 @@ export function AppShell({ children, role }: { children: React.ReactNode; role?:
 
       <div className="flex min-w-0 flex-1 flex-col bg-surface">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 md:hidden">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={session ? homeFor(session.role) : "/"} className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-md bg-accent text-2xs font-bold text-white">
               T
             </span>

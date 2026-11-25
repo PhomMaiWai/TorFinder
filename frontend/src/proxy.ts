@@ -169,11 +169,11 @@ function gate(request: NextRequest, session: SessionPayload | null): NextRespons
     return session ? null : jsonResponse({ error: signIn }, { status: 401 });
   }
 
-  // The landing page is the first impression for guests; once signed in, the
-  // logo and every link to "/" lead to the role's own home instead (#252).
-  if (pathname === "/") {
-    return session ? NextResponse.redirect(new URL(homeFor(session.role), request.url)) : null;
-  }
+  // The landing page is open to everyone, so a signed-in reader can still use
+  // the navbar's links to its sections (features, how it works, preview). The
+  // first impression for a signed-in account is its own home: sign-in goes
+  // there, and so does the logo (#252).
+  if (pathname === "/") return null;
 
   const toPublicView = publicViewFor(request, session);
   if (toPublicView) return NextResponse.redirect(toPublicView);

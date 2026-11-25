@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 import { PUBLIC_NOTICES } from "@/data/public-notices";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
-import { resetSession, useSession, workspaceFor } from "@/lib/use-session";
+import { homeFor, resetSession, useSession, workspaceFor } from "@/lib/use-session";
 
 /** Landing-page sections the navbar links to and tracks while scrolling. */
 const SECTION_IDS = ["features", "how-it-works", "preview"] as const;
@@ -157,7 +157,8 @@ export function SiteNavbar() {
             solid ? "h-14" : "h-16"
           }`}
         >
-          <Link href="/" className="group flex items-center gap-2.5" aria-label="TorFinder">
+          {/* Signed in, the logo leads home; the landing page stays one link away (#252). */}
+          <Link href={session ? homeFor(session.role) : "/"} className="group flex items-center gap-2.5" aria-label="TorFinder">
             <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-accent-dark text-xs font-bold text-white shadow-glow transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
               T
             </span>

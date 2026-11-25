@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { getLandingData } from "@/lib/landing-data";
 
-/** Guests only: proxy.ts sends signed-in visitors to their own home. */
+/** The landing page, open to everyone; signed-in accounts start at their own home (homeFor) and can come back here from the navbar. */
 export default async function LandingPage() {
   // The figures and the preview come from the database, never from the copy.
   const { stats, previews } = await getLandingData();
