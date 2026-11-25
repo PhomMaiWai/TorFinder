@@ -301,7 +301,7 @@ records and records marked `not-software`.
 
 | Method | Path | Guard | Body / query | Response |
 | --- | --- | --- | --- | --- |
-| GET | `/tor` | none | `?source=manual\|egp\|gproc\|mea&page=1&pageSize=20` (max 100) | Array of TORs, interleaved across stages so each page has every stage. Adds `bidding`, `currentStage`, `timeline`; leaves out `extraction` |
+| GET | `/tor` | none | `?source=manual\|egp\|gproc\|mea&q=<words>&page=1&pageSize=20` (max 100; `q` up to 100 characters, every word must appear in the title, agency, project number, summary or tags) | Array of TORs, interleaved across stages so each page has every stage. Adds `bidding`, `currentStage`, `timeline`; leaves out `extraction` |
 | GET | `/tor/:id` | none | — | One TOR with `extraction` (plus `assessment` of its confidence), `documents[]` (with `viewable`, `archive`), `bidding`, `timeline` |
 | POST | `/tor` | Admin | `CreateTorDto` | 201 the new TOR. 409 if a similar title from the same agency exists. Sends match alerts |
 | PATCH | `/tor/:id` | Admin | `UpdateTorDto` | The TOR. Changed fields are added to `lockedFields`, so imports stop overwriting them |

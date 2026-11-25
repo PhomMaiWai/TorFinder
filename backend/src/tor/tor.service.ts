@@ -12,6 +12,7 @@ import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
 import { UpdateExtractionDto } from "./dto/update-extraction.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
+import { escapeRegex } from "../common/regex";
 import { LISTED_TOR, STAGE_LISTING_ORDER } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
 import { buildTimeline } from "./tor-stage";
@@ -88,7 +89,7 @@ export class TorService {
     );
   }
 
-  async findAll(page = 1, pageSize = 20, source?: TorSource) {
+  async findAll(page = 1, pageSize = 20, source?: TorSource, q?: string) {
     // Deleted records stay in the collection but out of every listing except
     // the one that exists to restore them.
     const filter: Filter<TorDoc> = {
@@ -99,6 +100,16 @@ export class TorService {
     // source is filtered on the same anchored prefix an index can serve.
     if (source === "manual") filter.sourceRef = { $exists: false };
     else if (source) filter.sourceRef = { $regex: `^${source}:` };
+    // A search: every word has to appear somewhere in the record, in any field.
+    const words = (q ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 8);
+    if (words.length > 0) {
+      filter.$and = words.map((word) => {
+        const pattern = { $regex: escapeRegex(word), $options: "i" };
+        return {
+          $or: [{ title: pattern }, { agency: pattern }, { projectNumber: pattern }, { summary: pattern }, { tags: pattern }],
+        };
+      });
+    }
 
     const [docs, awarded] = await Promise.all([
       this.db.tors

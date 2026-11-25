@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsIn, IsInt, IsOptional, Max, Min } from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
 
 import { TOR_IMPORT_SOURCES } from "../tor.constants";
 
@@ -12,6 +12,12 @@ export class ListTorQueryDto {
   @IsOptional()
   @IsIn(TOR_SOURCES)
   source?: TorSource;
+
+  /** Words to find in the title, agency, project number, summary or tags. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  q?: string;
 
   @IsOptional()
   @Type(() => Number)

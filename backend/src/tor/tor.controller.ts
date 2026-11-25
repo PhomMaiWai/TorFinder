@@ -41,7 +41,7 @@ export class TorController {
 
   @Get()
   findAll(@Query() query: ListTorQueryDto) {
-    return this.torService.findAll(query.page, query.pageSize, query.source);
+    return this.torService.findAll(query.page, query.pageSize, query.source, query.q);
   }
 
   /**
