@@ -134,8 +134,9 @@ selects candidates matching **all** of:
 - Never extracted, or extracted by an older `EXTRACTION_VERSION` than current
 - Not mid-cooldown from a previous failure (24h cooldown, 3 attempts max —
   `AI_REQUEST.retryAfterMs` / `maxAttempts`)
-- **Not at the award stage** — award-stage records are excluded from this
-  queue entirely, not merely deprioritized
+- Any stage, awards included: an award's own notice names the winner and the
+  price, so the national e-GP's TOR bundle is read for it by project number,
+  as for a draft or invitation
 - Created within the last 90 days (`ACTIONABLE_WINDOW_MS`)
 
 Matches are then sorted **newest `createdAt` first** and capped at

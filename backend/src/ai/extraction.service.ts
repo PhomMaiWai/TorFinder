@@ -21,7 +21,7 @@ import { VertexClient } from "./vertex.client";
 
 const PDF_MIME = "application/pdf";
 
-const { draft: DRAFT_STAGE, invitation: INVITATION_STAGE, award: AWARD_STAGE } = STAGE;
+const { draft: DRAFT_STAGE, invitation: INVITATION_STAGE } = STAGE;
 
 /** e-GP names each announcement; MEA labels each attachment by its file name. */
 const isDraftDocument = (label: string) => /ร่าง|ขอบเขตของงาน|tor/i.test(label);
@@ -47,9 +47,6 @@ function documentRanking(stage: TorDoc["stage"]): ((label: string) => boolean)[]
 const DETAIL_RANKING = [isDraftDocument, isInvitationDocument];
 
 type LoadedDocument = { pdf: Buffer; label: string; url: string };
-
-/** A contract status that settles the project: signed, delivering, done, or called off. */
-const DECIDED_CONTRACT = /สัญญา|PO|ส่งงาน|ยกเลิก/;
 
 function documentRank(label: string, ranking: ((label: string) => boolean)[]): number {
   const rank = ranking.findIndex((matches) => matches(label));
@@ -190,20 +187,18 @@ export class ExtractionService {
   }
 
   /**
-   * The records this run will read: only announcements a company can still act
-   * on — a draft open for comment or an invitation open for bids, recent, with
-   * no contract signed and not cancelled. Their documents are the reason the
-   * product exists; an award or a closed bid is left with what it has. Newest
-   * first, so a backlog never starves the fresh arrivals.
+   * The records this run will read: every recent announcement, whatever its
+   * stage — an award too, since most of what each import brings in is awards
+   * and their page is empty without a summary. The 90-day window keeps the
+   * backlog of old awards from spending the quota. Newest first, so a backlog
+   * never starves the fresh arrivals.
    */
   private pickPending(limit: number): Promise<{ _id: ObjectId }[]> {
     return this.db.tors
       .find(
         {
           ...this.pendingFilter(),
-          stage: { $ne: AWARD_STAGE },
           createdAt: { $gte: new Date(Date.now() - ACTIONABLE_WINDOW_MS) },
-          contractStatus: { $not: DECIDED_CONTRACT },
         },
         { projection: { _id: 1 }, sort: { createdAt: -1 }, limit },
       )
@@ -298,10 +293,9 @@ export class ExtractionService {
     }
 
     // Who may bid and what the work is: the bidding document and TOR the
-    // national e-GP bundles for every e-bidding. Only for an announcement that
-    // can still be bid on or commented on — an award's bundle is a large
-    // download for detail nobody acts on any more.
-    if (tor.stage !== AWARD_STAGE && tor.projectNumber && PROJECT_NUMBER.test(tor.projectNumber)) {
+    // national e-GP bundles for every e-bidding. An award reads it too: its own
+    // notice names the winner and the price, not the work.
+    if (tor.projectNumber && PROJECT_NUMBER.test(tor.projectNumber)) {
       const tender = await this.gproc.tenderDocuments(tor.projectNumber, room).catch(() => []);
       for (const doc of tender) {
         loaded.push({ ...doc, url: gprocProjectUrl(tor.projectNumber) });
