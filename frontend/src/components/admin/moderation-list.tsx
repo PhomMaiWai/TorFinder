@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 
 import { approveFeedback, rejectFeedback } from "@/app/admin/moderation/actions";
+import { refreshAdminBadgeCounts } from "@/lib/use-admin-badge-counts";
 import type { Locale } from "@/i18n/config";
 import { formatDate } from "@/lib/datetime";
 import { valueLabel } from "@/lib/value-labels";
@@ -65,7 +66,10 @@ export function ModerationList({
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   disabled={isPending}
-                  onClick={() => startTransition(() => void rejectFeedback(item.id))}
+                  onClick={() => startTransition(async () => {
+                      await rejectFeedback(item.id);
+                      await refreshAdminBadgeCounts();
+                    })}
                   className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink disabled:opacity-50"
                 >
                   <X size={14} />
@@ -73,7 +77,10 @@ export function ModerationList({
                 </button>
                 <button
                   disabled={isPending}
-                  onClick={() => startTransition(() => void approveFeedback(item.id))}
+                  onClick={() => startTransition(async () => {
+                      await approveFeedback(item.id);
+                      await refreshAdminBadgeCounts();
+                    })}
                   className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark disabled:opacity-50"
                 >
                   <Check size={14} />

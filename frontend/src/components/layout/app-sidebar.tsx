@@ -29,9 +29,8 @@ import { useEffect, useState } from "react";
 
 type SessionUser = { name: string; email: string; role: Role };
 
-import { PENDING_ACCOUNTS } from "@/data/admin";
 import type { Role } from "@/lib/auth";
-import { FEEDBACK_ENTRIES } from "@/data/tor-details";
+import { resetAdminBadgeCounts, useAdminBadgeCounts } from "@/lib/use-admin-badge-counts";
 import { resetNotifications, useNotifications } from "@/lib/use-notifications";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
 
@@ -41,13 +40,6 @@ type NavLink = {
   icon: React.ElementType;
   badge?: number;
 };
-
-const PENDING_ACCOUNTS_COUNT = PENDING_ACCOUNTS.filter(
-  (a) => a.status === "รอตรวจสอบ",
-).length;
-const PENDING_FEEDBACK_COUNT = FEEDBACK_ENTRIES.filter(
-  (f) => f.status === "รอตรวจสอบ",
-).length;
 
 function getOrgNav(t: (key: string) => string): { section: string | null; links: NavLink[] }[] {
   return [
@@ -85,13 +77,11 @@ function getAdminNav(t: (key: string) => string): { section: string | null; link
           label: t("navPendingAccounts"),
           href: "/admin/accounts",
           icon: UserCheck,
-          badge: PENDING_ACCOUNTS_COUNT || undefined,
         },
         {
           label: t("navModeration"),
           href: "/admin/moderation",
           icon: MessageSquare,
-          badge: PENDING_FEEDBACK_COUNT || undefined,
         },
         { label: t("navReports"), href: "/admin/reports", icon: Flag },
         { label: t("navManageCompanies"), href: "/admin/companies", icon: Building2 },
@@ -106,14 +96,17 @@ function getAdminNav(t: (key: string) => string): { section: string | null; link
 function NavLinks({
   nav,
   onNavigate,
+  isAdmin,
 }: {
   nav: { section: string | null; links: NavLink[] }[];
   onNavigate?: () => void;
+  isAdmin: boolean;
 }) {
   const pathname = usePathname();
   const { savedIds } = useSavedTors();
   const { notifications } = useNotifications();
   const unreadNotifications = notifications.filter((n) => !n.read).length;
+  const { pendingAccounts, pendingFeedback } = useAdminBadgeCounts(isAdmin);
 
   function isActive(href: string) {
     const path = href.split("?")[0];
@@ -137,7 +130,11 @@ function NavLinks({
                 ? savedIds.length || undefined
                 : href.endsWith("/notifications")
                   ? unreadNotifications || undefined
-                  : staticBadge;
+                  : href === "/admin/accounts"
+                    ? pendingAccounts || undefined
+                    : href === "/admin/moderation"
+                      ? pendingFeedback || undefined
+                      : staticBadge;
               return (
                 <li key={href}>
                   <Link
@@ -210,6 +207,7 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
       await fetch("/api/auth/logout", { method: "POST" });
       resetSavedTors();
       resetNotifications();
+      resetAdminBadgeCounts();
       router.push("/login");
       router.refresh();
     } finally {
@@ -247,7 +245,7 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
         </div>
       </div>
 
-      <NavLinks nav={nav} onNavigate={onNavigate} />
+      <NavLinks nav={nav} onNavigate={onNavigate} isAdmin={isAdmin} />
 
       {/* User */}
       <div className="shrink-0 border-t border-border/80 p-3">
