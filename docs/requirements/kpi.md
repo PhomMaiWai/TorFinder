@@ -24,7 +24,7 @@ deploy (#235).
 | K4 | Freshness: time from publication to listing | Within 6 hours (e-GP, MEA) | Sync runs every 6 hours by default | ✅ By design, measure in production |
 | K5 | Duplicate TORs across sources | 0 | Not measured | ⏳ To measure |
 | K6 | Import failures noticed by an admin | Same day | Alert on the first failed run | ✅ By design |
-| K7 | TOR documents read by the AI | 80% of TORs the AI can open | 173 of 659 (26%); 376 of the 486 unread are older than the 90-day queue window | ❌ Below target until the backfill runs |
+| K7 | TOR documents read by the AI | 80% of the TORs from the last 90 days that the AI can open | 49 of 159 (31%) in the snapshot; the other 110 are waiting in the hourly queue, which clears them in about 5 runs | 🟡 Met once the queue catches up, measure in production |
 | K8 | AI extractions the model is confident about | 70% or more | 148 of 173 (86%) at 0.8 or above | ✅ Met |
 | K9 | AI processing time after import | Within 5 minutes (SRS) | New records are read right after each import (#400); snapshot baseline was a median of 8 hours | ✅ By design, measure in production |
 | K10 | Page load: home and search | Under 2 s (SRS) | Not measured | ⏳ To measure |
@@ -57,7 +57,7 @@ open for comments, 252 TOR announced, 344 winner announced.
 
 | KPI | Why it matters | How to measure |
 | --- | --- | --- |
-| **K7** Documents read | FR-08. Scope, qualifications and deliverables only appear once the AI has read the PDF. | Listed records with `extraction` divided by listed records the AI can open: a PDF or zip link, an e-GP project number, or a gproc invitation. `GET /api/ai/coverage` (admin) or `npm run ai-backfill` with no flags prints it. Snapshot: 173 of 659. The table below says why the rest are unread. |
+| **K7** Documents read | FR-08. Scope, qualifications and deliverables only appear once the AI has read the PDF. | Of the listed records announced in the last 90 days that the AI can open (a PDF or zip link, an e-GP project number, or a gproc invitation), the share with `extraction`. `GET /api/ai/coverage` (admin, fields `recentRead` / `recent`) or `npm run ai-backfill` with no flags prints it, and the all-ages figure beside it. Snapshot: 49 of 159. The table below says why records are unread. |
 | **K8** Confident extractions | Low-confidence answers are shown as unverified and need an admin to check them. | Share of the model's own `extraction.confidence` at 0.8 or above. Snapshot: 148 of 173. The level shown on the page (`extraction-confidence.ts`) also checks the amounts against the source, so it can come out lower. |
 | **K9** Processing time | The SRS asks for 5 minutes from import. | `extraction.extractedAt` minus `importedAt`, median and p95, over records imported after the change. Since #400 each import hands its new records to the AI job, which reads them straight away ([pipeline.md](../operations/pipeline.md#reading-right-after-import-kpi-k9)); a burst of more than 25 new records waits for the hourly run past the 25th. Snapshot baseline (99 records whose `importedAt` predates the reading): median 477 min, p95 about 20 days. |
 
@@ -76,12 +76,21 @@ buckets of `backend/src/ai/extraction-coverage.ts`, counted against today's
 | Older than 90 days | 376 | Outside the window the hourly queue reads (53 drafts, 135 invitations, 189 awards) |
 | Waiting | 110 | In the queue, past the 25-a-run cap |
 
-The 90-day window explains most of the gap: even with the queue empty,
-the hourly run tops out at 173 + 110 = 283 of 659 (43%). Reaching 80%
-(528 records) takes a one-off backfill that includes older records:
-`npm run ai-backfill -- --apply --include-older --retry-failed --max=500`
-([pipeline.md](../operations/pipeline.md#catching-up-a-backlog-kpi-k7)).
-That is about 490 model calls, roughly $10 at $0.02 a call with
+The 90-day window explains most of the unread records, and K7 is measured
+inside it. Of the 159 readable records announced in the last 90 days, 49 are read
+and the other 110 are waiting in the queue. The
+hourly run reads 25 at a time, so it gets through them in about 5 runs
+with no extra step. Since #400, new records are read right after each
+import as well.
+
+Older records (376 unread) are not counted, and nothing reads them by
+default. They are past bidding and no match alert is sent for them, so the
+team chose not to spend the Vertex AI budget on them. Over all ages the
+figure is 173 of 659 (26%), and the script prints it next to K7, so the
+gap stays visible. To read them anyway, `npm run ai-backfill -- --apply
+--include-older --max=500`
+([pipeline.md](../operations/pipeline.md#catching-up-a-backlog-kpi-k7))
+would try about 486 records, roughly $10 at $0.02 a call with
 `gemini-2.5-flash`.
 
 The 19 records with an earlier failure (none given up yet) failed for:
@@ -90,14 +99,18 @@ nothing readable in the announcement (10), the 120 s timeout on long scans
 fixable without uploading through Cloud Storage) and a reading with no
 usable field (1).
 
-The definition changed with #399: the denominator was "records with at
-least one `documents` entry" (652) and is now "records the AI can open"
-(659). The two differ by gproc invitations and records found by project
-number, which the queue reads without a `documents` entry, and by records
-whose only link is a listing page. The target stays 80%.
+The definition changed with #399. It was "records with `extraction` over
+records with at least one `documents` entry", all ages (173 of 652). It is
+now "the same over records the AI can open, announced in the last 90 days"
+(49 of 159), for two reasons. The 90-day window is what the queue reads and
+what bids and match alerts are about. And "can open" counts gproc
+invitations and records found by project number, which the queue reads
+without a `documents` entry, and leaves out records whose only link is a
+listing page. The target stays 80%.
 
-Re-measure K7 and K8 after the backfill, with `GET /api/ai/coverage` and
-the share of `extraction.confidence` at 0.8 or above.
+Re-measure K7 and K8 in production once the queue has caught up, with
+`GET /api/ai/coverage` and the share of `extraction.confidence` at 0.8 or
+above.
 
 FR-07 (classifying software or not) is done by keyword rules, not the AI,
 so it has no AI KPI here. If we want one, measure how many titles the

@@ -71,9 +71,15 @@ export type CoverageReport = {
   total: number;
   /** Records with at least one `documents` entry: K7's denominator before v1.1. */
   withDocuments: number;
-  /** Records the queue can open (everything but `no-document`): K7's denominator. */
+  /** Records the queue can open (everything but `no-document`), of any age. */
   readable: number;
   read: number;
+  /**
+   * K7 as measured: readable records announced in the last 90 days — the
+   * window the queue reads and the one bids and match alerts are still about.
+   */
+  recent: number;
+  recentRead: number;
   buckets: Record<CoverageBucket, number>;
   /** The same split, for the records with at least one `documents` entry. */
   bucketsWithDocuments: Record<CoverageBucket, number>;
@@ -90,10 +96,16 @@ export function summarizeCoverage(records: CoverageRecord[], now = Date.now()): 
   const bucketsWithDocuments = emptyBuckets();
   const reasons = new Map<string, number>();
   let withDocuments = 0;
+  let recent = 0;
+  let recentRead = 0;
 
   for (const record of records) {
     const bucket = classifyCoverage(record, now);
     buckets[bucket]++;
+    if (bucket !== "no-document" && record.createdAt.getTime() >= now - ACTIONABLE_WINDOW_MS) {
+      recent++;
+      if (bucket === "read") recentRead++;
+    }
     if (record.documents?.length) {
       withDocuments++;
       bucketsWithDocuments[bucket]++;
@@ -110,6 +122,8 @@ export function summarizeCoverage(records: CoverageRecord[], now = Date.now()): 
     withDocuments,
     readable: records.length - buckets["no-document"],
     read: buckets.read,
+    recent,
+    recentRead,
     buckets,
     bucketsWithDocuments,
     failureReasons: [...reasons]

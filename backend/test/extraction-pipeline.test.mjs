@@ -62,6 +62,9 @@ describe("summarizeCoverage", () => {
     assert.equal(report.read, 2);
     assert.equal(report.withDocuments, 3);
     assert.equal(report.bucketsWithDocuments.read, 1);
+    // K7 counts the last 90 days: the old record and the one with nothing to read are out.
+    assert.equal(report.recent, 3);
+    assert.equal(report.recentRead, 2);
     assert.deepEqual(report.failureReasons, [{ reason: "timeout after N ms", count: 1 }]);
   });
 });

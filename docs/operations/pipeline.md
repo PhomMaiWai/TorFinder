@@ -192,7 +192,10 @@ npm run ai-backfill --prefix backend -- --apply --max=100 # read up to 100
 npm run ai-backfill --prefix backend -- --apply --max=500 --include-older --retry-failed
 ```
 
-Run with no flags first: it prints why each listed record is or isn't
+Nothing needs this for K7, which counts the last 90 days only (see
+[kpi.md](../requirements/kpi.md)); it is for a freshly restored database,
+or if the team decides older records are worth the cost. Run with no flags
+first: it prints why each listed record is or isn't
 read (the same table as `GET /api/ai/coverage`), how many records the run
 would try and a rough cost at $0.02 a record. `--include-older` drops the
 90-day window for this run only, and `--retry-failed` clears earlier

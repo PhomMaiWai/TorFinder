@@ -78,9 +78,9 @@ async function main() {
 function print(logger: Logger, label: string, report: CoverageReport) {
   const pct = (part: number, whole: number) => (whole ? `${Math.round((part / whole) * 100)}%` : "–");
   logger.log(
-    `${label}: K7 = ${report.read} of ${report.readable} readable (${pct(report.read, report.readable)}); ` +
-      `${report.bucketsWithDocuments.read} of ${report.withDocuments} with a document ` +
-      `(${pct(report.bucketsWithDocuments.read, report.withDocuments)}); ${report.total} listed`,
+    `${label}: K7 = ${report.recentRead} of ${report.recent} readable from the last 90 days ` +
+      `(${pct(report.recentRead, report.recent)}); all ages ${report.read} of ${report.readable} ` +
+      `(${pct(report.read, report.readable)}); ${report.total} listed`,
   );
   for (const bucket of COVERAGE_BUCKETS) {
     logger.log(`  ${bucket.padEnd(13)} ${String(report.buckets[bucket]).padStart(5)}`);
