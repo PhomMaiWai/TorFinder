@@ -108,6 +108,7 @@ export function SiteNavbar() {
 
   // Viewers have no app sidebar, so signing out has to live up here.
   const isViewer = session?.role === "viewer";
+  const isOrg = session?.role === "org";
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
@@ -220,6 +221,9 @@ export function SiteNavbar() {
                   )}
                 </Link>
 
+                {/* A company's real notifications are in its workspace sidebar; this
+                    dropdown's notices are sample text, so it isn't offered to it. */}
+                {!isOrg && (
                 <div className="relative" ref={noticesRef}>
                   <button
                     type="button"
@@ -259,6 +263,7 @@ export function SiteNavbar() {
                     </div>
                   )}
                 </div>
+                )}
               </>
             )}
 

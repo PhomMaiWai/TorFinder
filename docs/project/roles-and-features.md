@@ -13,7 +13,7 @@ feature see [api.md](../design/api.md); for the diagram version see
 | --- | --- | --- | --- | --- |
 | Public visitor | — | Anyone reading procurement news | No account needed | — |
 | Viewer | `viewer` | A member of the public who wants to keep a list | Google sign-in at `/login/public` | `/dashboard` |
-| Organization | `org` | A software company looking for TORs to bid on | Sign up at `/signup/organization`, verify email, wait for admin approval | `/public` (TOR search); the workspace is `/dashboard?in=app`, with the public navbar on top |
+| Organization | `org` | A software company looking for TORs to bid on | Sign up at `/signup/organization`, verify email, wait for admin approval | `/public` (TOR search); the workspace starts at `/matches`, with the public navbar on top and its notifications in the sidebar |
 | Administrator | `admin` | The TorFinder team | Seeded, or an admin changes an existing account's role (a second admin approves) | `/admin` |
 
 Each backend guard admits exactly one role, so an admin cannot use the
