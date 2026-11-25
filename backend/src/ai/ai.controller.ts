@@ -35,6 +35,16 @@ export class AiController {
     };
   }
 
+  /**
+   * Why each listed TOR has or hasn't been read by the AI (KPI K7). Counts
+   * only: no model call, and nothing about any one record.
+   */
+  @Get("coverage")
+  @UseGuards(AdminGuard)
+  coverage() {
+    return this.extraction.coverage();
+  }
+
   /** Read everything still unextracted, up to this run's call budget. */
   @Post("extract")
   @UseGuards(AdminGuard)

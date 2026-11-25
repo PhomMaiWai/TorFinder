@@ -22,6 +22,13 @@ export type ImportRecord = {
   provisional?: readonly (keyof TorDoc)[];
 };
 
+/**
+ * Told about the records an import has just created. Called after the import
+ * has finished writing and is never awaited by it: whatever a listener does —
+ * read the new documents, say — it can neither slow an import down nor fail it.
+ */
+export type ImportListener = (source: TorImportSource, newIds: ObjectId[]) => Promise<unknown>;
+
 /** What a source's own sync reports: the import, plus what it couldn't fetch. */
 export type SyncResult = ImportResult & { failed: string[] };
 
@@ -83,11 +90,17 @@ const identity = (projectNumber: string, stage: string) => `${projectNumber}|${s
 @Injectable()
 export class TorImportService {
   private readonly logger = new Logger(TorImportService.name);
+  private readonly listeners: ImportListener[] = [];
 
   constructor(
     private readonly db: DatabaseService,
     private readonly matching: MatchingService,
   ) {}
+
+  /** Registers a listener for the records each import creates (see {@link ImportListener}). */
+  onImported(listener: ImportListener): void {
+    this.listeners.push(listener);
+  }
 
   async import(source: TorImportSource, records: ImportRecord[]): Promise<ImportResult> {
     const inScope = records.filter((record) => record.doc.createdAt >= env.torListedSince);
@@ -132,9 +145,11 @@ export class TorImportService {
     // that adds or removes records invalidates the stored ones.
     await this.matching.refreshBudgetStatuses();
     // Telling companies is a side effect; a failed send must not fail the import.
+    const newIds = Object.values(result.upsertedIds);
     await this.matching
-      .notifyMatches(Object.values(result.upsertedIds))
+      .notifyMatches(newIds)
       .catch((error: unknown) => this.logger.warn(`Match notifications failed: ${String(error)}`));
+    this.announce(source, newIds);
 
     this.logger.log(
       `${source}: ${result.upsertedCount} new, ${result.modifiedCount} updated, ` +
@@ -148,6 +163,20 @@ export class TorImportService {
       skipped,
       superseded: superseded.length,
     };
+  }
+
+  /**
+   * Hands the new records to every listener without waiting for any of them.
+   * Only records this run created: an update of a record already stored was
+   * either read already or is waiting in the queue with everything else.
+   */
+  private announce(source: TorImportSource, newIds: ObjectId[]): void {
+    if (newIds.length === 0) return;
+    for (const listener of this.listeners) {
+      void Promise.resolve()
+        .then(() => listener(source, newIds))
+        .catch((error: unknown) => this.logger.warn(`${source}: after-import step failed: ${String(error)}`));
+    }
   }
 
   /**

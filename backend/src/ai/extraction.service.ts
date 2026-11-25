@@ -16,6 +16,7 @@ import { EXTRACTABLE_DOCUMENT_PATTERN, isArchiveDocument, isExtractableDocument 
 import { ACTIONABLE_WINDOW_MS, LISTED_TOR, STAGE } from "../tor/tor.constants";
 import { AI_REQUEST, EXTRACTION_INSTRUCTION, EXTRACTION_SCHEMA, EXTRACTION_VERSION } from "./ai.constants";
 import { ExtractionRunResult, StoredExtraction } from "./ai.types";
+import { CoverageRecord, CoverageReport, summarizeCoverage } from "./extraction-coverage";
 import { isUseful, parseExtraction } from "./tor-extraction";
 import { VertexClient } from "./vertex.client";
 
@@ -48,6 +49,14 @@ const DETAIL_RANKING = [isDraftDocument, isInvitationDocument];
 
 type LoadedDocument = { pdf: Buffer; label: string; url: string };
 
+/** Which records a batch may pick from, beyond the queue's own rules. */
+export type PendingScope = {
+  /** Only these records — the ones an import has just created. */
+  ids?: ObjectId[];
+  /** Also records older than the 90-day window: a one-off backfill only. */
+  includeOlder?: boolean;
+};
+
 function documentRank(label: string, ranking: ((label: string) => boolean)[]): number {
   const rank = ranking.findIndex((matches) => matches(label));
   return rank === -1 ? ranking.length : rank;
@@ -70,6 +79,14 @@ function deadlineApplies(stage: TorDoc["stage"], label: string): boolean {
 @Injectable()
 export class ExtractionService {
   private readonly logger = new Logger(ExtractionService.name);
+  /**
+   * Records a batch is reading right now. The hourly run, an admin's button and
+   * the read after each import can overlap; without this, two of them could
+   * pick the same record and pay for it twice.
+   */
+  private readonly inFlight = new Set<string>();
+  /** The after-import reads, one after another, so three portals importing at once don't stack. */
+  private afterImport: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly db: DatabaseService,
@@ -144,8 +161,8 @@ export class ExtractionService {
    * read — is recorded on that record and the run carries on; a batch that
    * stopped at the first bad PDF would never get through a backlog.
    */
-  async extractPending(limit = AI_REQUEST.maxCallsPerRun): Promise<ExtractionRunResult> {
-    const pending = await this.pickPending(limit);
+  async extractPending(limit: number = AI_REQUEST.maxCallsPerRun, scope: PendingScope = {}): Promise<ExtractionRunResult> {
+    const pending = await this.pickPending(limit, scope);
 
     const result: ExtractionRunResult = { attempted: 0, extracted: 0, skipped: 0, failed: 0 };
     if (pending.length === 0) return result;
@@ -160,9 +177,13 @@ export class ExtractionService {
       AI_REQUEST.concurrency,
       () => Date.now() < deadline,
       async ({ _id }) => {
+        const key = _id.toString();
+        // Picked by another batch between its query and this one's.
+        if (this.inFlight.has(key)) return;
+        this.inFlight.add(key);
         result.attempted++;
         try {
-          await this.extractForTor(_id.toString());
+          await this.extractForTor(key);
           result.extracted++;
         } catch (error) {
           // "Nothing readable here" is a property of the announcement, not a
@@ -170,6 +191,8 @@ export class ExtractionService {
           if (error instanceof NotFoundException) result.skipped++;
           else result.failed++;
           await this.recordFailure(_id, error);
+        } finally {
+          this.inFlight.delete(key);
         }
       },
     );
@@ -187,18 +210,90 @@ export class ExtractionService {
   }
 
   /**
+   * Reads the records an import has just created, right away rather than at
+   * the next hourly run — the SRS asks for a new TOR to be read within five
+   * minutes (KPI K9). The same queue rules and the same per-run cap apply, so
+   * this spends nothing the hourly run wouldn't have: each new record costs one
+   * call, once, whichever run gets to it first. An import that brought nothing
+   * new never gets here, so an idle import makes no model call.
+   */
+  extractImported(ids: ObjectId[]): Promise<ExtractionRunResult> {
+    const run = this.afterImport.then(() => this.extractPending(AI_REQUEST.maxCallsPerRun, { ids }));
+    this.afterImport = run.catch(() => undefined);
+    return run;
+  }
+
+  /**
+   * Works through the queue in capped batches until it is empty or `max`
+   * records have been tried — the one-off catch-up for a backlog the hourly
+   * run would take days over (KPI K7). Every record tried leaves the queue,
+   * read or marked failed, so this always ends. `retryFailed` gives records
+   * that failed before (often under older reading rules) one more try each.
+   */
+  async backfill(options: { max: number; includeOlder?: boolean; retryFailed?: boolean }): Promise<
+    ExtractionRunResult & { batches: number; failuresCleared: number }
+  > {
+    let failuresCleared = 0;
+    if (options.retryFailed) {
+      const { modifiedCount } = await this.db.tors.updateMany(
+        { ...LISTED_TOR, extraction: { $exists: false }, extractionFailure: { $exists: true } },
+        { $unset: { extractionFailure: "" } },
+      );
+      failuresCleared = modifiedCount;
+    }
+
+    const total = { attempted: 0, extracted: 0, skipped: 0, failed: 0, batches: 0, failuresCleared };
+    while (total.attempted < options.max) {
+      const batch = await this.extractPending(Math.min(AI_REQUEST.maxCallsPerRun, options.max - total.attempted), {
+        includeOlder: options.includeOlder,
+      });
+      if (batch.attempted === 0) break;
+      total.batches++;
+      total.attempted += batch.attempted;
+      total.extracted += batch.extracted;
+      total.skipped += batch.skipped;
+      total.failed += batch.failed;
+      this.logger.log(`Backfill: ${total.extracted} read, ${total.attempted} of at most ${options.max} tried`);
+    }
+    return total;
+  }
+
+  /**
+   * Why each listed record has or hasn't been read — the measurement behind
+   * KPI K7. Reads one projection of the collection and spends no model call.
+   */
+  async coverage(): Promise<CoverageReport> {
+    const records = await this.db.tors
+      .find(LISTED_TOR, {
+        projection: {
+          stage: 1,
+          createdAt: 1,
+          sourceRef: 1,
+          projectNumber: 1,
+          "documents.url": 1,
+          "extraction.version": 1,
+          extractionFailure: 1,
+        },
+      })
+      .toArray();
+    return summarizeCoverage(records as CoverageRecord[]);
+  }
+
+  /**
    * The records this run will read: every recent announcement, whatever its
    * stage — an award too, since most of what each import brings in is awards
    * and their page is empty without a summary. The 90-day window keeps the
    * backlog of old awards from spending the quota. Newest first, so a backlog
    * never starves the fresh arrivals.
    */
-  private pickPending(limit: number): Promise<{ _id: ObjectId }[]> {
+  private pickPending(limit: number, scope: PendingScope = {}): Promise<{ _id: ObjectId }[]> {
+    const busy = [...this.inFlight].map((id) => new ObjectId(id));
     return this.db.tors
       .find(
         {
           ...this.pendingFilter(),
-          createdAt: { $gte: new Date(Date.now() - ACTIONABLE_WINDOW_MS) },
+          ...(scope.includeOlder ? {} : { createdAt: { $gte: new Date(Date.now() - ACTIONABLE_WINDOW_MS) } }),
+          _id: scope.ids ? { $in: scope.ids, $nin: busy } : { $nin: busy },
         },
         { projection: { _id: 1 }, sort: { createdAt: -1 }, limit },
       )

@@ -14,14 +14,17 @@ procurement reports there stop at FY 2562 / 2019 and have not been updated
 since October 2021, so every row fell before the 2022 cutoff and the source
 never contributed a record.)
 None of them call each other directly — a source writes a record, and the
-AI job separately picks up whatever's unread, whenever it next runs.
+AI job reads it. The import doesn't wait for that: when an import creates new
+records, it hands their ids to the AI job and returns, and the AI job reads
+them straight away (see "Reading right after import" below). Everything else
+still unread is picked up by the AI job's own timer.
 
 | Job | What it imports | Default interval | Polls on boot? | Manual trigger (admin-only unless noted) |
 | --- | --- | --- | --- | --- |
 | `egp` | Bangkok's own e-GP API | 360 min (`EGP_POLL_MINUTES`) | Yes | `POST /api/egp/sync` |
 | `mea` | Metropolitan Electricity Authority's procurement site | 360 min (`MEA_POLL_MINUTES`) | Yes | `POST /api/mea/sync` |
 | `gproc` | The national e-GP (กรมบัญชีกลาง / process5), for open projects' procurement step | 180 min (`GPROC_POLL_MINUTES`) | Yes | `POST /api/gproc/capture` — different shape, see below |
-| AI extraction | Reads the PDF behind each imported record | 60 min (`AI_POLL_MINUTES`) | **No** by default | `POST /api/ai/extract` |
+| AI extraction | Reads the PDF behind each imported record | Right after each import that creates records (`AI_EXTRACT_AFTER_IMPORT`), plus every 60 min (`AI_POLL_MINUTES`) for the rest of the queue | **No** by default | `POST /api/ai/extract`; backlog: `npm run ai-backfill` |
 
 (`backend/src/config/env.ts` is the source for every default above.)
 
@@ -92,6 +95,7 @@ source's own `*.constants.ts`, not configurable via env.
 | `VERTEX_PROJECT_ID` | empty | Gates AI extraction entirely — empty means the job does nothing regardless of `AI_POLL_MINUTES` |
 | `VERTEX_LOCATION` | `asia-southeast1` | Vertex AI region |
 | `VERTEX_MODEL` | `gemini-2.5-flash` | Model used for extraction |
+| `AI_EXTRACT_AFTER_IMPORT` | `true` | Read the records each import creates right after it; `false` leaves them to the hourly run |
 | `VERTEX_EMBEDDING_MODEL` | `text-multilingual-embedding-002` | Model that embeds TORs for "find similar" |
 
 `gproc`'s manual trigger doesn't match the other two's shape: it's
@@ -143,9 +147,60 @@ or similar). If you need that behavior, it isn't there yet; don't assume it
 is because an older doc said so.
 
 Per-call behavior: `temperature: 0` (same PDF always yields the same
-fields), up to 3 model retries, a 120s timeout per document, 3 documents
+fields), up to 3 model retries, a 180s timeout per document, 3 documents
 read concurrently, and a 10-minute wall-clock budget on the whole run —
 whatever doesn't finish in that window stays pending for the next run.
+
+### Reading right after import (KPI K9)
+
+Decided for #400: option 2 of the issue, trigger after import, rather than
+polling every 5 minutes or relaxing the SRS target. When
+`TorImportService.import()` creates records, it calls its listeners with
+the new ids after the write, the budget refresh and the match alerts, and
+does not wait for them. `ExtractionScheduler` registers one listener
+(only when `VERTEX_PROJECT_ID` is set and `AI_EXTRACT_AFTER_IMPORT` isn't
+`false`), and it calls `ExtractionService.extractImported(ids)`:
+
+- the same queue rules as above, limited to those ids, with the same
+  25-call cap and 10-minute budget; whatever is past the cap waits for the
+  hourly run
+- one after-import read at a time, so three portals importing together
+  don't stack runs
+- a record already being read by another run (the hourly one, an admin's
+  button) is skipped, so nothing is paid for twice
+- an import that created nothing calls no listener, so an idle import makes
+  no model call; the total number of calls doesn't change, each new record
+  is read once whichever run reaches it first
+- a failure inside the read is logged and recorded on the record
+  (`extractionFailure`), and can't fail or slow the import
+
+Only new records are handed over. An update of a record already stored was
+either read already or is still in the queue, and the hourly run gets to it.
+
+### Catching up a backlog (KPI K7)
+
+The hourly run reads at most 25 records and only from the last 90 days, so
+a database restored from a snapshot, or one filled while AI was off, takes
+days to catch up, and older records are never read. `npm run ai-backfill`
+(`backend/src/scripts/ai-backfill.ts`) works through the queue in batches
+of 25 until it's empty or `--max` records have been tried:
+
+```bash
+npm run build --prefix backend
+npm run ai-backfill --prefix backend                      # counts only, no model call
+npm run ai-backfill --prefix backend -- --apply --max=100 # read up to 100
+npm run ai-backfill --prefix backend -- --apply --max=500 --include-older --retry-failed
+```
+
+Nothing needs this for K7, which counts the last 90 days only (see
+[kpi.md](../requirements/kpi.md)); it is for a freshly restored database,
+or if the team decides older records are worth the cost. Run with no flags
+first: it prints why each listed record is or isn't
+read (the same table as `GET /api/ai/coverage`), how many records the run
+would try and a rough cost at $0.02 a record. `--include-older` drops the
+90-day window for this run only, and `--retry-failed` clears earlier
+failures so each gets one more try. With Docker Compose:
+`docker compose exec backend node dist/scripts/ai-backfill.js`.
 
 ### Confidence is shown, not a publish gate
 
@@ -188,6 +243,9 @@ separately rather than just trusting "it's fine":
   cooldown between tries — the same document failing every hour would
   otherwise eat the entire 25-call batch forever and nothing behind it
   would ever get read.
+- **Two AI runs never read the same record.** The hourly run, the
+  after-import read and an admin's button can overlap; a record one of
+  them is reading is skipped by the others.
 - **An admin's manual correction is never silently overwritten.** Once a
   field is in a record's `lockedFields`, no re-import — same source or
   not — touches it again.

@@ -277,6 +277,10 @@ export const env = {
     // would pay for it each time. Ignored entirely without a project id.
     pollMinutes: optionalNumber("AI_POLL_MINUTES", 60),
     pollOnStartup: process.env.AI_POLL_ON_STARTUP === "true",
+    // Read what each import created right after it, rather than waiting for
+    // the next poll (KPI K9: within 5 minutes). Costs nothing extra: each new
+    // record is one call either way. "false" leaves it to the poll alone.
+    extractAfterImport: process.env.AI_EXTRACT_AFTER_IMPORT !== "false",
     // Daily caps on model calls that visitors can trigger (docs/SECURITY.md G1).
     // Background extraction is capped per run instead (ai.constants.ts).
     quota: {

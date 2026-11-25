@@ -5,8 +5,12 @@ import { Type, type Schema } from "@google/genai";
  * region and on/off switch differ, and those live in env.
  */
 export const AI_REQUEST = {
-  /** One document at a time; a scanned TOR takes the model a while to read. */
-  timeoutMs: 120_000,
+  /**
+   * One document at a time; a scanned TOR takes the model a while to read. At
+   * 120 s, 6 of the 19 failures in the October snapshot were this timeout
+   * ("This operation was aborted") on long scans, so it is 180 s.
+   */
+  timeoutMs: 180_000,
   /** Vertex rejects oversized inline payloads, so a big scan is skipped, not truncated. */
   maxDocumentBytes: 15 * 1024 * 1024,
   /**
