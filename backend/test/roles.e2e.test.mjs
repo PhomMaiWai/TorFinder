@@ -46,6 +46,7 @@ const ADMIN_ONLY = [
   ["PATCH", `/accounts/${ID}/details`],
   ["PATCH", `/accounts/${ID}/suspend`],
   ["PATCH", `/accounts/${ID}/reactivate`],
+  ["GET", "/ai/coverage"],
   ["POST", "/ai/extract"],
   ["POST", `/ai/extract/${ID}`],
   ["GET", "/audit"],

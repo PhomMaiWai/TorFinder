@@ -24,9 +24,9 @@ deploy (#235).
 | K4 | Freshness: time from publication to listing | Within 6 hours (e-GP, MEA) | Sync runs every 6 hours by default | ✅ By design, measure in production |
 | K5 | Duplicate TORs across sources | 0 | Not measured | ⏳ To measure |
 | K6 | Import failures noticed by an admin | Same day | Alert on the first failed run | ✅ By design |
-| K7 | TOR documents read by the AI | 80% of TORs with a document | 173 of 652 (27%) | ❌ Below target |
+| K7 | TOR documents read by the AI | 80% of TORs the AI can open | 173 of 659 (26%); 376 of the 486 unread are older than the 90-day queue window | ❌ Below target until the backfill runs |
 | K8 | AI extractions the model is confident about | 70% or more | 148 of 173 (86%) at 0.8 or above | ✅ Met |
-| K9 | AI processing time after import | Within 5 minutes (SRS) | Extraction job runs hourly | ❌ Not met by default |
+| K9 | AI processing time after import | Within 5 minutes (SRS) | New records are read right after each import (#400); snapshot baseline was a median of 8 hours | ✅ By design, measure in production |
 | K10 | Page load: home and search | Under 2 s (SRS) | Not measured | ⏳ To measure |
 | K11 | Concurrent users | 100 without slowdown (SRS) | Not measured | ⏳ To measure |
 | K12 | Availability | 99% during evaluation (SRS) | Not deployed | ⏳ After deploy |
@@ -57,9 +57,47 @@ open for comments, 252 TOR announced, 344 winner announced.
 
 | KPI | Why it matters | How to measure |
 | --- | --- | --- |
-| **K7** Documents read | FR-08. Scope, qualifications and deliverables only appear once the AI has read the PDF. | Records with `extraction` divided by records with at least one `documents` entry. Snapshot: 173 of 652, and 32 more marked `extractionFailure`. The rest are waiting in the queue, or AI was off when they arrived. |
+| **K7** Documents read | FR-08. Scope, qualifications and deliverables only appear once the AI has read the PDF. | Listed records with `extraction` divided by listed records the AI can open: a PDF or zip link, an e-GP project number, or a gproc invitation. `GET /api/ai/coverage` (admin) or `npm run ai-backfill` with no flags prints it. Snapshot: 173 of 659. The table below says why the rest are unread. |
 | **K8** Confident extractions | Low-confidence answers are shown as unverified and need an admin to check them. | Share of the model's own `extraction.confidence` at 0.8 or above. Snapshot: 148 of 173. The level shown on the page (`extraction-confidence.ts`) also checks the amounts against the source, so it can come out lower. |
-| **K9** Processing time | The SRS asks for 5 minutes from import. | `extraction.extractedAt` minus `importedAt`. The extraction job runs every 60 minutes (`AI_POLL_MINUTES`), so meeting 5 minutes needs `AI_POLL_MINUTES=5` or running extraction right after each import. |
+| **K9** Processing time | The SRS asks for 5 minutes from import. | `extraction.extractedAt` minus `importedAt`, median and p95, over records imported after the change. Since #400 each import hands its new records to the AI job, which reads them straight away ([pipeline.md](../operations/pipeline.md#reading-right-after-import-kpi-k9)); a burst of more than 25 new records waits for the hourly run past the 25th. Snapshot baseline (99 records whose `importedAt` predates the reading): median 477 min, p95 about 20 days. |
+
+### Why TORs are unread (K7)
+
+Measured on the October 27 snapshot (683 records, all listed) with the
+buckets of `backend/src/ai/extraction-coverage.ts`, counted against today's
+90-day window. Each record is in one bucket, checked in this order:
+
+| Bucket | Records | What it means |
+| --- | --- | --- |
+| Read | 173 | Has an extraction (any version) |
+| No document | 24 | No PDF or zip link, no e-GP project number: nothing to read |
+| Gave up | 0 | Failed 3 times, no longer retried |
+| Cooling down | 0 | Failed within the last 24 hours |
+| Older than 90 days | 376 | Outside the window the hourly queue reads (53 drafts, 135 invitations, 189 awards) |
+| Waiting | 110 | In the queue, past the 25-a-run cap |
+
+The 90-day window explains most of the gap: even with the queue empty,
+the hourly run tops out at 173 + 110 = 283 of 659 (43%). Reaching 80%
+(528 records) takes a one-off backfill that includes older records:
+`npm run ai-backfill -- --apply --include-older --retry-failed --max=500`
+([pipeline.md](../operations/pipeline.md#catching-up-a-backlog-kpi-k7)).
+That is about 490 model calls, roughly $10 at $0.02 a call with
+`gemini-2.5-flash`.
+
+The 19 records with an earlier failure (none given up yet) failed for:
+nothing readable in the announcement (10), the 120 s timeout on long scans
+(6, the timeout is now 180 s), a file over the 15 MB inline limit (2, not
+fixable without uploading through Cloud Storage) and a reading with no
+usable field (1).
+
+The definition changed with #399: the denominator was "records with at
+least one `documents` entry" (652) and is now "records the AI can open"
+(659). The two differ by gproc invitations and records found by project
+number, which the queue reads without a `documents` entry, and by records
+whose only link is a listing page. The target stays 80%.
+
+Re-measure K7 and K8 after the backfill, with `GET /api/ai/coverage` and
+the share of `extraction.confidence` at 0.8 or above.
 
 FR-07 (classifying software or not) is done by keyword rules, not the AI,
 so it has no AI KPI here. If we want one, measure how many titles the

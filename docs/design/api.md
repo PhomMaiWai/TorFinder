@@ -398,6 +398,7 @@ when `VERTEX_PROJECT_ID` is not set.
 | Method | Path | Guard | Body | Response |
 | --- | --- | --- | --- | --- |
 | GET | `/ai/status` | none | — | `{ configured, model, location }` |
+| GET | `/ai/coverage` | Admin | — | 200 `{ total, withDocuments, readable, read, buckets, bucketsWithDocuments, failureReasons[] }`; why each listed TOR is or isn't read (KPI K7), no model call |
 | POST | `/ai/extract` | Admin | — | 201 `{ attempted, extracted, skipped, failed }`; reads every pending TOR up to the run's budget |
 | POST | `/ai/extract/:torId` | Admin | — | 201 the stored extraction for one TOR |
 | POST | `/ai/proposal-draft/:torId` | Org | `{ previousProposal }` (200-20,000 chars) | 200 `{ sections: [{ heading, body }], gaps[] }` |
