@@ -13,7 +13,6 @@ import { MongoThrottlerStorage } from "./common/mongo-throttler.storage";
 import { env } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
 import { AiModule } from "./ai/ai.module";
-import { DataGovModule } from "./datagov/datagov.module";
 import { EgpModule } from "./egp/egp.module";
 import { FeedbackModule } from "./feedback/feedback.module";
 import { GprocModule } from "./gproc/gproc.module";
@@ -50,7 +49,6 @@ import { TorModule } from "./tor/tor.module";
     SimilarModule,
     AiModule,
     EgpModule,
-    DataGovModule,
     MeaModule,
     GprocModule,
     FeedbackModule,

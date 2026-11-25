@@ -12,7 +12,11 @@ one — then fix the older one.
 
 ## The five jobs
 
-Five independent scheduled jobs write into one shared `tors` collection.
+Four independent scheduled jobs write into one shared `tors` collection.
+(A fifth, data.go.th, was removed on 26 Nov 2026: กรมบัญชีกลาง's monthly
+procurement reports there stop at FY 2562 / 2019 and have not been updated
+since October 2021, so every row fell before the 2022 cutoff and the source
+never contributed a record.)
 None of them call each other directly — a source writes a record, and the
 AI job separately picks up whatever's unread, whenever it next runs.
 
@@ -20,7 +24,6 @@ AI job separately picks up whatever's unread, whenever it next runs.
 | --- | --- | --- | --- | --- |
 | `egp` | Bangkok's own e-GP API | 360 min (`EGP_POLL_MINUTES`) | Yes | `POST /api/egp/sync` |
 | `mea` | Metropolitan Electricity Authority's procurement site | 360 min (`MEA_POLL_MINUTES`) | Yes | `POST /api/mea/sync` |
-| `datagov` | data.go.th's monthly procurement dump | 1440 min / daily (`DATAGOV_POLL_MINUTES`) | Yes | `POST /api/datagov/sync` |
 | `gproc` | The national e-GP (กรมบัญชีกลาง / process5), for open projects' procurement step | 180 min (`GPROC_POLL_MINUTES`) | Yes | `POST /api/gproc/capture` — different shape, see below |
 | AI extraction | Reads the PDF behind each imported record | 60 min (`AI_POLL_MINUTES`) | **No** by default | `POST /api/ai/extract` |
 
@@ -95,7 +98,7 @@ source's own `*.constants.ts`, not configurable via env.
 | `VERTEX_MODEL` | `gemini-2.5-flash` | Model used for extraction |
 | `VERTEX_EMBEDDING_MODEL` | `text-multilingual-embedding-002` | Model that embeds TORs for "find similar" |
 
-`gproc`'s manual trigger doesn't match the other three's shape: it's
+`gproc`'s manual trigger doesn't match the other two's shape: it's
 `POST /api/gproc/capture` with a body of specific `projectNumbers` to fetch,
 returns `202 Accepted` with a `runId` immediately, and the actual result is
 read back from `GET /api/gproc/capture/:runId` once it finishes — a
@@ -108,14 +111,12 @@ A `sourceRef` is prefixed with where a record came from
 `backend/src/tor/tor.constants.ts`'s `sourceRank` is the authority:
 
 ```
-manual (4) > egp (3) > gproc (2) > mea (1) > datagov (0)
+manual (4) > egp (3) > gproc (2) > mea (1)
 ```
 
 An admin's own entry always wins. Bangkok's e-GP outranks the national
 e-GP because it carries the actual files and signed contracts; the national
-feed outranks MEA because it's the same announcement with less attached;
-MEA outranks data.go.th because data.go.th's rows are historical contract
-records, not live announcements anyone can still act on. An admin-entered
+feed outranks MEA because it's the same announcement with less attached. An admin-entered
 record is never auto-deleted or overwritten by any source.
 
 Within one sync's own results, duplicates collapse first by an exact
@@ -208,7 +209,6 @@ TOKEN=<an admin session token>
 
 curl -X POST http://localhost:4000/api/egp/sync      -H "Authorization: Bearer $TOKEN"
 curl -X POST http://localhost:4000/api/mea/sync      -H "Authorization: Bearer $TOKEN"
-curl -X POST http://localhost:4000/api/datagov/sync  -H "Authorization: Bearer $TOKEN"
 curl -X POST http://localhost:4000/api/ai/extract    -H "Authorization: Bearer $TOKEN"
 curl -X POST http://localhost:4000/api/ai/extract/<torId> -H "Authorization: Bearer $TOKEN"  # one record, now
 

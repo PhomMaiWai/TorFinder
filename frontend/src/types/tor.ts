@@ -19,7 +19,7 @@ export type TorBudgetStatus = "สูงกว่าปกติ" | "ต่ำ�
  * Where a record came from: what an admin typed in, or the portal that
  * published it. Mirrors the backend's TOR_SOURCES — the listing filters on it.
  */
-export const TOR_SOURCES = ["manual", "egp", "gproc", "mea", "datagov"] as const;
+export const TOR_SOURCES = ["manual", "egp", "gproc", "mea"] as const;
 export type TorSource = (typeof TOR_SOURCES)[number];
 
 /**
@@ -161,6 +161,12 @@ export type TorExtraction = {
   penalty?: string | null;
   warrantyPeriod?: string | null;
   contact?: string | null;
+  /** The hours on the deadline day, "HH:MM–HH:MM" or just "HH:MM". */
+  deadlineTime?: string | null;
+  /** The last day of public comment on a draft, ISO date. */
+  feedbackDeadline?: string | null;
+  /** Set once an admin checked (and perhaps corrected) the reading by hand. */
+  reviewed?: { by: string; at: string };
   /** The model's own estimate, 0-1. Shown only through `assessment`. */
   confidence: number;
   model: string;

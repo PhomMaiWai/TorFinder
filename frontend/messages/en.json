@@ -177,7 +177,7 @@
     "step3Label": "Match your company",
     "step3Caption": "Fits your company profile",
     "step4Label": "Instant alert",
-    "step4Message": "New TOR matches you 92%",
+    "step4Message": "A new TOR fits your company",
     "step4Meta": "Closes in 6 days"
   },
   "LandingFeatures": {
@@ -193,24 +193,13 @@
     "transparencyDescription": "Lets the public search project data and helps the OAG detect price irregularities and below-standard competition more easily."
   },
   "LandingStats": {
-    "items": [
-      {
-        "value": "200+",
-        "label": "Software TORs per year"
-      },
-      {
-        "value": "40+",
-        "label": "BMA agencies"
-      },
-      {
-        "value": "฿450M+",
-        "label": "Annual market value"
-      },
-      {
-        "value": "Every 24 hrs",
-        "label": "Data update cycle"
-      }
-    ]
+    "projects": "Software projects in the last 12 months",
+    "agencies": "Agencies announcing in 12 months",
+    "budget": "Total budget in 12 months",
+    "budgetValue": "฿{amount}M",
+    "poll": "New announcements pulled from e-GP",
+    "pollValue": "Every {hours} hrs",
+    "footnote": "Counted from the announcements in the system right now; a project with several announcements counts once."
   },
   "LandingSteps": {
     "heading": "Get started in 3 steps",
@@ -234,12 +223,7 @@
     "searchAll": "Search all",
     "closingSoon": "Closing soon",
     "daysLeft": "{count} days left",
-    "close": "Close",
-    "showFeedback": "Give feedback",
     "viewDetails": "View details",
-    "feedbackPlaceholder": "Enter your suggestions, concerns, or comments to help increase transparency...",
-    "cancel": "Cancel",
-    "submitFeedback": "Submit feedback",
     "noResults": "No projects match your search",
     "viewPublicPortal": "Go to Public Portal to search all projects"
   },
@@ -287,7 +271,8 @@
         "status": "fail",
         "weight": 15
       }
-    ]
+    ],
+    "exampleNote": "Illustration: the TOR, company and score here are made up to show how matching works."
   },
   "SignInForm": {
     "emailLabel": "Email",
@@ -683,7 +668,7 @@
     "contactLabel": "Contact",
     "lowConfidenceNote": "Low confidence — these details may be incomplete or wrong. Check against the original document before relying on them.",
     "confidenceLabel": "{score}% confidence",
-    "confidenceHint": "Based on how much of the document could be read and whether its figures match what the agency published on e-GP",
+    "confidenceHint": "Based on how much of the document could be read and whether its figures match what the agency published on e-GP. Capped at 95%, since no automatic reading is ever certain",
     "openSourceDocument": "Open original document",
     "fieldVerify": "Please verify",
     "fieldVerifyHint": "Differs from the figure the agency published on e-GP",
@@ -732,7 +717,6 @@
     "bidPoint_recommended": "Recommended",
     "bidPoint_conservative": "Margin-first",
     "bidPointDiscount": "{discount}% under",
-    "bidWinChance": "~{chance}% price win chance",
     "competition_blue": "Blue ocean · little price pressure",
     "competition_moderate": "Moderate competition",
     "competition_red": "Red ocean · heavy price cutting",
@@ -744,7 +728,9 @@
     "bidAwardRow": "Won at {awarded} ({discount}% under)",
     "bidUnknownVendor": "Winner not published",
     "bidInsightNote": "Estimated from past winning bids against the reference price. It does not account for quality scoring, qualifications or the number of bidders — a guide, not a guarantee.",
-    "lastEdited": "Last corrected by {by} on {date}"
+    "lastEdited": "Last corrected by {by} on {date}",
+    "reviewedBadge": "Checked by an administrator",
+    "bidBeats": "Under the winning price in {beaten} of {total} compared projects"
   },
   "ProposalDraft": {
     "heading": "Draft a proposal from an earlier one",
@@ -1300,13 +1286,13 @@
     "showAll": "Show all {count} agencies",
     "showLess": "Show less",
     "emptyTitle": "No award notices yet",
-    "emptyBody": "Once award notices or contracts are imported from e-GP, MEA or data.go.th, they show here.",
+    "emptyBody": "Once award notices or contracts are imported from e-GP or MEA, they show here.",
     "emptyYear": "No award notices in {year}",
     "limitsTitle": "What the data can and can't tell",
     "limitBids": "Sources publish only the winner and the winning price, never the other bids. \"Against the average\" here means against the reference price, and a company's \"win rate\" is its share of an agency's awards.",
     "limitBase": "The reference price is used where published, otherwise the budget. Awards under 30% or over 105% of that figure are left out, as they are usually one lot of a bigger project or a figure in the wrong unit.",
     "limitSpread": "\"Low\" competition means one company won more than half of the agency's awards; \"high\" means nearly every award went to a different company. At least 3 awards with a named winner are needed.",
-    "limitSources": "Winner names come from e-GP contracts and the Comptroller General's contract reports (data.go.th). MEA publishes only the agreed price, not the winner's name.",
+    "limitSources": "Winner names come from e-GP contracts. MEA publishes only the agreed price, not the winner's name.",
     "growthLink": "See your company's growth path"
   },
   "Certificates": {
@@ -1551,7 +1537,6 @@
       "egp": "From e-GP",
       "gproc": "From e-GP (Comptroller General)",
       "mea": "From MEA",
-      "datagov": "From data.go.th",
       "all": "All",
       "not-software": "Not software",
       "deleted": "Trash"
@@ -1612,7 +1597,26 @@
       "failed": "Failed · ",
       "done": "Done · ",
       "counts": "{created} new · {updated} updated · {known} already here · {skipped} skipped · {failed} failed"
-    }
+    },
+    "detailsSection": "Announcement details",
+    "extractionSection": "What the AI read from the document",
+    "extractionSectionHint": "Check against the original document and correct anything the AI misread. Saving marks this section as reviewed, and the AI will no longer read over it automatically.",
+    "noExtraction": "The AI hasn't read this announcement's document yet. It will once a readable file is available.",
+    "extractionMeta": "Read by {model} on {date} · {score}% confidence",
+    "extractionReviewedBy": "Reviewed by {who} on {date}",
+    "extractionNotReviewed": "Not reviewed yet",
+    "onePerLine": "One item per line",
+    "bahtPlaceholder": "Amount in baht, e.g. 2500000",
+    "documentDeadlineLabel": "Deadline in the document",
+    "deadlineTimeLabel": "Hours on the deadline day",
+    "feedbackDeadlineLabel": "End of public comment",
+    "markReviewed": "I've checked what the AI read",
+    "markReviewedHint": "Changing any field marks it reviewed anyway. Tick this when every field is already right and needs no change.",
+    "searchLabel": "Search TORs",
+    "searchPlaceholder": "Search by project title, agency, project number or tag",
+    "searchButton": "Search",
+    "clearSearch": "Clear search",
+    "noSearchResults": "No TORs in this tab match \"{q}\""
   },
   "Errors": {
     "connectionFailed": "Couldn't reach the server. Please try again.",

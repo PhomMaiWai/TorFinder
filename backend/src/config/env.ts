@@ -309,15 +309,6 @@ export const env = {
     pollOnStartup: (process.env.MEA_POLL_ON_STARTUP ?? "true") === "true",
   },
   /**
-   * The open-data portal republishes กรมบัญชีกลาง's procurement reports once a
-   * month, so polling it every few hours would only re-read what it already
-   * handed over. Daily is already ahead of the data.
-   */
-  datagov: {
-    pollMinutes: optionalNumber("DATAGOV_POLL_MINUTES", 1_440),
-    pollOnStartup: (process.env.DATAGOV_POLL_ON_STARTUP ?? "true") === "true",
-  },
-  /**
    * The national e-GP is read for the procurement step of the announcements
    * still open, and to follow captured projects to their next announcement —
    * a few dozen projects, one at a time. Every three hours keeps "still open"

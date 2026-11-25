@@ -137,7 +137,7 @@ describe("re-importing a corrected record", () => {
 
   it("never purges a corrected record", async () => {
     const db = fakeDb();
-    await new TorImportService(db, matching).purge("datagov", () => false);
+    await new TorImportService(db, matching).purge("mea", () => false);
     assert.deepEqual(db.writes.finds[0].lockedFields, { $exists: false });
   });
 });

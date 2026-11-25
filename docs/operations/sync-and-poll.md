@@ -10,7 +10,6 @@
 | --- | --- | --- | --- |
 | e-GP | ทันที | 6 ชม. | 2 หน้า × 50 ผล ต่อประเภทประกาศ |
 | MEA | 60 วิ | 6 ชม. | 3 listing ทีละ 1,000 แถว |
-| data.go.th | 120 วิ | 24 ชม. | 6 เดือนล่าสุด |
 | AI extraction | 180 วิ | 1 ชม. | 25 ฉบับ (อ่านพร้อมกัน 3) |
 
 ที่เหลื่อมเพราะสามแหล่งต้องเข้าไปอ่านหน้า detail เหมือนกัน และเพราะ interval นับจากจุดที่เหลื่อม มันจึงห่างกันทุกรอบ
@@ -26,7 +25,7 @@
 5. ตัดตัวซ้ำแล้วเขียนลง DB
 6. ล้างของที่ไม่เข้าเกณฑ์แล้ว ด้วยกฎชุดเดียวกับตอน import
 
-**ตัดตัวซ้ำ** — ยุบในแบตช์ → เทียบ `projectNumber + stage` แบบตรงตัว → เทียบชื่อแบบใกล้เคียง (แยกตาม stage) → ถ้าซ้ำให้แหล่งที่น่าเชื่อกว่าชนะ ตามลำดับ `manual > egp > mea > datagov`
+**ตัดตัวซ้ำ** — ยุบในแบตช์ → เทียบ `projectNumber + stage` แบบตรงตัว → เทียบชื่อแบบใกล้เคียง (แยกตาม stage) → ถ้าซ้ำให้แหล่งที่น่าเชื่อกว่าชนะ ตามลำดับ `manual > egp > gproc > mea`
 
 รายการที่แอดมินพิมพ์เองไม่เคยถูกลบอัตโนมัติ
 
@@ -46,7 +45,6 @@ admin-only ทุกเส้น (หน้า `/admin/tor` มีปุ่ม�
 ```bash
 curl -X POST http://localhost:4000/api/egp/sync     -H "Authorization: Bearer $TOKEN"
 curl -X POST http://localhost:4000/api/mea/sync     -H "Authorization: Bearer $TOKEN"
-curl -X POST http://localhost:4000/api/datagov/sync -H "Authorization: Bearer $TOKEN"
 curl -X POST http://localhost:4000/api/ai/extract   -H "Authorization: Bearer $TOKEN"  # 25 ฉบับ
 
 curl http://localhost:4000/api/ai/status   # เส้นเดียวที่ไม่ต้อง login
@@ -60,7 +58,6 @@ curl http://localhost:4000/api/ai/status   # เส้นเดียวที�
 | --- | --- | --- |
 | `EGP_POLL_MINUTES` | 360 | 0 = ปิด poll ปุ่มยังกดได้ |
 | `MEA_POLL_MINUTES` | 360 | |
-| `DATAGOV_POLL_MINUTES` | 1440 | portal อัปเดตเดือนละครั้ง |
 | `AI_POLL_MINUTES` | 60 | ไม่มี `VERTEX_PROJECT_ID` = ปิดตัวเอง |
 | `*_POLL_ON_STARTUP` | false | บนเครื่อง dev ปิดไว้ เพราะรีสตาร์ททั้งวัน |
 | `EGP_MAX_PAGES` | 2 | ดึงลึกกี่หน้าต่อประเภทประกาศ |

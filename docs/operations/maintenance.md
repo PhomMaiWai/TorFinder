@@ -38,8 +38,8 @@ evaluation period ([kpi.md](../requirements/kpi.md), K12).
 ### Did the imports run?
 
 The importers run on a schedule inside the backend (see
-[pipeline.md](./pipeline.md)): e-GP and MEA every 6 hours, data.go.th every
-day, AI extraction every hour. Three things tell you when one goes wrong:
+[pipeline.md](./pipeline.md)): e-GP and MEA every 6 hours, the national
+e-GP every 3 hours, AI extraction every hour. Three things tell you when one goes wrong:
 
 1. **Admin notifications.** When a run fails, or some feeds don't answer,
    every active admin gets one unread notification for that source

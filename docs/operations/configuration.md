@@ -48,11 +48,10 @@ Demo accounts live in `backend/src/database/seed-data.ts`.
 | Bangkok e-GP (`egp2.bangkok.go.th`) | Drafts for hearing, invitations, award notices from BMA | 6 h | Import button on `/admin/tor` |
 | National e-GP (`process5.gprocurement.go.th`) | Current procurement step and tender documents for open projects | 3 h | Capture by project number on `/admin/tor` |
 | MEA (`procurement.mea.or.th`) | MEA procurement announcements | 6 h | Button on `/admin/tor` |
-| data.go.th | Monthly government contract data | daily | Button on `/admin/tor` |
 | Vertex AI (Gemini) | Fields read from each TOR's PDF | 1 h | `POST /api/ai/extract` (no button yet) |
 
 Every importer keeps only software and IT work in Bangkok, published from 2022 on,
-merges the same project across sources (manual > Bangkok e-GP > MEA > data.go.th),
+merges the same project across sources (manual > Bangkok e-GP > national e-GP > MEA),
 and leaves fields an admin has corrected alone. Re-running is always safe. The details
 are in [pipeline.md](./pipeline.md) and, in plainer words,
 [pipeline-guide.md](./pipeline-guide.md).
@@ -79,10 +78,9 @@ are in [pipeline.md](./pipeline.md) and, in plainer words,
 | `VERTEX_EMBEDDING_MODEL` | `text-multilingual-embedding-002` | "Find similar" ranks by keywords without Vertex |
 | `EGP_POLL_MINUTES` | `360` | `0` turns the job off; same for the other `*_POLL_MINUTES` |
 | `MEA_POLL_MINUTES` | `360` | |
-| `DATAGOV_POLL_MINUTES` | `1440` | |
 | `GPROC_POLL_MINUTES` | `180` | |
 | `AI_POLL_MINUTES` | `60` | |
-| `EGP_POLL_ON_STARTUP`, `MEA_POLL_ON_STARTUP`, `DATAGOV_POLL_ON_STARTUP`, `GPROC_POLL_ON_STARTUP` | `true` | Run once when the backend starts |
+| `EGP_POLL_ON_STARTUP`, `MEA_POLL_ON_STARTUP`, `GPROC_POLL_ON_STARTUP` | `true` | Run once when the backend starts |
 | `AI_POLL_ON_STARTUP` | `false` | Off by default so restarts don't spend model calls |
 | `EGP_LOOKBACK_DAYS` | `120` | How far back drafts and invitations are read |
 | `EGP_MAX_PAGES` | `40` | Pages per announcement type |

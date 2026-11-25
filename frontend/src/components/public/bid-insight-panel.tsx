@@ -19,7 +19,7 @@ const COMPETITION_CLS = {
 
 /**
  * What to bid, and how contested this kind of work has been: three price
- * points from past winning bids, each with the share of those winners it
+ * points from past winning bids, each with how many of those winning prices it
  * would have undercut, then who has been winning and for how much.
  */
 export function BidInsightPanel({ insight }: { insight: BidInsight }) {
@@ -74,7 +74,10 @@ export function BidInsightPanel({ insight }: { insight: BidInsight }) {
               <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-alt">
                 <div className="h-full rounded-full bg-accent" style={{ width: `${pct(point.winChance)}%` }} />
               </div>
-              <p className="mt-1 text-2xs text-ink-muted">{t("bidWinChance", { chance: pct(point.winChance) })}</p>
+              {/* A count of real awards, not a forecast: winChance is beaten / peerCount (backend bid-insight.ts). */}
+              <p className="mt-1 text-2xs text-ink-muted">
+                {t("bidBeats", { beaten: Math.round(point.winChance * insight.peerCount), total: insight.peerCount })}
+              </p>
             </li>
           );
         })}

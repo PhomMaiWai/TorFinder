@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { TorCorrectionInfo } from "@/components/admin/tor-correction-info";
 import { TorEditForm } from "@/components/admin/tor-edit-form";
+import { TorExtractionReview } from "@/components/admin/tor-extraction-review";
 import { AdminPageShell } from "@/components/layout/admin-page";
 import { BMA_AGENCIES } from "@/data/opportunities";
 import { fetchReport } from "@/lib/admin-api";
@@ -15,6 +16,9 @@ import { updateTorEntry } from "./actions";
 
 const inputCls =
   "h-11 w-full rounded-lg border border-border px-4 text-sm text-ink outline-none placeholder:text-ink-subtle focus:border-accent/40 focus:ring-2 focus:ring-accent/10";
+
+/** Two fields side by side, except in the narrow left column of the wide layout. */
+const pairCls = "grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2";
 
 export default async function AdminEditTorPage({
   params,
@@ -47,7 +51,7 @@ export default async function AdminEditTorPage({
 
   return (
     <AdminPageShell title={t("editTitle")} description={tor.title}>
-      <div className="max-w-2xl space-y-4">
+      <div className="space-y-5">
         {report && (
           <section className="rounded-xl border border-warn/30 bg-warn-soft p-5" aria-label={t("reportRegion")}>
             <p className="flex items-center gap-2 text-sm font-semibold text-ink">
@@ -67,128 +71,139 @@ export default async function AdminEditTorPage({
           </section>
         )}
         <TorCorrectionInfo tor={tor} />
-        <TorEditForm action={updateWithId} className="rounded-xl border border-border bg-surface p-6">
+        {/* One form, one save: the announcement on the left, the AI's reading of its document on the right. */}
+        <TorEditForm action={updateWithId}>
           {report && <input type="hidden" name="reportId" value={report.id} />}
-          <Field label={tv("field.classification")}>
-            <select
-              name="classification"
-              defaultValue={tor.classification ?? "software"}
-              className={inputCls}
-            >
-              {TOR_CLASSIFICATIONS.map((value) => (
-                <option key={value} value={value}>
-                  {valueLabel(tv, "classification", value)}
-                </option>
-              ))}
-            </select>
-            <span className="mt-1.5 block text-xs text-ink-muted">
-              {t("classificationHint", { notSoftware: valueLabel(tv, "classification", "not-software") })}
-            </span>
-          </Field>
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+            <section className="space-y-5 rounded-xl border border-border bg-surface p-6">
+              <h2 className="text-base font-semibold text-ink">{t("detailsSection")}</h2>
+              <Field label={tv("field.classification")}>
+                <select
+                  name="classification"
+                  defaultValue={tor.classification ?? "software"}
+                  className={inputCls}
+                >
+                  {TOR_CLASSIFICATIONS.map((value) => (
+                    <option key={value} value={value}>
+                      {valueLabel(tv, "classification", value)}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1.5 block text-xs text-ink-muted">
+                  {t("classificationHint", { notSoftware: valueLabel(tv, "classification", "not-software") })}
+                </span>
+              </Field>
 
-          <Field label={tv("field.title")}>
-            <input
-              name="title"
-              required
-              defaultValue={tor.title}
-              className={inputCls}
-            />
-          </Field>
+              <Field label={tv("field.title")}>
+                <input
+                  name="title"
+                  required
+                  defaultValue={tor.title}
+                  className={inputCls}
+                />
+              </Field>
 
-          <Field label={tv("field.agency")}>
-            <select
-              name="agency"
-              required
-              defaultValue={tor.agency}
-              className={inputCls}
-            >
-              {agencies.map((agency) => (
-                <option key={agency} value={agency}>
-                  {agency}
-                </option>
-              ))}
-            </select>
-          </Field>
+              <Field label={tv("field.agency")}>
+                <select
+                  name="agency"
+                  required
+                  defaultValue={tor.agency}
+                  className={inputCls}
+                >
+                  {agencies.map((agency) => (
+                    <option key={agency} value={agency}>
+                      {agency}
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={tv("field.budget")}>
-              <input
-                name="budget"
-                required
-                defaultValue={tor.budget}
-                className={inputCls}
-              />
-            </Field>
-            <Field label={tv("field.deadline")}>
-              <input
-                name="deadline"
-                required
-                defaultValue={tor.deadline}
-                className={inputCls}
-              />
-            </Field>
+              <div className={pairCls}>
+                <Field label={tv("field.budget")}>
+                  <input
+                    name="budget"
+                    required
+                    defaultValue={tor.budget}
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label={tv("field.deadline")}>
+                  <input
+                    name="deadline"
+                    required
+                    defaultValue={tor.deadline}
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
+
+              <div className={pairCls}>
+                <Field label={tv("field.daysLeft")}>
+                  <input
+                    name="daysLeft"
+                    type="number"
+                    min={0}
+                    defaultValue={tor.daysLeft}
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label={tv("field.budgetStatus")}>
+                  <select
+                    name="budgetStatus"
+                    defaultValue={tor.budgetStatus ?? "ปกติ"}
+                    className={inputCls}
+                  >
+                    <option value="ปกติ">{valueLabel(tv, "budgetStatus", "ปกติ")}</option>
+                    <option value="สูงกว่าปกติ">{valueLabel(tv, "budgetStatus", "สูงกว่าปกติ")}</option>
+                    <option value="ต่ำกว่าปกติ">{valueLabel(tv, "budgetStatus", "ต่ำกว่าปกติ")}</option>
+                  </select>
+                </Field>
+              </div>
+
+              <Field label={tv("field.stage")}>
+                <select name="stage" defaultValue={tor.stage} className={inputCls}>
+                  {stages.map((stage) => (
+                    <option key={stage} value={stage}>
+                      {valueLabel(tv, "stage", stage)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label={t("tagsLabel")}>
+                <input
+                  name="tags"
+                  defaultValue={tor.tags.join(", ")}
+                  className={inputCls}
+                />
+              </Field>
+
+              <Field label={t("summaryHeading")}>
+                <textarea
+                  name="summary"
+                  required
+                  rows={6}
+                  defaultValue={tor.summary}
+                  className={`${inputCls} h-auto resize-y py-3`}
+                />
+              </Field>
+            </section>
+
+            <TorExtractionReview extraction={tor.extraction} />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={tv("field.daysLeft")}>
-              <input
-                name="daysLeft"
-                type="number"
-                min={0}
-                defaultValue={tor.daysLeft}
-                className={inputCls}
-              />
-            </Field>
-            <Field label={tv("field.budgetStatus")}>
-              <select
-                name="budgetStatus"
-                defaultValue={tor.budgetStatus ?? "ปกติ"}
-                className={inputCls}
-              >
-                <option value="ปกติ">{valueLabel(tv, "budgetStatus", "ปกติ")}</option>
-                <option value="สูงกว่าปกติ">{valueLabel(tv, "budgetStatus", "สูงกว่าปกติ")}</option>
-                <option value="ต่ำกว่าปกติ">{valueLabel(tv, "budgetStatus", "ต่ำกว่าปกติ")}</option>
-              </select>
-            </Field>
+          {/* Stays in view while a long form scrolls, so saving never means hunting for the button. */}
+          <div className="sticky bottom-0 z-10 -mx-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border bg-surface/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8">
+            <button
+              type="submit"
+              className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+            >
+              {t("saveChanges")}
+            </button>
+            <p className="text-xs text-ink-muted">
+              {t("lockOnSave")}
+            </p>
           </div>
-
-          <Field label={tv("field.stage")}>
-            <select name="stage" defaultValue={tor.stage} className={inputCls}>
-              {stages.map((stage) => (
-                <option key={stage} value={stage}>
-                  {valueLabel(tv, "stage", stage)}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label={t("tagsLabel")}>
-            <input
-              name="tags"
-              defaultValue={tor.tags.join(", ")}
-              className={inputCls}
-            />
-          </Field>
-
-          <Field label={t("summaryHeading")}>
-            <textarea
-              name="summary"
-              required
-              rows={5}
-              defaultValue={tor.summary}
-              className={`${inputCls} h-auto resize-none py-3`}
-            />
-          </Field>
-
-          <button
-            type="submit"
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
-          >
-            {t("saveChanges")}
-          </button>
-          <p className="text-xs text-ink-muted">
-            {t("lockOnSave")}
-          </p>
         </TorEditForm>
       </div>
     </AdminPageShell>

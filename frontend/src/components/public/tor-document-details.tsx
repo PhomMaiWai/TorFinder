@@ -5,6 +5,7 @@ import {
   Briefcase,
   Building2,
   Check,
+  CheckCircle2,
   ExternalLink,
   ListChecks,
   Sparkles,
@@ -174,16 +175,23 @@ export function TorDocumentDetails({
       </h2>
       {extraction && assessment && (
         <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          {/* The machine reading's own score always shows; an admin's check is told beside it, not in its place. */}
           <span
             title={t("confidenceHint")}
             className={`rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums ${LEVEL_STYLE[assessment.level]}`}
           >
             {t("confidenceLabel", { score: Math.round(assessment.score * 100) })}
           </span>
+          {extraction.reviewed && (
+            <span className="flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-0.5 text-xs font-semibold text-success">
+              <CheckCircle2 size={12} />
+              {t("reviewedBadge")}
+            </span>
+          )}
           <p className="text-xs text-ink-subtle">{t("extractionDisclaimer", { model: extraction.model })}</p>
         </div>
       )}
-      {extraction && assessment?.level === "low" && (
+      {extraction && !extraction.reviewed && assessment?.level === "low" && (
         <div className="mb-5 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-lg bg-warn-soft px-3 py-2 text-xs leading-relaxed text-warn">
           <p className="flex flex-1 items-start gap-2">
             <AlertTriangle size={14} className="mt-0.5 shrink-0" />

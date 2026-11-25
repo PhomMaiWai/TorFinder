@@ -165,7 +165,7 @@ export class TorImportService {
       .find(
         // An admin who corrected a record decided it belongs; a rule change doesn't overrule that.
         { sourceRef: { $regex: `^${source}:` }, ...UNCORRECTED },
-        { projection: { title: 1, agency: 1, goodsCategory: 1, location: 1, createdAt: 1 } },
+        { projection: { title: 1, agency: 1, goodsCategory: 1, createdAt: 1 } },
       )
       .toArray();
 

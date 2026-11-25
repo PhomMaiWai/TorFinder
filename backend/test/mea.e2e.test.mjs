@@ -1,8 +1,7 @@
 // End-to-end coverage for the MEA (การไฟฟ้านครหลวง) import (backend/src/mea),
 // run in CI by .github/workflows/auth.yml against a freshly booted backend + MongoDB.
 //
-// Same approach as tor-integration.e2e.test.mjs's e-GP coverage and
-// datagov.e2e.test.mjs: Node's built-in runner + fetch over HTTP, admin-guard
+// Same approach as tor-integration.e2e.test.mjs's e-GP coverage: Node's built-in runner + fetch over HTTP, admin-guard
 // checks always on, and the live portal fetch kept opt-in since it reaches the
 // real procurement.mea.or.th site. The scraper's own HTML parsing is covered
 // deterministically in mea-client.test.mjs instead of here.

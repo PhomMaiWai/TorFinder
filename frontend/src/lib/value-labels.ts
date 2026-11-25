@@ -47,8 +47,7 @@ const KEYS = {
   },
   /**
    * A TOR's tag: the importers tag each record with the portal's announcement
-   * type (backend egp/mea/gproc constants). data.go.th sends its own type names,
-   * which pass through as published.
+   * type (backend egp/mea/gproc constants).
    */
   tag: {
     "ร่างขอบเขตของงาน (TOR)": "draftTor",

@@ -74,23 +74,21 @@ export const ACTIONABLE_WINDOW_MS = 90 * 24 * 60 * 60_000;
  * with the one it came from (`egp:69089649017:D0`), which is what lets a
  * listing be filtered by source without a second field to keep in step.
  */
-export const TOR_IMPORT_SOURCES = ["egp", "gproc", "mea", "datagov"] as const;
+export const TOR_IMPORT_SOURCES = ["egp", "gproc", "mea"] as const;
 export type TorImportSource = (typeof TOR_IMPORT_SOURCES)[number];
 
 /**
  * Which copy of a project survives when two sources publish it. An admin typed
  * theirs in deliberately, so it always wins. Then Bangkok's e-GP, which carries
  * the files and the signed contracts; then the national e-GP (process5), the
- * same announcement with less around it; then the agency's own site, which adds
- * documents but only covers itself; last the open-data dumps, which are
- * historical contract records rather than announcements anyone can still act on.
+ * same announcement with less around it; last the agency's own site, which adds
+ * documents but only covers itself.
  */
 const SOURCE_RANK: Record<TorImportSource | "manual", number> = {
   manual: 4,
   egp: 3,
   gproc: 2,
   mea: 1,
-  datagov: 0,
 };
 
 /** The source a `sourceRef` belongs to; no ref at all means an admin entered it. */

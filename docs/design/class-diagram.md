@@ -21,7 +21,6 @@ classDiagram
     }
     class EgpScheduler
     class MeaScheduler
-    class DataGovScheduler
     class GprocScheduler
     class ExtractionScheduler
 
@@ -31,9 +30,6 @@ classDiagram
         +nearMisses() NearMiss[]
     }
     class MeaService {
-        +sync() SyncResult
-    }
-    class DataGovService {
         +sync() SyncResult
     }
     class GprocService {
@@ -51,10 +47,6 @@ classDiagram
     class MeaClient {
         +announcements(type)
         +detail(type, keyId)
-    }
-    class DataGovClient {
-        +procurementPackages(start, rows)
-        +projectLocation(resourceId, projectNo)
     }
     class GprocClient {
         +projectDetail(projectNumber)
@@ -88,24 +80,20 @@ classDiagram
 
     SyncScheduler <|-- EgpScheduler
     SyncScheduler <|-- MeaScheduler
-    SyncScheduler <|-- DataGovScheduler
     SyncScheduler <|-- GprocScheduler
     SyncScheduler <|-- ExtractionScheduler
     SyncScheduler --> AdminAlertsService : after repeated failures
 
     EgpScheduler --> EgpService
     MeaScheduler --> MeaService
-    DataGovScheduler --> DataGovService
     GprocScheduler --> GprocService
     ExtractionScheduler --> ExtractionService
 
     EgpService --> EgpClient
     MeaService --> MeaClient
-    DataGovService --> DataGovClient
     GprocService --> GprocClient
     EgpService --> TorImportService
     MeaService --> TorImportService
-    DataGovService --> TorImportService
     GprocService --> TorImportService
 
     TorImportService --> MatchingService : refresh budgets, notify matches

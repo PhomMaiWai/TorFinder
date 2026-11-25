@@ -18,9 +18,12 @@ export async function fetchTorList(
   page = 1,
   pageSize = 20,
   source?: TorSource,
+  /** Words to find in the title, agency, project number, summary or tags. */
+  q?: string,
 ): Promise<TorRecord[]> {
   const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (source) query.set("source", source);
+  if (q?.trim()) query.set("q", q.trim());
 
   return fetchJson<TorRecord[]>(`/api/tor?${query}`);
 }

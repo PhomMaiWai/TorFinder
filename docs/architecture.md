@@ -40,7 +40,6 @@ flowchart TB
         EGP["Bangkok e-GP"]
         GPROC["National e-GP"]
         MEA["MEA procurement site"]
-        DATAGOV["data.go.th"]
     end
 
     subgraph Services["Outside services (optional)"]
@@ -52,7 +51,7 @@ flowchart TB
     end
 
     Public & Org & Admin --> TF
-    TF --> EGP & GPROC & MEA & DATAGOV
+    TF --> EGP & GPROC & MEA
     TF --> Vertex & Google
     TF --> Resend & Line & Slack
 ```
@@ -88,7 +87,7 @@ unit-tested from `dist/` without a database.
 | `auth/` | Sign-up, login, Google sign-in, reset and verify links | |
 | `accounts/` | Company profile, approval, roles, suspension | |
 | `tor/` | TOR CRUD, the shared import path, de-duplication, stages, document relay | `tor-import.service.ts`, `tor-dedup.ts`, `tor-stage.ts`, `tor.constants.ts` |
-| `egp/`, `gproc/`, `mea/`, `datagov/` | One importer per source: client, service, scheduler | Each decides what it wants (`isWanted`) and hands records to `TorImportService` |
+| `egp/`, `gproc/`, `mea/` | One importer per source: client, service, scheduler | Each decides what it wants (`isWanted`) and hands records to `TorImportService` |
 | `ai/` | Vertex client, PDF extraction queue, proposal drafts | `extraction-confidence.ts`, `tor-extraction.ts` |
 | `matching/` | Company ranking, match alerts, budget and bid insight | `matching.scoring.ts`, `match-alerts.ts`, `bid-insight.ts` |
 | `similar/` | Find similar TORs from pasted text or one TOR: Vertex embeddings cached in `torEmbeddings`, TF-IDF keyword ranking when Vertex is off or fails | `similar-text.ts` |
@@ -134,19 +133,19 @@ flowchart LR
 ```
 
 1. **Fetch.** Each source's scheduler extends `SyncScheduler`
-   (`common/sync-scheduler.ts`). e-GP and MEA run every 6 hours, data.go.th
-   daily, the national e-GP every 3 hours, extraction hourly; all are set in
+   (`common/sync-scheduler.ts`). e-GP and MEA run every 6 hours,
+   the national e-GP every 3 hours, extraction hourly; all are set in
    `config/env.ts`. An admin's "sync now" joins a run already in progress
    instead of starting a second one.
 2. **Filter.** `isSoftwareProject` (`common/software-filter.ts`) is a keyword
-   rule, not AI. MEA, the national e-GP and data.go.th add a Bangkok check
+   rule, not AI. MEA and the national e-GP add a Bangkok check
    (`tor/thai-locality.ts`); Bangkok e-GP only carries BMA agencies. All
    apply the `TOR_LISTED_SINCE` cutoff. The same rule runs again after each
    sync (`TorImportService.purge`), so tightening it cleans up old records.
 3. **De-duplicate.** Copies of one project from different sources collapse
    by project number and stage, then by a close title match
    (`tor/tor-dedup-index.ts`). When two sources disagree, `sourceRank` in
-   `tor/tor.constants.ts` decides: manual > egp > gproc > mea > datagov.
+   `tor/tor.constants.ts` decides: manual > egp > gproc > mea.
 4. **Store.** `TorImportService` upserts by `sourceRef` (`egp:…`, `mea:…`).
    Fields an admin corrected are in `lockedFields` and no import overwrites
    them. The stage is one of five (`TOR_STAGES`: plan, draft for comment,

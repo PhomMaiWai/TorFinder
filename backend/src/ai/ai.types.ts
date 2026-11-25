@@ -47,6 +47,13 @@ export type StoredExtraction = TorExtraction & {
   documentUrl: string;
   extractedAt: Date;
   version: number;
+  /**
+   * Set when an admin checked (and perhaps corrected) the reading by hand.
+   * A reviewed extraction is never re-read automatically, so a new extraction
+   * version can't silently undo the correction; only an admin's own "read
+   * again" replaces it.
+   */
+  reviewed?: { by: string; at: Date };
 };
 
 /** What one batch run got through. */

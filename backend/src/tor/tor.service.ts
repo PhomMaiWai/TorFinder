@@ -1,4 +1,5 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { isDeepStrictEqual } from "node:util";
 import { Filter, ObjectId } from "mongodb";
 
 import { assessConfidence } from "../ai/extraction-confidence";
@@ -9,7 +10,9 @@ import { workTypesOf } from "../matching/work-types";
 import { env } from "../config/env";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { TorSource } from "./dto/list-tor-query.dto";
+import { UpdateExtractionDto } from "./dto/update-extraction.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
+import { escapeRegex } from "../common/regex";
 import { LISTED_TOR, STAGE_LISTING_ORDER } from "./tor.constants";
 import { awardedProjectNumbers, biddingOf } from "./tor-bidding";
 import { buildTimeline } from "./tor-stage";
@@ -86,7 +89,7 @@ export class TorService {
     );
   }
 
-  async findAll(page = 1, pageSize = 20, source?: TorSource) {
+  async findAll(page = 1, pageSize = 20, source?: TorSource, q?: string) {
     // Deleted records stay in the collection but out of every listing except
     // the one that exists to restore them.
     const filter: Filter<TorDoc> = {
@@ -97,6 +100,16 @@ export class TorService {
     // source is filtered on the same anchored prefix an index can serve.
     if (source === "manual") filter.sourceRef = { $exists: false };
     else if (source) filter.sourceRef = { $regex: `^${source}:` };
+    // A search: every word has to appear somewhere in the record, in any field.
+    const words = (q ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 8);
+    if (words.length > 0) {
+      filter.$and = words.map((word) => {
+        const pattern = { $regex: escapeRegex(word), $options: "i" };
+        return {
+          $or: [{ title: pattern }, { agency: pattern }, { projectNumber: pattern }, { summary: pattern }, { tags: pattern }],
+        };
+      });
+    }
 
     const [docs, awarded] = await Promise.all([
       this.db.tors
@@ -282,6 +295,58 @@ export class TorService {
     return { id: updated.toString(), ...rest };
   }
 
+  /**
+   * An admin's review of what the AI read off the document. Only fields that
+   * differ from the stored reading are written; either way the reading is
+   * marked reviewed, which also keeps the AI job from re-reading it later
+   * (ExtractionService). The audit log names the fields that changed.
+   */
+  async updateExtraction(id: string, dto: UpdateExtractionDto, editor: { email: string; name: string }) {
+    if (!ObjectId.isValid(id)) throw new NotFoundException("ไม่พบรายการ TOR");
+    const _id = new ObjectId(id);
+
+    const current = await this.db.tors.findOne({ _id }, { projection: { title: 1, extraction: 1 } });
+    if (!current) throw new NotFoundException("ไม่พบรายการ TOR");
+    if (!current.extraction) throw new BadRequestException("ประกาศนี้ยังไม่มีข้อมูลที่ AI อ่านจากเอกสาร");
+
+    const { reviewed, ...fields } = dto;
+    const changes: Record<string, unknown> = {};
+    for (const [field, value] of Object.entries(fields) as [keyof typeof fields, unknown][]) {
+      if (value === undefined) continue;
+      // A reading from before a field existed has no value for it: the same as empty.
+      const stored = current.extraction[field] ?? (Array.isArray(value) ? [] : null);
+      if (!isDeepStrictEqual(stored, value)) changes[field] = value;
+    }
+    if (Object.keys(changes).length === 0 && !reviewed) return this.findOne(id);
+
+    await this.db.tors.updateOne(
+      { _id },
+      {
+        $set: {
+          ...Object.fromEntries(Object.entries(changes).map(([field, value]) => [`extraction.${field}`, value])),
+          "extraction.reviewed": { by: editor.name, at: new Date() },
+        },
+      },
+    );
+
+    const changed = Object.keys(changes);
+    await this.audit.record(
+      editor.email,
+      "ตรวจทานข้อมูลที่ AI อ่านจากเอกสาร TOR",
+      changed.length > 0
+        ? `${current.title}: ${changed.map((field) => EXTRACTION_FIELD_LABELS[field] ?? field).join(", ")}`
+        : `${current.title}: ยืนยันว่าถูกต้อง`,
+    );
+    // Qualifications and figures feed the match score; a corrected reading can
+    // lift a company over its line (or rule it out), as a fresh AI reading does.
+    if (changed.length > 0) {
+      await this.matching
+        .notifyMatches([_id])
+        .catch((error: unknown) => this.logger.warn(`Match notifications after review failed: ${String(error)}`));
+    }
+    return this.findOne(id);
+  }
+
   /** Announcements an admin marked as outside software work — the list that can put them back. */
   async findNotSoftware() {
     const docs = await this.db.tors
@@ -296,6 +361,26 @@ export class TorService {
 }
 
 /** How the audit log names each field an admin can correct. */
+/** How the audit log names each AI-read field an admin corrected. */
+const EXTRACTION_FIELD_LABELS: Record<string, string> = {
+  scope: "ขอบเขตงาน",
+  objectives: "วัตถุประสงค์",
+  qualifications: "คุณสมบัติผู้เสนอราคา",
+  deliverables: "สิ่งที่ต้องส่งมอบ",
+  paymentTerms: "งวดงานและการจ่ายเงิน",
+  budgetAmount: "งบประมาณในเอกสาร",
+  referencePrice: "ราคากลาง",
+  deadline: "วันสิ้นสุดในเอกสาร",
+  deadlineTime: "ช่วงเวลา",
+  feedbackDeadline: "วันสิ้นสุดรับฟังความคิดเห็น",
+  contractPeriod: "ระยะเวลาสัญญา",
+  evaluationCriteria: "เกณฑ์การพิจารณา",
+  bidSecurity: "หลักประกัน",
+  penalty: "ค่าปรับ",
+  warrantyPeriod: "ระยะเวลารับประกัน",
+  contact: "ช่องทางติดต่อ",
+};
+
 const FIELD_LABELS = {
   title: "ชื่อโครงการ",
   agency: "หน่วยงาน",

@@ -17,7 +17,7 @@ to a real route; the guard named in brackets is what the backend checks
 | Scheduler | — | Timers inside the backend (`SyncScheduler` subclasses) |
 
 External systems: Bangkok e-GP, national e-GP (process5), MEA procurement
-site, data.go.th, Google Vertex AI (Gemini), Google Identity, Resend
+site, Google Vertex AI (Gemini), Google Identity, Resend
 (email), LINE Messaging API, Slack webhooks.
 
 ## Diagram
@@ -103,7 +103,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     Scheduler(["⏱ Scheduler"])
-    Sources[["Bangkok e-GP · National e-GP<br/>MEA · data.go.th"]]
+    Sources[["Bangkok e-GP · National e-GP<br/>MEA"]]
     Vertex[["Vertex AI (Gemini)"]]
     Channels[["Email · LINE · Slack"]]
 
@@ -146,10 +146,10 @@ flowchart LR
 | UC19 | Create, edit, hide, restore TORs | Admin | `POST/PATCH/DELETE /api/tor`, `/:id/restore` | FR-22 |
 | UC21 | Moderate comments | Admin | `GET /api/feedback`, `PATCH /api/feedback/:id` | FR-23 |
 | UC22 | Resolve reports and fix the TOR | Admin | `/api/reports` | FR-21, FR-22 |
-| UC23 | Run imports and AI by hand | Admin | `POST /api/{egp,mea,datagov}/sync`, `/gproc/capture`, `/ai/extract` | FR-04, FR-08 |
+| UC23 | Run imports and AI by hand | Admin | `POST /api/{egp,mea}/sync`, `/gproc/capture`, `/ai/extract` | FR-04, FR-08 |
 | UC24 | Watch pipeline health and audit log | Admin | `GET /api/egp/metrics`, `/egp/near-misses`, `/audit` | FR-06, FR-25 |
 | UC25 | See which companies fit a TOR | Admin | `GET /api/matching/tor/:id/companies` | FR-13 |
-| UC26 | Import TORs from sources | Scheduler | `EgpScheduler`, `MeaScheduler`, `DataGovScheduler`, `GprocScheduler` | FR-04, FR-05, FR-07, FR-26 |
+| UC26 | Import TORs from sources | Scheduler | `EgpScheduler`, `MeaScheduler`, `GprocScheduler` | FR-04, FR-05, FR-07, FR-26 |
 | UC27 | Extract TOR fields with AI | Scheduler | `ExtractionScheduler` | FR-08 |
 | UC28 | Send match alerts | Scheduler | `MatchingService.notifyMatches` (after every import and extraction) | FR-14 |
 

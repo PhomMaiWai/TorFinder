@@ -73,7 +73,7 @@ There is no root `package.json` and no root `src/` folder: the app is `backend/`
 | Problem reports | `/api/tor/:torId/reports`, `/api/reports/*` | Throttle; AdminGuard | `backend/src/reports/reports.controller.ts` |
 | Market insights, growth path | `/api/insights/*` | Public; OrgGuard | `backend/src/insights/insights.controller.ts` |
 | Audit log | `/api/audit` | AdminGuard | `backend/src/audit/audit.controller.ts` |
-| Manual portal sync | `/api/egp/sync`, `/api/mea/sync`, `/api/datagov/sync`, `/api/gproc/capture` | AdminGuard | `backend/src/{egp,mea,datagov,gproc}/*.controller.ts` |
+| Manual portal sync | `/api/egp/sync`, `/api/mea/sync`, `/api/gproc/capture` | AdminGuard | `backend/src/{egp,mea,gproc}/*.controller.ts` |
 | Health check | `/health` | Public | `backend/src/health.controller.ts` |
 
 The frontend also has route handlers under `frontend/src/app/api/**/route.ts` that read the httpOnly session cookie and forward the call to the backend with a Bearer token (`frontend/src/lib/backend-proxy.ts`, `frontend/src/lib/session-headers.ts`).
@@ -84,7 +84,6 @@ The frontend also has route handlers under `frontend/src/app/api/**/route.ts` th
 | --- | --- | --- |
 | Bangkok e-GP (BMA) | `egp2.bangkok.go.th` | `backend/src/egp/egp.client.ts`, `egp.scheduler.ts` (poll default 360 min, `backend/src/config/env.ts:277`) |
 | MEA procurement | `procurement.mea.or.th` | `backend/src/mea/mea.client.ts`, `mea.scheduler.ts` |
-| data.go.th | `data.go.th` | `backend/src/datagov/datagov.client.ts`, `datagov.scheduler.ts` |
 | Comptroller General's Department e-GP | `process5.gprocurement.go.th` | `backend/src/gproc/gproc.client.ts`, `gproc.scheduler.ts` |
 
 Imported records are normalised and de-duplicated in `backend/src/tor/tor-normalize.ts`, `tor-dedup.ts` and `tor-import.service.ts`.
@@ -211,7 +210,7 @@ flowchart LR
     U[Public visitor / Viewer]
     O[Org user / Owner]
     A[Admin]
-    P[(Gov portals: e-GP BMA egp2.bangkok.go.th,<br/>MEA, data.go.th, gprocurement.go.th)]
+    P[(Gov portals: e-GP BMA egp2.bangkok.go.th,<br/>MEA, gprocurement.go.th)]
     G[Google sign-in / LINE / Resend]
   end
   subgraph Edge["TB1: HTTPS edge (Caddy)"]
