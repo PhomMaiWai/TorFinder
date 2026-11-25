@@ -38,7 +38,7 @@ How the mitigations are checked:
 | Session tokens and `SESSION_SECRET` | Whoever holds the secret can mint a token for any role |
 | Role and approval state | Decides who can edit TORs, approve companies and read problem reports |
 | Company profiles, certificates and proposal library | Business details, certificate scans, CVs and past-project files; private to each company |
-| Notification channels | Where a company's alerts go: email, Slack webhook, LINE user id |
+| Notification channels | Where a company's alerts go: email, LINE user id |
 | Moderation data | Problem reports, the audit log |
 | TOR records and documents | Public, but their integrity matters: a bidder acts on dates and budgets |
 | Secrets and credentials | `SESSION_SECRET`, MongoDB credentials, Resend and LINE keys, the LINE channel secret, Google Cloud credentials |
@@ -72,7 +72,7 @@ flowchart LR
   subgraph external["Trust boundary 3: external services"]
     google["Google sign-in"]
     portals["Procurement portals<br/>e-GP, MEA"]
-    notify["Resend email, LINE Messaging API,<br/>Slack webhooks"]
+    notify["Resend email, LINE Messaging API"]
     vertex["Vertex AI"]
   end
 

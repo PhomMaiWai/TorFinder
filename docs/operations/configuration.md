@@ -88,6 +88,7 @@ are in [pipeline.md](./pipeline.md) and, in plainer words,
 | `EGP_ENRICH_BUDGET_MS` | `45000` | Time cap on fetching per-project detail in one sync |
 | `RESEND_API_KEY` | empty | Empty turns email off (links are logged instead) |
 | `NOTIFY_EMAIL_FROM` | `TOR Finder <noreply@torfinder.app>` | |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | empty, `465` | Send email over SMTP instead of Resend, e.g. Gmail (`smtp.gmail.com`, `465`, the Gmail address, an app password). Reaches any address without a verified domain. `SMTP_SECURE` overrides TLS-on-connect (default: on for port 465, STARTTLS otherwise). Not available behind the hardening proxy |
 | `MAIL_CATCHER_URL` | empty | Testing only. `http://mailpit:8025` sends every email to Mailpit (`docker compose --profile mail up -d`, view at http://localhost:8025) instead of Resend. Keep it empty in production |
 | `LINE_CHANNEL_ACCESS_TOKEN` | empty | Empty turns LINE off |
 | `NOTIFY_MATCH_THRESHOLD` | `70` | Default score for match alerts; each company can set its own |

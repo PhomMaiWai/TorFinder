@@ -13,7 +13,7 @@ feature see [api.md](../design/api.md); for the diagram version see
 | --- | --- | --- | --- | --- |
 | Public visitor | — | Anyone reading procurement news | No account needed | — |
 | Viewer | `viewer` | A member of the public who wants to keep a list | Google sign-in at `/login/public` | `/dashboard` |
-| Organization | `org` | A software company looking for TORs to bid on | Sign up at `/signup/organization`, verify email, wait for admin approval | `/dashboard` |
+| Organization | `org` | A software company looking for TORs to bid on | Sign up at `/signup/organization`, verify email, wait for admin approval | `/public` (TOR search); the workspace starts at `/matches`, with the public navbar on top and its notifications in the sidebar |
 | Administrator | `admin` | The TorFinder team | Seeded, or an admin changes an existing account's role (a second admin approves) | `/admin` |
 
 Each backend guard admits exactly one role, so an admin cannot use the
@@ -66,8 +66,7 @@ Everything a viewer can do, plus:
 - Find TORs similar to the company profile's past experience with one
   button on the search page.
 - Get an alert when a new TOR scores above the company's own threshold
-  (40-95), in the app and by email, LINE or Slack; send a test message to
-  check the channels (`/notifications`).
+  (40-95), in the app and by email or LINE (`/notifications`).
 - Ask the AI to draft a proposal for a TOR from one of the company's old
   proposals (5 per minute).
 
@@ -117,7 +116,7 @@ FR numbers are from [summary.md](../requirements/summary.md).
 | FR-11 | Full detail and link to the original document | ✅ Done | Documents open in the page |
 | FR-12 | Company matching profile | ✅ Done | |
 | FR-13 | Score each TOR against the profile | ✅ Done | Plus "find similar" from a pasted project or profile (#255): Vertex AI embeddings, keyword ranking without them |
-| FR-14 | Notify above a set score | ✅ Done | In-app, email, LINE, Slack |
+| FR-14 | Notify above a set score | ✅ Done | In-app, email, LINE |
 | FR-15 | Bookmark a TOR | ✅ Done | |
 | FR-16 | Save and reuse a search | ✅ Done | Up to 50 per account |
 | FR-17 | Show the lifecycle stage | ✅ Done | Five-stage timeline |

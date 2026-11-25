@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 import { PUBLIC_NOTICES } from "@/data/public-notices";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
-import { resetSession, useSession, workspaceFor } from "@/lib/use-session";
+import { homeFor, resetSession, useSession, workspaceFor } from "@/lib/use-session";
 
 /** Landing-page sections the navbar links to and tracks while scrolling. */
 const SECTION_IDS = ["features", "how-it-works", "preview"] as const;
@@ -108,6 +108,7 @@ export function SiteNavbar() {
 
   // Viewers have no app sidebar, so signing out has to live up here.
   const isViewer = session?.role === "viewer";
+  const isOrg = session?.role === "org";
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
@@ -156,7 +157,8 @@ export function SiteNavbar() {
             solid ? "h-14" : "h-16"
           }`}
         >
-          <Link href="/" className="group flex items-center gap-2.5" aria-label="TorFinder">
+          {/* Signed in, the logo leads home; the landing page stays one link away (#252). */}
+          <Link href={session ? homeFor(session.role) : "/"} className="group flex items-center gap-2.5" aria-label="TorFinder">
             <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-accent-dark text-xs font-bold text-white shadow-glow transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
               T
             </span>
@@ -204,6 +206,8 @@ export function SiteNavbar() {
                 deciding to sign up. */}
             {showUserTools && (
               <>
+                {/* A company's saved list is in its workspace sidebar. */}
+                {!isOrg && (
                 <Link
                   href="/saved"
                   className="relative grid size-9 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
@@ -219,7 +223,11 @@ export function SiteNavbar() {
                     </span>
                   )}
                 </Link>
+                )}
 
+                {/* A company's real notifications are in its workspace sidebar; this
+                    dropdown's notices are sample text, so it isn't offered to it. */}
+                {!isOrg && (
                 <div className="relative" ref={noticesRef}>
                   <button
                     type="button"
@@ -259,6 +267,7 @@ export function SiteNavbar() {
                     </div>
                   )}
                 </div>
+                )}
               </>
             )}
 

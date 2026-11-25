@@ -13,7 +13,7 @@ How TorFinder limits its connections to other systems, how long it keeps data, a
 | MEA portal | One list request per announcement type; detail pages 5 in flight | Detail reads queue, and stop at the enrichment time budget | `MEA_ENRICHMENT` in `mea.constants.ts` |
 | gProc portal | One project at a time (2 requests each), with a pause between projects | Stops after a run of consecutive failures (circuit breaker) | `GPROC_REQUEST` in `gproc.constants.ts` |
 | Vertex AI | One extraction batch at a time; drafts 5 per minute per client | Further drafts get 429 | Scheduler; route throttle |
-| Resend (email), LINE, Slack | One request per message | Each send stands alone; failures are logged | Notification code |
+| Resend or SMTP (email), LINE | One request per message | Each send stands alone; failures are logged | Notification code |
 | Frontend → backend | No pool limit (Node's default agent) | Each call has an 8–10 s timeout | `frontend/src/lib/*.ts` |
 
 Requests coming in are limited too: 100 per minute per client on the API (`THROTTLE_LIMIT`), 5 per minute on sign-in, sign-up and reset (`AUTH_THROTTLE_LIMIT`), and 10 wrong passwords per address per 15 minutes (`LOGIN_FAILURE_LIMIT`, `LOGIN_FAILURE_WINDOW_MS`).
@@ -30,7 +30,7 @@ Requests coming in are limited too: 100 per minute per client on the API (`THROT
 | A whole scheduled sync that throws | — | 3 attempts | 5 s, then 10 s; then admins are alerted (`common/sync-scheduler.ts`) |
 | Relaying a portal document or archive | 60 s | 0 | 40 MB cap; the user retries |
 | Vertex AI | 120 s | 3 on retryable errors | A failed document is retried after 24 h, not every run |
-| Resend, LINE, Slack | 8 s | 0 | Failure is logged; the user's action still succeeds |
+| Resend, SMTP, LINE | 8 s | 0 | Failure is logged; the user's action still succeeds |
 | Google sign-in token check | Library default | 0 | Sign-in fails with a message |
 
 ## How long data is kept
@@ -67,7 +67,6 @@ Deleting an account on request is done by an admin in the database for now; ther
 | `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` | Backend environment | Every 12 months; the secret at once if exposed (forged webhooks) | Reissue in the LINE console, `.env`, restart |
 | `GOOGLE_CLIENT_ID` | Both environments | Not a secret; changes only with the Google project | — |
 | Vertex AI credentials | Host's Application Default Credentials | Per the Google Cloud key policy | Rotate the service-account key in Google Cloud |
-| Companies' Slack webhook URLs | User records | Owned by each company | The company replaces it in its settings |
 
 Whoever runs the server rotates the secrets and records the date in the team's operations notes.
 

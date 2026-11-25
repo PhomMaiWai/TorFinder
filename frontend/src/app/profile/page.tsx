@@ -9,7 +9,6 @@ import { AppShell } from "@/components/layout/app-sidebar";
 import { COMPANY_SIZE_OPTIONS, type CompanySize } from "@/data/company-profile";
 import { ChangePasswordSection } from "@/components/profile/change-password";
 import { ProfileNudges } from "@/components/profile/profile-nudges";
-import { CertificatesSection } from "@/components/profile/certificates-section";
 import { WORK_TYPE_GROUPS, type CertificateRecord, type WorkType } from "@/types/tor";
 import { profileProgress } from "@/lib/profile-progress";
 import { formatTaxId, hasValidTaxIdChecksum, isValidTaxId } from "@/lib/thai-validation";
@@ -108,9 +107,21 @@ export default function ProfilePage() {
   const [workTypes, setWorkTypes] = useState<WorkType[]>([]);
   const [largestPastContract, setLargestPastContract] = useState("");
   const [registeredCapital, setRegisteredCapital] = useState("");
-  // Null until answered: "none" is an answer, a blank isn't. Owned by
-  // CertificatesSection, which saves on its own; kept here for completeness.
+  // Null until answered: "none" is an answer, a blank isn't. Edited in the
+  // document library (/library); read here only for the completeness meter.
   const [certificates, setCertificates] = useState<CertificateRecord[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/certificates", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { certificates: CertificateRecord[] | null } | null) => {
+        if (!cancelled && data) setCertificates(data.certificates);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [matchAlerts, setMatchAlerts] = useState(true);
@@ -414,10 +425,6 @@ export default function ProfilePage() {
                 </label>
               </div>
             </div>
-          </Section>
-
-          <Section id="standards" title={t("standardsSectionTitle")}>
-            <CertificatesSection onChange={setCertificates} />
           </Section>
 
           <Section id="budget-range" title={t("budgetRangeSectionTitle")}>

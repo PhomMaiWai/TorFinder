@@ -18,7 +18,7 @@ to a real route; the guard named in brackets is what the backend checks
 
 External systems: Bangkok e-GP, national e-GP (process5), MEA procurement
 site, Google Vertex AI (Gemini), Google Identity, Resend
-(email), LINE Messaging API, Slack webhooks.
+(email), LINE Messaging API.
 
 ## Diagram
 
@@ -59,7 +59,7 @@ flowchart LR
         UC8(["UC8 Bookmark TORs"])
         UC9(["UC9 Save searches"])
         UC10(["UC10 Read notifications"])
-        UC11(["UC11 Set email / LINE / Slack channels"])
+        UC11(["UC11 Set email / LINE channels"])
         UC12(["UC12 Maintain company profile"])
         UC13(["UC13 See matched TORs with score and gaps"])
         UC14(["UC14 Draft a proposal with AI"])
@@ -104,7 +104,7 @@ flowchart LR
     Scheduler(["⏱ Scheduler"])
     Sources[["Bangkok e-GP · National e-GP<br/>MEA"]]
     Vertex[["Vertex AI (Gemini)"]]
-    Channels[["Email · LINE · Slack"]]
+    Channels[["Email · LINE"]]
 
     subgraph TorFinder["TorFinder"]
         UC26(["UC26 Import TORs from sources"])

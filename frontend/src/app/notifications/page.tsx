@@ -137,9 +137,9 @@ export default function NotificationsPage() {
                 </>
               );
 
-              // An alert about an announcement opens it; reading it there counts as read.
+              // An alert about an announcement opens it inside the workspace; reading it there counts as read.
               return n.torId ? (
-                <Link key={n.id} href={`/tor/${n.torId}`} onClick={() => markRead(n.id)} className={rowCls}>
+                <Link key={n.id} href={`/tor/${n.torId}?in=app`} onClick={() => markRead(n.id)} className={rowCls}>
                   {content}
                 </Link>
               ) : (

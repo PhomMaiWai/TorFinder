@@ -234,9 +234,6 @@ and they hold no secrets.
 | `VERTEX_LOCATION`, `VERTEX_MODEL` | No | Defaults `asia-southeast1`, `gemini-2.5-flash` |
 | `AI_*_PER_DAY` | No | Daily caps on AI calls visitors can trigger; 0 turns a cap off |
 
-Slack alerts need nothing in `.env`: each company pastes its own Slack
-incoming-webhook URL on its Notifications page.
-
 The full list of settings, with defaults, is in
 [configuration.md](docs/operations/configuration.md#environment-variables) and
 the three `.env.example` files.

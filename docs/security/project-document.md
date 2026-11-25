@@ -31,7 +31,7 @@ This document follows the six sections the assignment asks for. Each section is 
   - Docker Compose
 - **Services it talks to:**
   - Google sign-in
-  - Resend email, LINE and Slack (notifications)
+  - Resend or SMTP email, and LINE (notifications)
   - Gemini on Vertex AI (optional)
   - the e-GP, MEA and data.go.th procurement portals
 
@@ -49,7 +49,7 @@ Full list with route and status: [roles-and-features.md](../project/roles-and-fe
 | --- | --- | --- |
 | Public visitor | Anyone | Search and filter TORs; find similar TORs; TOR detail with AI summary, timeline and documents; budget insight; market insights; comment on a draft TOR; report a problem |
 | Viewer (`viewer`) | Member of the public, via Google sign-in | Bookmarks and saved searches |
-| Organization (`org`) | Software company: signs up, verifies email, then is approved by an admin | Company profile; TORs ranked by fit with reasons; match alerts by app, email, LINE and Slack; certificates and proposal library with file uploads; AI proposal draft; starter-pack ZIP |
+| Organization (`org`) | Software company: signs up, verifies email, then is approved by an admin | Company profile; TORs ranked by fit with reasons; match alerts by app, email and LINE; certificates and proposal library with file uploads; AI proposal draft; starter-pack ZIP |
 | Admin (`admin`) | TorFinder team | Approve companies; manage users and roles; edit, hide and lock TORs; moderate comments; handle reports; run imports; audit log |
 
 Automatic jobs import TORs from four portals on a timer, de-duplicate them, run AI extraction and send match alerts.

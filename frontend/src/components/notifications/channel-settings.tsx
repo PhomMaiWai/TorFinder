@@ -1,14 +1,15 @@
 "use client";
 
-import { CheckCircle2, Hash, Mail, MessageCircle, Send } from "lucide-react";
+import { CheckCircle2, Mail, MessageCircle, Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { OffsiteLink } from "@/components/ui/offsite-link";
+import { useSession } from "@/lib/use-session";
 
-type Channel = "email" | "slack" | "line";
+type Channel = "email" | "line";
 
 type ChannelsResponse = {
-  channels: { email: boolean; slackWebhookUrl?: string; lineUserId?: string };
+  channels: { email: boolean; lineUserId?: string };
   available: Record<Channel, boolean>;
 };
 
@@ -19,21 +20,19 @@ type LineLink = { code: string; expiresAt: string; addFriendUrl: string; message
 /** How often the page asks whether the code has arrived in the OA chat. */
 const LINK_POLL_MS = 3_000;
 
-const INPUT =
-  "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-ink placeholder:text-ink-subtle focus:border-accent focus:outline-none disabled:opacity-50";
-
 /**
  * Where notifications go besides the in-app list. Email goes to the sign-in
- * address; Slack needs a webhook only the company has, so it pastes that here.
- * LINE is connected by sending a one-time code to our Official Account — the
+ * address. LINE is connected by sending a one-time code to our Official Account — the
  * LINE app never shows anyone their user id. A channel the server isn't
  * configured for is shown but disabled.
  */
 export function ChannelSettings() {
   const t = useTranslations("NotificationsPage");
+  // The test send stays an admin tool; a company just saves its channels.
+  const session = useSession();
+  const canTest = session?.role === "admin";
   const [loaded, setLoaded] = useState<ChannelsResponse | null>(null);
   const [email, setEmail] = useState(false);
-  const [slack, setSlack] = useState("");
   const [lineUserId, setLineUserId] = useState<string | undefined>();
   const [lineLink, setLineLink] = useState<LineLink | null>(null);
   const [status, setStatus] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
@@ -47,7 +46,6 @@ export function ChannelSettings() {
         if (!data) return;
         setLoaded(data);
         setEmail(data.channels.email);
-        setSlack(data.channels.slackWebhookUrl ?? "");
         setLineUserId(data.channels.lineUserId);
       })
       .catch(() => setLoaded(null));
@@ -84,7 +82,7 @@ export function ChannelSettings() {
     const res = await fetch("/api/notifications/channels", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, slackWebhookUrl: slack.trim() }),
+      body: JSON.stringify({ email }),
     }).catch(() => null);
     setBusy(false);
     if (res?.ok) {
@@ -129,7 +127,7 @@ export function ChannelSettings() {
       <h2 className="text-base font-bold text-ink">{t("channelsHeading")}</h2>
       <p className="mt-0.5 mb-4 text-sm text-ink-muted">{t("channelsDescription")}</p>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <label className="flex items-start gap-3 rounded-lg border border-border p-4">
           <input
             type="checkbox"
@@ -148,20 +146,6 @@ export function ChannelSettings() {
             </span>
           </span>
         </label>
-
-        <div className="rounded-lg border border-border p-4">
-          <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-ink">
-            <Hash size={15} className="text-ink-subtle" />
-            Slack
-          </p>
-          <input
-            value={slack}
-            onChange={(e) => setSlack(e.target.value)}
-            placeholder="https://hooks.slack.com/services/…"
-            className={INPUT}
-          />
-          <p className="mt-1.5 text-xs text-ink-muted">{t("channelSlackHint")}</p>
-        </div>
 
         <div className="rounded-lg border border-border p-4">
           <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-ink">
@@ -237,14 +221,16 @@ export function ChannelSettings() {
         >
           {t("channelsSave")}
         </button>
-        <button
-          onClick={test}
-          disabled={busy}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-alt disabled:opacity-50"
-        >
-          <Send size={14} />
-          {t("channelsTest")}
-        </button>
+        {canTest && (
+          <button
+            onClick={test}
+            disabled={busy}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-alt disabled:opacity-50"
+          >
+            <Send size={14} />
+            {t("channelsTest")}
+          </button>
+        )}
         {status && (
           <span className={`text-sm ${status.tone === "success" ? "text-success" : "text-danger"}`}>
             {status.text}

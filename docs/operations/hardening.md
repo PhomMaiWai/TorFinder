@@ -17,7 +17,7 @@ In the commands below, `H` stands for `docker compose -f docker-compose.yml -f d
 - The backend sits on the `internal` network, which has no gateway, so it can't reach the internet by itself.
 - Its only way out is the `egress` service, a Squid proxy (`docker/hardening/squid.conf`). It allows HTTPS to these hosts only:
   - the procurement portals: `egp2.bangkok.go.th`, `process5.gprocurement.go.th`, `procurement.mea.or.th`;
-  - Resend, LINE and Slack, for notifications;
+  - Resend and LINE, for notifications;
   - `googleapis.com`, for Google sign-in checks and Vertex AI.
 - Node follows the proxy through `HTTPS_PROXY` with `NODE_USE_ENV_PROXY=1`.
 - **A new outside service** must be added to `squid.conf`, or its calls fail with a refusal.

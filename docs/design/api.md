@@ -446,8 +446,8 @@ All `Session`.
 | GET | `/notifications` | — | Own notifications, newest first: `[{ id, type, title, message, torId?, score?, read, createdAt }]` |
 | PATCH | `/notifications/:id/read` | — | 204 |
 | PATCH | `/notifications/read-all` | — | 204 |
-| GET | `/notifications/channels` | — | `{ email, slackWebhookUrl?, lineUserId? }` |
-| PUT | `/notifications/channels` | `{ email?: bool, slackWebhookUrl?: "https://hooks.slack.com/services/..." \| "", lineUserId?: "U…32 hex" \| "" }` | The channels. An empty string turns a channel off |
+| GET | `/notifications/channels` | — | `{ email, lineUserId? }` |
+| PUT | `/notifications/channels` | `{ email?: bool }` | The channels. LINE is linked and unlinked through its own routes below |
 | POST | `/notifications/channels/test` | — | 200 `[{ channel, ok, error? }]` after sending a test to each channel that is on |
 | POST | `/notifications/channels/line/link` | — | 200 a one-time code the user sends to the LINE Official Account |
 | DELETE | `/notifications/channels/line` | — | Unlinks LINE |

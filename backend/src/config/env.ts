@@ -234,6 +234,18 @@ export const env = {
     // Testing only: a Mailpit address (e.g. http://mailpit:8025). Every email
     // then goes there instead of Resend — viewable in its web UI, never delivered.
     mailCatcherUrl: process.env.MAIL_CATCHER_URL ?? "",
+    // Email over SMTP — e.g. Gmail (smtp.gmail.com, 465, an app password) —
+    // reaches any inbox without a verified sending domain. Used instead of
+    // Resend when SMTP_HOST is set.
+    smtp: {
+      host: process.env.SMTP_HOST ?? "",
+      port: optionalNumber("SMTP_PORT", 465),
+      // 465 is TLS from the first byte; 587 starts plain and upgrades (STARTTLS).
+      // Empty counts as unset: docker-compose passes `SMTP_SECURE=` when .env has none.
+      secure: (process.env.SMTP_SECURE || String(optionalNumber("SMTP_PORT", 465) === 465)) === "true",
+      user: process.env.SMTP_USER ?? "",
+      pass: process.env.SMTP_PASS ?? "",
+    },
     // LINE Messaging API: the official account's long-lived channel access token.
     lineChannelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
     // Signs the webhook LINE calls when someone messages the OA — how a user

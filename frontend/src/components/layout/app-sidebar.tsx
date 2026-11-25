@@ -17,7 +17,6 @@ import {
   Plus,
   Search,
   Sprout,
-  Trophy,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -32,7 +31,9 @@ import type { Role } from "@/lib/auth";
 import { resetAdminBadgeCounts, useAdminBadgeCounts } from "@/lib/use-admin-badge-counts";
 import { resetNotifications, useNotifications } from "@/lib/use-notifications";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
-import { resetSession } from "@/lib/use-session";
+import { homeFor, resetSession, useSession } from "@/lib/use-session";
+
+import { SiteNavbar } from "./site-navbar";
 
 type NavLink = {
   label: string;
@@ -46,14 +47,13 @@ function getOrgNav(t: (key: string) => string): { section: string | null; links:
     {
       section: null,
       links: [
-        { label: t("navOverview"), href: "/dashboard?in=app", icon: Activity },
+        // The market overview, insights and TOR search live in the public navbar
+        // above the workspace (AppShell), so they aren't repeated here.
         // The profile before the matches: every match is computed from it.
         { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
         { label: t("navLibrary"), href: "/library", icon: FolderOpen },
         { label: t("navMatches"), href: "/matches", icon: LayoutDashboard },
-        { label: t("navInsights"), href: "/insights?in=app", icon: Trophy },
         { label: t("navGrowth"), href: "/growth", icon: Sprout },
-        { label: t("navSearchTor"), href: "/search", icon: Search },
         { label: t("navSavedList"), href: "/saved?scope=org", icon: Bookmark },
         {
           label: t("navNotifications"),
@@ -282,6 +282,10 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
 export function AppShell({ children, role }: { children: React.ReactNode; role?: Role }) {
   const t = useTranslations("AppShell");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  // Same rule as the sidebar's own menu: a role says, else the path does.
+  const isAdmin = role ? role === "admin" : pathname.startsWith("/admin");
+  const session = useSession();
 
   return (
     <div className="flex min-h-screen bg-surface">
@@ -300,7 +304,7 @@ export function AppShell({ children, role }: { children: React.ReactNode; role?:
 
       <div className="flex min-w-0 flex-1 flex-col bg-surface">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 md:hidden">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={session ? homeFor(session.role) : "/"} className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-md bg-accent text-2xs font-bold text-white">
               T
             </span>
@@ -314,6 +318,16 @@ export function AppShell({ children, role }: { children: React.ReactNode; role?:
             <Menu size={20} />
           </button>
         </div>
+
+        {/* A company's workspace keeps the public site's navbar on top, so the
+            public pages (search, market overview…) are one click away. The
+            admin console is a separate tool and doesn't get it. On phones the
+            bar above (logo → home) does that job instead. */}
+        {!isAdmin && (
+          <div className="sticky top-0 z-40 hidden md:block">
+            <SiteNavbar />
+          </div>
+        )}
 
         {children}
       </div>

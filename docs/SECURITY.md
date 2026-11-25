@@ -67,7 +67,7 @@ There is no root `package.json` and no root `src/` folder: the app is `backend/`
 | Certificates with file upload | `/api/certificates/*` | OrgGuard | `backend/src/certificates/certificates.controller.ts` |
 | Proposal library with file upload, coverage, starter-pack ZIP | `/api/library/*` | OrgGuard | `backend/src/library/library.controller.ts` |
 | Saved TORs, saved searches | `/api/saved-tors/*`, `/api/saved-searches/*` | SessionGuard | `backend/src/saved-tors/saved-tors.controller.ts`, `backend/src/saved-searches/saved-searches.controller.ts` |
-| Notifications and channels (in-app, e-mail, LINE, Slack) | `/api/notifications/*` | SessionGuard | `backend/src/notifications/notifications.controller.ts` |
+| Notifications and channels (in-app, e-mail, LINE) | `/api/notifications/*` | SessionGuard | `backend/src/notifications/notifications.controller.ts` |
 | LINE webhook | `POST /api/line/webhook` | Signature check, throttle | `backend/src/notifications/line-webhook.controller.ts` |
 | Problem reports | `/api/tor/:torId/reports`, `/api/reports/*` | Throttle; AdminGuard | `backend/src/reports/reports.controller.ts` |
 | Market insights, growth path | `/api/insights/*` | Public; OrgGuard | `backend/src/insights/insights.controller.ts` |

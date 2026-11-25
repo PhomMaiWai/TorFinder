@@ -20,20 +20,21 @@ export type ProfileItemKey = "workTypes" | "pastContract" | "capital" | "certifi
 
 type ProfileItem = {
   key: ProfileItemKey;
-  /** Section id on /profile, so a nudge can take the company straight to the field. */
-  section: string;
+  /** Where the field is, so a nudge can take the company straight to it. */
+  href: string;
   done: (profile: MatchingProfile) => boolean;
 };
 
 /** In order of how much the match loses without them: work type alone is half the score. */
 const ITEMS: ProfileItem[] = [
-  { key: "workTypes", section: "work-types", done: (p) => Boolean(p.workTypes?.length) },
-  { key: "pastContract", section: "qualifications", done: (p) => Boolean(p.largestPastContract) },
-  { key: "capital", section: "qualifications", done: (p) => Boolean(p.registeredCapital) },
-  { key: "certifications", section: "standards", done: (p) => p.certificates != null || p.certifications !== undefined },
+  { key: "workTypes", href: "/profile#work-types", done: (p) => Boolean(p.workTypes?.length) },
+  { key: "pastContract", href: "/profile#qualifications", done: (p) => Boolean(p.largestPastContract) },
+  { key: "capital", href: "/profile#qualifications", done: (p) => Boolean(p.registeredCapital) },
+  // Certificates are kept in the document library, not on the profile.
+  { key: "certifications", href: "/library#certificates", done: (p) => p.certificates != null || p.certifications !== undefined },
   {
     key: "budget",
-    section: "budget-range",
+    href: "/profile#budget-range",
     done: (p) => Boolean(p.preferredBudgetMin || p.preferredBudgetMax),
   },
 ];
@@ -41,9 +42,9 @@ const ITEMS: ProfileItem[] = [
 export type ProfileProgressItem = { key: ProfileItemKey; href: string; done: boolean };
 
 export function profileProgress(profile: MatchingProfile | null | undefined) {
-  const items: ProfileProgressItem[] = ITEMS.map(({ key, section, done }) => ({
+  const items: ProfileProgressItem[] = ITEMS.map(({ key, href, done }) => ({
     key,
-    href: `/profile#${section}`,
+    href,
     done: profile ? done(profile) : false,
   }));
   const doneCount = items.filter((item) => item.done).length;

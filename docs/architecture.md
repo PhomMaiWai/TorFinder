@@ -47,13 +47,12 @@ flowchart TB
         Google["Google Identity"]
         Resend["Resend email"]
         Line["LINE"]
-        Slack["Slack"]
     end
 
     Public & Org & Admin --> TF
     TF --> EGP & GPROC & MEA
     TF --> Vertex & Google
-    TF --> Resend & Line & Slack
+    TF --> Resend & Line
 ```
 
 TorFinder only reads from the sources. It never writes back to a portal and
@@ -94,7 +93,7 @@ unit-tested from `dist/` without a database.
 | `insights/` | Market insights across all awards (who wins, discounts, competition per agency) | `market-insights.ts` |
 | `reports/` | "Report a problem" and the admin queue | |
 | `saved-tors/`, `saved-searches/` | Bookmarks and saved searches | |
-| `notifications/` | In-app notifications, email/LINE/Slack delivery, admin sync alerts | `notification-delivery.ts` |
+| `notifications/` | In-app notifications, email/LINE delivery, admin sync alerts | `notification-delivery.ts` |
 | `audit/` | The audit log of admin actions | |
 | `scripts/` | One-off maintenance (`scope-cleanup`) | Count first, change only with `--apply` |
 
@@ -158,8 +157,7 @@ flowchart LR
    admin adds a TOR, and after an extraction. Scores are computed from the
    company profile with plain rules (`matching.scoring.ts`), not stored on
    the TOR. A company is alerted once per TOR and stage when the score
-   reaches its threshold (70 by default), through in-app, email, LINE or
-   Slack.
+   reaches its threshold (70 by default), through in-app, email or LINE.
 7. **Show.** Public pages list only `LISTED_TOR` records (not soft-deleted,
    not marked not-software). Documents open through `TorDocumentService`,
    which streams the portal's file and only accepts a file already recorded
@@ -212,7 +210,7 @@ flowchart LR
 | Database | MongoDB 7 through the official `mongodb` driver (no ORM) |
 | Auth | HMAC-signed session token in an httpOnly cookie; Google ID tokens via `google-auth-library` |
 | AI | Vertex AI (Gemini for extraction and drafts, text embeddings for find similar), optional |
-| Notifications | Resend (email), LINE Messaging API, Slack webhooks, all optional |
+| Notifications | Resend or SMTP (email), LINE Messaging API, all optional |
 | Tests | Node's built-in test runner and `fetch`, against a real backend and MongoDB |
 | Runtime | Node.js 22, Docker Compose |
 

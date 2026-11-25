@@ -107,7 +107,9 @@ export default function LibraryPage() {
             {t("loadFailed")}
           </p>
         ) : (
-          <div className="space-y-8 lg:max-w-3xl">
+          <div className="space-y-8">
+            {/* Projects and team side by side on a wide screen; certificates span the width below. */}
+            <div className="grid items-start gap-8 xl:grid-cols-2">
             <Section id="projects" title={t("projectsTitle")}>
               <RecordSection<PastProject, ProjectDraft>
                 kind="projects"
@@ -348,6 +350,7 @@ export default function LibraryPage() {
                 )}
               />
             </Section>
+            </div>
 
             <Section id="certificates" title={t("certificatesTitle")}>
               <CertificatesSection />

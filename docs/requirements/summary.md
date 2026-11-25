@@ -176,7 +176,7 @@ this list to still be accurate:
 - No fixed confidence threshold was set for AI classification/extraction
 - Which OAuth provider(s) to support wasn't decided (as-built: Google)
 - Whether "unusual pricing" / "low-competition" (FR-24) gets defined statistically or by fixed rule-of-thumb thresholds is still open
-- Whether MVP needs both email and in-app notifications, or in-app alone, was unconfirmed (as-built: in-app, email, LINE, and Slack — see `backend/src/notifications/`)
+- Whether MVP needs both email and in-app notifications, or in-app alone, was unconfirmed (as-built: in-app, email and LINE — see `backend/src/notifications/`)
 - How the repository gets backfilled with pre-2026 TORs versus relying on the ongoing sync was never decided
 
 ## Terms worth knowing
