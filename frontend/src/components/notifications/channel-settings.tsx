@@ -4,6 +4,7 @@ import { CheckCircle2, Hash, Mail, MessageCircle, Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { OffsiteLink } from "@/components/ui/offsite-link";
+import { useSession } from "@/lib/use-session";
 
 type Channel = "email" | "slack" | "line";
 
@@ -31,6 +32,9 @@ const INPUT =
  */
 export function ChannelSettings() {
   const t = useTranslations("NotificationsPage");
+  // The test send stays an admin tool; a company just saves its channels.
+  const session = useSession();
+  const canTest = session?.role === "admin";
   const [loaded, setLoaded] = useState<ChannelsResponse | null>(null);
   const [email, setEmail] = useState(false);
   const [slack, setSlack] = useState("");
@@ -237,14 +241,16 @@ export function ChannelSettings() {
         >
           {t("channelsSave")}
         </button>
-        <button
-          onClick={test}
-          disabled={busy}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-alt disabled:opacity-50"
-        >
-          <Send size={14} />
-          {t("channelsTest")}
-        </button>
+        {canTest && (
+          <button
+            onClick={test}
+            disabled={busy}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-alt disabled:opacity-50"
+          >
+            <Send size={14} />
+            {t("channelsTest")}
+          </button>
+        )}
         {status && (
           <span className={`text-sm ${status.tone === "success" ? "text-success" : "text-danger"}`}>
             {status.text}

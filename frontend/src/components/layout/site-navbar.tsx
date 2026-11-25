@@ -205,6 +205,8 @@ export function SiteNavbar() {
                 deciding to sign up. */}
             {showUserTools && (
               <>
+                {/* A company's saved list is in its workspace sidebar. */}
+                {!isOrg && (
                 <Link
                   href="/saved"
                   className="relative grid size-9 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink"
@@ -220,6 +222,7 @@ export function SiteNavbar() {
                     </span>
                   )}
                 </Link>
+                )}
 
                 {/* A company's real notifications are in its workspace sidebar; this
                     dropdown's notices are sample text, so it isn't offered to it. */}
