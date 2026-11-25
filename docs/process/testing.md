@@ -191,10 +191,12 @@ issue under milestone D11.
 | FR-25 | Audit trail of admin actions | ✅ Done | `audit-hooks.e2e`, `admin-dashboard.e2e`, `retention.e2e` | |
 | FR-26 | Only BMA, only 2022 onward | ✅ Done | `scope-filter` | |
 
-**Result:** 23 of the 24 in-scope FRs are done and FR-10 is partial. Every
-in-scope FR has at least one automated test, but for FR-07 only the admin
-override is tested, not the import filter. Manual check: _ of 24
-passed on _.
+**Result:** 21 of the 22 in-scope FRs are done and FR-10 is partial
+(FR-19, FR-20, FR-23 and FR-24 were removed). Every in-scope FR has at least
+one automated test, but for FR-07 only the admin override is tested, not the
+import filter. **Manual check: not done for v1.0** (team decision, 26 Nov
+2026); v1.0 (`ea6fe41`) was released on the automated evidence and the
+fresh-clone check of 25 Nov.
 
 ## Writing a new test
 
