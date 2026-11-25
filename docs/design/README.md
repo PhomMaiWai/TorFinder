@@ -14,7 +14,7 @@ other file.
 | [System architecture](./system-architecture.md) | Containers, external systems, backend modules and frontend areas |
 | [ER diagram](./er-diagram.md) | MongoDB collections, fields, references and indexes |
 | [Class diagram](./class-diagram.md) | Backend guards, schedulers, importers and domain services |
-| [Sequence diagrams](./sequence-diagrams.md) | Sign-in, sign-up and approval, import and AI, matching, feedback moderation, error reports |
+| [Sequence diagrams](./sequence-diagrams.md) | Sign-in, sign-up and approval, import and AI, matching, the comment window, error reports |
 | [API reference](./api.md) | Every backend route, its guard, body and response |
 | [Architectural Decision Records](./adr.md) | The design decisions behind the code, why, and what they cost |
 

@@ -26,7 +26,7 @@ Rev. 2 reported 0 Fail, but a full re-review of `main` at `0c9802e` found 7 fail
 | --- | --- | --- | --- | --- |
 | 9.1.3 | Pass | Partial | Pass | docker-compose fell back to the public dev `SESSION_SECRET`, so anyone could forge an admin token. Production now refuses a missing, published or short (< 32 chars) secret, in both `backend/src/config/env.ts` and `frontend/src/lib/auth.ts`; compose has no fallback |
 | 6.3.2 | Pass | Fail | Pass | The production image seeded `admin@bma.go.th` / `Admin1234!` by default. Compose now seeds only when `.env` sets `SEED_DEMO_DATA=true`, and the backend warns if it ever seeds in production |
-| 8.2.1 | Pass | Fail | Pass | `GET /tor/:torId/feedback?status=…` was public and returned pending and rejected comments; it is now approved-only. `/api/test-db` (any signed-in user could list collections) is deleted |
+| 8.2.1 | Pass | Fail | Pass | `GET /tor/:torId/feedback?status=…` was public and returned pending and rejected comments; it is now approved-only. `/api/test-db` (any signed-in user could list collections) is deleted The comment routes were removed altogether on 26 Nov 2026. |
 | 15.2.1 | Not reviewed | Fail | Pass | Backend had 1 critical and 4 high advisories in production dependencies; `npm audit fix` applied. CI now fails on high/critical; Dependabot added |
 | 6.3.1 | Pass | Partial | Pass | Every login reached the backend from the Next.js server's IP, so 5 bad logins by anyone locked everyone out. The client IP is now forwarded and trusted only from loopback/private hops, and failed logins are capped per email |
 | 6.2.8 | Pass | Fail | Pass | The signup action trimmed the password, so a password with a leading or trailing space never worked at login |
@@ -224,11 +224,11 @@ Roles: `viewer` (public Google sign-in), `org` (company), `admin`. A guard admit
 
 | Access | Routes |
 | --- | --- |
-| Public | `POST /auth/*` except logout and password change; `GET /tor`, `GET /tor/:id`, its documents (`/tor/:id/documents/*`) and its e-GP documents (`/tor/:id/egp-documents/*`); `GET /tor/:torId/feedback` (approved only); `GET /feedback/counts`; `POST /tor/:torId/feedback`; `POST /tor/:torId/reports`; `POST /tor/similar`; `GET /insights/market`; `GET /matching/tor/:id/budget`, `/bid-insight`; `POST /matching/tor/:id/score`; `GET /ai/status`; `GET /health` |
+| Public | `POST /auth/*` except logout and password change; `GET /tor`, `GET /tor/:id`, its documents (`/tor/:id/documents/*`) and its e-GP documents (`/tor/:id/egp-documents/*`); `POST /tor/:torId/reports`; `POST /tor/similar`; `GET /insights/market`; `GET /matching/tor/:id/budget`, `/bid-insight`; `POST /matching/tor/:id/score`; `GET /ai/status`; `GET /health` |
 | Public, signed by the caller | `POST /line/webhook`: no session, but refused unless `X-Line-Signature` is LINE's HMAC of the raw body with the channel secret; 300/min per client IP |
 | Any signed-in account (own data only) | `POST /auth/logout`, `POST /auth/password`, `GET/PATCH /accounts/me`, `GET /matching/opportunities`, `/notifications/*` (including LINE link/unlink and channel settings), `/saved-searches/*`, `/saved-tors/*` |
 | `org` (own company's records only) | `POST /ai/proposal-draft/:torId`; `GET /insights/growth`; `/certificates/*` (records and their files); `/library/*` (team, references, past projects, their files, coverage and the starter-pack ZIP) |
-| `admin` | `/accounts` (list, directory, edit, suspend, reactivate), `GET /audit`, `POST /tor`, `PATCH/DELETE /tor/:id`, `POST /tor/:id/restore`, `GET /tor/deleted`, `/tor/not-software`, `GET /feedback`, `PATCH /feedback/:id`, `GET/PATCH /reports*`, `PATCH /accounts/:id/details`, `GET /matching/tor/:id/companies`, `POST /matching/budget/refresh`, `POST /ai/extract*`, `/egp/*` (sync, near-misses, metrics), `/mea/sync`, `/datagov/sync`, `/gproc/*` |
+| `admin` | `/accounts` (list, directory, edit, suspend, reactivate), `GET /audit`, `POST /tor`, `PATCH/DELETE /tor/:id`, `POST /tor/:id/restore`, `GET /tor/deleted`, `/tor/not-software`, `GET/PATCH /reports*`, `PATCH /accounts/:id/details`, `GET /matching/tor/:id/companies`, `POST /matching/budget/refresh`, `POST /ai/extract*`, `/egp/*` (sync, near-misses, metrics), `/mea/sync`, `/gproc/*` |
 
 Data-level rule: a route that serves a caller's own data takes the user id from the session token, never from the request. Certificate and library records and files are looked up inside the signed-in company's own profile, so another company's record id is simply not found.
 

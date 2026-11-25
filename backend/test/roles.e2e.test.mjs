@@ -52,8 +52,6 @@ const ADMIN_ONLY = [
   ["POST", "/egp/sync"],
   ["GET", "/egp/near-misses"],
   ["GET", "/egp/metrics"],
-  ["GET", "/feedback"],
-  ["PATCH", `/feedback/${ID}`],
   ["POST", "/gproc/capture"],
   ["GET", `/gproc/capture/${ID}`],
   ["GET", `/matching/tor/${ID}/companies`],

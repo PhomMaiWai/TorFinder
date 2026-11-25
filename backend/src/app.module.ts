@@ -14,7 +14,6 @@ import { env } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
 import { AiModule } from "./ai/ai.module";
 import { EgpModule } from "./egp/egp.module";
-import { FeedbackModule } from "./feedback/feedback.module";
 import { GprocModule } from "./gproc/gproc.module";
 import { MeaModule } from "./mea/mea.module";
 import { MatchingModule } from "./matching/matching.module";
@@ -51,7 +50,6 @@ import { TorModule } from "./tor/tor.module";
     EgpModule,
     MeaModule,
     GprocModule,
-    FeedbackModule,
     ReportsModule,
     MatchingModule,
     SavedSearchesModule,

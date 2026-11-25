@@ -77,7 +77,7 @@ mongodump --uri "$MONGODB_URI" --gzip --archive=torfinder-$(date +%F).archive.gz
 
 - Keep 14 daily copies, and store them somewhere other than the database
   host.
-- The collections that cannot be rebuilt are `users`, `feedback`,
+- The collections that cannot be rebuilt are `users`,
   `torReports`, `savedTors`, `savedSearches`, `notifications`,
   `auditLogEntries` and the admin corrections on `tors` (`lockedFields`).
   TORs themselves can be re-imported from the sources, but admin edits

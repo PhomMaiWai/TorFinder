@@ -11,7 +11,7 @@ browser never talks to the backend directly (see
 2. [Company sign-up and admin approval](#2-company-sign-up-and-admin-approval)
 3. [Scheduled import, AI extraction and match alerts](#3-scheduled-import-ai-extraction-and-match-alerts)
 4. [A company opens its matched TORs](#4-a-company-opens-its-matched-tors)
-5. [Public comment and moderation](#5-public-comment-and-moderation)
+5. [Public comment window](#5-public-comment-window)
 6. [Error report and "Fix this TOR"](#6-error-report-and-fix-this-tor)
 7. [Sensitive admin action with a passkey check (step-up)](#7-sensitive-admin-action-with-a-passkey-check-step-up)
 
@@ -211,38 +211,29 @@ sequenceDiagram
     end
 ```
 
-## 5. Public comment and moderation
+## 5. Public comment window
+
+The site doesn't take comments: they go to the agency through the channel its
+announcement gives. It shows whether a draft is still open for comment, and
+the search page can filter on it.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor P as Public visitor
-    participant N as Next.js /tor/[id]
-    participant F as FeedbackService
-    actor Ad as Admin
-    participant Audit as AuditService
+    participant N as Next.js /tor/[id], /public
+    participant T as TorService
     participant DB as MongoDB
 
-    P->>N: Write a comment (10-5000 chars)
-    N->>F: POST /api/tor/:torId/feedback (throttled)
-    F->>DB: TOR + its feedback deadline
-    alt hearing period is over
-        F-->>N: 400 ปิดรับฟังความคิดเห็นสำหรับประกาศนี้แล้ว
+    P->>N: Open a draft TOR, or filter "เปิดรับฟังความคิดเห็น"
+    N->>T: GET /api/tor/:id (or the listing)
+    T->>DB: TOR with feedbackDeadline (portal's, else the model's) and bidding
+    T-->>N: the record
+    alt the comment deadline is today or later, or none and the project is still open
+        N-->>P: "TOR นี้เปิดรับฟังความคิดเห็นถึง <date>"
     else
-        F->>DB: feedback.insertOne(status รอตรวจสอบ)
-        F-->>N: 201 comment (not shown publicly yet)
+        N-->>P: "ปิดรับฟังความคิดเห็นแล้วเมื่อ <date>"
     end
-
-    Ad->>N: /admin/moderation
-    N->>F: GET /api/feedback?status=รอตรวจสอบ (AdminGuard)
-    Ad->>N: Approve or reject
-    N->>F: PATCH /api/feedback/:id {status}
-    F->>DB: status, reviewedAt
-    F->>Audit: record(admin, ...)
-
-    P->>N: Open the TOR again
-    N->>F: GET /api/tor/:torId/feedback
-    F-->>N: approved comments only
 ```
 
 ## 6. Error report and "Fix this TOR"

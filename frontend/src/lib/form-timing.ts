@@ -4,14 +4,14 @@ import { readSessionSecret } from "@/lib/auth";
 import { FORM_TOKEN_FIELD } from "@/lib/form-timing-field";
 
 /**
- * ASVS 2.4.2: a token saying when a sign-up or comment form was served. The
+ * ASVS 2.4.2: a token saying when a sign-up form was served. The
  * page puts it in the form; the server action sends it to the backend in
  * X-Form-Token, and the backend's FormTimingGuard refuses a submission that
  * comes back sooner than a person could fill it in. Signed with the session
  * secret both sides share (with its own prefix, so it is never a valid
  * session signature). Mirrors backend/src/common/form-timing.guard.ts.
  */
-export type FormPurpose = "signup" | "feedback";
+export type FormPurpose = "signup";
 
 export { FORM_TOKEN_FIELD };
 

@@ -6,10 +6,9 @@ import { pollWhileVisible } from "@/lib/poll-while-visible";
 
 export type AdminBadgeCounts = {
   pendingAccounts: number;
-  pendingFeedback: number;
 };
 
-const EMPTY: AdminBadgeCounts = { pendingAccounts: 0, pendingFeedback: 0 };
+const EMPTY: AdminBadgeCounts = { pendingAccounts: 0 };
 
 /**
  * The admin sidebar's pending counts, shared by every caller. Read when the
@@ -30,12 +29,7 @@ function createStore() {
       const res = await fetch("/api/admin/badge-counts", { cache: "no-store" });
       if (!res.ok) return;
       const next: AdminBadgeCounts = await res.json();
-      if (
-        next.pendingAccounts === snapshot.pendingAccounts &&
-        next.pendingFeedback === snapshot.pendingFeedback
-      ) {
-        return;
-      }
+      if (next.pendingAccounts === snapshot.pendingAccounts) return;
       snapshot = next;
       notify();
     } catch {

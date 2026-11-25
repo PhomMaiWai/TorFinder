@@ -1,52 +1,11 @@
 "use server";
 
 import { getTranslations } from "next-intl/server";
-import { revalidatePath } from "next/cache";
 
 import { idPath } from "@/lib/backend-path";
 import { clientIpHeaders } from "@/lib/client-ip";
-import { formTokenHeader } from "@/lib/form-timing";
 import { isReportReason } from "@/lib/report-reasons";
 import { authHeaders } from "@/lib/session-headers";
-
-export type FeedbackState = { error?: string; submitted?: boolean };
-
-/**
- * Files a comment on an announcement. It is held for review, so the page says
- * "received" rather than showing the comment — pretending it is published would
- * be a lie the reader finds out about later.
- */
-export async function submitFeedback(
-  torId: string,
-  _prev: FeedbackState,
-  formData: FormData,
-): Promise<FeedbackState> {
-  const te = await getTranslations("Errors");
-  const text = String(formData.get("text") ?? "").trim();
-  const author = String(formData.get("author") ?? "").trim();
-
-  if (text.length < 10) {
-    return { error: te("feedbackTooShort") };
-  }
-
-  const res = await fetch(`${process.env.BACKEND_URL}/api/tor/${idPath(torId)}/feedback`, {
-    method: "POST",
-    headers: { ...(await clientIpHeaders()), ...formTokenHeader(formData), "Content-Type": "application/json" },
-    body: JSON.stringify({ text, author: author || undefined }),
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    // 429 is the rate limit, and saying so beats a generic failure.
-    if (res.status === 429) return { error: te("feedbackTooFrequent") };
-    // A 400 says why in its own words — e.g. the comment period closed while the page was open.
-    const body = res.status === 400 ? await res.json().catch(() => null) : null;
-    return { error: typeof body?.message === "string" ? body.message : te("feedbackFailed") };
-  }
-
-  revalidatePath(`/tor/${torId}`);
-  return { submitted: true };
-}
 
 export type ReportState = { error?: string; submitted?: boolean };
 

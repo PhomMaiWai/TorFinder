@@ -6,7 +6,6 @@ import { CertificateRecord } from "../certificates/certificate.types";
 import { PastProject, TeamMember } from "../library/library.types";
 import { CERTIFICATIONS, Certification } from "../matching/requirements";
 import { WorkType } from "../matching/work-types";
-import { FeedbackStatus } from "../feedback/feedback.constants";
 import { ReportReason, ReportStatus } from "../reports/reports.constants";
 import { PasswordParams, passwordFields, verifyPassword } from "../common/password";
 import { ROLES, Role } from "../common/roles";
@@ -273,17 +272,6 @@ export type TorDoc = {
   lockedFields?: string[];
 };
 
-/** A public comment on one announcement, shown only once it is approved. */
-export type FeedbackDoc = {
-  torId: ObjectId;
-  /** Whatever the commenter typed; anonymous comments get a fallback name. */
-  author: string;
-  text: string;
-  status: FeedbackStatus;
-  createdAt: Date;
-  reviewedAt?: Date;
-};
-
 /** Someone telling the admins an announcement is wrong (FR-21); never shown publicly. */
 export type TorReportDoc = {
   torId: ObjectId;
@@ -326,12 +314,10 @@ export type SavedSearchDoc = {
 };
 
 /**
- * "match" comes from each import (MatchingService.notifyMatches) and
- * "approval" from account review. "feedback" has no producer yet, but the type
- * stays ready for when it does, the same way TorSource anticipates values
- * before every source exists.
+ * "match" comes from each import (MatchingService.notifyMatches), "approval"
+ * from account review, "system" from imports and account changes.
  */
-export const NOTIFICATION_TYPES = ["match", "approval", "feedback", "system"] as const;
+export const NOTIFICATION_TYPES = ["match", "approval", "system"] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export type NotificationDoc = {
@@ -478,7 +464,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   users!: Collection<UserDoc>;
   tors!: Collection<TorDoc>;
-  feedback!: Collection<FeedbackDoc>;
   torReports!: Collection<TorReportDoc>;
   savedTors!: Collection<SavedTorDoc>;
   savedSearches!: Collection<SavedSearchDoc>;
@@ -532,7 +517,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.client.connect();
     this.users = this.client.db().collection<UserDoc>("users");
     this.tors = this.client.db().collection<TorDoc>("tors");
-    this.feedback = this.client.db().collection<FeedbackDoc>("feedback");
     this.torReports = this.client.db().collection<TorReportDoc>("torReports");
     this.savedTors = this.client.db().collection<SavedTorDoc>("savedTors");
     this.savedSearches = this.client.db().collection<SavedSearchDoc>("savedSearches");
@@ -566,8 +550,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.tors.createIndex({ stage: 1, projectNumber: 1 });
     // The two ways comments are read: under one announcement, and in the
     // moderation queue.
-    await this.feedback.createIndex({ torId: 1, createdAt: -1 });
-    await this.feedback.createIndex({ status: 1, createdAt: -1 });
     // The admin list reads open reports newest first; a TOR's own reports by TOR.
     await this.torReports.createIndex({ status: 1, createdAt: -1 });
     await this.torReports.createIndex({ torId: 1, createdAt: -1 });

@@ -65,7 +65,7 @@ scope:
 | `style` | Formatting only |
 
 The scope is the area you touched, usually the backend module or frontend
-area: `auth`, `tor`, `matching`, `reports`, `feedback`, `audit`,
+area: `auth`, `tor`, `matching`, `reports`, `audit`,
 `search`, `admin`, `i18n`, `deps`, `test`.
 
 Good examples from the history:

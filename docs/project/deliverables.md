@@ -16,7 +16,7 @@ done (with the reason).
 
 | ID | Deliverable | Lead | Acceptance criteria | Status | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| D1 | **Working web application** (Next.js frontend, NestJS backend, MongoDB) | Whole team | Runs from a fresh clone with `docker compose up`; covers the SRS functional requirements that are in scope | ✅ 23 of 26 FRs done, FR-10 partial (no tech-stack filter), FR-20 and FR-24 removed with their roles on 22 Nov | [roles-and-features.md](./roles-and-features.md), [README](../../README.md#getting-started) |
+| D1 | **Working web application** (Next.js frontend, NestJS backend, MongoDB) | Whole team | Runs from a fresh clone with `docker compose up`; covers the SRS functional requirements that are in scope | ✅ 21 of 26 FRs done, FR-10 partial (no tech-stack filter), FR-20 and FR-24 removed with their roles on 22 Nov, FR-19 and FR-23 (public comments and their moderation) removed on 26 Nov | [roles-and-features.md](./roles-and-features.md), [README](../../README.md#getting-started) |
 | D2 | **Data import and AI pipeline** (e-GP, process5, MEA; Vertex AI extraction and matching) | @OverCatX, @SKlv1ain | Scheduled imports with dedup and admin alerts; AI extraction with a confidence level; match alerts | 🟡 Imports done; AI reads 27% of documents (target 80%) and runs hourly (target 5 min) | [pipeline.md](../operations/pipeline.md), [kpi.md](../requirements/kpi.md) K7, K9, #399, #400 |
 | D3 | **Requirements**: SRS v1.0, condensed summary, KPIs | @fcxbsyo | FR-01 to FR-26 and NFRs written, each FR traced to code | ✅ | [srs.md](../requirements/srs.md), [summary.md](../requirements/summary.md), [kpi.md](../requirements/kpi.md) |
 | D4 | **Design documents**: use cases, domain model, architecture, ER, class and sequence diagrams, API reference | @OverCatX | Each diagram matches the code on the submitted commit | ✅ Reviewed 25 Nov | [design/](../design/README.md), [architecture.md](../architecture.md) |
@@ -33,7 +33,7 @@ done (with the reason).
 
 | Deliverable | Functional requirements |
 | --- | --- |
-| D1 | FR-01 to FR-06 (accounts, roles, approval), FR-09 to FR-19, FR-21 to FR-23, FR-25, FR-26 |
+| D1 | FR-01 to FR-06 (accounts, roles, approval), FR-09 to FR-18, FR-21, FR-22, FR-25, FR-26 |
 | D2 | FR-07 (software filter), FR-08 (AI extraction), FR-13 (match scoring), FR-14 (alerts) |
 | D3 to D12 | Non-functional requirements and course deliverables |
 

@@ -62,7 +62,6 @@
     "navCompanyProfile": "โปรไฟล์บริษัท",
     "navNotifications": "การแจ้งเตือน",
     "navPendingAccounts": "บัญชีรออนุมัติ",
-    "navModeration": "กลั่นกรองความคิดเห็น",
     "navManageCompanies": "จัดการบริษัท",
     "navManageUsers": "จัดการผู้ใช้งาน",
     "navAuditLog": "Audit Log",
@@ -218,7 +217,7 @@
   },
   "LandingPreview": {
     "heading": "ค้นหาและตรวจสอบ TOR โปร่งใส",
-    "description": "ระบบเปิดให้ประชาชนและบริษัทซอฟต์แวร์เข้ามาค้นหาโครงการของ กทม. ได้อย่างอิสระ ตรวจสอบราคา และสามารถส่งข้อเสนอแนะในช่วงประชาพิจารณ์ (Draft) ได้ทันที",
+    "description": "ระบบเปิดให้ประชาชนและบริษัทซอฟต์แวร์ค้นหาโครงการของ กทม. ได้อย่างอิสระ ตรวจสอบราคา และดูว่า TOR ไหนยังเปิดรับฟังความคิดเห็นถึงเมื่อไร",
     "searchPlaceholder": "ค้นหาชื่อโครงการ หรือชื่อหน่วยงาน...",
     "searchAll": "ค้นหาทั้งหมด",
     "closingSoon": "ใกล้หมดเขต",
@@ -484,7 +483,7 @@
   },
   "PublicPage": {
     "pageTitle": "ค้นหาประกาศ TOR ซอฟต์แวร์",
-    "pageDescription": "ค้นหาและติดตามโครงการจัดซื้อจัดจ้างด้านซอฟต์แวร์ของ กทม. พร้อมร่วมแสดงความคิดเห็นในระยะร่าง TOR",
+    "pageDescription": "ค้นหาและติดตามโครงการจัดซื้อจัดจ้างด้านซอฟต์แวร์ของ กทม. พร้อมดูว่าร่าง TOR ไหนยังเปิดรับฟังความคิดเห็นอยู่",
     "resultsCountMobile": "พบ {count} รายการ",
     "filtersButton": "ตัวกรอง",
     "clearAllFilters": "ล้างทั้งหมด",
@@ -502,7 +501,7 @@
     "filterStatusTitle": "สถานะ",
     "statusAllOpen": "เปิดอยู่ทั้งหมด",
     "statusBidding": "ยื่นข้อเสนอได้",
-    "statusComment": "ร่าง TOR / รับฟังความคิดเห็น",
+    "statusComment": "เปิดรับฟังความคิดเห็น",
     "statusAwarded": "ได้ผู้ชนะ / ทำสัญญาแล้ว",
     "statusClosed": "ปิดแล้ว / ยกเลิก",
     "statusUnknown": "ยังไม่ทราบสถานะ",
@@ -529,16 +528,9 @@
     "budgetLabel": "งบประมาณโครงการ",
     "saveAriaLabel": "บันทึก",
     "unsaveAriaLabel": "เอาออกจากรายการที่บันทึก",
-    "feedbackCountLabel": "มี {count} ความคิดเห็น",
-    "closeFeedbackButton": "ปิดกล่องข้อความ",
-    "openFeedbackButton": "แสดงความคิดเห็น",
     "feedbackOpenUntilBadge": "รับฟังความคิดเห็นถึง {date}",
     "viewDetails": "ดูรายละเอียด",
-    "feedbackFormLabel": "ร่วมแสดงความคิดเห็น (Draft TOR)",
-    "feedbackPlaceholder": "ระบุข้อเสนอแนะ ข้อกังวล หรือความคิดเห็น เพื่อให้โครงการเกิดความโปร่งใสและเป็นธรรมที่สุด...",
-    "feedbackDisclaimer": "* ความคิดเห็นของคุณจะถูกตรวจสอบก่อนแสดงผลต่อสาธารณะ",
     "cancelButton": "ยกเลิก",
-    "submitFeedbackButton": "ส่งความเห็น",
     "deadlineUnknown": "ไม่ระบุวันปิดรับ",
     "deadlineClosed": "ปิดรับแล้ว",
     "announcementDocument": "เอกสารประกาศ",
@@ -568,7 +560,8 @@
       "education": "การศึกษา สังคม และวัฒนธรรม",
       "district": "สำนักงานเขต",
       "other": "อื่นๆ"
-    }
+    },
+    "statusUpcoming": "ยังไม่เปิดยื่นข้อเสนอ (แผน / ราคากลาง)"
   },
   "FindSimilar": {
     "title": "หา TOR ที่คล้ายกับงานที่คุณเคยทำ",
@@ -600,7 +593,7 @@
   },
   "TorDetailPage": {
     "backToSearch": "กลับไปค้นหา TOR",
-    "feedbackOpenUntil": "เปิดรับฟังความคิดเห็นถึง {date}",
+    "feedbackOpenUntil": "TOR นี้เปิดรับฟังความคิดเห็นถึง {date}",
     "urgentBadge": "ใกล้หมดเขต",
     "newBadge": "ใหม่",
     "saveButton": "บันทึก",
@@ -610,11 +603,6 @@
     "qualifications": "คุณสมบัติผู้เสนอ",
     "deliverables": "สิ่งที่ต้องส่งมอบ",
     "relatedTechnologies": "เทคโนโลยีที่เกี่ยวข้อง",
-    "shareFeedback": "ร่วมแสดงความคิดเห็น",
-    "feedbackWindowInfo": "ช่วงรับฟังเปิดถึง {date} · มีผู้ยื่นแล้ว {count} ราย",
-    "feedbackTextareaPlaceholder": "ข้อเสนอแนะหรือความคิดเห็นเกี่ยวกับขอบเขตงานหรือเงื่อนไขนี้...",
-    "feedbackModerationNote": "ความคิดเห็นจะถูกตรวจสอบก่อนแสดงผลต่อสาธารณะ",
-    "submitFeedbackButton": "ส่งความคิดเห็น",
     "awardedVendorTitle": "ผู้ชนะการเสนอราคา",
     "vendorRiskWarning": "ระบบพบความเสี่ยง: ความเชี่ยวชาญอาจไม่สอดคล้องกับขอบเขตงาน",
     "budgetLabel": "งบประมาณ",
@@ -648,7 +636,6 @@
     "matchedCompaniesHeading": "บริษัทที่ระบบจับคู่ได้",
     "companySizeLabel": "ขนาด{size}",
     "matchScoreValue": "{score}%",
-    "feedbackListHeading": "ความคิดเห็นจากสาธารณะ",
     "documentsHeading": "เอกสารประกาศทั้งหมด",
     "budgetAssessmentHeading": "การประเมินวงเงิน",
     "budgetMedianLabel": "ค่ากลาง {median} จาก {count} โครงการที่นำมาเทียบ",
@@ -656,8 +643,6 @@
     "extractionHeading": "รายละเอียดที่อ่านจากเอกสาร",
     "extractionDisclaimer": "สกัดโดยอัตโนมัติจากเอกสารประกาศด้วย {model} — โปรดตรวจสอบกับเอกสารต้นฉบับก่อนใช้อ้างอิง",
     "documentBudgetLabel": "วงเงินตามเอกสาร",
-    "feedbackAuthorPlaceholder": "ชื่อผู้แสดงความคิดเห็น (ไม่ระบุก็ได้)",
-    "feedbackSubmitted": "ส่งความคิดเห็นแล้ว รอเจ้าหน้าที่ตรวจสอบก่อนเผยแพร่",
     "objectives": "วัตถุประสงค์",
     "referencePriceLabel": "ราคากลาง",
     "evaluationCriteria": "เกณฑ์การพิจารณา",
@@ -730,7 +715,12 @@
     "bidInsightNote": "ประมาณจากราคาที่ผู้ชนะเสนอในอดีตเทียบกับราคากลาง ไม่ได้รวมคะแนนคุณภาพ คุณสมบัติ หรือจำนวนคู่แข่ง ใช้ประกอบการตัดสินใจ ไม่ใช่การรับประกันผล",
     "lastEdited": "ข้อมูลแก้ไขล่าสุดโดย {by} เมื่อ {date}",
     "reviewedBadge": "ผู้ดูแลระบบตรวจทานแล้ว",
-    "bidBeats": "ต่ำกว่าราคาผู้ชนะ {beaten} จาก {total} โครงการที่เทียบ"
+    "bidBeats": "ต่ำกว่าราคาผู้ชนะ {beaten} จาก {total} โครงการที่เทียบ",
+    "feedbackClosed": "ปิดรับฟังความคิดเห็นสำหรับประกาศนี้แล้ว",
+    "feedbackClosedOn": "ปิดรับฟังความคิดเห็นแล้วเมื่อ {date}",
+    "feedbackStatusHeading": "การรับฟังความคิดเห็น",
+    "feedbackOpenNoDate": "TOR นี้อยู่ในช่วงรับฟังความคิดเห็น ประกาศไม่ระบุวันสิ้นสุด",
+    "feedbackWhereToSend": "ส่งความคิดเห็นถึงหน่วยงานโดยตรงตามช่องทางที่ระบุในประกาศต้นฉบับ"
   },
   "ProposalDraft": {
     "heading": "สร้างร่าง Proposal จากข้อเสนอเดิม",
@@ -945,13 +935,6 @@
     "followingCount": "ติดตาม {count} TOR",
     "suspendAction": "ระงับการใช้งาน",
     "reactivateAction": "เปิดใช้งานอีกครั้ง"
-  },
-  "AdminModerationPage": {
-    "title": "กลั่นกรองความคิดเห็น",
-    "description": "ตรวจสอบและอนุมัติความคิดเห็นสาธารณะที่ส่งเข้ามาต่อ TOR แต่ละรายการ",
-    "rejectAction": "ปฏิเสธ",
-    "approveAction": "อนุมัติ",
-    "emptyQueue": "ยังไม่มีความคิดเห็นให้ตรวจสอบ"
   },
   "AdminUsersPage": {
     "title": "จัดการผู้ใช้งาน",
@@ -1637,9 +1620,6 @@
     "fillAllFields": "กรอกข้อมูลให้ครบก่อนบันทึก",
     "saveTorFailed": "บันทึกรายการ TOR ไม่สำเร็จ",
     "saveFailed": "บันทึกไม่สำเร็จ",
-    "feedbackTooShort": "กรุณาเขียนความคิดเห็นอย่างน้อย 10 ตัวอักษร",
-    "feedbackTooFrequent": "ส่งความคิดเห็นถี่เกินไป กรุณารอสักครู่",
-    "feedbackFailed": "ส่งความคิดเห็นไม่สำเร็จ",
     "reportReasonRequired": "กรุณาเลือกประเภทของปัญหา",
     "reportTooShort": "กรุณาอธิบายปัญหาอย่างน้อย 10 ตัวอักษร",
     "reportTooFrequent": "แจ้งปัญหาถี่เกินไป กรุณารอสักครู่",

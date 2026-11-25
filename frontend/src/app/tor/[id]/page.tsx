@@ -17,7 +17,6 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavbar } from "@/components/layout/site-navbar";
 import { BidInsightPanel } from "@/components/public/bid-insight-panel";
 import { BiddingBadge } from "@/components/public/bidding-badge";
-import { FeedbackForm } from "@/components/public/feedback-form";
 import { ProposalDraftForm } from "@/components/public/proposal-draft-form";
 import { CoveragePanel } from "@/components/library/coverage-panel";
 import { ReportProblemForm } from "@/components/public/report-problem-form";
@@ -28,11 +27,10 @@ import { TorRecordFacts } from "@/components/public/tor-record-facts";
 import { TorTimeline } from "@/components/public/tor-timeline";
 import { TOR_DETAILS } from "@/data/tor-details";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
-import { issueFormToken } from "@/lib/form-timing";
 import { formatDate, formatDateTime } from "@/lib/datetime";
 import type { Locale } from "@/i18n/config";
 import { displayValue, valueLabel } from "@/lib/value-labels";
-import { fetchBidInsight, fetchBudgetAssessment, fetchFeedback } from "@/lib/tor-api";
+import { fetchBidInsight, fetchBudgetAssessment } from "@/lib/tor-api";
 import { getTorById, mockNumericId } from "@/lib/tor-source";
 import {
   biddingOf,
@@ -76,9 +74,9 @@ export default async function TorDetailPage({
 
   // Supplementary panels exist only for real records; the showcase ones aren't
   // in the corpus they are computed against.
-  const [budgetAssessment, publishedFeedback, bidInsight] = tor.sourceRef
-    ? await Promise.all([fetchBudgetAssessment(tor.id), fetchFeedback(tor.id), fetchBidInsight(tor.id)])
-    : [null, [], null];
+  const [budgetAssessment, bidInsight] = tor.sourceRef
+    ? await Promise.all([fetchBudgetAssessment(tor.id), fetchBidInsight(tor.id)])
+    : [null, null];
 
   // Showcase records carry hand-written scope instead of an extraction.
   const numericId = mockNumericId(id);
@@ -264,43 +262,26 @@ export default async function TorDetailPage({
           {/* A signed-in company preparing a bid, or reworking one for the next similar job (org only, like the backend's OrgGuard). */}
           {inApp && session?.role === "org" && tor.sourceRef && <ProposalDraftForm torId={tor.id} />}
 
-          {publishedFeedback.length > 0 && (
+          {/* Only the comment window's status: comments go to the agency through its own channel, not this site. */}
+          {tor.stage === "เปิดรับฟังความคิดเห็น" && (
             <section className={CARD}>
               <h2 className={HEADING}>
                 <MessageSquare size={18} className="text-ink-subtle" />
-                {t("feedbackListHeading")}
+                {t("feedbackStatusHeading")}
               </h2>
-              <ul className="space-y-4">
-                {publishedFeedback.map((entry) => (
-                  <li key={entry.id} className="rounded-lg bg-surface-alt p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-ink">{entry.author}</p>
-                      <span className="text-xs text-ink-subtle">{dateOf(entry.createdAt) ?? ""}</span>
-                    </div>
-                    <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{entry.text}</p>
-                  </li>
-                ))}
-              </ul>
+              <p className={`text-sm font-medium ${feedback.open ? "text-ink" : "text-ink-muted"}`}>
+                {feedback.open
+                  ? feedback.until
+                    ? t("feedbackOpenUntil", { date: dateOf(feedback.until) ?? "" })
+                    : t("feedbackOpenNoDate")
+                  : feedback.until
+                    ? t("feedbackClosedOn", { date: dateOf(feedback.until) ?? "" })
+                    : t("feedbackClosed")}
+              </p>
+              {feedback.open && (
+                <p className="mt-1.5 text-xs text-ink-muted">{t("feedbackWhereToSend")}</p>
+              )}
             </section>
-          )}
-
-          {/* Comments are only useful while the draft can still change. */}
-          {tor.sourceRef && feedback.open && (
-            <FeedbackForm
-              torId={tor.id}
-              formToken={issueFormToken("feedback")}
-              labels={{
-                heading: t("shareFeedback"),
-                until: feedback.until
-                  ? t("feedbackOpenUntil", { date: dateOf(feedback.until) ?? "" })
-                  : undefined,
-                authorPlaceholder: t("feedbackAuthorPlaceholder"),
-                textPlaceholder: t("feedbackTextareaPlaceholder"),
-                submit: t("submitFeedbackButton"),
-                moderationNote: t("feedbackModerationNote"),
-                submitted: t("feedbackSubmitted"),
-              }}
-            />
           )}
         </div>
 

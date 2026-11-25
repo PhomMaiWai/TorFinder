@@ -14,7 +14,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  MessageSquare,
   Plus,
   Search,
   Sprout,
@@ -33,6 +32,7 @@ import type { Role } from "@/lib/auth";
 import { resetAdminBadgeCounts, useAdminBadgeCounts } from "@/lib/use-admin-badge-counts";
 import { resetNotifications, useNotifications } from "@/lib/use-notifications";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
+import { resetSession } from "@/lib/use-session";
 
 type NavLink = {
   label: string;
@@ -78,11 +78,6 @@ function getAdminNav(t: (key: string) => string): { section: string | null; link
           href: "/admin/accounts",
           icon: UserCheck,
         },
-        {
-          label: t("navModeration"),
-          href: "/admin/moderation",
-          icon: MessageSquare,
-        },
         { label: t("navReports"), href: "/admin/reports", icon: Flag },
         { label: t("navManageCompanies"), href: "/admin/companies", icon: Building2 },
         { label: t("navManageUsers"), href: "/admin/users", icon: Users },
@@ -106,7 +101,7 @@ function NavLinks({
   const { savedIds } = useSavedTors();
   const { notifications } = useNotifications();
   const unreadNotifications = notifications.filter((n) => !n.read).length;
-  const { pendingAccounts, pendingFeedback } = useAdminBadgeCounts(isAdmin);
+  const { pendingAccounts } = useAdminBadgeCounts(isAdmin);
 
   function isActive(href: string) {
     const path = href.split("?")[0];
@@ -132,9 +127,7 @@ function NavLinks({
                   ? unreadNotifications || undefined
                   : href === "/admin/accounts"
                     ? pendingAccounts || undefined
-                    : href === "/admin/moderation"
-                      ? pendingFeedback || undefined
-                      : staticBadge;
+                    : staticBadge;
               return (
                 <li key={href}>
                   <Link
@@ -208,6 +201,8 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
       resetSavedTors();
       resetNotifications();
       resetAdminBadgeCounts();
+      // The navbar caches who is signed in; without this, /login still shows the old name.
+      resetSession();
       router.push("/login");
       router.refresh();
     } finally {

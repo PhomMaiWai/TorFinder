@@ -50,7 +50,7 @@ There is no root `package.json` and no root `src/` folder: the app is `backend/`
 | Saved TORs and saved searches | Viewer, Org | `frontend/src/app/saved/page.tsx` |
 | Notifications | Signed in | `frontend/src/app/notifications/page.tsx` |
 | Account, passkeys, signed-in devices | Signed in | `frontend/src/app/account/page.tsx` |
-| Admin console (accounts, users, companies, TOR edit, moderation, reports, audit, notifications) | Admin | `frontend/src/app/admin/**/page.tsx` |
+| Admin console (accounts, users, companies, TOR edit, reports, audit, notifications) | Admin | `frontend/src/app/admin/**/page.tsx` |
 | Off-site link warning | Anyone | `frontend/src/app/leaving/page.tsx` |
 
 ### 2.2 API routes (backend controllers)
@@ -69,7 +69,6 @@ There is no root `package.json` and no root `src/` folder: the app is `backend/`
 | Saved TORs, saved searches | `/api/saved-tors/*`, `/api/saved-searches/*` | SessionGuard | `backend/src/saved-tors/saved-tors.controller.ts`, `backend/src/saved-searches/saved-searches.controller.ts` |
 | Notifications and channels (in-app, e-mail, LINE, Slack) | `/api/notifications/*` | SessionGuard | `backend/src/notifications/notifications.controller.ts` |
 | LINE webhook | `POST /api/line/webhook` | Signature check, throttle | `backend/src/notifications/line-webhook.controller.ts` |
-| Public comments on draft TORs; admin moderation | `/api/tor/:torId/feedback`, `/api/feedback/*` | FormTimingGuard + throttle; AdminGuard | `backend/src/feedback/feedback.controller.ts` |
 | Problem reports | `/api/tor/:torId/reports`, `/api/reports/*` | Throttle; AdminGuard | `backend/src/reports/reports.controller.ts` |
 | Market insights, growth path | `/api/insights/*` | Public; OrgGuard | `backend/src/insights/insights.controller.ts` |
 | Audit log | `/api/audit` | AdminGuard | `backend/src/audit/audit.controller.ts` |

@@ -80,7 +80,6 @@ Everything a viewer can do, plus:
 - Add, edit, hide and restore TORs; mark a TOR as not software
   (`/admin/tor`). Edited fields are locked so the next
   import doesn't overwrite them.
-- Moderate public comments (`/admin/moderation`).
 - Work through problem reports and fix the TOR from the report
   (`/admin/reports`).
 - Start an import from Bangkok e-GP or MEA, capture projects
@@ -122,12 +121,12 @@ FR numbers are from [summary.md](../requirements/summary.md).
 | FR-15 | Bookmark a TOR | ✅ Done | |
 | FR-16 | Save and reuse a search | ✅ Done | Up to 50 per account |
 | FR-17 | Show the lifecycle stage | ✅ Done | Five-stage timeline |
-| FR-18 | Flag TORs open for feedback | ✅ Done | Shows until when comments are open |
-| FR-19 | Public feedback on a draft | ✅ Done | Moderated before it is shown |
+| FR-18 | Flag TORs open for feedback | ✅ Done | A draft shows until when comments are open; the search page filters on it |
+| FR-19 | Public feedback on a draft | ❌ Removed | Comments go to the agency through its own channel; the site's comment form and its moderation were removed on 26 Nov 2026 |
 | FR-20 | Owner sees match count and feedback | ❌ Removed | The Project Owner role and its `/owner` dashboard were removed on 22 Nov 2026 |
 | FR-21 | Report an error on a listing | ✅ Done | |
 | FR-22 | Admin corrects a record or classification | ✅ Done | Corrected fields are locked |
-| FR-23 | Admin hides spam or abusive feedback | ✅ Done | |
+| FR-23 | Admin hides spam or abusive feedback | ❌ Removed | No comments are taken any more, so there is nothing to moderate (26 Nov 2026) |
 | FR-24 | Flag unusual pricing or low competition | ❌ Removed | The Auditor Office role and its `/auditor` list were removed on 22 Nov 2026 |
 | FR-25 | Audit trail | ✅ Done | Admin actions and sync runs in one feed |
 | FR-26 | Only BMA, only 2022 onward | ✅ Done | Bangkok locality rules; `TOR_LISTED_SINCE` |

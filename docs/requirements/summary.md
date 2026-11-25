@@ -112,12 +112,12 @@ a search query.
 
 **Status & public feedback**
 FR-17 (Must) show the current lifecycle stage · FR-18 (Must) flag TORs open
-for feedback · FR-19 (Should) let the public submit feedback on a draft ·
+for feedback · FR-19 (Should, removed 26 Nov 2026) let the public submit feedback on a draft ·
 FR-20 (Must, removed 22 Nov 2026) show the owner their match count and collected feedback.
 
 **Quality, oversight, admin**
 FR-21 (Must) report an error on a listing · FR-22 (Must) Admin corrects a
-wrong classification/record · FR-23 (Must) Admin hides spam/abusive feedback
+wrong classification/record · FR-23 (Must, removed 26 Nov 2026) Admin hides spam/abusive feedback
 · FR-24 (**Could**, removed 22 Nov 2026) flag unusual pricing or low
 competition for the Auditor Office · FR-25 (Must) audit trail of admin-relevant actions.
 

@@ -62,7 +62,6 @@
     "navCompanyProfile": "Company profile",
     "navNotifications": "Notifications",
     "navPendingAccounts": "Pending accounts",
-    "navModeration": "Feedback moderation",
     "navManageCompanies": "Manage companies",
     "navManageUsers": "Manage users",
     "navAuditLog": "Audit Log",
@@ -218,7 +217,7 @@
   },
   "LandingPreview": {
     "heading": "Search and review TORs transparently",
-    "description": "The system lets the public and software companies freely search BMA projects, review prices, and submit feedback during the public hearing (Draft) period instantly.",
+    "description": "Anyone, public or software company, can search BMA projects freely, review prices, and see which TORs are still open for public comment and until when.",
     "searchPlaceholder": "Search by project name or agency name...",
     "searchAll": "Search all",
     "closingSoon": "Closing soon",
@@ -484,7 +483,7 @@
   },
   "PublicPage": {
     "pageTitle": "Search software TOR announcements",
-    "pageDescription": "Search and track BMA software procurement projects, and share feedback during the draft TOR stage.",
+    "pageDescription": "Search and follow BMA software procurement, and see which draft TORs are still open for public comment.",
     "resultsCountMobile": "{count} results found",
     "filtersButton": "Filters",
     "clearAllFilters": "Clear all",
@@ -502,7 +501,7 @@
     "filterStatusTitle": "Status",
     "statusAllOpen": "All open",
     "statusBidding": "Open for bids",
-    "statusComment": "Draft TOR / open for comment",
+    "statusComment": "Open for public comment",
     "statusAwarded": "Awarded / contracted",
     "statusClosed": "Closed / cancelled",
     "statusUnknown": "Status unknown",
@@ -529,16 +528,9 @@
     "budgetLabel": "Project budget",
     "saveAriaLabel": "Save",
     "unsaveAriaLabel": "Remove from saved list",
-    "feedbackCountLabel": "{count} comments",
-    "closeFeedbackButton": "Close comment box",
-    "openFeedbackButton": "Leave feedback",
     "feedbackOpenUntilBadge": "Comments until {date}",
     "viewDetails": "View details",
-    "feedbackFormLabel": "Share your feedback (Draft TOR)",
-    "feedbackPlaceholder": "Enter suggestions, concerns, or comments to make this project as transparent and fair as possible...",
-    "feedbackDisclaimer": "* Your comment will be reviewed before being shown publicly",
     "cancelButton": "Cancel",
-    "submitFeedbackButton": "Submit comment",
     "deadlineUnknown": "No closing date given",
     "deadlineClosed": "Closed",
     "announcementDocument": "Announcement document",
@@ -568,7 +560,8 @@
       "education": "Education, social and culture",
       "district": "District offices",
       "other": "Other"
-    }
+    },
+    "statusUpcoming": "Not yet open for bids (plan / reference price)"
   },
   "FindSimilar": {
     "title": "Find TORs like work you have done",
@@ -600,7 +593,7 @@
   },
   "TorDetailPage": {
     "backToSearch": "Back to TOR search",
-    "feedbackOpenUntil": "Open for comments until {date}",
+    "feedbackOpenUntil": "This TOR is open for public comment until {date}",
     "urgentBadge": "Deadline approaching",
     "newBadge": "New",
     "saveButton": "Save",
@@ -610,11 +603,6 @@
     "qualifications": "Bidder qualifications",
     "deliverables": "Deliverables",
     "relatedTechnologies": "Related technologies",
-    "shareFeedback": "Share your feedback",
-    "feedbackWindowInfo": "Feedback window open until {date} · {count} submissions so far",
-    "feedbackTextareaPlaceholder": "Suggestions or comments about this scope of work or conditions...",
-    "feedbackModerationNote": "Comments will be reviewed before being shown publicly",
-    "submitFeedbackButton": "Submit comment",
     "awardedVendorTitle": "Awarded bidder",
     "vendorRiskWarning": "Risk detected: expertise may not align with the scope of work",
     "budgetLabel": "Budget",
@@ -648,7 +636,6 @@
     "matchedCompaniesHeading": "Matched companies",
     "companySizeLabel": "{size} size",
     "matchScoreValue": "{score}%",
-    "feedbackListHeading": "Public feedback",
     "documentsHeading": "All announcement documents",
     "budgetAssessmentHeading": "Budget assessment",
     "budgetMedianLabel": "Median {median} across {count} comparable projects",
@@ -656,8 +643,6 @@
     "extractionHeading": "Details read from the document",
     "extractionDisclaimer": "Extracted automatically from the announcement document with {model} — check against the original before relying on it.",
     "documentBudgetLabel": "Budget stated in the document",
-    "feedbackAuthorPlaceholder": "Your name (optional)",
-    "feedbackSubmitted": "Comment received — it will appear once a moderator approves it.",
     "objectives": "Objectives",
     "referencePriceLabel": "Reference price",
     "evaluationCriteria": "Evaluation criteria",
@@ -730,7 +715,12 @@
     "bidInsightNote": "Estimated from past winning bids against the reference price. It does not account for quality scoring, qualifications or the number of bidders — a guide, not a guarantee.",
     "lastEdited": "Last corrected by {by} on {date}",
     "reviewedBadge": "Checked by an administrator",
-    "bidBeats": "Under the winning price in {beaten} of {total} compared projects"
+    "bidBeats": "Under the winning price in {beaten} of {total} compared projects",
+    "feedbackClosed": "Public comment on this announcement has closed.",
+    "feedbackClosedOn": "Public comment closed on {date}.",
+    "feedbackStatusHeading": "Public comment",
+    "feedbackOpenNoDate": "This TOR is open for public comment; the announcement gives no end date",
+    "feedbackWhereToSend": "Send comments to the agency directly, through the channel given in the original announcement"
   },
   "ProposalDraft": {
     "heading": "Draft a proposal from an earlier one",
@@ -945,13 +935,6 @@
     "followingCount": "Following {count} TOR",
     "suspendAction": "Suspend Access",
     "reactivateAction": "Reactivate"
-  },
-  "AdminModerationPage": {
-    "title": "Moderate Feedback",
-    "description": "Review and approve public feedback submitted for each TOR",
-    "rejectAction": "Reject",
-    "approveAction": "Approve",
-    "emptyQueue": "No comments to review"
   },
   "AdminUsersPage": {
     "title": "Manage Users",
@@ -1637,9 +1620,6 @@
     "fillAllFields": "Fill in every field before saving.",
     "saveTorFailed": "Couldn't save the TOR.",
     "saveFailed": "Couldn't save.",
-    "feedbackTooShort": "Write at least 10 characters.",
-    "feedbackTooFrequent": "You're sending feedback too often. Please wait a moment.",
-    "feedbackFailed": "Couldn't send your feedback.",
     "reportReasonRequired": "Choose what kind of problem it is.",
     "reportTooShort": "Describe the problem in at least 10 characters.",
     "reportTooFrequent": "You're reporting too often. Please wait a moment.",

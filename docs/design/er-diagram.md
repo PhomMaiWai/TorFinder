@@ -271,7 +271,6 @@ lockout and rate limits so they hold across backend instances.
 | `tors` | `{ createdAt: -1 }` | Default listing order |
 | `tors` | `{ sourceRef: 1 }` unique, sparse | Re-importing updates instead of duplicating |
 | `tors` | `{ stage: 1, projectNumber: 1 }` | Finding other stages of the same project |
-| `feedback` | `{ torId: 1, createdAt: -1 }`, `{ status: 1, createdAt: -1 }` | Comments per TOR; moderation queue |
 | `torReports` | `{ status: 1, createdAt: -1 }`, `{ torId: 1, createdAt: -1 }` | Admin list; reports per TOR |
 | `savedTors` | `{ userId: 1, torId: 1 }` unique, `{ userId: 1, createdAt: -1 }` | No double bookmark; own list |
 | `torEmbeddings` | `{ torId: 1, model: 1 }` unique | One vector per TOR per embedding model, for "find similar" |
