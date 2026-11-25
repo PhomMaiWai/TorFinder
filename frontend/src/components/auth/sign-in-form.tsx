@@ -12,6 +12,7 @@ import { GoogleSignInButton, isGoogleSignInEnabled } from "@/components/auth/goo
 import { ResendVerification } from "@/components/auth/resend-verification";
 import { PasswordInput } from "@/components/ui/password-input";
 import { type PasskeyFailureResult, signInWithPasskey } from "@/lib/passkeys-client";
+import { resetSession } from "@/lib/use-session";
 
 const ICONS = {
   building: Building2,
@@ -87,6 +88,7 @@ export function SignInForm({
       if (result.message) setPasskeyOptions(null);
       return;
     }
+    resetSession();
     router.push(redirectTo);
     router.refresh();
   }
@@ -124,6 +126,7 @@ export function SignInForm({
         return;
       }
 
+      resetSession();
       router.push(redirectTo);
       router.refresh();
     } catch {
@@ -135,6 +138,7 @@ export function SignInForm({
 
   function handleGoogleSuccess() {
     setError(null);
+    resetSession();
     router.push(redirectTo);
     router.refresh();
   }

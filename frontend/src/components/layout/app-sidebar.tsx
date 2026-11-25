@@ -33,6 +33,7 @@ import type { Role } from "@/lib/auth";
 import { resetAdminBadgeCounts, useAdminBadgeCounts } from "@/lib/use-admin-badge-counts";
 import { resetNotifications, useNotifications } from "@/lib/use-notifications";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
+import { resetSession } from "@/lib/use-session";
 
 type NavLink = {
   label: string;
@@ -208,6 +209,8 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
       resetSavedTors();
       resetNotifications();
       resetAdminBadgeCounts();
+      // The navbar caches who is signed in; without this, /login still shows the old name.
+      resetSession();
       router.push("/login");
       router.refresh();
     } finally {
