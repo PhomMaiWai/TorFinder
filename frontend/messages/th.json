@@ -62,7 +62,6 @@
     "navCompanyProfile": "โปรไฟล์บริษัท",
     "navNotifications": "การแจ้งเตือน",
     "navPendingAccounts": "บัญชีรออนุมัติ",
-    "navModeration": "กลั่นกรองความคิดเห็น",
     "navManageCompanies": "จัดการบริษัท",
     "navManageUsers": "จัดการผู้ใช้งาน",
     "navAuditLog": "Audit Log",
@@ -502,7 +501,7 @@
     "filterStatusTitle": "สถานะ",
     "statusAllOpen": "เปิดอยู่ทั้งหมด",
     "statusBidding": "ยื่นข้อเสนอได้",
-    "statusComment": "ร่าง TOR / รับฟังความคิดเห็น",
+    "statusComment": "เปิดรับฟังความคิดเห็น",
     "statusAwarded": "ได้ผู้ชนะ / ทำสัญญาแล้ว",
     "statusClosed": "ปิดแล้ว / ยกเลิก",
     "statusUnknown": "ยังไม่ทราบสถานะ",
@@ -561,7 +560,8 @@
       "education": "การศึกษา สังคม และวัฒนธรรม",
       "district": "สำนักงานเขต",
       "other": "อื่นๆ"
-    }
+    },
+    "statusUpcoming": "ยังไม่เปิดยื่นข้อเสนอ (แผน / ราคากลาง)"
   },
   "FindSimilar": {
     "title": "หา TOR ที่คล้ายกับงานที่คุณเคยทำ",
@@ -935,13 +935,6 @@
     "followingCount": "ติดตาม {count} TOR",
     "suspendAction": "ระงับการใช้งาน",
     "reactivateAction": "เปิดใช้งานอีกครั้ง"
-  },
-  "AdminModerationPage": {
-    "title": "กลั่นกรองความคิดเห็น",
-    "description": "ตรวจสอบและอนุมัติความคิดเห็นสาธารณะที่ส่งเข้ามาต่อ TOR แต่ละรายการ",
-    "rejectAction": "ปฏิเสธ",
-    "approveAction": "อนุมัติ",
-    "emptyQueue": "ยังไม่มีความคิดเห็นให้ตรวจสอบ"
   },
   "AdminUsersPage": {
     "title": "จัดการผู้ใช้งาน",

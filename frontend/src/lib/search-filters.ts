@@ -7,14 +7,15 @@ import { DEFAULT_SORT, isSortKey, type SortKey } from "@/lib/tor-sort";
  * filters — whether bidding is open, the announcement stage, and the
  * announcement type — which said the same thing three ways.
  */
-export type TorStatus = "bidding" | "comment" | "awarded" | "closed" | "unknown";
+export type TorStatus = "bidding" | "comment" | "upcoming" | "awarded" | "closed" | "unknown";
 
-export const STATUSES: readonly TorStatus[] = ["bidding", "comment", "awarded", "closed", "unknown"];
+export const STATUSES: readonly TorStatus[] = ["bidding", "comment", "upcoming", "awarded", "closed", "unknown"];
 
 /** Each status's label, under the search page's (PublicPage) messages. */
 export const STATUS_LABEL_KEY: Record<TorStatus, string> = {
   bidding: "statusBidding",
   comment: "statusComment",
+  upcoming: "statusUpcoming",
   awarded: "statusAwarded",
   closed: "statusClosed",
   unknown: "statusUnknown",

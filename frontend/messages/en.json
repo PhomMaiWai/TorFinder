@@ -62,7 +62,6 @@
     "navCompanyProfile": "Company profile",
     "navNotifications": "Notifications",
     "navPendingAccounts": "Pending accounts",
-    "navModeration": "Feedback moderation",
     "navManageCompanies": "Manage companies",
     "navManageUsers": "Manage users",
     "navAuditLog": "Audit Log",
@@ -502,7 +501,7 @@
     "filterStatusTitle": "Status",
     "statusAllOpen": "All open",
     "statusBidding": "Open for bids",
-    "statusComment": "Draft TOR / open for comment",
+    "statusComment": "Open for public comment",
     "statusAwarded": "Awarded / contracted",
     "statusClosed": "Closed / cancelled",
     "statusUnknown": "Status unknown",
@@ -561,7 +560,8 @@
       "education": "Education, social and culture",
       "district": "District offices",
       "other": "Other"
-    }
+    },
+    "statusUpcoming": "Not yet open for bids (plan / reference price)"
   },
   "FindSimilar": {
     "title": "Find TORs like work you have done",
@@ -935,13 +935,6 @@
     "followingCount": "Following {count} TOR",
     "suspendAction": "Suspend Access",
     "reactivateAction": "Reactivate"
-  },
-  "AdminModerationPage": {
-    "title": "Moderate Feedback",
-    "description": "Review and approve public feedback submitted for each TOR",
-    "rejectAction": "Reject",
-    "approveAction": "Approve",
-    "emptyQueue": "No comments to review"
   },
   "AdminUsersPage": {
     "title": "Manage Users",

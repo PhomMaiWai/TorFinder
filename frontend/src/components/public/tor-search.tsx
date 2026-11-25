@@ -63,16 +63,20 @@ import { FilterCheckbox } from "./filter-checkbox";
 import { FilterRadio } from "./filter-radio";
 import { OffsiteLink } from "@/components/ui/offsite-link";
 
-/** Everything a reader can still act on: bid now, or comment on what is coming. */
-const OPEN_STATUSES: readonly TorStatus[] = ["bidding", "comment"];
+/**
+ * Everything still open: bid now, comment on a draft now, or plan for what is
+ * coming. Always offered, even when nothing is in one right now — the option
+ * and its count of 0 say so, where a missing option would only raise the question.
+ */
+const OPEN_STATUSES: readonly TorStatus[] = ["bidding", "comment", "upcoming"];
 
 function statusOf(tor: TorRecord): TorStatus {
+  // A draft inside its public-comment window — the same rule the TOR page states.
+  if (feedbackWindow(tor).open) return "comment";
   const { status, reason } = biddingOf(tor);
-  // Bid now, or plan for what is coming — two different jobs, so two options;
-  // the "all open" shortcut puts them back together.
-  // Only an invitation takes bids; a plan, a draft or a reference price is
-  // still ahead of that.
-  if (status === "open") return tor.stage === "ประกาศ TOR" ? "bidding" : "comment";
+  // Only an invitation takes bids; a plan, a reference price or a draft past
+  // its comment window is still ahead of that.
+  if (status === "open") return tor.stage === "ประกาศ TOR" ? "bidding" : "upcoming";
   if (status === "unknown") return "unknown";
   return reason === "awarded" || reason === "contracted" ? "awarded" : "closed";
 }
@@ -541,11 +545,20 @@ export function TorSearch({
 
   // Filter options come from what was actually announced, not a fixed list.
   const agencies = useMemo(() => tors.map((t) => t.agency), [tors]);
-  // Only the statuses something actually has — an empty option is a dead end.
-  const statuses = useMemo(() => {
-    const present = new Set(tors.map(statusOf));
-    return STATUSES.filter((status) => present.has(status));
+  // How many TORs are in each status. The open ones are always listed (see
+  // OPEN_STATUSES); the rest only when something has them.
+  const statusCounts = useMemo(() => {
+    const counts = new Map<TorStatus, number>();
+    for (const tor of tors) {
+      const status = statusOf(tor);
+      counts.set(status, (counts.get(status) ?? 0) + 1);
+    }
+    return counts;
   }, [tors]);
+  const statuses = useMemo(
+    () => STATUSES.filter((status) => OPEN_STATUSES.includes(status) || statusCounts.has(status)),
+    [statusCounts],
+  );
   // Newest first: the current year is the one a reader almost always wants.
   const years = useMemo(
     () =>
@@ -716,7 +729,7 @@ export function TorSearch({
             statuses={statuses}
             selected={selectedStatuses}
             onChange={setSelectedStatuses}
-            labelOf={(status) => t(STATUS_LABEL_KEY[status])}
+            labelOf={(status) => `${t(STATUS_LABEL_KEY[status])} (${statusCounts.get(status) ?? 0})`}
           />
 
           <div className="mb-7 h-px w-full bg-surface-alt" />
