@@ -83,7 +83,12 @@ Before tagging, on the commit you will present:
 1. All PRs for the release merged; no open PR left that changes the demo.
 2. CI green on that commit (`gh run list --branch main --limit 3`).
 3. Fresh clone and `docker compose up -d --build` from the README works;
-   demo accounts sign in.
+   demo accounts sign in. **Checked 25 Nov on `85d6251`:** clean clone,
+   README steps only; every service started; company and admin demo accounts
+   signed in; the first import added 44 TORs (35 e-GP, 9 MEA) within about 3
+   minutes, after which matches and a match alert appeared. Two problems
+   found and added to the README troubleshooting list: no open TORs until
+   that first import finishes, and Docker running out of disk (#233).
 4. Manual column of the FR table in [testing.md](../process/testing.md#functional-requirements-release-check-v10)
    filled in.
 5. Put the commit in the line at the top of this file, merge that change,

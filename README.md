@@ -131,6 +131,14 @@ After you change `.env`, run `docker compose up -d` again (add `--build` for the
   `.gitattributes` existed. Run `git rm --cached -r . -q` then `git reset --hard`
   to check the files out again with LF endings.
 - *Everyone is signed out after a change*: `SESSION_SECRET` changed. Sign in again.
+- *No open TORs and no matches right after the first start*: the bundled
+  snapshot is from 27 Oct 2026, so its deadlines have passed. The importers run
+  on start and add new TORs from e-GP and MEA within a few minutes (this needs
+  internet access); matches and alerts follow. Reload after about 3 minutes.
+- *The database restarts with `No space left on device`*: Docker's disk is full.
+  Check with `docker system df`, then free space with `docker builder prune`
+  (build cache only) or raise the disk size in Docker Desktop → Settings →
+  Resources.
 
 ### Running without Docker
 

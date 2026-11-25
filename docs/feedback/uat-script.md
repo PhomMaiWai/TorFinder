@@ -16,8 +16,10 @@ an average satisfaction of 4 or more out of 5. See
 
 1. Start a fresh copy: `docker compose up -d --build` with
    `SEED_DEMO_DATA=true` in `.env` (see the [README](../../README.md#demo-accounts)).
-2. Open `http://localhost:3000` in a private browser window and check that
-   the home page lists TORs.
+2. Wait about 3 minutes after the first start, so the importers add TORs
+   that are still open (the bundled snapshot's deadlines have passed). Open
+   `http://localhost:3000` in a private browser window and check that the
+   search shows open TORs.
 3. Sign in once as `contact@arundigital.co.th` and check that
    `/dashboard`, `/matches` and `/notifications` show data. Sign out.
 4. Have [uat-log.md](./uat-log.md) open to fill in, and a timer.
