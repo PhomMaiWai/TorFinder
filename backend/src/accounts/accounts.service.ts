@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { ClientSession, Filter, ObjectId } from "mongodb";
 
 import { AuditService } from "../audit/audit.service";
-import { AccountLinksService } from "../auth/account-links.service";
+import { ADMIN_RESET_INTRO, AccountLinksService } from "../auth/account-links.service";
 import { PasskeysService } from "../auth/passkeys.service";
 import { logSecurityEvent } from "../common/security-log";
 import { SessionRevocationService } from "../common/session-revocation.service";
@@ -122,9 +122,7 @@ export class AccountsService {
     if (user.role === "viewer") throw new BadRequestException("บัญชีประชาชนทั่วไปเข้าสู่ระบบด้วย Google จึงไม่มีรหัสผ่านให้ตั้งใหม่");
     if (user.suspended) throw new BadRequestException("บัญชีนี้ถูกระงับอยู่ กรุณาเปิดใช้งานก่อนส่งลิงก์ตั้งรหัสผ่าน");
 
-    await this.links.send(user, "password-reset", {
-      intro: "ผู้ดูแลระบบ TOR Finder ส่งลิงก์ตั้งรหัสผ่านใหม่ให้บัญชีนี้ กดลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่ด้วยตัวเอง ผู้ดูแลระบบไม่เห็นและไม่ได้กำหนดรหัสผ่านของคุณ",
-    });
+    await this.links.send(user, "password-reset", { intro: ADMIN_RESET_INTRO });
     logSecurityEvent("auth.password.reset.admin", {
       outcome: "success",
       userId: id,
@@ -169,10 +167,27 @@ export class AccountsService {
     await this.notifications.create(
       result._id,
       "system",
-      suspended ? "บัญชีของคุณถูกระงับการใช้งาน" : "บัญชีของคุณกลับมาใช้งานได้แล้ว",
       suspended
-        ? "ผู้ดูแลระบบระงับการใช้งานบัญชีนี้ชั่วคราว กรุณาติดต่อผู้ดูแลระบบหากมีข้อสงสัย"
-        : "ผู้ดูแลระบบเปิดใช้งานบัญชีนี้อีกครั้ง เข้าใช้งานได้ทันที",
+        ? {
+            th: {
+              title: "บัญชีของคุณถูกระงับการใช้งาน",
+              message: "ผู้ดูแลระบบระงับการใช้งานบัญชีนี้ชั่วคราว กรุณาติดต่อผู้ดูแลระบบหากมีข้อสงสัย",
+            },
+            en: {
+              title: "Your account has been suspended",
+              message: "An administrator has temporarily suspended this account. Please contact the administrator if you have questions.",
+            },
+          }
+        : {
+            th: {
+              title: "บัญชีของคุณกลับมาใช้งานได้แล้ว",
+              message: "ผู้ดูแลระบบเปิดใช้งานบัญชีนี้อีกครั้ง เข้าใช้งานได้ทันที",
+            },
+            en: {
+              title: "Your account is active again",
+              message: "An administrator has reactivated this account. You can use it right away.",
+            },
+          },
     );
 
     const { _id, ...rest } = result;
@@ -280,6 +295,12 @@ export class AccountsService {
     });
 
     await this.notifyReviewDecision(result._id, status, result.company?.companyName ?? result.name);
+    // Mailed outside notifications' channels: a pending company has had no way to turn email on.
+    await this.links.notify(
+      result.email,
+      status === "approved" ? "account-approved" : "account-rejected",
+      [["บริษัท / Company", result.company?.companyName ?? result.name]],
+    );
 
     const { _id, ...rest } = result;
     return { id: _id.toString(), ...rest };
@@ -294,16 +315,26 @@ export class AccountsService {
       await this.notifications.create(
         userId,
         "approval",
-        "บัญชีของคุณได้รับการอนุมัติแล้ว",
-        `ผู้ดูแลระบบอนุมัติบัญชี ${companyName} เรียบร้อยแล้ว เข้าใช้งานได้ทันที`,
+        {
+          th: {
+            title: "บัญชีของคุณได้รับการอนุมัติแล้ว",
+            message: `ผู้ดูแลระบบอนุมัติบัญชี ${companyName} เรียบร้อยแล้ว เข้าใช้งานได้ทันที`,
+          },
+          en: {
+            title: "Your account is approved",
+            message: `An administrator approved the account for ${companyName}. You can use it right away.`,
+          },
+        },
       );
       return;
     }
     await this.notifications.create(
       userId,
       "approval",
-      "บัญชีของคุณไม่ผ่านการอนุมัติ",
-      "บัญชีของคุณไม่ผ่านการอนุมัติ กรุณาติดต่อผู้ดูแลระบบ",
+      {
+        th: { title: "บัญชีของคุณไม่ผ่านการอนุมัติ", message: "บัญชีของคุณไม่ผ่านการอนุมัติ กรุณาติดต่อผู้ดูแลระบบ" },
+        en: { title: "Your account was not approved", message: "Your account was not approved. Please contact the administrator." },
+      },
     );
   }
 

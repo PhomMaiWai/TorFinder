@@ -11,7 +11,12 @@ const { activeChannels, deliver } = await import("../dist/notifications/notifica
 
 const SLACK = "https://hooks.slack.com/services/T000/B000/XXXX";
 const LINE = `U${"a".repeat(32)}`;
-const NOTE = { title: "TOR ใหม่", message: "จ้างพัฒนาระบบ", link: "https://example.com/tor/1" };
+const NOTE = {
+  title: "TOR ใหม่",
+  message: "จ้างพัฒนาระบบ",
+  en: { title: "New TOR", message: "System development" },
+  link: "https://example.com/tor/1",
+};
 
 const realFetch = globalThis.fetch;
 afterEach(() => {

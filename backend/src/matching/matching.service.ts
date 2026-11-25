@@ -248,8 +248,8 @@ export class MatchingService {
           if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) continue;
           throw error;
         }
-        const { title, message } = alertText(alert);
-        await this.notifications.create(account._id, "match", title, message, alert.tor._id, alert.score);
+        const { title, message, en } = alertText(alert);
+        await this.notifications.create(account._id, "match", { th: { title, message }, en }, alert.tor._id, alert.score);
         sent++;
       }
     }

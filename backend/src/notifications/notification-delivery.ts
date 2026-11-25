@@ -1,13 +1,20 @@
-import { escapeHtml, sendEmail as send } from "../common/email";
+import { canSendEmail, sendEmail as send } from "../common/email";
+import { emailSubject, renderEmail } from "../common/email-layout";
 import { env } from "../config/env";
 import { NotificationChannels } from "../database/database.service";
 import { canLinkLine } from "./line-link";
 
 export type Channel = "email" | "slack" | "line";
 
+/** A notification's words in one language. */
+export type NotificationText = { title: string; message: string };
+
 export type OutgoingNotification = {
+  /** Thai: the in-app record and the Slack/LINE text. */
   title: string;
   message: string;
+  /** The English version, added under the Thai in the email. */
+  en: NotificationText;
   /** A page on the site to open, when the notification is about one. */
   link?: string;
 };
@@ -35,13 +42,13 @@ async function post(url: string, body: unknown, headers: Record<string, string> 
 }
 
 function sendEmail(to: string, notification: OutgoingNotification): Promise<void> {
-  const { title, message, link } = notification;
-  return send({
-    to,
-    subject: title,
-    text: plainText(notification),
-    html: `<p>${escapeHtml(message)}</p>${link ? `<p><a href="${escapeHtml(link)}">เปิดดูใน TOR Finder</a></p>` : ""}`,
+  const { title, message, en, link } = notification;
+  const { html, text } = renderEmail({
+    th: { heading: title, paragraphs: [message], buttonLabel: "เปิดดูใน TOR Finder" },
+    en: { heading: en.title, paragraphs: [en.message], buttonLabel: "Open in TOR Finder" },
+    buttonUrl: link,
   });
+  return send({ to, subject: emailSubject(title, en.title), text, html });
 }
 
 function sendSlack(webhookUrl: string, notification: OutgoingNotification): Promise<void> {
@@ -67,7 +74,7 @@ function sendLine(to: string, notification: OutgoingNotification): Promise<void>
 export function activeChannels(channels: NotificationChannels | undefined): Channel[] {
   if (!channels) return [];
   return [
-    channels.email && env.notify.resendApiKey ? ("email" as const) : null,
+    channels.email && canSendEmail() ? ("email" as const) : null,
     channels.slackWebhookUrl ? ("slack" as const) : null,
     channels.lineUserId && env.notify.lineChannelAccessToken ? ("line" as const) : null,
   ].filter((channel): channel is Channel => channel !== null);
@@ -76,7 +83,7 @@ export function activeChannels(channels: NotificationChannels | undefined): Chan
 /** Which channels the server is configured for at all — the settings page greys the rest out. */
 export function availableChannels(): Record<Channel, boolean> {
   return {
-    email: Boolean(env.notify.resendApiKey),
+    email: canSendEmail(),
     slack: true,
     line: canLinkLine(),
   };

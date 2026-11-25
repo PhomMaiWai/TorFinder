@@ -90,6 +90,7 @@ are in [pipeline.md](./pipeline.md) and, in plainer words,
 | `EGP_ENRICH_BUDGET_MS` | `45000` | Time cap on fetching per-project detail in one sync |
 | `RESEND_API_KEY` | empty | Empty turns email off (links are logged instead) |
 | `NOTIFY_EMAIL_FROM` | `TOR Finder <noreply@torfinder.app>` | |
+| `MAIL_CATCHER_URL` | empty | Testing only. `http://mailpit:8025` sends every email to Mailpit (`docker compose --profile mail up -d`, view at http://localhost:8025) instead of Resend. Keep it empty in production |
 | `LINE_CHANNEL_ACCESS_TOKEN` | empty | Empty turns LINE off |
 | `NOTIFY_MATCH_THRESHOLD` | `70` | Default score for match alerts; each company can set its own |
 | `NOTIFY_MAX_MATCHES_PER_RUN` | `5` | Most match alerts one company gets per import |

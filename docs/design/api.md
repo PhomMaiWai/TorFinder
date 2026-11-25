@@ -525,6 +525,7 @@ backend route of the same name. `frontend/src/proxy.ts` refuses every
 | `/api/certificates`, `/api/certificates/none`, `/api/certificates/[id]`, `/api/certificates/[id]/file` | GET, POST, PUT, DELETE | `/certificates/…` | Bodies (JSON and the multipart upload) stream through unread; the file comes back as a download |
 | `/api/ai/proposal-draft/[torId]` | POST | `/ai/proposal-draft/:torId` | |
 | `/api/gproc/capture`, `/[runId]` | POST, GET | `/gproc/capture` | |
+| `/api/admin/badge-counts` | GET | `/accounts?status=pending` and `/feedback?status=รอตรวจสอบ`; returns only the two counts for the admin sidebar | |
 | `/api/notifications`, `/[id]/read`, `/read-all`, `/channels`, `/channels/test`, `/channels/line`, `/channels/line/link` | as backend | `/notifications/...` | |
 | `/api/saved-searches`, `/[id]` | GET, POST, DELETE | `/saved-searches` | |
 | `/api/saved-tors`, `/[torId]`, `/import` | GET, POST, DELETE | `/saved-tors` | |

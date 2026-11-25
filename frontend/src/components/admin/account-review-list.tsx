@@ -21,6 +21,7 @@ import type { Locale } from "@/i18n/config";
 import type { ActionResult } from "@/lib/action-result";
 import { formatDateTime } from "@/lib/datetime";
 import { type PasskeyFailureResult, withStepUp } from "@/lib/passkeys-client";
+import { refreshAdminBadgeCounts } from "@/lib/use-admin-badge-counts";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -98,6 +99,7 @@ export function AccountReviewList({
     setRefusal(null);
     const result = await withStepUp(() => action(id), stepUpMessage);
     if (result.error) setRefusal({ id, text: result.error });
+    else await refreshAdminBadgeCounts();
   }
   const tv = useTranslations("Values");
   const locale = useLocale() as Locale;

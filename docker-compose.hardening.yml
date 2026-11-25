@@ -35,6 +35,8 @@ services:
       - SESSION_SECRET_PREVIOUS=
       - SESSION_SECRET_PREVIOUS_UNTIL=
       - RESEND_API_KEY=
+      # A hardened deployment really sends its mail; the test catcher stays off.
+      - MAIL_CATCHER_URL=
       - LINE_CHANNEL_ACCESS_TOKEN=
       - LINE_CHANNEL_SECRET=
     # ASVS 13.3.1: its secrets come from the vault (vault-init), not from .env.

@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 import type { NotificationType } from "@/data/notifications";
+import { pollWhileVisible } from "@/lib/poll-while-visible";
 
 export type Notification = {
   id: string;
@@ -27,7 +28,7 @@ const EMPTY_SNAPSHOT: Notification[] = [];
 function createStore() {
   let listeners: Array<() => void> = [];
   let cachedSnapshot: Notification[] = EMPTY_SNAPSHOT;
-  let hasLoaded = false;
+  let stopPolling: (() => void) | null = null;
 
   function notify() {
     listeners.forEach((listener) => listener());
@@ -37,7 +38,10 @@ function createStore() {
     try {
       const res = await fetch("/api/notifications", { cache: "no-store" });
       if (res.ok) {
-        cachedSnapshot = await res.json();
+        const next: Notification[] = await res.json();
+        // A poll that brings nothing new shouldn't re-render the sidebar and page.
+        if (JSON.stringify(next) === JSON.stringify(cachedSnapshot)) return;
+        cachedSnapshot = next;
         notify();
       }
     } catch {
@@ -47,12 +51,18 @@ function createStore() {
 
   function subscribe(callback: () => void) {
     listeners.push(callback);
-    if (!hasLoaded) {
-      hasLoaded = true;
+    // Read once, then every 30s while the tab is in view, so a new alert
+    // reaches the badge without a reload.
+    if (!stopPolling) {
       load();
+      stopPolling = pollWhileVisible(load);
     }
     return () => {
       listeners = listeners.filter((l) => l !== callback);
+      if (listeners.length === 0 && stopPolling) {
+        stopPolling();
+        stopPolling = null;
+      }
     };
   }
 
@@ -99,7 +109,8 @@ function createStore() {
   /** Called on logout — a client-side navigation, not a reload, so this module stays loaded. */
   function reset() {
     cachedSnapshot = EMPTY_SNAPSHOT;
-    hasLoaded = false;
+    stopPolling?.();
+    stopPolling = null;
     notify();
   }
 

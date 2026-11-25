@@ -38,6 +38,15 @@ export class AdminAlertsService {
             .slice(0, FEEDS_LISTED)
             .join(", ")}${problem.failedFeeds.length > FEEDS_LISTED ? " …" : ""} — ข้อมูลที่ได้มาถูกบันทึกแล้ว ส่วนที่ขาดจะดึงใหม่ในรอบถัดไป`;
 
+    const titleEn =
+      problem.kind === "failed" ? `Couldn't fetch data from ${source}` : `Data from ${source} came in incomplete`;
+    const messageEn =
+      problem.kind === "failed"
+        ? `The automatic run failed: ${problem.error} — it will be retried in the next run.`
+        : `Some feeds didn't respond (${problem.failedFeeds.length}): ${problem.failedFeeds
+            .slice(0, FEEDS_LISTED)
+            .join(", ")}${problem.failedFeeds.length > FEEDS_LISTED ? " …" : ""} — what came in is saved; the rest will be fetched again in the next run.`;
+
     try {
       const admins = await this.db.users
         .find({ role: "admin", suspended: { $ne: true } }, { projection: { _id: 1 } })
@@ -56,7 +65,12 @@ export class AdminAlertsService {
       await Promise.all(
         admins
           .filter(({ _id }) => !alreadyTold.has(_id.toString()))
-          .map(({ _id }) => this.notifications.create(_id, "system", title, message)),
+          .map(({ _id }) =>
+            this.notifications.create(_id, "system", {
+              th: { title, message },
+              en: { title: titleEn, message: messageEn },
+            }),
+          ),
       );
     } catch (error) {
       // The alert is about a failure; it must never become a second one.

@@ -68,6 +68,9 @@ services:
       # Notification channels; each stays off while its keys are empty.
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - NOTIFY_EMAIL_FROM=${NOTIFY_EMAIL_FROM:-TOR Finder <onboarding@resend.dev>}
+      # Testing only: http://mailpit:8025 sends every email to the mailpit
+      # service below instead of Resend (start it with --profile mail).
+      - MAIL_CATCHER_URL=${MAIL_CATCHER_URL:-}
       - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN:-}
       - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET:-}
       - LINE_BOT_ID=${LINE_BOT_ID:-}
@@ -166,6 +169,17 @@ services:
       db:
         condition: service_healthy
     restart: "no"
+
+  # Testing only, off unless asked for: `docker compose --profile mail up -d`.
+  # Catches every email the backend sends (with MAIL_CATCHER_URL set) and
+  # shows them at http://localhost:8025 — any address, nothing delivered.
+  mailpit:
+    image: axllent/mailpit:v1.21
+    profiles: [mail]
+    logging: *logging
+    ports:
+      - "127.0.0.1:8025:8025"
+    restart: unless-stopped
 
   db:
     image: mongo:7

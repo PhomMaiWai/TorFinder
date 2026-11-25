@@ -14,7 +14,7 @@ import {
   parseLinkCode,
   replyLine,
 } from "./line-link";
-import { availableChannels, deliver, DeliveryResult } from "./notification-delivery";
+import { availableChannels, deliver, DeliveryResult, NotificationText } from "./notification-delivery";
 
 @Injectable()
 export class NotificationsService {
@@ -40,14 +40,18 @@ export class NotificationsService {
    * for itself. Other services call this directly once they've done
    * something worth telling the account about.
    */
+  /**
+   * `th` is what the app stores and shows; `en` is added under it in the
+   * email, so a reader of either language gets the message.
+   */
   async create(
     userId: ObjectId,
     type: NotificationType,
-    title: string,
-    message: string,
+    { th, en }: { th: NotificationText; en: NotificationText },
     torId?: ObjectId,
     score?: number,
   ): Promise<void> {
+    const { title, message } = th;
     await this.db.notifications.insertOne({
       userId,
       type,
@@ -66,7 +70,7 @@ export class NotificationsService {
     );
     if (!account?.notificationChannels) return;
     const link = torId ? `${env.frontendOrigin}/tor/${torId.toString()}?in=app` : env.frontendOrigin;
-    for (const result of await deliver(account, { title, message, link })) {
+    for (const result of await deliver(account, { title, message, en, link })) {
       if (!result.ok) this.logger.warn(`${result.channel} to ${userId.toString()} failed: ${result.error}`);
     }
   }
@@ -165,6 +169,10 @@ export class NotificationsService {
     return deliver(account, {
       title: "ทดสอบการแจ้งเตือนจาก TOR Finder",
       message: "ช่องทางนี้พร้อมรับแจ้งเตือนเมื่อมีประกาศ TOR ใหม่ที่ตรงกับบริษัทของคุณแล้ว",
+      en: {
+        title: "Test notification from TOR Finder",
+        message: "This channel is ready to receive alerts when a new TOR matching your company is published.",
+      },
       link: env.frontendOrigin,
     });
   }
