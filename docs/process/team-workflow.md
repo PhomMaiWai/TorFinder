@@ -81,7 +81,7 @@ other two roles were shared rather than held by one person.
 | Iteration planning | Start of each iteration | Pull epics and sub-issues into the iteration; estimate about 30 points; Must before Should before Could | Estimates in each iteration file |
 | Daily work / stand-up | Ongoing | Move cards Todo → In progress → Done; raise blockers in the team chat | Board status, PR activity |
 | Review | End of each iteration | Show what is Done; the October in-class review with the client was the big one | Epic #250 |
-| Retrospective | End of each iteration | Unfinished items carry over to the next iteration; scope is adjusted; process changes are agreed and recorded | [retrospectives.md](./retrospectives.md) |
+| Retrospective | End of each iteration, 30 min | Check last actions, look at the numbers, went well / to improve, vote, then 1 to 3 actions with one owner and a check date each; unfinished items carry over | [retrospectives.md](./retrospectives.md#how-we-run-a-retrospective) |
 
 ## Artifacts
 
