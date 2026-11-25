@@ -26,6 +26,7 @@ change must keep.
 | Document | Covers |
 | --- | --- |
 | [deliverables.md](./project/deliverables.md) | What we hand over (D1 to D12): owner, acceptance criteria, status and evidence |
+| [release-v1.0.md](./project/release-v1.0.md) | v1.0 release notes, known limitations and the tagging checklist |
 | [project-plan.md](./project/project-plan.md) | Vision, scope, stakeholders, tech stack, iteration overview |
 | [roles-and-features.md](./project/roles-and-features.md) | What each role can do, and which features are done |
 | [iterations/](./project/iterations/) | Each iteration's backlog and delivery status, from the GitHub Projects board |

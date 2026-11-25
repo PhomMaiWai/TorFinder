@@ -26,7 +26,7 @@ done (with the reason).
 | D8 | **Security self-audit** (Software Security course 01219325, shared codebase) | @SKlv1ain, @fcxbsyo | OWASP ASVS L1 and L2 with 0 failing items, threat model, SAST and DAST reports | ✅ L1 and L2 pass; L3 triaged | [security/](../security/), [SECURITY.md](../../SECURITY.md) |
 | D9 | **Operations guide**: deployment checklist, maintenance, limits and retention | @OverCatX | A newcomer can run, back up and update the system | ✅ for Docker Compose | [operations/](../operations/) |
 | D10 | **Production deployment** | @OverCatX | Public URL with HTTPS, seeded data, smoke-tested | ❌ Not deployed. Proposed: ship the Docker Compose release instead (team to confirm, see the decisions below) | #236 to #240 |
-| D11 | **Release** `v1.0` on GitHub | @SKlv1ain | Annotated tag and release notes on the presented commit, CI green | ⏳ Tagged on presentation day | #397 |
+| D11 | **Release** `v1.0` on GitHub | @SKlv1ain | Annotated tag and release notes on the presented commit, CI green | ⏳ Notes and FR table ready; tagged on presentation day | [release-v1.0.md](./release-v1.0.md), [FR table](../process/testing.md#functional-requirements-release-check-v10), #397 |
 | D12 | **Final presentation and demo** (26 Nov, 35 points) | Whole team | Slides cover the 7 checklist criteria with evidence; demo on a fresh `docker compose up`; one timed rehearsal | ⏳ In progress | #398 |
 
 ## How the deliverables map to the SRS
