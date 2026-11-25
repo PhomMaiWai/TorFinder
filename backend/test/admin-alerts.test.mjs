@@ -33,7 +33,7 @@ function fakeDb({ admins = [ADMIN_A, ADMIN_B], unreadFor = [] } = {}) {
 
 function fakeNotifications() {
   const sent = [];
-  return { sent, create: async (userId, type, title, message) => sent.push({ userId, type, title, message }) };
+  return { sent, create: async (userId, type, { th, en }) => sent.push({ userId, type, title: th.title, message: th.message, en }) };
 }
 
 describe("AdminAlertsService", () => {
@@ -47,6 +47,7 @@ describe("AdminAlertsService", () => {
     assert.equal(notifications.sent[0].type, "system");
     assert.match(notifications.sent[0].title, /e-GP ไม่สำเร็จ/);
     assert.match(notifications.sent[0].message, /timeout/);
+    assert.match(notifications.sent[0].en.title, /Couldn't fetch data from e-GP/);
   });
 
   it("names the failed feeds on a partial run", async () => {

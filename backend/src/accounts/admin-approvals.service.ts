@@ -8,7 +8,7 @@ import { SessionPayload } from "../common/token";
 import { env } from "../config/env";
 import { AdminApprovalDoc, DatabaseService } from "../database/database.service";
 import { NotificationsService } from "../notifications/notifications.service";
-import { DIRECTORY_FIELDS, ROLE_LABELS, RoleChangeTarget, RoleChangesService } from "./role-changes.service";
+import { DIRECTORY_FIELDS, ROLE_LABELS, ROLE_LABELS_EN, RoleChangeTarget, RoleChangesService } from "./role-changes.service";
 
 const NOT_FOUND = "ไม่พบคำขอนี้ หรือคำขอหมดอายุแล้ว";
 const OWN_REQUEST = "อนุมัติคำขอของตัวเองไม่ได้ ต้องให้ผู้ดูแลระบบคนอื่นเป็นผู้อนุมัติ";
@@ -116,8 +116,16 @@ export class AdminApprovalsService {
         this.notifications.create(
           _id,
           "system",
-          "มีคำขอเปลี่ยนบทบาทผู้ดูแลระบบรออนุมัติ",
-          `${actor.email} ขอเปลี่ยน ${target.name} (${target.email}) จาก${ROLE_LABELS[target.role]}เป็น${ROLE_LABELS[toRole]} กรุณาตรวจสอบที่หน้าจัดการผู้ใช้`,
+          {
+            th: {
+              title: "มีคำขอเปลี่ยนบทบาทผู้ดูแลระบบรออนุมัติ",
+              message: `${actor.email} ขอเปลี่ยน ${target.name} (${target.email}) จาก${ROLE_LABELS[target.role]}เป็น${ROLE_LABELS[toRole]} กรุณาตรวจสอบที่หน้าจัดการผู้ใช้`,
+            },
+            en: {
+              title: "An administrator role change is awaiting approval",
+              message: `${actor.email} asked to change ${target.name} (${target.email}) from ${ROLE_LABELS_EN[target.role]} to ${ROLE_LABELS_EN[toRole]}. Please review it on the user management page.`,
+            },
+          },
         ),
       ),
     ]);
@@ -200,8 +208,16 @@ export class AdminApprovalsService {
       this.notifications.create(
         claimed.requestedBy.id,
         "system",
-        "คำขอเปลี่ยนบทบาทผู้ดูแลระบบได้รับการอนุมัติ",
-        `${actor.email} อนุมัติการเปลี่ยน ${claimed.targetName} (${claimed.targetEmail}) เป็น${ROLE_LABELS[claimed.toRole]}แล้ว`,
+        {
+          th: {
+            title: "คำขอเปลี่ยนบทบาทผู้ดูแลระบบได้รับการอนุมัติ",
+            message: `${actor.email} อนุมัติการเปลี่ยน ${claimed.targetName} (${claimed.targetEmail}) เป็น${ROLE_LABELS[claimed.toRole]}แล้ว`,
+          },
+          en: {
+            title: "Administrator role change approved",
+            message: `${actor.email} approved changing ${claimed.targetName} (${claimed.targetEmail}) to ${ROLE_LABELS_EN[claimed.toRole]}.`,
+          },
+        },
       ),
     ]);
 
@@ -234,8 +250,16 @@ export class AdminApprovalsService {
         this.notifications.create(
           claimed.requestedBy.id,
           "system",
-          "คำขอเปลี่ยนบทบาทผู้ดูแลระบบถูกปฏิเสธ",
-          `${actor.email} ปฏิเสธการเปลี่ยน ${claimed.targetName} (${claimed.targetEmail}) เป็น${ROLE_LABELS[claimed.toRole]}`,
+          {
+            th: {
+              title: "คำขอเปลี่ยนบทบาทผู้ดูแลระบบถูกปฏิเสธ",
+              message: `${actor.email} ปฏิเสธการเปลี่ยน ${claimed.targetName} (${claimed.targetEmail}) เป็น${ROLE_LABELS[claimed.toRole]}`,
+            },
+            en: {
+              title: "Administrator role change rejected",
+              message: `${actor.email} rejected changing ${claimed.targetName} (${claimed.targetEmail}) to ${ROLE_LABELS_EN[claimed.toRole]}.`,
+            },
+          },
         ),
     ]);
     return { ok: true as const };

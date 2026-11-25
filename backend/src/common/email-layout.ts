@@ -1,8 +1,9 @@
 import { escapeHtml } from "./email";
 
 /**
- * The one look every TOR Finder email shares: a branded header, a white card,
- * an optional button and a small footer. Built from tables and inline styles
+ * The one look every TOR Finder email shares: a branded header, a white card
+ * with the Thai text first and the same message in English below it, an
+ * optional button and a small footer. Built from tables and inline styles
  * because that is what Gmail, Outlook and phone mail apps all render the same.
  */
 
@@ -22,17 +23,30 @@ const TONE_COLOR: Record<EmailTone, string> = {
   danger: "#dc2626",
 };
 
-export type EmailContent = {
+/** One language's share of an email. */
+export type EmailCopy = {
   heading: string;
   paragraphs: string[];
-  /** Label/value rows shown in a grey box, e.g. ["บริษัท", "บริษัท abc จำกัด"]. */
-  details?: [string, string][];
-  button?: { label: string; url: string };
-  /** Small grey text under the button — expiry, "if this wasn't you", etc. */
+  /** The button's label in this language; the URL is shared. */
+  buttonLabel?: string;
+  /** Small grey text under the section — expiry, "if this wasn't you", etc. */
   footnote?: string;
+};
+
+export type EmailContent = {
+  th: EmailCopy;
+  en: EmailCopy;
+  /** Label/value rows in a grey box, shown once. Labels carry both languages, e.g. "บริษัท / Company". */
+  details?: [string, string][];
+  buttonUrl?: string;
   /** Colours the bar above the heading: green for good news, red for a refusal. */
   tone?: EmailTone;
 };
+
+/** "หัวข้อ / Heading — TOR Finder": both languages, so either reader knows what it is from the inbox. */
+export function emailSubject(th: string, en: string): string {
+  return `${th} / ${en} — TOR Finder`;
+}
 
 /** Escapes, then turns bare http(s) URLs into links, so a notice can mention a page inline. */
 function linkify(text: string): string {
@@ -42,20 +56,37 @@ function linkify(text: string): string {
   );
 }
 
-export function renderEmail({ heading, paragraphs, details, button, footnote, tone = "neutral" }: EmailContent): {
+function sectionHtml(copy: EmailCopy, lang: "th" | "en", buttonUrl?: string): string {
+  const paragraphs = copy.paragraphs
+    .map((p) => `<p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:${INK}">${linkify(p)}</p>`)
+    .join("");
+  const button =
+    buttonUrl && copy.buttonLabel
+      ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 16px">
+          <tr><td style="border-radius:8px;background:${ACCENT}">
+            <a href="${escapeHtml(buttonUrl)}" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px">${escapeHtml(copy.buttonLabel)}</a>
+          </td></tr>
+        </table>`
+      : "";
+  const footnote = copy.footnote
+    ? `<p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:${MUTED}">${linkify(copy.footnote)}</p>`
+    : "";
+  return `<div lang="${lang}">
+    <h1 style="margin:0 0 14px;font-size:20px;line-height:1.4;color:${INK}">${escapeHtml(copy.heading)}</h1>
+    ${paragraphs}${button}${footnote}
+  </div>`;
+}
+
+export function renderEmail({ th, en, details, buttonUrl, tone = "neutral" }: EmailContent): {
   html: string;
   text: string;
 } {
-  const paragraphHtml = paragraphs
-    .map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:${INK}">${linkify(p)}</p>`)
-    .join("");
-
   const detailsHtml = details?.length
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 20px;background:${PAGE};border-radius:8px">
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 18px;background:${PAGE};border-radius:8px">
         ${details
           .map(
             ([label, value]) => `<tr>
-              <td style="padding:10px 16px;font-size:13px;color:${MUTED};width:30%;vertical-align:top">${escapeHtml(label)}</td>
+              <td style="padding:10px 16px;font-size:13px;color:${MUTED};width:34%;vertical-align:top">${escapeHtml(label)}</td>
               <td style="padding:10px 16px;font-size:14px;color:${INK};font-weight:600">${escapeHtml(value)}</td>
             </tr>`,
           )
@@ -63,22 +94,16 @@ export function renderEmail({ heading, paragraphs, details, button, footnote, to
       </table>`
     : "";
 
-  const buttonHtml = button
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 20px">
-        <tr><td style="border-radius:8px;background:${ACCENT}">
-          <a href="${escapeHtml(button.url)}" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px">${escapeHtml(button.label)}</a>
-        </td></tr>
-      </table>
-      <p style="margin:0 0 16px;font-size:12px;line-height:1.6;color:${MUTED}">ถ้ากดปุ่มไม่ได้ คัดลอกลิงก์นี้ไปเปิดในเบราว์เซอร์:<br><a href="${escapeHtml(button.url)}" style="color:${MUTED};word-break:break-all">${escapeHtml(button.url)}</a></p>`
-    : "";
-
-  const footnoteHtml = footnote
-    ? `<p style="margin:8px 0 0;padding-top:16px;border-top:1px solid ${BORDER};font-size:13px;line-height:1.6;color:${MUTED}">${linkify(footnote)}</p>`
+  const fallbackLink = buttonUrl
+    ? `<p style="margin:0;padding-top:16px;border-top:1px solid ${BORDER};font-size:12px;line-height:1.6;color:${MUTED}">
+        ถ้ากดปุ่มไม่ได้ คัดลอกลิงก์นี้ไปเปิดในเบราว์เซอร์ / If the button doesn't work, copy this link into your browser:<br>
+        <a href="${escapeHtml(buttonUrl)}" style="color:${MUTED};word-break:break-all">${escapeHtml(buttonUrl)}</a>
+      </p>`
     : "";
 
   const html = `<!doctype html>
 <html lang="th">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(heading)}</title></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(th.heading)}</title></head>
 <body style="margin:0;padding:0;background:${PAGE};font-family:${FONT}">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE}">
     <tr><td align="center" style="padding:32px 16px">
@@ -92,15 +117,16 @@ export function renderEmail({ heading, paragraphs, details, button, footnote, to
         <tr><td style="background:#ffffff;border:1px solid ${BORDER};border-radius:12px;overflow:hidden">
           <div style="height:4px;background:${TONE_COLOR[tone]}"></div>
           <div style="padding:28px 32px">
-            <h1 style="margin:0 0 16px;font-size:20px;line-height:1.4;color:${INK}">${escapeHtml(heading)}</h1>
-            ${paragraphHtml}
+            ${sectionHtml(th, "th", buttonUrl)}
             ${detailsHtml}
-            ${buttonHtml}
-            ${footnoteHtml}
+            <p style="margin:8px 0 18px;padding-top:18px;border-top:1px dashed ${BORDER};font-size:11px;font-weight:600;letter-spacing:.08em;color:${MUTED}">ENGLISH</p>
+            ${sectionHtml(en, "en", buttonUrl)}
+            ${fallbackLink}
           </div>
         </td></tr>
         <tr><td style="padding:16px 4px;font-size:12px;line-height:1.6;color:${MUTED};text-align:center">
-          อีเมลนี้ส่งอัตโนมัติจาก TOR Finder กรุณาอย่าตอบกลับ
+          อีเมลนี้ส่งอัตโนมัติจาก TOR Finder กรุณาอย่าตอบกลับ<br>
+          This is an automated email from TOR Finder. Please do not reply.
         </td></tr>
       </table>
     </td></tr>
@@ -108,13 +134,20 @@ export function renderEmail({ heading, paragraphs, details, button, footnote, to
 </body>
 </html>`;
 
+  const textSection = (copy: EmailCopy) =>
+    [
+      copy.heading,
+      ...copy.paragraphs,
+      ...(buttonUrl && copy.buttonLabel ? [`${copy.buttonLabel}: ${buttonUrl}`] : []),
+      ...(copy.footnote ? [copy.footnote] : []),
+    ].join("\n\n");
+
   const text = [
-    heading,
-    ...paragraphs,
-    ...(details ?? []).map(([label, value]) => `${label}: ${value}`),
-    ...(button ? [`${button.label}: ${button.url}`] : []),
-    ...(footnote ? [footnote] : []),
-    "—\nอีเมลนี้ส่งอัตโนมัติจาก TOR Finder กรุณาอย่าตอบกลับ",
+    textSection(th),
+    ...(details?.length ? [details.map(([label, value]) => `${label}: ${value}`).join("\n")] : []),
+    "— English —",
+    textSection(en),
+    "—\nอีเมลนี้ส่งอัตโนมัติจาก TOR Finder กรุณาอย่าตอบกลับ\nThis is an automated email from TOR Finder. Please do not reply.",
   ].join("\n\n");
 
   return { html, text };

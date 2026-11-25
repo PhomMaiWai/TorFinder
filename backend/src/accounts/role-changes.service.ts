@@ -13,6 +13,13 @@ export const ROLE_LABELS: Record<Role, string> = {
   viewer: "ประชาชนทั่วไป",
 };
 
+/** The same roles in English, for the English half of an email. */
+export const ROLE_LABELS_EN: Record<Role, string> = {
+  admin: "Administrator",
+  org: "Company",
+  viewer: "Member of the public",
+};
+
 export const LAST_ADMIN = "ต้องมีผู้ดูแลระบบอย่างน้อย 1 คน จึงเปลี่ยนบทบาทของผู้ดูแลระบบคนสุดท้ายไม่ได้";
 export const CHANGED_MEANWHILE = "บัญชีนี้ถูกแก้ไขไปแล้ว กรุณาโหลดหน้าใหม่";
 
@@ -163,8 +170,16 @@ export class RoleChangesService {
     return this.notifications.create(
       userId,
       "system",
-      "บทบาทของบัญชีคุณเปลี่ยนแล้ว",
-      `ผู้ดูแลระบบเปลี่ยนบทบาทของคุณเป็น${ROLE_LABELS[role]} กรุณาเข้าสู่ระบบอีกครั้ง`,
+      {
+        th: {
+          title: "บทบาทของบัญชีคุณเปลี่ยนแล้ว",
+          message: `ผู้ดูแลระบบเปลี่ยนบทบาทของคุณเป็น${ROLE_LABELS[role]} กรุณาเข้าสู่ระบบอีกครั้ง`,
+        },
+        en: {
+          title: "Your account's role has changed",
+          message: `An administrator changed your role to ${ROLE_LABELS_EN[role]}. Please sign in again.`,
+        },
+      },
     );
   }
 }

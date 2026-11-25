@@ -683,9 +683,14 @@ export class AuthService {
       ip,
       reason: hash ? "owner_notified" : "no_device_id",
     });
-    const when = now.toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "long", timeStyle: "short" });
+    const format = { timeZone: "Asia/Bangkok", dateStyle: "long", timeStyle: "short" } as const;
+    const when = `${now.toLocaleString("th-TH", format)} · ${now.toLocaleString("en-GB", format)} (UTC+7)`;
     // Not awaited: the email must never hold up (or fail) the sign-in itself.
-    const details = [`เวลา: ${when} (เวลาประเทศไทย)`, `เบราว์เซอร์: ${label}`, ...(ip ? [`IP: ${ip}`] : [])];
+    const details: [string, string][] = [
+      ["เวลา / Time", when],
+      ["เบราว์เซอร์ / Browser", label],
+      ...(ip ? [["IP", ip] as [string, string]] : []),
+    ];
     void this.links.notify(user.email, "new-device", details);
     // ASVS 8.4.2: a staff account on a new device is something every other
     // admin should know about, not only its owner.
@@ -694,14 +699,14 @@ export class AuthService {
   }
 
   /** Emails every other admin about a staff sign-in from a new device. Never throws. */
-  private async notifyAdmins(user: WithId<UserDoc>, details: string[]): Promise<void> {
+  private async notifyAdmins(user: WithId<UserDoc>, details: [string, string][]): Promise<void> {
     try {
       const admins = await this.db.users
         .find({ role: "admin", _id: { $ne: user._id }, suspended: { $ne: true } }, { projection: { email: 1 } })
         .toArray();
       await Promise.all(
         admins.map((admin) =>
-          this.links.notify(admin.email, "staff-new-device", [`บัญชีเจ้าหน้าที่: ${user.name} (${user.email})`, ...details]),
+          this.links.notify(admin.email, "staff-new-device", [["บัญชีเจ้าหน้าที่ / Staff account", `${user.name} (${user.email})`], ...details]),
         ),
       );
     } catch (error) {

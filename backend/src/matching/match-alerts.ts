@@ -65,7 +65,7 @@ export function planAlerts<T extends Pick<TorDoc, "stage" | "projectNumber"> & {
 /** The notification's title and message, worded for where the project stands. */
 export function alertText(
   alert: Pick<PlannedAlert<Pick<TorDoc, "title" | "agency" | "budget" | "stage">>, "tor" | "score" | "phase" | "followsEarly">,
-): { title: string; message: string } {
+): { title: string; message: string; en: { title: string; message: string } } {
   const { tor, score, phase, followsEarly } = alert;
   const title =
     phase === "early"
@@ -74,5 +74,18 @@ export function alertText(
         ? `เปิดรับข้อเสนอแล้ว — โครงการที่ตรงกับบริษัทคุณ ${score}%`
         : `TOR ใหม่ตรงกับบริษัทคุณ ${score}%`;
   const lead = phase === "early" ? "ยังไม่เปิดรับข้อเสนอ มีเวลาเตรียมตัว: " : "";
-  return { title, message: `${lead}${tor.title} — ${tor.agency} (${tor.budget})` };
+  // The TOR's own title, agency and stage are Thai records; only the wording around them is translated.
+  const titleEn =
+    phase === "early"
+      ? `New project matches your company ${score}% (${tor.stage})`
+      : followsEarly
+        ? `Now open for bids — a project matching your company ${score}%`
+        : `New TOR matches your company ${score}%`;
+  const leadEn = phase === "early" ? "Not open for bids yet — time to prepare: " : "";
+  const project = `${tor.title} — ${tor.agency} (${tor.budget})`;
+  return {
+    title,
+    message: `${lead}${project}`,
+    en: { title: titleEn, message: `${leadEn}${project}` },
+  };
 }
