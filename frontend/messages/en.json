@@ -411,7 +411,6 @@
     "budgetMinLabel": "From (THB)",
     "budgetMaxLabel": "Up to (THB)",
     "workTypesFallback": "No work types chosen yet",
-    "standardsSectionTitle": "Certificates (ISO, CMMI, cybersecurity, AI)",
     "registeredCapitalHint": "Public record at the Department of Business Development (DBD), checked against a TOR's minimum capital",
     "matchAlertsSectionTitle": "Matching TOR alerts",
     "matchAlertsLabel": "Alert me about projects that fit my company",

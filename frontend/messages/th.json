@@ -411,7 +411,6 @@
     "budgetMinLabel": "ตั้งแต่ (บาท)",
     "budgetMaxLabel": "ไม่เกิน (บาท)",
     "workTypesFallback": "ยังไม่ได้เลือกประเภทงาน",
-    "standardsSectionTitle": "ใบรับรอง (ISO, CMMI, ความปลอดภัยไซเบอร์, AI)",
     "registeredCapitalHint": "ข้อมูลสาธารณะจากกรมพัฒนาธุรกิจการค้า (DBD) ใช้เทียบกับเกณฑ์ทุนจดทะเบียนใน TOR",
     "matchAlertsSectionTitle": "แจ้งเตือน TOR ที่ตรงกับบริษัท",
     "matchAlertsLabel": "แจ้งเตือนเมื่อมีโครงการที่ตรงกับบริษัท",
