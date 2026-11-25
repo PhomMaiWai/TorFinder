@@ -531,7 +531,6 @@ backend route of the same name. `frontend/src/proxy.ts` refuses every
 | `/api/saved-tors`, `/[torId]`, `/import` | GET, POST, DELETE | `/saved-tors` | |
 | `/api/tor/[id]/documents/...` | GET | `/tor/:id/documents/...` | ✓ |
 | `/api/tor/[id]/egp-documents/...` | GET | `/tor/:id/egp-documents/...` | ✓ |
-| `/api/tor/[id]/panel` | GET | `/matching/tor/:id/companies` + `/tor/:id/feedback` in one call | |
 
 Everything else (sign-up, TOR create and edit, admin actions, feedback,
 reports) goes through Server Actions in `frontend/src/app/**/actions.ts`
@@ -542,10 +541,6 @@ or is fetched by Server Components.
 Found while writing this page. They are listed here so the page is honest
 about the current code, not because they are intended.
 
-1. **`/api/tor/[id]/panel` looks unused.** No page calls it any more, and
-   it asks the Admin-only `GET /matching/tor/:id/companies`, so for anyone
-   but an admin the company list comes back empty. It can probably be
-   deleted.
-2. **Rate limits are per process.** With more than one backend instance,
+1. **Rate limits are per process.** With more than one backend instance,
    each one counts separately (see
    [deployment-checklist.md](../operations/deployment-checklist.md)).
