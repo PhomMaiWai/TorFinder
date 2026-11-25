@@ -34,6 +34,8 @@ import { resetNotifications, useNotifications } from "@/lib/use-notifications";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
 import { resetSession } from "@/lib/use-session";
 
+import { SiteNavbar } from "./site-navbar";
+
 type NavLink = {
   label: string;
   href: string;
@@ -282,6 +284,9 @@ function SidebarContent({ onNavigate, role }: { onNavigate?: () => void; role?: 
 export function AppShell({ children, role }: { children: React.ReactNode; role?: Role }) {
   const t = useTranslations("AppShell");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  // Same rule as the sidebar's own menu: a role says, else the path does.
+  const isAdmin = role ? role === "admin" : pathname.startsWith("/admin");
 
   return (
     <div className="flex min-h-screen bg-surface">
@@ -314,6 +319,16 @@ export function AppShell({ children, role }: { children: React.ReactNode; role?:
             <Menu size={20} />
           </button>
         </div>
+
+        {/* A company's workspace keeps the public site's navbar on top, so the
+            public pages (search, market overview…) are one click away. The
+            admin console is a separate tool and doesn't get it. On phones the
+            bar above (logo → home) does that job instead. */}
+        {!isAdmin && (
+          <div className="sticky top-0 z-40 hidden md:block">
+            <SiteNavbar />
+          </div>
+        )}
 
         {children}
       </div>

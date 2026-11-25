@@ -11,7 +11,7 @@ export default function OrganizationLoginPage() {
       badge={t("badge")}
       title={t("title")}
       description={t("description")}
-      redirectTo="/dashboard"
+      redirectTo="/public"
       switchHref="/login/admin"
       switchLabel={t("switchLabel")}
       signupHref="/signup/organization"

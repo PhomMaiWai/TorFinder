@@ -9,10 +9,10 @@ import { buildSiteOverview } from "@/lib/site-stats";
 import { getAllTors } from "@/lib/tor-source";
 
 /**
- * The public overview of the whole site — open to guests, and home for every
- * signed-in account but admins (see homeFor). Everyone lands on it with the
- * public navbar, companies too; `?in=app` is the company workspace's view of
- * it, inside the sidebar (see workspaceFor).
+ * The public overview of the whole site — open to guests, and home for public
+ * viewers (see homeFor; companies land on /public). `?in=app` is the company
+ * workspace's view of it, inside the sidebar with the public navbar on top
+ * (see workspaceFor and AppShell).
  */
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ in?: string }> }) {
   const [tors, session, { in: context }] = await Promise.all([

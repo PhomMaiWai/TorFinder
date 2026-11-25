@@ -2,11 +2,13 @@
 export type Role = "admin" | "org" | "viewer";
 
 /**
- * Where a signed-in user lands. Admins start on their own console; everyone else — public viewers included — on the public overview at
- * /dashboard.
+ * Where a signed-in user lands. Admins start on their own console, companies
+ * on the public TOR search (their workspace is one click away in the navbar),
+ * public viewers on the public overview at /dashboard.
  */
 export function homeFor(role: Role): string {
   if (role === "admin") return "/admin";
+  if (role === "org") return "/public";
   return "/dashboard";
 }
 
@@ -17,6 +19,6 @@ export function homeFor(role: Role): string {
  * of the overview.
  */
 export function workspaceFor(role: Role): string {
-  if (role === "org") return `${homeFor(role)}?in=app`;
+  if (role === "org") return "/dashboard?in=app";
   return homeFor(role);
 }
