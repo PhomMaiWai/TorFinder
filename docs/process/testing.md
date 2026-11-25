@@ -41,7 +41,7 @@ export MONGODB_URI=mongodb://localhost:27017/torr_test   # a database you can th
 export SESSION_SECRET=test-secret
 export SEED_DEMO_DATA=true
 export EGP_POLL_MINUTES=0 EGP_POLL_ON_STARTUP=false
-export MEA_POLL_ON_STARTUP=false DATAGOV_POLL_ON_STARTUP=false GPROC_POLL_ON_STARTUP=false
+export MEA_POLL_ON_STARTUP=false GPROC_POLL_ON_STARTUP=false
 export VERTEX_PROJECT_ID=
 export THROTTLE_LIMIT=300 AUTH_THROTTLE_LIMIT=300   # see the note below
 export E2E_BASE_URL=http://localhost:4000
@@ -114,7 +114,7 @@ them (it needs the backend and `next start` running, like the steps above).
 | --- | --- | --- |
 | Sign-in and accounts | `auth.e2e`, `oauth.e2e`, `account-links.e2e`, `accounts.e2e`, `admin-edit-users.e2e`, `user-edit-conflict`, `roles.e2e`, `role-guards` | Sign-up, login and its rate limit, Google sign-in, reset and verify links, company profile, approval, roles, suspension, every guard |
 | TORs | `tor.e2e`, `tor-integration.e2e`, `tor-corrections.e2e`, `tor-corrections`, `tor-stages` | CRUD, soft delete, manual vs imported records, locked fields, stage model |
-| Importers | `tor-normalize-dedup`, `scope-filter`, `mea-client`, `mea.e2e`, `datagov.e2e`, `admin-alerts` | Normalising and de-duplicating records, the Bangkok scope rule, MEA page parsing, data.go.th import, sync failure alerts |
+| Importers | `tor-normalize-dedup`, `scope-filter`, `mea-client`, `mea.e2e`, `admin-alerts` | Normalising and de-duplicating records, the Bangkok scope rule, MEA page parsing, sync failure alerts |
 | Matching | `matching-scoring`, `matching.e2e`, `match-alerts`, `match-alerts.e2e`, `bid-insight` | Score rules, ranking, which alerts are sent and when, bid suggestion |
 | AI | `extraction-confidence`, `proposal-draft`, `feedback-deadline` | Confidence assessment, proposal prompt, cleaning dates read by the model. No model is ever called |
 | Public input | `feedback-window.e2e`, `feedback-deadline.e2e`, `reports.e2e` | Comment window, feedback deadline, reporting problems |
@@ -137,10 +137,10 @@ them (it needs the backend and `next start` running, like the steps above).
 
 - No browser tests: nothing clicks through the UI, so client-side
   interactions (forms, filters in the browser) are only checked by hand.
-- By default no real call is made to e-GP, MEA, data.go.th, Vertex AI,
+- By default no real call is made to e-GP, MEA, Vertex AI,
   Resend, LINE or Slack; those clients are faked or skipped. Live import
-  checks exist but are opt-in: set `E2E_EGP_LIVE=1`, `E2E_MEA_LIVE=1` or
-  `E2E_DATAGOV_LIVE=1` to run them against the real portals.
+  checks exist but are opt-in: set `E2E_EGP_LIVE=1` or `E2E_MEA_LIVE=1`
+  to run them against the real portals.
 - No load or performance tests for the NFR targets (page load under 2 s,
   100 concurrent users).
 - FR-07: the keyword filter that decides "software or not" at import
@@ -167,7 +167,7 @@ issue under milestone D11.
 | FR-01 | Register and sign in (email/password, Google) | ✅ Done | `auth.e2e`, `oauth.e2e`, `account-links.e2e`, `password-rehash.e2e` | |
 | FR-02 | Profile, bookmarks, notifications need sign-in | ✅ Done | `role-guards`, `roles.e2e`; frontend `workspace-separation.e2e` | |
 | FR-03 | Admin manages accounts and permissions | ✅ Done | `accounts.e2e`, `admin-approvals.e2e`, `admin-edit-users.e2e` | |
-| FR-04 | Import TORs from e-GP for BMA | ✅ Done | `tor-integration.e2e`, `portal-fetch`, `mea.e2e`, `datagov.e2e` | |
+| FR-04 | Import TORs from e-GP for BMA | ✅ Done | `tor-integration.e2e`, `portal-fetch`, `mea.e2e` | |
 | FR-05 | De-duplicate across sources | ✅ Done | `tor-normalize-dedup` | |
 | FR-06 | Log and alert admin on sync failure | ✅ Done | `admin-alerts` | |
 | FR-07 | Classify software / not software | ✅ Done, changed on purpose: a keyword filter at import plus an admin override, instead of the AI classifier planned in #137 | Admin override only: `tor-corrections.e2e`. **No test for the import filter** | |

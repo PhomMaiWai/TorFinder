@@ -24,7 +24,7 @@ flowchart LR
             Guards["Guards<br/>Session / Admin / Org / StepUp<br/>Throttler"]
             Controllers["REST controllers<br/>/api/*"]
             Services["Domain services<br/>tor · matching · accounts · feedback<br/>reports · notifications · audit"]
-            Importers["Importers + schedulers<br/>egp · mea · datagov · gproc · ai"]
+            Importers["Importers + schedulers<br/>egp · mea · gproc · ai"]
         end
         DB[("MongoDB 7 · :27017<br/>db: torr")]
     end
@@ -33,7 +33,6 @@ flowchart LR
         EGP["Bangkok e-GP API<br/>egp2.bangkok.go.th"]
         GPROC["National e-GP<br/>process5.gprocurement.go.th"]
         MEA["MEA procurement<br/>procurement.mea.or.th"]
-        DATAGOV["data.go.th CKAN API"]
     end
 
     subgraph Cloud["Other services"]
@@ -52,7 +51,7 @@ flowchart LR
     Importers --> Services
     Services --> DB
     Importers --> DB
-    Importers --> EGP & GPROC & MEA & DATAGOV
+    Importers --> EGP & GPROC & MEA
     Importers -- "PDF + prompt, JSON schema" --> VERTEX
     Services -- "verify ID token" --> GOOGLE
     Services --> RESEND & LINE & SLACK
@@ -77,7 +76,7 @@ a suspension makes older tokens stop working
 (`SessionRevocationService`).
 
 **Imports run inside the backend process.** Each source has a scheduler
-(`EgpScheduler`, `MeaScheduler`, `DataGovScheduler`, `GprocScheduler`,
+(`EgpScheduler`, `MeaScheduler`, `GprocScheduler`,
 `ExtractionScheduler`) built on `SyncScheduler`. A run started from the admin
 button joins the scheduled run if one is already going. Rate limiting is
 in-memory, so the design assumes one backend instance (see
@@ -102,7 +101,6 @@ flowchart TB
     Ai["AiModule<br/>VertexClient · ExtractionService<br/>ProposalService · ExtractionScheduler"]
     Egp["EgpModule"]
     Mea["MeaModule"]
-    DataGov["DataGovModule"]
     Gproc["GprocModule<br/>+ EgpDocumentsController"]
     Feedback["FeedbackModule"]
     Reports["ReportsModule"]
@@ -120,7 +118,6 @@ flowchart TB
     Ai --> Gproc & Matching & Notifications & Audit
     Egp --> Tor & Notifications & Audit
     Mea --> Tor & Notifications & Audit
-    DataGov --> Tor & Notifications & Audit
     Gproc --> Tor & Notifications & Audit
     Feedback --> Audit
     Reports --> Audit

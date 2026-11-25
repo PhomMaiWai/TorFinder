@@ -83,7 +83,7 @@ Everything a viewer can do, plus:
 - Moderate public comments (`/admin/moderation`).
 - Work through problem reports and fix the TOR from the report
   (`/admin/reports`).
-- Start an import from Bangkok e-GP, MEA or data.go.th, capture projects
+- Start an import from Bangkok e-GP or MEA, capture projects
   from the national e-GP by project number, and run AI extraction by hand
   (API only for now, `POST /api/ai/extract`).
 - Watch import health (last run, imported today, history, near misses),
@@ -92,7 +92,7 @@ Everything a viewer can do, plus:
 
 ### Automatic (no user)
 
-- Import TORs from Bangkok e-GP, MEA, data.go.th and the national e-GP on a
+- Import TORs from Bangkok e-GP, MEA and the national e-GP on a
   timer, keep only software work in Bangkok from 2022 on, and merge
   duplicates across sources.
 - Read each TOR's PDF with Vertex AI (Gemini) when it is configured.
@@ -108,8 +108,8 @@ FR numbers are from [summary.md](../requirements/summary.md).
 | FR-01 | Register and sign in by email/password or OAuth | ✅ Done | Google sign-in, email verification, password reset |
 | FR-02 | Profile, bookmarks and notifications need sign-in | ✅ Done | Enforced in `proxy.ts` and by backend guards |
 | FR-03 | Admin manages accounts and permissions | ✅ Done | Approve, reject, role, suspend |
-| FR-04 | Pull TORs from e-GP for BMA | ✅ Done | Also MEA, data.go.th, national e-GP |
-| FR-05 | De-duplicate across sources | ✅ Done | Trust order manual > e-GP > MEA > data.go.th |
+| FR-04 | Pull TORs from e-GP for BMA | ✅ Done | Also MEA and national e-GP |
+| FR-05 | De-duplicate across sources | ✅ Done | Trust order manual > e-GP > national e-GP > MEA |
 | FR-06 | Log and alert admin on sync failure | ✅ Done | Sync history kept for Bangkok e-GP only |
 | FR-07 | Classify software / not software | ✅ Done | Keyword filter at import, admin override |
 | FR-08 | Extract scope, qualifications, price, deadline from the PDF | ✅ Done | Needs `VERTEX_PROJECT_ID` |
@@ -137,8 +137,8 @@ FR numbers are from [summary.md](../requirements/summary.md).
 - AI proposal draft for companies.
 - Bid insight from past awards (typical discount, competition).
 - Market insights page from past awards (#256): top winners, awarded vs
-  reference price, winner spread per agency. Winners are named by e-GP and
-  data.go.th only; MEA publishes the price without the winner.
+  reference price, winner spread per agency. Winners are named by e-GP
+  only; MEA publishes the price without the winner.
 - National e-GP documents shown file by file inside the page.
 - Thai/English and light/dark theme.
 

@@ -10,7 +10,6 @@ How TorFinder limits its connections to other systems, how long it keeps data, a
 | --- | --- | --- | --- |
 | MongoDB | 50 connections per backend process | A query waits for a free connection; after 10 s it fails and the caller gets the generic 500. No server reachable for 10 s: the same | `MONGO_MAX_POOL_SIZE`, `MONGO_WAIT_QUEUE_TIMEOUT_MS`, `MONGO_SERVER_SELECTION_TIMEOUT_MS` (`database.service.ts`) |
 | e-GP portal | 5 requests in flight (2 for award searches) | Further requests queue in the importer | `EGP_CONCURRENCY` |
-| data.go.th | 5 searches in flight | Queue in the importer | `SEARCH_CONCURRENCY` in `datagov.service.ts` |
 | MEA portal | One list request per announcement type; detail pages 5 in flight | Detail reads queue, and stop at the enrichment time budget | `MEA_ENRICHMENT` in `mea.constants.ts` |
 | gProc portal | One project at a time (2 requests each), with a pause between projects | Stops after a run of consecutive failures (circuit breaker) | `GPROC_REQUEST` in `gproc.constants.ts` |
 | Vertex AI | One extraction batch at a time; drafts 5 per minute per client | Further drafts get 429 | Scheduler; route throttle |
@@ -28,7 +27,6 @@ Requests coming in are limited too: 100 per minute per client on the API (`THROT
 | e-GP, MEA, gProc list pages | 30 s per attempt | 3 | Exponential, 500 ms × 2ⁿ (`common/http-client.ts`) |
 | e-GP and MEA detail pages | 8 s | 1 | e-GP enrichment stops after 45 s in total (`EGP_ENRICH_BUDGET_MS`); the rest waits for the next run |
 | gProc document bundle | 120 s | 3 | As above |
-| data.go.th | 20 s | 3 | As above |
 | A whole scheduled sync that throws | — | 3 attempts | 5 s, then 10 s; then admins are alerted (`common/sync-scheduler.ts`) |
 | Relaying a portal document or archive | 60 s | 0 | 40 MB cap; the user retries |
 | Vertex AI | 120 s | 3 on retryable errors | A failed document is retried after 24 h, not every run |

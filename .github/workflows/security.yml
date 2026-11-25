@@ -104,7 +104,6 @@ jobs:
       EGP_POLL_MINUTES: "0"
       EGP_POLL_ON_STARTUP: "false"
       MEA_POLL_MINUTES: "0"
-      DATAGOV_POLL_MINUTES: "0"
       GPROC_POLL_MINUTES: "0"
       AI_POLL_MINUTES: "0"
       VERTEX_PROJECT_ID: ""

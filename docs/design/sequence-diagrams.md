@@ -149,7 +149,7 @@ sequenceDiagram
     E->>I: import("egp", records)
     I->>I: drop records before 2022, collapse duplicates
     I->>DB: find same project from other sources
-    I->>I: trust order manual > egp > mea > datagov
+    I->>I: trust order manual > egp > gproc > mea
     I->>DB: tors.bulkWrite(upsert by sourceRef, keep lockedFields)
     I->>M: refreshBudgetStatuses()
     I->>M: notifyMatches(new ids)
@@ -175,7 +175,7 @@ sequenceDiagram
     end
 ```
 
-MEA, data.go.th and the national e-GP (gproc) follow the same path through
+MEA and the national e-GP (gproc) follow the same path through
 `TorImportService.import`. The details for each source are in
 [pipeline.md](../operations/pipeline.md).
 

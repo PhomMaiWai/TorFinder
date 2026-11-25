@@ -42,7 +42,7 @@ How the mitigations are checked:
 | Moderation data | Pending and rejected feedback, problem reports, the audit log |
 | TOR records and documents | Public, but their integrity matters: a bidder acts on dates and budgets |
 | Secrets and credentials | `SESSION_SECRET`, MongoDB credentials, Resend and LINE keys, the LINE channel secret, Google Cloud credentials |
-| Availability | Sign-in, search and the scheduled imports from e-GP, MEA and data.go.th |
+| Availability | Sign-in, search and the scheduled imports from e-GP and MEA |
 
 | Actor | Trust level |
 | --- | --- |
@@ -71,7 +71,7 @@ flowchart LR
 
   subgraph external["Trust boundary 3: external services"]
     google["Google sign-in"]
-    portals["Procurement portals<br/>e-GP, MEA, data.go.th"]
+    portals["Procurement portals<br/>e-GP, MEA"]
     notify["Resend email, LINE Messaging API,<br/>Slack webhooks"]
     vertex["Vertex AI"]
   end

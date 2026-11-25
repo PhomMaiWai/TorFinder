@@ -9,7 +9,6 @@ import { deleteTor, restoreTor } from "@/lib/tor-admin-api";
 const SOURCES = {
   egp: "ระบบ e-GP",
   mea: "เว็บไซต์จัดซื้อจัดจ้าง กฟน.",
-  datagov: "ระบบข้อมูลเปิดภาครัฐ (data.go.th)",
 } as const;
 
 /**
@@ -42,10 +41,6 @@ export async function syncFromEgp() {
 
 export async function syncFromMea() {
   await sync("mea");
-}
-
-export async function syncFromDataGov() {
-  await sync("datagov");
 }
 
 /** Hides an announcement from every listing. */

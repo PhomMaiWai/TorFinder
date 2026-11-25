@@ -9,30 +9,30 @@ model first.
 ## The problem it solves
 
 A TOR (Terms of Reference) is a government procurement notice — what an
-agency wants built, by when, for how much. They get published across four
-different places (Bangkok's own e-GP API, the national e-GP, the Metropolitan
-Electricity Authority's own site, and a monthly open-data dump), none of
-which agree on format, and several of which publish the same project more
-than once. Nobody wants to check four sites a day to find new software work.
+agency wants built, by when, for how much. They get published across three
+different places (Bangkok's own e-GP API, the national e-GP, and the
+Metropolitan Electricity Authority's own site), none of which agree on
+format, and several of which publish the same project more than once.
+Nobody wants to check three sites a day to find new software work.
 
-So the pipeline does it instead: four independent jobs pull from those four
+So the pipeline does it instead: three independent jobs pull from those three
 sources on their own schedule, write everything into one shared database,
-and a fifth job reads the PDF behind each new listing with Gemini to pull
+and a fourth job reads the PDF behind each new listing with Gemini to pull
 out the fields — scope, qualifications, budget, deadline — that would
 otherwise mean opening the document yourself.
 
 ## The shape of it
 
 ```
- four sources, four schedules                  one shared database            the AI reads what's new
+ three sources, three schedules                 one shared database            the AI reads what's new
  ──────────────────────────────                ─────────────────            ────────────────────────
  egp      ──┐
  mea      ──┤
- datagov  ──┼──►  write/update TOR records ──►   MongoDB `tors`  ◄──────  extraction job picks up
- gproc    ──┘                                                              whatever it hasn't read yet
+ gproc    ──┴──►  write/update TOR records ──►   MongoDB `tors`  ◄──────  extraction job picks up
+                                                                         whatever it hasn't read yet
 ```
 
-The four import jobs never talk to the AI job, or to each other. Each one
+The three import jobs never talk to the AI job, or to each other. Each one
 just writes what it found. The extraction job runs on its own clock and
 asks the database "what's new and unread" every time it wakes up. If you
 turn every import job off and leave the AI one running, it just does
@@ -40,12 +40,12 @@ nothing — there's nothing new to read.
 
 ## What happens to one TOR, start to finish
 
-1. One of the four sources publishes it. Whichever job is scheduled next
+1. One of the three sources publishes it. Whichever job is scheduled next
    picks it up on its own sync.
 2. If another source already has the same project, the two get reconciled —
    not "first one wins," but a fixed trust order (an admin's own entry beats
    everything; after that, Bangkok's e-GP beats the national e-GP beats MEA
-   beats data.go.th — see `pipeline.md` for why that order). The better copy
+   — see `pipeline.md` for why that order). The better copy
    survives; the worse one doesn't linger as a duplicate listing.
 3. It sits in the database, unread, until the AI extraction job's own
    schedule next comes around — up to an hour later by default.
@@ -70,11 +70,10 @@ set up (`docker compose up -d --build`, or the backend run locally against a
 reachable MongoDB). The pipeline is part of the backend process itself —
 there's no separate worker to start.
 
-By default, four of the five jobs run their first sync a few seconds after
-boot (`*_POLL_ON_STARTUP` defaults to `true` for `egp`/`mea`/`datagov`/
-`gproc`). The AI extraction job is the one exception — it stays off at boot
+By default, three of the four jobs run their first sync a few seconds after
+boot (`*_POLL_ON_STARTUP` defaults to `true` for `egp`/`mea`/`gproc`). The AI extraction job is the one exception — it stays off at boot
 unless you explicitly set `AI_POLL_ON_STARTUP=true`, because unlike the
-other four, every run of it spends a real Vertex AI model call, and a dev
+other three, every run of it spends a real Vertex AI model call, and a dev
 machine that restarts ten times a day shouldn't pay for that ten times.
 
 If you want to see a sync happen without waiting for the schedule, every job
@@ -113,7 +112,7 @@ Beyond the audit log:
 | You see | What it means |
 | --- | --- |
 | A sync's `skipped` count is high | Those projects already exist from a source this one doesn't outrank — not an error, just the trust order doing its job |
-| `superseded` shows up | This sync's copy replaced a worse one already stored (e.g. e-GP's version replacing data.go.th's) |
+| `superseded` shows up | This sync's copy replaced a worse one already stored (e.g. e-GP's version replacing MEA's) |
 | A scheduled run retried once or twice before succeeding | Normal — the scheduler retries a thrown error up to 3 times, 5s then 10s apart, before giving up and alerting admins |
 | An admin alert about a "partial" sync | Some feeds answered and some didn't — results from the ones that worked were still saved |
 | `near-misses` isn't empty | The software/IT keyword filter rejected something that might not have deserved it — check it, don't assume it's always wrong |

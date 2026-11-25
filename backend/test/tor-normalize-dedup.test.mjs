@@ -17,8 +17,6 @@
 //   - MEA:       ASP.NET `/Date(ms)/` timestamps, Thai numerals ("๒๘,๐๐๐"),
 //                and the e-GP project number appended to free text
 //                ("... เลขที่โครงการในระบบ e-GP : 69089649017").
-//   - data.go.th: plain numbers/strings out of a CKAN datastore row, no project
-//                number of its own beyond what e-GP assigned.
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -71,7 +69,7 @@ describe("formatBaht / UNKNOWN", () => {
 });
 
 describe("parseDate — each source's own date dialect", () => {
-  it("parses an ISO date the way e-GP and data.go.th publish it", () => {
+  it("parses an ISO date the way e-GP publishes it", () => {
     const date = parseDate("2026-09-24T00:00:00.000Z");
     assert.equal(date?.toISOString(), "2026-09-24T00:00:00.000Z");
   });
@@ -133,7 +131,7 @@ describe("extractProjectNumber — the one identifier all three portals share", 
     assert.equal(extractProjectNumber(meaAnnouncementNo), "69089649017");
   });
 
-  it("accepts data.go.th's proj_no as a number rather than a string", () => {
+  it("accepts a project number given as a number rather than a string", () => {
     assert.equal(extractProjectNumber(69089649017), "69089649017");
   });
 
@@ -244,7 +242,7 @@ describe("TorDedupIndex — cross-source fuzzy lookup at scale", () => {
     // Thai script carries no spaces, so wordOverlap() never fires on it (see
     // TorDedupIndex's own comment) — the realistic fuzzy case here is
     // containment, e.g. e-GP appending a procurement-method clause onto the
-    // same title data.go.th reports. Long enough that the shared run clears
+    // same title another source reports. Long enough that the shared run clears
     // both the shingle length and MIN_CONTAINMENT_LENGTH, and different
     // enough from the stored title that the exact byTitle map can't answer it
     // — this can only be found by scanning the shingle candidates.
@@ -280,7 +278,7 @@ describe("sourceOf / sourceRank — which source's copy survives", () => {
   it("reads the source off the sourceRef prefix", () => {
     assert.equal(sourceOf("egp:69089649017:D0"), "egp");
     assert.equal(sourceOf("mea:12345"), "mea");
-    assert.equal(sourceOf("datagov:69089649017"), "datagov");
+    assert.equal(sourceOf("gproc:69089649017:I"), "gproc");
   });
 
   it("treats a missing or unrecognized ref as manual", () => {
@@ -288,12 +286,12 @@ describe("sourceOf / sourceRank — which source's copy survives", () => {
     assert.equal(sourceOf("something-else:1"), "manual");
   });
 
-  it("ranks manual above e-GP above MEA above data.go.th", () => {
-    const ranks = ["manual", "egp", "mea", "datagov"].map(sourceRank);
+  it("ranks manual above e-GP above gproc above MEA", () => {
+    const ranks = ["manual", "egp", "gproc", "mea"].map(sourceRank);
     assert.deepEqual(
       ranks,
       [...ranks].sort((a, b) => b - a),
-      "SOURCE_RANK must already be in descending order: manual, egp, mea, datagov",
+      "SOURCE_RANK must already be in descending order: manual, egp, gproc, mea",
     );
   });
 
@@ -306,35 +304,22 @@ describe("sourceOf / sourceRank — which source's copy survives", () => {
     return existingRank >= incomingRank ? "existing" : "incoming";
   }
 
-  it("keeps an existing e-GP announcement over an incoming data.go.th contract record", () => {
-    assert.equal(winner("egp:69089649017:D0", "datagov"), "existing");
-  });
-
   it("keeps an existing e-GP announcement over an incoming MEA one", () => {
     assert.equal(winner("egp:69089649017:D0", "mea"), "existing");
-  });
-
-  it("lets an incoming e-GP announcement supersede an existing data.go.th record", () => {
-    assert.equal(winner("datagov:69089649017", "egp"), "incoming");
   });
 
   it("lets an incoming e-GP announcement supersede an existing MEA record", () => {
     assert.equal(winner("mea:12345", "egp"), "incoming");
   });
 
-  it("lets an incoming MEA record supersede an existing data.go.th one", () => {
-    assert.equal(winner("datagov:69089649017", "mea"), "incoming");
-  });
-
-  it("never lets data.go.th supersede anything, including another data.go.th run", () => {
-    assert.equal(winner("datagov:69089649017", "datagov"), "existing");
-    assert.equal(winner("mea:12345", "datagov"), "existing");
-    assert.equal(winner("egp:69089649017:D0", "datagov"), "existing");
+  it("never lets MEA supersede e-GP or another MEA run", () => {
+    assert.equal(winner("egp:69089649017:D0", "mea"), "existing");
+    assert.equal(winner("mea:12345", "mea"), "existing");
   });
 
   it("keeps a manual entry over every automated source", () => {
     assert.equal(winner("undefined-ref-means-manual", "egp"), "existing");
-    for (const source of ["egp", "mea", "datagov"]) {
+    for (const source of ["egp", "gproc", "mea"]) {
       assert.equal(winner(undefined, source), "existing");
     }
   });

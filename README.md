@@ -22,7 +22,7 @@ companies that could bid on it.
   Details: [roles-and-features.md](docs/project/roles-and-features.md).
 
 Announcements are imported from the agencies' public APIs (Bangkok e-GP, national
-e-GP, data.go.th) and the MEA procurement site.
+e-GP) and the MEA procurement site.
 
 ## Tech stack
 
@@ -277,7 +277,7 @@ export NODE_ENV=development SEED_DEMO_DATA=true VERTEX_PROJECT_ID= \
   SESSION_SECRET=ci-test-secret-not-for-production \
   FRONTEND_ORIGIN=http://localhost:3000 \
   EGP_POLL_MINUTES=0 EGP_POLL_ON_STARTUP=false MEA_POLL_MINUTES=0 \
-  DATAGOV_POLL_MINUTES=0 GPROC_POLL_MINUTES=0 AI_POLL_MINUTES=0 \
+  GPROC_POLL_MINUTES=0 AI_POLL_MINUTES=0 \
   THROTTLE_LIMIT=300 AUTH_THROTTLE_LIMIT=5 AUTH_THROTTLE_TTL_MS=60000 \
   E2E_BASE_URL=http://localhost:4000
 node dist/main.js &

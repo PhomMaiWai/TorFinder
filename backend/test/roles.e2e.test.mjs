@@ -49,7 +49,6 @@ const ADMIN_ONLY = [
   ["POST", "/ai/extract"],
   ["POST", `/ai/extract/${ID}`],
   ["GET", "/audit"],
-  ["POST", "/datagov/sync"],
   ["POST", "/egp/sync"],
   ["GET", "/egp/near-misses"],
   ["GET", "/egp/metrics"],

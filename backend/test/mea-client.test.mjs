@@ -1,6 +1,6 @@
 // Unit coverage for the MEA scraper (backend/src/mea/mea.client.ts): the
 // DataTables pagination in announcements() and the regex HTML parsing in
-// detail(). Unlike the other portal clients (data.go.th, e-GP), MEA publishes
+// detail(). Unlike the other portal client (e-GP), MEA publishes
 // no API — every fact comes out of hand-written regexes over the site's own
 // HTML, which is exactly the kind of logic that breaks silently, so it is
 // worth pinning down with fixtures instead of only exercising it live.

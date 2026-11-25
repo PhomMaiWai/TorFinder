@@ -11,39 +11,11 @@
  *    procurement portal; everything on it is in scope by construction.
  *  - gproc (backend/src/gproc): no check. It only re-reads the procurement
  *    step of project numbers already stored — numbers that reached the
- *    database through one of the other three, scope already settled.
+ *    database through one of the other two, scope already settled.
  *  - MEA (backend/src/mea): namesSomewhereElse, inverted. The utility serves
  *    two neighbouring provinces besides the city and says so when it does, so
  *    everything is kept except what names one of them.
- *  - data.go.th (backend/src/datagov): namesBangkok, falling back to
- *    isPointInBangkok. The source is national and mostly upcountry, so
- *    Bangkok has to be proven rather than assumed — by the agency/project
- *    name first, and only when that is silent, by the coordinates the
- *    source's own map table gives for the contract.
  */
-
-/**
- * Bangkok as a box. Crude on purpose: a point-in-polygon over the city boundary
- * would need the boundary shipped and maintained, and the box is only ever
- * asked about a project that is already a procurement record with an address
- * somewhere in Thailand. It bleeds a little into Nonthaburi and Samut Prakan,
- * which is the same metropolitan area the electricity authority serves.
- */
-export const BANGKOK_BOUNDS = {
-  minLat: 13.49,
-  maxLat: 13.96,
-  minLong: 100.32,
-  maxLong: 100.94,
-} as const;
-
-export function isPointInBangkok(lat: number, long: number): boolean {
-  return (
-    lat >= BANGKOK_BOUNDS.minLat &&
-    lat <= BANGKOK_BOUNDS.maxLat &&
-    long >= BANGKOK_BOUNDS.minLong &&
-    long <= BANGKOK_BOUNDS.maxLong
-  );
-}
 
 /** How an agency or a project title says "Bangkok". */
 const BANGKOK_NAMES = ["กรุงเทพ", "กทม", "บางกอก"];
@@ -107,17 +79,4 @@ export function namesSomewhereElse(...texts: (string | null | undefined)[]): boo
  */
 export function meaInScope(subject: string | null | undefined): boolean {
   return !namesSomewhereElse(subject);
-}
-
-/**
- * datagov's scope rule (see the module comment above): the agency/project
- * name first, the map table's coordinates only when that is silent.
- */
-export function datagovInScope(
-  agency: string | null | undefined,
-  title: string | null | undefined,
-  location?: { lat: number; long: number } | null,
-): boolean {
-  if (namesBangkok(agency, title)) return true;
-  return location != null && isPointInBangkok(location.lat, location.long);
 }

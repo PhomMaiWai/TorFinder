@@ -46,8 +46,8 @@ These say whether the data is worth searching.
 | **K1** TORs in the repository | A company only comes back if the list is long enough to be useful. The SRS sizes the MVP at about 500 new TORs a month. | Count `tors` without `deletedAt` in MongoDB. |
 | **K2** Years covered | FR-26 says 2022 onward. A missing year means an importer or the `TOR_LISTED_SINCE` cutoff is wrong. | Group `tors` by year of `createdAt`. Snapshot: 2022: 68, 2023: 67, 2024: 106, 2025: 173, 2026: 269. |
 | **K3** Link to the source | A business rule: every record keeps a traceable link to e-GP or the agency. | Count records with `sourceUrl`. |
-| **K4** Freshness | A TOR is only useful before its deadline. | e-GP and MEA poll every 360 minutes, data.go.th every 1,440 (`EGP_POLL_MINUTES`, `MEA_POLL_MINUTES`, `DATAGOV_POLL_MINUTES`). In production, compare each record's `importedAt` with its announcement date. |
-| **K5** Duplicates | FR-05. The same project appears on e-GP, MEA and data.go.th; we should list it once. | Group `tors` by `projectNumber` and count groups with more than one record. |
+| **K4** Freshness | A TOR is only useful before its deadline. | e-GP and MEA poll every 360 minutes (`EGP_POLL_MINUTES`, `MEA_POLL_MINUTES`). In production, compare each record's `importedAt` with its announcement date. |
+| **K5** Duplicates | FR-05. The same project appears on Bangkok e-GP, the national e-GP and MEA; we should list it once. | Group `tors` by `projectNumber` and count groups with more than one record. |
 | **K6** Failures noticed | FR-06. A source can be down for days without anyone noticing. | Each failed or partial run notifies every admin (`AdminAlertsService`). Check `syncRuns` for failures without a matching alert. |
 
 Today's snapshot has 513 records from e-GP and 170 from MEA. By stage: 87

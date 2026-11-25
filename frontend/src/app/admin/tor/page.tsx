@@ -10,7 +10,7 @@ import { fetchTorList } from "@/lib/tor-api";
 import { stageBadgeCls } from "@/lib/tor-ui";
 import { displayValue, valueLabel } from "@/lib/value-labels";
 
-import { syncFromDataGov, syncFromEgp, syncFromMea } from "./actions";
+import { syncFromEgp, syncFromMea } from "./actions";
 
 const PAGE_SIZE = 20;
 
@@ -20,7 +20,6 @@ const TABS = [
   { id: "egp" },
   { id: "gproc" },
   { id: "mea" },
-  { id: "datagov" },
   { id: "all" },
   { id: "not-software" },
   { id: "deleted" },
@@ -30,7 +29,6 @@ const TABS = [
 const IMPORTS = [
   { id: "egp", label: "e-GP", action: syncFromEgp },
   { id: "mea", label: null, action: syncFromMea },
-  { id: "datagov", label: "data.go.th", action: syncFromDataGov },
 ] as const;
 
 

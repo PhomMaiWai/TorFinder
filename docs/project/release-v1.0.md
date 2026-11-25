@@ -10,7 +10,7 @@ from a fresh clone (decided 25 Nov 2026, see [D10](./deliverables.md#decisions-t
 ## What TorFinder does
 
 TorFinder collects Bangkok (BMA) government software procurement
-announcements (TORs) from e-GP, MEA and data.go.th in one place, reads the
+announcements (TORs) from e-GP and MEA in one place, reads the
 TOR documents with AI, and matches them to software companies' profiles so
 each company hears about the projects worth bidding on, early.
 

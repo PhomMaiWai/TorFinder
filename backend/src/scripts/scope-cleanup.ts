@@ -4,7 +4,6 @@ import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 
 import { AppModule } from "../app.module";
-import { DataGovService } from "../datagov/datagov.service";
 import { EgpService } from "../egp/egp.service";
 import { GprocService } from "../gproc/gproc.service";
 import { MeaService } from "../mea/mea.service";
@@ -34,7 +33,6 @@ async function main() {
     { name: "e-GP", service: app.get(EgpService) },
     { name: "gproc", service: app.get(GprocService) },
     { name: "MEA", service: app.get(MeaService) },
-    { name: "data.go.th", service: app.get(DataGovService) },
   ];
 
   let total = 0;
