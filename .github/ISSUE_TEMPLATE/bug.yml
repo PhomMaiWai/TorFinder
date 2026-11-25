@@ -1,0 +1,64 @@
+name: Bug
+description: Something in TorFinder does not work as the SRS or the design docs say it should.
+title: "bug: <what goes wrong>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problems: do not file them here. Follow [SECURITY.md](../blob/main/SECURITY.md) instead.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, including any error message or error ID.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen
+      description: The expected behaviour, and where it is written down if you know (SRS FR id or design doc).
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: Page or API route, role you were signed in as, and the commit or environment.
+      placeholder: /tors?q=... as company admin, main @ 80073c1, docker compose
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria for the fix
+      value: |
+        - [ ] The steps above no longer reproduce the bug
+        - [ ] A test covers it (or the PR says why it cannot)
+    validations:
+      required: true
+
+  - type: input
+    id: design
+    attributes:
+      label: Design reference
+      description: The design doc for the broken flow, if any.
+      placeholder: docs/design/sequence-diagrams.md
+    validations:
+      required: false

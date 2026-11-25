@@ -1,5 +1,7 @@
 # TorFinder architecture
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](process/team-workflow.md#definition-of-done)).
+
 A map of the code for someone about to change it: what the system is made
 of, where each kind of logic lives, how one TOR moves from a government
 portal to a company's inbox, and the rules a change must not break.
@@ -93,7 +95,6 @@ unit-tested from `dist/` without a database.
 | `insights/` | Market insights across all awards (who wins, discounts, competition per agency) | `market-insights.ts` |
 | `feedback/` | Public comments and their moderation | |
 | `reports/` | "Report a problem" and the admin queue | |
-| `owner/` | The agency owner's dashboard | |
 | `saved-tors/`, `saved-searches/` | Bookmarks and saved searches | |
 | `notifications/` | In-app notifications, email/LINE/Slack delivery, admin sync alerts | `notification-delivery.ts` |
 | `audit/` | The audit log of admin actions | |
@@ -106,7 +107,7 @@ unit-tested from `dist/` without a database.
 | `app/` | Pages (App Router), Server Actions (`actions.ts`), route handlers (`app/api/`) | Data is fetched here, on the server |
 | `proxy.ts` | Checks the session cookie and the role before a page renders | Every protected prefix is listed here |
 | `lib/` | Backend clients (`*-api.ts`), session helpers, filters, formatting | `session-headers.ts` is how a call carries the session |
-| `components/` | UI by area (`public/`, `admin/`, `owner/`, `insights/`, …) and shared `ui/` | Client components never fetch the backend themselves |
+| `components/` | UI by area (`public/`, `admin/`, `insights/`, …) and shared `ui/` | Client components never fetch the backend themselves |
 | `types/` | Shapes of what the backend returns | Kept in step with `docs/design/api.md` |
 | `i18n/`, `../messages/` | next-intl set-up and the Thai and English strings | Every visible string has a key in both files |
 | `data/` | Static and demo data | `admin.ts` still backs the mock `/admin/companies` page |
@@ -126,7 +127,7 @@ flowchart LR
     Q --> E["Extract fields from PDF<br/>with confidence"]
     E --> M2["Score again<br/>with richer data"]
     M1 & M2 --> A["Alert companies<br/>above their threshold"]
-    U --> V["Listed: search, detail page,<br/>owner view"]
+    U --> V["Listed: search,<br/>detail page"]
     V --> C["Public comments<br/>(moderated)"]
     V --> R["Problem reports"] --> K["Admin corrects<br/>fields get locked"]
     K --> U

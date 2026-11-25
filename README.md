@@ -321,6 +321,10 @@ docs/        requirements, design, process, operations and security docs
 
 - [docs/](docs/README.md): requirements, design diagrams, API reference, process
   and operations
+- [deliverables.md](docs/project/deliverables.md): what the team hands over, who
+  owns it and where the evidence is
+- [retrospectives.md](docs/process/retrospectives.md): how the team changed its
+  process, with the evidence
 - [developer-guide.md](docs/process/developer-guide.md): branches, commits and pull
   requests
 

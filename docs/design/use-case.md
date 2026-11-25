@@ -1,5 +1,7 @@
 # Use case model
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](../process/team-workflow.md#definition-of-done)).
+
 Who uses TorFinder and what each of them can do. Every use case below maps
 to a real route; the guard named in brackets is what the backend checks
 (see [api.md](./api.md) for the full list).
@@ -158,5 +160,5 @@ closest match, not an official mapping from the SRS.
 
 - `/admin/companies` in the frontend still runs on mock data, so there is
   no real "manage companies" use case beyond UC17 and UC18.
-- An admin is not automatically an owner. Each guard admits
+- An admin is not automatically a company. Each guard admits
   exactly one role (`backend/src/common/role.guard.ts`).

@@ -1,5 +1,7 @@
 # Sequence diagrams
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](../process/team-workflow.md#definition-of-done)).
+
 The main flows through the system, drawn from the code. "Next.js" means the
 frontend server (pages, Server Actions and `/api/*` route handlers); the
 browser never talks to the backend directly (see
@@ -11,6 +13,7 @@ browser never talks to the backend directly (see
 4. [A company opens its matched TORs](#4-a-company-opens-its-matched-tors)
 5. [Public comment and moderation](#5-public-comment-and-moderation)
 6. [Error report and "Fix this TOR"](#6-error-report-and-fix-this-tor)
+7. [Sensitive admin action with a passkey check (step-up)](#7-sensitive-admin-action-with-a-passkey-check-step-up)
 
 ## 1. Sign in and call a protected route
 
@@ -34,8 +37,17 @@ sequenceDiagram
         A-->>N: 401 อีเมลหรือรหัสผ่านไม่ถูกต้อง
     else email not verified / pending / rejected / suspended
         A-->>N: 403 with reason (code: email-unverified when unverified)
+    else staff account with a passkey
+        A-->>N: 200 {status: passkey-required, options}
+        B->>B: navigator.credentials.get (user touches the key)
+        B->>N: POST /api/auth/passkey/login {response}
+        N->>A: POST /api/auth/passkey/login
+        A->>A: verify signature against users.passkeys[].publicKey
+        A->>DB: sessions.insertOne({_id: sid, device, amr})
+        A-->>N: 200 {user, token}
+        N-->>B: Set-Cookie torr_session (httpOnly, 7 days) + {user}
     else OK
-        A->>DB: set lastLoginAt
+        A->>DB: set lastLoginAt; sessions.insertOne({_id: sid, device, amr})
         A-->>N: 200 {user, token}
         N-->>B: Set-Cookie torr_session (httpOnly, 7 days) + {user}
     end
@@ -45,9 +57,9 @@ sequenceDiagram
     N->>N: proxy.ts verifies HMAC and role locally
     N->>G: GET /api/matching/opportunities<br/>Authorization: Bearer token
     G->>G: verifySessionToken + check role
-    G->>R: isValid(sub, iat)
-    R->>DB: users.sessionMinIssuedAt (cached 30 s)
-    alt token revoked or wrong role
+    G->>R: isValid(sub, iat, sid)
+    R->>DB: users.sessionMinIssuedAt (cached 30 s) and sessions[sid].revokedAt
+    alt token revoked, session ended, idle too long or wrong role
         G-->>N: 401 / 403
     else allowed
         G-->>N: handler result
@@ -55,7 +67,10 @@ sequenceDiagram
     end
 ```
 
-Google sign-in follows the same shape through `POST /api/auth/google`. A
+The token carries `sid`, the id of the `sessions` record, so the user can
+list their sessions on `/account` and end one (`POST /auth/sessions/:id/end`),
+and an admin can end all of an account's sessions. Google sign-in follows
+the same shape through `POST /api/auth/google`. A
 new Google user who chose "company" gets `{status: "needs-company-info"}`
 back and finishes with `POST /api/auth/google/complete`.
 
@@ -263,3 +278,48 @@ sequenceDiagram
 
 Because the fields are locked, the next import does not overwrite the
 correction.
+
+## 7. Sensitive admin action with a passkey check (step-up)
+
+Suspending an account, changing a role, reviewing a company, deleting an
+announcement or ending someone's sessions needs a passkey check from the
+last `STEP_UP_MINUTES` (default 10), not just a session. Granting or
+removing the admin role also needs a second admin.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Ad as Admin
+    participant B as Browser
+    participant N as Next.js (Server Action)
+    participant G as AdminGuard + StepUpGuard
+    participant P as PasskeysService
+    participant S as AccountsService
+    participant DB as MongoDB
+
+    Ad->>B: Click "Suspend" on /admin/users
+    B->>N: suspend(id)
+    N->>G: PATCH /api/accounts/:id/suspend
+    alt last passkey check older than STEP_UP_MINUTES
+        G-->>N: 403 step-up required
+        N-->>B: ask for the passkey
+        B->>N: POST /api/auth/step-up/options
+        N->>P: challenge
+        P-->>B: options
+        B->>B: navigator.credentials.get
+        B->>N: POST /api/auth/step-up {response}
+        N->>P: verify
+        P-->>N: session re-signed with pkt = now
+        N->>G: retry PATCH /api/accounts/:id/suspend
+    end
+    G->>S: setSuspended(id, true)
+    S->>DB: users.suspended = true; revoke its sessions
+    S->>DB: auditLogEntries.insertOne
+    S-->>B: updated account
+```
+
+For a role change to or from `admin`, `AccountsService` files an
+`adminApprovals` request instead of applying it, and every other admin is
+notified. Another admin approves it with
+`POST /accounts/admin-approvals/:id/approve` (also behind step-up); the one
+who asked cannot.

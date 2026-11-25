@@ -1,5 +1,7 @@
 # ER diagram
 
+> **Last reviewed against the code:** 25 Nov 2026 (`main` at `85d6251`). A PR that changes what this page describes updates it in the same PR ([Definition of Done](../process/team-workflow.md#definition-of-done)).
+
 How data is stored in MongoDB (database `torr`). The types come from
 `backend/src/database/database.service.ts`, and the indexes are created in
 `DatabaseService.onModuleInit` there.
@@ -194,7 +196,42 @@ erDiagram
         string detail
         date createdAt
     }
+    passkey {
+        string id UK "credential id, unique across accounts"
+        string publicKey "COSE key; the private key stays on the device"
+        int counter "spots a cloned key"
+        string name "the user's label"
+        date createdAt
+    }
+    sessions {
+        string _id PK "sid in the session token"
+        ObjectId userId FK
+        string device "e.g. Chrome on macOS"
+        string ip
+        string_array amr "pwd | google | passkey"
+        date revokedAt "set when ended"
+        date createdAt
+        date expiresAt "TTL index"
+    }
+    adminApprovals {
+        ObjectId _id PK
+        ObjectId targetId FK "unique: one open request per account"
+        string targetEmail
+        string fromRole
+        string toRole
+        object requestedBy "id + email"
+        date createdAt
+        date expiresAt "TTL index"
+    }
+    rateCounters {
+        string _id PK "e.g. login-failures:email"
+        int hits
+        date expiresAt "TTL index"
+    }
 
+    users ||--o{ passkey : "embedded passkeys[] (staff)"
+    users ||--o{ sessions : "signed in as"
+    users ||--o| adminApprovals : "role change waiting"
     users ||--o| company_profile : "embedded (org only)"
     users ||--o| notification_channels : embedded
     tors ||--o{ tor_document : "embedded documents[]"
@@ -217,6 +254,13 @@ erDiagram
 by email, not by `_id`, so entries survive an account being renamed. The
 admin audit page merges both collections into one feed.
 
+Two small collections hold no business data and are left out of the
+diagram: `locks` (one document, `admin-demotion`, taken inside a
+transaction so two admins can't demote each other at once) and
+`savedSearchCounts` (`{ _id: userId, count }`, so the 50-per-account limit
+on saved searches is one atomic check). `rateCounters` backs the login
+lockout and rate limits so they hold across backend instances.
+
 ## Indexes
 
 | Collection | Index | Why |
@@ -237,6 +281,10 @@ admin audit page merges both collections into one feed.
 | `auditLogEntries` | `{ createdAt: -1 }` | Newest first |
 | `authTokens` | `{ tokenHash: 1 }` unique, `{ userId: 1, purpose: 1 }`, `{ expiresAt: 1 }` TTL | Links expire on their own |
 | `matchAlerts` | `{ userId: 1, projectKey: 1, phase: 1 }` unique | Never alert twice for the same phase |
+| `users` | `{ "passkeys.id": 1 }` unique, partial | A passkey belongs to one account |
+| `sessions` | `{ userId: 1, createdAt: -1 }`, `{ expiresAt: 1 }` TTL | Own session list; records go when the token would have expired |
+| `adminApprovals` | `{ targetId: 1 }` unique, `{ expiresAt: 1 }` TTL | One open request per account; stale requests expire |
+| `rateCounters` | `{ expiresAt: 1 }` TTL | Counters clear when their window ends |
 
 ## Rules worth knowing
 

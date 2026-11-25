@@ -24,6 +24,7 @@ change must keep.
 
 | Document | Covers |
 | --- | --- |
+| [deliverables.md](./project/deliverables.md) | What we hand over (D1 to D12): owner, acceptance criteria, status and evidence |
 | [project-plan.md](./project/project-plan.md) | Vision, scope, stakeholders, tech stack, iteration overview |
 | [roles-and-features.md](./project/roles-and-features.md) | What each role can do, and which features are done |
 | [iterations/](./project/iterations/) | Each iteration's backlog and delivery status, from the GitHub Projects board |
@@ -54,6 +55,7 @@ change must keep.
 | --- | --- |
 | [sdlc.md](./process/sdlc.md) | The six SDLC stages and what we did in each, with evidence |
 | [team-workflow.md](./process/team-workflow.md) | How the team ran Scrum: Team Delivery Cycle diagram, roles, cadence, Definition of Done |
+| [retrospectives.md](./process/retrospectives.md) | Each process problem we saw, what we changed, and the result; review and issue-linking per iteration |
 | [developer-guide.md](./process/developer-guide.md) | Branches, commits, pull requests, code style |
 | [testing.md](./process/testing.md) | How to run the tests, what they cover, what CI runs |
 
@@ -104,7 +106,12 @@ Must/Should/Could items tagged with their SRS functional requirement).
 | [5](./project/iterations/iteration-5.md) | Sep 24 – Sep 30 | 6/10 epics Done |
 | [6](./project/iterations/iteration-6.md) | Oct 01 – Oct 07 | 1/4 epics Done |
 | [7](./project/iterations/iteration-7.md) | Oct 08 – Oct 14 | 1/13 sub-issues Done |
-| [8](./project/iterations/iteration-8.md) | Oct 15 – Oct 21 | Not yet captured in full — see note in the file |
+| [8](./project/iterations/iteration-8.md) | Oct 15 – Oct 21 | 1 PR merged: in-class client review, stage timeline |
+| [9](./project/iterations/iteration-9.md) | Oct 22 – Oct 28 | 38 PRs merged |
+| [10](./project/iterations/iteration-10.md) | Oct 29 – Nov 04 | 1 PR merged; review required on `main` from 3 Nov |
+| [11](./project/iterations/iteration-11.md) | Nov 05 – Nov 11 | 11 PRs merged |
+| [12](./project/iterations/iteration-12.md) | Nov 12 – Nov 18 | 25 PRs merged |
+| [13](./project/iterations/iteration-13.md) | Nov 19 – Nov 25 | 40 PRs merged |
 
-The board continues beyond iteration 8. Pull a fresh backlog export from
-the GitHub Project to extend this past iteration 8.
+Iterations 1 to 7 come from a board export; 8 to 13 list what was merged
+each week (the export was not available for them).
