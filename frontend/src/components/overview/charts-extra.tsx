@@ -307,6 +307,17 @@ export function ValueTreemap({
 
 /* ── Calendar heatmap: open TORs closing on each day, six weeks from this Monday ── */
 
+/** Short weekday names, Sunday first (Date#getUTCDay order). */
+const WEEKDAY_SHORT = {
+  th: ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+} as const;
+
+/** The weekday of an instant in Bangkok (UTC+7, no daylight saving), 0 = Sunday. */
+function bangkokWeekday(at: number): number {
+  return new Date(at + 7 * 3_600_000).getUTCDay();
+}
+
 function heatStep(count: number): 0 | 1 | 2 | 3 | 4 {
   return count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : count <= 4 ? 3 : 4;
 }
@@ -330,7 +341,9 @@ export function ClosingCalendar({
   moreLabel: string;
 }) {
   const tag = locale === "th" ? "th-TH" : "en-GB";
-  const weekday = new Intl.DateTimeFormat(tag, { weekday: "short", timeZone: "Asia/Bangkok" });
+  // Fixed labels, not Intl: Node's ICU and the browser's disagree on the short
+  // Thai weekday ("จ." vs "จันทร์"), which broke hydration.
+  const weekdays = WEEKDAY_SHORT[locale === "th" ? "th" : "en"];
   const dayNum = new Intl.DateTimeFormat(tag, { day: "numeric", timeZone: "Asia/Bangkok" });
   const full = new Intl.DateTimeFormat(tag, { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Bangkok" });
   const DAY_MS = 86_400_000;
@@ -342,7 +355,7 @@ export function ClosingCalendar({
       <div className="grid grid-cols-7 gap-1.5">
         {Array.from({ length: 7 }, (_, i) => (
           <span key={i} className="pb-1 text-center text-2xs font-medium text-ink-subtle">
-            {weekday.format(start + i * DAY_MS + 12 * 3_600_000)}
+            {weekdays[bangkokWeekday(start + i * DAY_MS + 12 * 3_600_000)]}
           </span>
         ))}
         {counts.map((count, i) => {
