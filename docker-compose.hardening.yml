@@ -37,6 +37,10 @@ services:
       - RESEND_API_KEY=
       # A hardened deployment really sends its mail; the test catcher stays off.
       - MAIL_CATCHER_URL=
+      # Outbound traffic goes only through the HTTPS proxy, which SMTP can't use:
+      # mail goes out through Resend's HTTP API here.
+      - SMTP_HOST=
+      - SMTP_PASS=
       - LINE_CHANNEL_ACCESS_TOKEN=
       - LINE_CHANNEL_SECRET=
     # ASVS 13.3.1: its secrets come from the vault (vault-init), not from .env.

@@ -71,6 +71,13 @@ services:
       # Testing only: http://mailpit:8025 sends every email to the mailpit
       # service below instead of Resend (start it with --profile mail).
       - MAIL_CATCHER_URL=${MAIL_CATCHER_URL:-}
+      # Email over SMTP instead of Resend, e.g. Gmail: smtp.gmail.com, 465,
+      # your Gmail address and an app password (see .env.example).
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_SECURE=${SMTP_SECURE:-}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
       - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN:-}
       - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET:-}
       - LINE_BOT_ID=${LINE_BOT_ID:-}
