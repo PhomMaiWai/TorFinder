@@ -117,7 +117,7 @@ Beyond the audit log:
 | A scheduled run retried once or twice before succeeding | Normal — the scheduler retries a thrown error up to 3 times, 5s then 10s apart, before giving up and alerting admins |
 | An admin alert about a "partial" sync | Some feeds answered and some didn't — results from the ones that worked were still saved |
 | `near-misses` isn't empty | The software/IT keyword filter rejected something that might not have deserved it — check it, don't assume it's always wrong |
-| An extraction stays pending for a long time | Either the AI job's interval hasn't come around yet (up to 60 min by default), or the record doesn't qualify for the queue at all — check `pipeline.md`'s filter list: award-stage, older than 90 days, and already-failed-3-times records are all permanently skipped, not just delayed |
+| An extraction stays pending for a long time | Either the AI job's interval hasn't come around yet (up to 60 min by default), or the record doesn't qualify for the queue at all — check `pipeline.md`'s filter list: older than 90 days and already-failed-3-times records are permanently skipped, not just delayed |
 | A record shows `low` confidence | Expected and not an error — the pipeline publishes it anyway, with the label as a hint to verify it against the source PDF |
 | Two admins trigger the same sync at once | The second one joins the first's in-flight run rather than starting a duplicate — you won't get two overlapping syncs against the same source |
 
