@@ -1,36 +1,36 @@
 "use client";
 
-import { ArrowRight, Building2, Clock, MessageSquare, Search } from "lucide-react";
+import { ArrowRight, Building2, Clock, Search } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState, useMemo } from "react";
 
-import { OPPORTUNITIES } from "@/data/opportunities";
-import { FEEDBACK_ENTRIES } from "@/data/tor-details";
+import type { PreviewTor } from "@/lib/landing-data";
 import { valueLabel } from "@/lib/value-labels";
 
-export function PreviewSection() {
+/** Cards shown at once; the search narrows a larger pool of open announcements (getLandingData). */
+const SHOWN = 4;
+
+/**
+ * Real announcements still open for bids or comment, newest first, searchable
+ * in place; the full search is one click away with the same words.
+ */
+export function PreviewSection({ tors }: { tors: PreviewTor[] }) {
   const t = useTranslations("LandingPreview");
   const tv = useTranslations("Values");
   const [search, setSearch] = useState("");
-  const [feedbackOpenId, setFeedbackOpenId] = useState<number | null>(null);
-  const [feedbackText, setFeedbackText] = useState("");
 
   const items = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return OPPORTUNITIES.filter((opp) => {
-      const matchSearch =
-        !q ||
-        `${opp.title} ${opp.agency} ${opp.tags.join(" ")}`.toLowerCase().includes(q);
-      return matchSearch;
-    }).slice(0, 4); // Show top 4
-  }, [search]);
+    const words = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return tors
+      .filter((tor) => {
+        const text = `${tor.title} ${tor.agency} ${tor.tags.join(" ")}`.toLowerCase();
+        return words.every((word) => text.includes(word));
+      })
+      .slice(0, SHOWN);
+  }, [search, tors]);
 
-  function handleSubmitFeedback() {
-    if (!feedbackText.trim()) return;
-    setFeedbackOpenId(null);
-    setFeedbackText("");
-  }
+  const searchAllHref = search.trim() ? `/public?q=${encodeURIComponent(search.trim())}` : "/public";
 
   return (
     <section id="preview" className="aurora bg-surface-alt/60 py-24 sm:py-32">
@@ -55,7 +55,7 @@ export function PreviewSection() {
               placeholder={t("searchPlaceholder")}
             />
             <Link
-              href="/public"
+              href={searchAllHref}
               className="hidden h-10 shrink-0 items-center justify-center rounded-lg bg-ink px-5 text-sm font-semibold text-surface transition-colors hover:bg-ink/90 sm:flex"
             >
               {t("searchAll")}
@@ -67,10 +67,6 @@ export function PreviewSection() {
           {items.map((tor) => {
             const isFeedbackStage = tor.stage === "เปิดรับฟังความคิดเห็น";
             const isUrgent = tor.daysLeft <= 7;
-            const approvedCount = FEEDBACK_ENTRIES.filter(
-              (f) => f.torId === tor.id && f.status === "อนุมัติ",
-            ).length;
-            const isFeedbackOpen = feedbackOpenId === tor.id;
 
             return (
               <article
@@ -123,66 +119,14 @@ export function PreviewSection() {
                   </Link>
                 </div>
 
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
-                  <div className="flex items-center gap-2">
-                    {approvedCount > 0 && (
-                      <span className="mr-2 flex items-center gap-1.5 text-xs font-medium text-ink-muted">
-                        <MessageSquare size={13} className="text-ink-subtle" />
-                        {approvedCount}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {isFeedbackStage && (
-                      <button
-                        onClick={() => {
-                          if (isFeedbackOpen) {
-                            setFeedbackOpenId(null);
-                          } else {
-                            setFeedbackOpenId(tor.id);
-                            setFeedbackText("");
-                          }
-                        }}
-                        className="flex h-8 items-center gap-1.5 rounded-lg bg-surface-alt px-3 text-xs font-medium text-ink-muted transition-colors hover:bg-border"
-                      >
-                        {isFeedbackOpen ? t("close") : t("showFeedback")}
-                      </button>
-                    )}
-                    <Link
-                      href={`/tor/${tor.id}`}
-                      className="flex h-8 items-center gap-1.5 rounded-lg bg-ink px-3 text-xs font-medium text-surface transition-colors hover:bg-ink/90"
-                    >
-                      {t("viewDetails")}
-                    </Link>
-                  </div>
+                <div className="mt-5 flex justify-end border-t border-border pt-5">
+                  <Link
+                    href={`/tor/${tor.id}`}
+                    className="flex h-8 items-center gap-1.5 rounded-lg bg-ink px-3 text-xs font-medium text-surface transition-colors hover:bg-ink/90"
+                  >
+                    {t("viewDetails")}
+                  </Link>
                 </div>
-
-                {isFeedbackOpen && (
-                  <div className="mt-4 rounded-xl bg-surface-alt p-4 ring-1 ring-border/60">
-                    <textarea
-                      className="w-full rounded-lg border border-border bg-surface p-3 text-sm text-ink outline-none placeholder:text-ink-subtle focus:ring-2 focus:ring-accent/20"
-                      rows={2}
-                      value={feedbackText}
-                      onChange={(e) => setFeedbackText(e.target.value)}
-                      placeholder={t("feedbackPlaceholder")}
-                    />
-                    <div className="mt-2.5 flex justify-end gap-2">
-                      <button
-                        onClick={() => setFeedbackOpenId(null)}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface-alt hover:text-ink"
-                      >
-                        {t("cancel")}
-                      </button>
-                      <button
-                        onClick={handleSubmitFeedback}
-                        className="rounded-lg bg-accent px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-accent-dark"
-                      >
-                        {t("submitFeedback")}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </article>
             );
           })}

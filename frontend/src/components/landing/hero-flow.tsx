@@ -1,13 +1,18 @@
 "use client";
 
-import { Bell, Building2, FileText, Sparkles } from "lucide-react";
+import { Bell, Building2, Check, FileText, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 
 const STEP_MS = 2600;
 const RING_R = 22;
 const RING_C = 2 * Math.PI * RING_R;
-const SCORE = 92;
+/**
+ * How far the ring fills. Illustrative only, so no number is printed with it:
+ * a visitor has no company profile yet, and a made-up match score would read
+ * as a claim about a real TOR.
+ */
+const RING_FILL = 0.85;
 
 /**
  * Where each card sits around the headline: two on the left (input), two on
@@ -244,11 +249,13 @@ export function HeroFlow() {
                   strokeLinecap="round"
                   className={`stroke-accent ${isActive(2) ? "animate-ring" : ""}`}
                   strokeDasharray={RING_C}
-                  strokeDashoffset={RING_C * (1 - SCORE / 100)}
+                  strokeDashoffset={RING_C * (1 - RING_FILL)}
                   style={{ "--ring-c": RING_C } as CSSProperties}
                 />
               </svg>
-              <span className="absolute inset-0 grid place-items-center text-sm font-bold text-ink">{SCORE}</span>
+              <span className="absolute inset-0 grid place-items-center text-accent">
+                <Check size={18} strokeWidth={3} />
+              </span>
             </div>
             <div className="min-w-0 space-y-1.5">
               <p className="text-2xs leading-snug text-ink-muted">{t("step3Caption")}</p>

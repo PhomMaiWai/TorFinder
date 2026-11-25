@@ -3,13 +3,17 @@ import { Bell, CircleCheck, Search } from "lucide-react";
 const RING_R = 18;
 const RING_C = 2 * Math.PI * RING_R;
 
+/**
+ * How far each ring fills. Shapes only, like the skeleton lines beside them:
+ * no number is printed, since a made-up score would read as a real match.
+ */
 const ROWS = [
-  { score: 92, widths: ["w-4/5", "w-1/2"] },
-  { score: 87, widths: ["w-3/4", "w-2/5"] },
-  { score: 74, widths: ["w-2/3", "w-1/3"] },
+  { fill: 0.9, widths: ["w-4/5", "w-1/2"] },
+  { fill: 0.75, widths: ["w-3/4", "w-2/5"] },
+  { fill: 0.6, widths: ["w-2/3", "w-1/3"] },
 ];
 
-function ScoreRing({ score, delay }: { score: number; delay: number }) {
+function ScoreRing({ fill, delay }: { fill: number; delay: number }) {
   return (
     <div className="relative size-11 shrink-0">
       <svg viewBox="0 0 44 44" className="size-full -rotate-90">
@@ -23,16 +27,16 @@ function ScoreRing({ score, delay }: { score: number; delay: number }) {
           strokeLinecap="round"
           className="animate-ring stroke-accent"
           strokeDasharray={RING_C}
-          strokeDashoffset={RING_C * (1 - score / 100)}
+          strokeDashoffset={RING_C * (1 - fill)}
           style={{ "--ring-c": RING_C, animationDelay: `${delay}ms` } as React.CSSProperties}
         />
       </svg>
-      <span className="absolute inset-0 grid place-items-center text-xs font-bold text-ink">{score}</span>
+      <span className="absolute inset-0 m-auto h-1.5 w-4 rounded-full bg-border" />
     </div>
   );
 }
 
-/** Decorative product preview — numbers and skeleton lines only, hidden from assistive tech. */
+/** Decorative product preview — shapes and skeleton lines only, hidden from assistive tech. */
 export function HeroMockup() {
   return (
     <div aria-hidden className="relative mx-auto mt-16 max-w-4xl">
@@ -51,11 +55,11 @@ export function HeroMockup() {
           <div className="space-y-px">
             {ROWS.map((row, i) => (
               <div
-                key={row.score}
+                key={row.widths[0]}
                 className="animate-fade-up flex items-center gap-4 bg-surface/70 p-4"
                 style={{ animationDelay: `${600 + i * 120}ms` }}
               >
-                <ScoreRing score={row.score} delay={800 + i * 120} />
+                <ScoreRing fill={row.fill} delay={800 + i * 120} />
                 <div className="min-w-0 flex-1 space-y-2.5">
                   <div className={`h-2.5 rounded-full bg-ink/80 ${row.widths[0]}`} />
                   <div className={`h-2 rounded-full bg-border ${row.widths[1]}`} />

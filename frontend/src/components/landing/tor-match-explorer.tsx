@@ -104,6 +104,10 @@ export function TorMatchExplorer() {
           </p>
           <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("heading")}</h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-ink-muted">{t("description")}</p>
+          {/* The TOR, the company and the score below are made up to show the method; saying so keeps the number from reading as a claim. */}
+          <p className="mx-auto mt-3 inline-flex rounded-full bg-surface-alt px-3 py-1 text-xs font-medium text-ink-muted">
+            {t("exampleNote")}
+          </p>
         </div>
 
         <div
