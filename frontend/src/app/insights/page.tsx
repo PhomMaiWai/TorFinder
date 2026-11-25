@@ -12,16 +12,16 @@ import { fetchMarketInsights, parseYearParam } from "@/lib/insights-api";
  * price, and where one company keeps winning (FR-24, #256). Public, like the
  * overview: every figure is read from a published award notice.
  */
-export default async function InsightsPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
-  const { year: yearParam } = await searchParams;
+export default async function InsightsPage({ searchParams }: { searchParams: Promise<{ year?: string; in?: string }> }) {
+  const { year: yearParam, in: context } = await searchParams;
   const [insights, session] = await Promise.all([
     fetchMarketInsights(parseYearParam(yearParam)),
     cookies().then((jar) => verifySessionToken(jar.get(SESSION_COOKIE)?.value)),
   ]);
 
-  // Same split as /dashboard: companies see it inside their workspace sidebar.
-  const workspace = session?.role === "org";
-  const body = <MarketInsightsView data={insights} growthLink={session?.role === "org"} />;
+  // Same split as /dashboard: `?in=app` is the company workspace's view, in the sidebar.
+  const workspace = session?.role === "org" && context === "app";
+  const body = <MarketInsightsView data={insights} growthLink={session?.role === "org"} inApp={workspace} />;
 
   if (workspace) {
     return (

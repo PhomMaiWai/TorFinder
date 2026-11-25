@@ -10,21 +10,22 @@ import { getAllTors } from "@/lib/tor-source";
 
 /**
  * The public overview of the whole site — open to guests, and home for every
- * signed-in account but admins (see homeFor). Companies see it inside their
- * workspace sidebar; everyone else gets the public navbar.
+ * signed-in account but admins (see homeFor). Everyone lands on it with the
+ * public navbar, companies too; `?in=app` is the company workspace's view of
+ * it, inside the sidebar (see workspaceFor).
  */
-export default async function DashboardPage() {
-  const [tors, session] = await Promise.all([
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ in?: string }> }) {
+  const [tors, session, { in: context }] = await Promise.all([
     getAllTors(),
     cookies().then((jar) => verifySessionToken(jar.get(SESSION_COOKIE)?.value)),
+    searchParams,
   ]);
 
-  // Only company accounts get the workspace sidebar: its menu is the company's
-  // (profile, matches). Admins have their own console, and a
-  // viewer has none, so they all see the public navbar here.
+  // Only company accounts have the workspace sidebar: its menu is the company's
+  // (profile, matches). Admins have their own console, and a viewer has none.
   const audience: Audience = !session
     ? "guest"
-    : session.role === "org"
+    : session.role === "org" && context === "app"
       ? "workspace"
       : "viewer";
   // Only the summary crosses to the client, never the records themselves.

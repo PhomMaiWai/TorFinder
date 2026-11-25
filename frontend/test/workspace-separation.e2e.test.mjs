@@ -1,5 +1,6 @@
-// The company workspace stays with company accounts. /search, a TOR opened
-// with ?in=app and /saved?scope=org render inside the company sidebar (company
+// The company workspace stays with company accounts. /search, /dashboard,
+// /insights or a TOR opened with ?in=app, and /saved?scope=org render inside
+// the company sidebar (company
 // profile, matches, library…); proxy.ts sends a public viewer, staff or a guest
 // to the public view of the same page instead, keeping the rest of the query.
 //
@@ -78,6 +79,26 @@ describe("a TOR opened with ?in=app", () => {
 
   it("leaves the public TOR page alone for a viewer", async () => {
     assert.equal(await redirectOf(TOR, "viewer"), null);
+  });
+});
+
+// A company lands on the public overview like everyone else; ?in=app is its
+// workspace's view of the overview and the insights (the sidebar's links).
+describe("/dashboard and /insights opened with ?in=app", () => {
+  for (const page of ["/dashboard", "/insights"]) {
+    for (const role of ["viewer", "admin", undefined]) {
+      it(`${page} opens in the public layout for ${role ?? "a guest"}`, async () => {
+        assert.equal(await redirectOf(`${page}?in=app`, role), page);
+      });
+    }
+
+    it(`${page} stays in the workspace for org`, async () => {
+      assert.equal(await redirectOf(`${page}?in=app`, "org"), null);
+    });
+  }
+
+  it("keeps the year when sending a viewer to the public insights", async () => {
+    assert.equal(await redirectOf("/insights?in=app&year=2025", "viewer"), "/insights?year=2025");
   });
 });
 

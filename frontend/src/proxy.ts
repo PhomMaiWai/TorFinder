@@ -64,8 +64,9 @@ const PUBLIC_API_ROUTES = [
 
 /**
  * Accounts that work inside the company workspace (the sidebar with company
- * profile, matches, library…). /search and a TOR opened with `?in=app` are that
- * workspace's view of public pages; anyone else gets the public view.
+ * profile, matches, library…). /search, and /dashboard, /insights or a TOR
+ * opened with `?in=app`, are that workspace's view of public pages; anyone else
+ * gets the public view.
  */
 const WORKSPACE_ROLES: readonly Role[] = ["org"];
 
@@ -229,7 +230,9 @@ function publicViewFor(request: NextRequest, session: SessionPayload | null): UR
     url.pathname = "/public";
     return url;
   }
-  if (/^\/tor\/[^/]+$/.test(pathname) && searchParams.get("in") === "app" && !inWorkspace) {
+  // The workspace's view of the overview, the insights or a TOR, for anyone without one.
+  const workspaceView = pathname === "/dashboard" || pathname === "/insights" || /^\/tor\/[^/]+$/.test(pathname);
+  if (workspaceView && searchParams.get("in") === "app" && !inWorkspace) {
     url.searchParams.delete("in");
     return url;
   }

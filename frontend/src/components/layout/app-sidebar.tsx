@@ -54,12 +54,12 @@ function getOrgNav(t: (key: string) => string): { section: string | null; links:
     {
       section: null,
       links: [
-        { label: t("navOverview"), href: "/dashboard", icon: Activity },
+        { label: t("navOverview"), href: "/dashboard?in=app", icon: Activity },
         // The profile before the matches: every match is computed from it.
         { label: t("navCompanyProfile"), href: "/profile", icon: Building2 },
         { label: t("navLibrary"), href: "/library", icon: FolderOpen },
         { label: t("navMatches"), href: "/matches", icon: LayoutDashboard },
-        { label: t("navInsights"), href: "/insights", icon: Trophy },
+        { label: t("navInsights"), href: "/insights?in=app", icon: Trophy },
         { label: t("navGrowth"), href: "/growth", icon: Sprout },
         { label: t("navSearchTor"), href: "/search", icon: Search },
         { label: t("navSavedList"), href: "/saved?scope=org", icon: Bookmark },

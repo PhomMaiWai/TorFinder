@@ -11,7 +11,7 @@ export type SessionUser = {
   role: Role;
 };
 
-export { homeFor } from "@/lib/roles";
+export { homeFor, workspaceFor } from "@/lib/roles";
 
 // Shared across every component that asks, so one page render makes one request.
 let pending: Promise<SessionUser | null> | undefined;
