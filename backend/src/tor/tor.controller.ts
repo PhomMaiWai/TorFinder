@@ -19,6 +19,7 @@ import { StepUpGuard } from "../common/step-up.guard";
 import { AuthenticatedRequest } from "../common/session.guard";
 import { CreateTorDto } from "./dto/create-tor.dto";
 import { ListTorQueryDto } from "./dto/list-tor-query.dto";
+import { UpdateExtractionDto } from "./dto/update-extraction.dto";
 import { UpdateTorDto } from "./dto/update-tor.dto";
 import { TorArchiveService } from "./tor-archive.service";
 import { TorDocumentService } from "./tor-document.service";
@@ -114,6 +115,13 @@ export class TorController {
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.torService.findOne(id);
+  }
+
+  /** An admin's review of the AI's reading of the document (see TorService.updateExtraction). */
+  @Patch(":id/extraction")
+  @UseGuards(AdminGuard)
+  updateExtraction(@Param("id") id: string, @Body() dto: UpdateExtractionDto, @Req() request: AuthenticatedRequest) {
+    return this.torService.updateExtraction(id, dto, request.session);
   }
 
   @Patch(":id")

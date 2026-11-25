@@ -301,10 +301,11 @@ records and records marked `not-software`.
 
 | Method | Path | Guard | Body / query | Response |
 | --- | --- | --- | --- | --- |
-| GET | `/tor` | none | `?source=manual\|egp\|gproc\|mea\|datagov&page=1&pageSize=20` (max 100) | Array of TORs, interleaved across stages so each page has every stage. Adds `bidding`, `currentStage`, `timeline`; leaves out `extraction` |
+| GET | `/tor` | none | `?source=manual\|egp\|gproc\|mea&page=1&pageSize=20` (max 100) | Array of TORs, interleaved across stages so each page has every stage. Adds `bidding`, `currentStage`, `timeline`; leaves out `extraction` |
 | GET | `/tor/:id` | none | — | One TOR with `extraction` (plus `assessment` of its confidence), `documents[]` (with `viewable`, `archive`), `bidding`, `timeline` |
 | POST | `/tor` | Admin | `CreateTorDto` | 201 the new TOR. 409 if a similar title from the same agency exists. Sends match alerts |
 | PATCH | `/tor/:id` | Admin | `UpdateTorDto` | The TOR. Changed fields are added to `lockedFields`, so imports stop overwriting them |
+| PATCH | `/tor/:id/extraction` | Admin | `UpdateExtractionDto` (any AI-read field; `reviewed: true` to confirm without changes) | The TOR. Writes only fields that differ, sets `extraction.reviewed`, and the AI job stops re-reading it; 400 when the TOR has no extraction yet |
 | DELETE | `/tor/:id` | Admin | — | Soft delete (sets `deletedAt`) |
 | POST | `/tor/:id/restore` | Admin | — | Undoes the soft delete |
 | GET | `/tor/deleted` | Admin | — | Hidden TORs, newest first |
@@ -488,7 +489,6 @@ source does.
 | --- | --- | --- | --- |
 | POST | `/egp/sync` | — | 200 `{ fetched, imported, updated, skipped, superseded, failed[] }` |
 | POST | `/mea/sync` | — | 200, same shape |
-| POST | `/datagov/sync` | — | 200, same shape |
 | POST | `/gproc/capture` | `{ projectNumbers: string[] }` (1-100, each 11 digits) | 202 `{ id, status: "running", startedAt, total, counts, notes[] }` |
 | GET | `/gproc/capture/:runId` | — | The same run object, `status` now `running`, `done` or `failed` |
 | GET | `/egp/metrics` | — | `{ status, lastRunAt, importedToday, history[] }` |

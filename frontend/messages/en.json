@@ -744,7 +744,8 @@
     "bidAwardRow": "Won at {awarded} ({discount}% under)",
     "bidUnknownVendor": "Winner not published",
     "bidInsightNote": "Estimated from past winning bids against the reference price. It does not account for quality scoring, qualifications or the number of bidders — a guide, not a guarantee.",
-    "lastEdited": "Last corrected by {by} on {date}"
+    "lastEdited": "Last corrected by {by} on {date}",
+    "reviewedBadge": "Checked by an administrator"
   },
   "ProposalDraft": {
     "heading": "Draft a proposal from an earlier one",
@@ -1300,13 +1301,13 @@
     "showAll": "Show all {count} agencies",
     "showLess": "Show less",
     "emptyTitle": "No award notices yet",
-    "emptyBody": "Once award notices or contracts are imported from e-GP, MEA or data.go.th, they show here.",
+    "emptyBody": "Once award notices or contracts are imported from e-GP or MEA, they show here.",
     "emptyYear": "No award notices in {year}",
     "limitsTitle": "What the data can and can't tell",
     "limitBids": "Sources publish only the winner and the winning price, never the other bids. \"Against the average\" here means against the reference price, and a company's \"win rate\" is its share of an agency's awards.",
     "limitBase": "The reference price is used where published, otherwise the budget. Awards under 30% or over 105% of that figure are left out, as they are usually one lot of a bigger project or a figure in the wrong unit.",
     "limitSpread": "\"Low\" competition means one company won more than half of the agency's awards; \"high\" means nearly every award went to a different company. At least 3 awards with a named winner are needed.",
-    "limitSources": "Winner names come from e-GP contracts and the Comptroller General's contract reports (data.go.th). MEA publishes only the agreed price, not the winner's name.",
+    "limitSources": "Winner names come from e-GP contracts. MEA publishes only the agreed price, not the winner's name.",
     "growthLink": "See your company's growth path"
   },
   "Certificates": {
@@ -1551,7 +1552,6 @@
       "egp": "From e-GP",
       "gproc": "From e-GP (Comptroller General)",
       "mea": "From MEA",
-      "datagov": "From data.go.th",
       "all": "All",
       "not-software": "Not software",
       "deleted": "Trash"
@@ -1612,7 +1612,21 @@
       "failed": "Failed · ",
       "done": "Done · ",
       "counts": "{created} new · {updated} updated · {known} already here · {skipped} skipped · {failed} failed"
-    }
+    },
+    "detailsSection": "Announcement details",
+    "extractionSection": "What the AI read from the document",
+    "extractionSectionHint": "Check against the original document and correct anything the AI misread. Saving marks this section as reviewed, and the AI will no longer read over it automatically.",
+    "noExtraction": "The AI hasn't read this announcement's document yet. It will once a readable file is available.",
+    "extractionMeta": "Read by {model} on {date} · {score}% confidence",
+    "extractionReviewedBy": "Reviewed by {who} on {date}",
+    "extractionNotReviewed": "Not reviewed yet",
+    "onePerLine": "One item per line",
+    "bahtPlaceholder": "Amount in baht, e.g. 2500000",
+    "documentDeadlineLabel": "Deadline in the document",
+    "deadlineTimeLabel": "Hours on the deadline day",
+    "feedbackDeadlineLabel": "End of public comment",
+    "markReviewed": "I've checked what the AI read",
+    "markReviewedHint": "Changing any field marks it reviewed anyway. Tick this when every field is already right and needs no change."
   },
   "Errors": {
     "connectionFailed": "Couldn't reach the server. Please try again.",

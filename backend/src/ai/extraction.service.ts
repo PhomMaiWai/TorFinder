@@ -237,7 +237,8 @@ export class ExtractionService {
         {
           $or: [
             { extraction: { $exists: false } },
-            { "extraction.version": { $lt: EXTRACTION_VERSION } },
+            // An admin-reviewed reading stays, whatever version it was read at.
+            { "extraction.version": { $lt: EXTRACTION_VERSION }, "extraction.reviewed": { $exists: false } },
           ],
         },
         {
