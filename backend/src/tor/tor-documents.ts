@@ -60,3 +60,14 @@ export function isViewableDocument(url: string): boolean {
  * refuses, and every one of those is a wasted place in the run's budget.
  */
 export const READABLE_DOCUMENT_PATTERN = `${PORTAL_FILE_URL_PREFIX}(?:/.*)?(?:${FILE_PATH_MARKERS.join("|")}).*\\.pdf$`;
+
+/**
+ * A file the extractor can do something with: a PDF it reads as is, or a
+ * bundle it opens to find the PDFs inside. What the background run queues.
+ */
+export function isExtractableDocument(url: string): boolean {
+  return isReadableDocument(url) || isArchiveDocument(url);
+}
+
+/** isExtractableDocument as a Mongo pattern, kept beside it for the same reason as the one above. */
+export const EXTRACTABLE_DOCUMENT_PATTERN = `${PORTAL_FILE_URL_PREFIX}(?:/.*)?(?:${FILE_PATH_MARKERS.join("|")}).*\\.(?:pdf|zip)$`;

@@ -7,7 +7,14 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
 import { fetchPortalFile, isAllowedPortalUrl } from "../dist/common/portal-fetch.js";
-import { isArchiveDocument, isReadableDocument, isViewableDocument, READABLE_DOCUMENT_PATTERN } from "../dist/tor/tor-documents.js";
+import {
+  EXTRACTABLE_DOCUMENT_PATTERN,
+  isArchiveDocument,
+  isExtractableDocument,
+  isReadableDocument,
+  isViewableDocument,
+  READABLE_DOCUMENT_PATTERN,
+} from "../dist/tor/tor-documents.js";
 
 const EGP = "https://egp2.bangkok.go.th/api/file/b79a494e/0010_draft.pdf";
 const MEA = "https://procurement.mea.or.th/files_procurement/WORK_PRICE/cbecb5cf/kas.pdf";
@@ -49,6 +56,15 @@ describe("document checks follow the allowlist", () => {
     for (const url of [EGP, MEA, "https://evil.example/api/file/x.pdf", "http://egp2.bangkok.go.th/api/file/x.pdf", "https://egp2.bangkok.go.th/api/file/x.zip"]) {
       assert.equal(pattern.test(url), isReadableDocument(url), url);
     }
+  });
+
+  it("the extraction queue's pattern selects exactly what isExtractableDocument accepts", () => {
+    const pattern = new RegExp(EXTRACTABLE_DOCUMENT_PATTERN, "i");
+    const bundle = "https://procurement.mea.or.th/files_procurement/WORK_DRAFT/abc/x.zip";
+    for (const url of [EGP, MEA, bundle, "https://evil.example/files_procurement/x.zip", "https://egp2.bangkok.go.th/api/file/x.xlsx", "https://procurement.mea.or.th/Draft/Detail/abc"]) {
+      assert.equal(pattern.test(url), isExtractableDocument(url), url);
+    }
+    assert.ok(isExtractableDocument(bundle));
   });
 });
 

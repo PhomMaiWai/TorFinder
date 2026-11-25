@@ -9,6 +9,11 @@ export const AI_REQUEST = {
   timeoutMs: 120_000,
   /** Vertex rejects oversized inline payloads, so a big scan is skipped, not truncated. */
   maxDocumentBytes: 15 * 1024 * 1024,
+  /**
+   * A zipped bundle (MEA posts its documents this way) is downloaded whole to
+   * get at the PDFs inside; they still have to fit maxDocumentBytes together.
+   */
+  maxBundleBytes: 40 * 1024 * 1024,
   /** Extraction must be reproducible: the same PDF always yields the same fields. */
   temperature: 0,
   maxOutputTokens: 8192,
