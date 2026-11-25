@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 import { PUBLIC_NOTICES } from "@/data/public-notices";
 import { resetSavedTors, useSavedTors } from "@/lib/use-saved-tors";
-import { homeFor, resetSession, useSession } from "@/lib/use-session";
+import { resetSession, useSession, workspaceFor } from "@/lib/use-session";
 
 /** Landing-page sections the navbar links to and tracks while scrolling. */
 const SECTION_IDS = ["features", "how-it-works", "preview"] as const;
@@ -281,7 +281,7 @@ export function SiteNavbar() {
               </div>
             ) : session ? (
               <Link
-                href={homeFor(session.role)}
+                href={workspaceFor(session.role)}
                 className="hidden h-9 max-w-52 items-center rounded-xl bg-accent px-4 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-px hover:bg-accent-dark md:flex"
               >
                 <span className="truncate">{session.name}</span>
@@ -349,7 +349,7 @@ export function SiteNavbar() {
                   </button>
                 ) : session ? (
                   <Link
-                    href={homeFor(session.role)}
+                    href={workspaceFor(session.role)}
                     className="flex flex-1 items-center justify-center truncate rounded-xl bg-accent py-2.5 text-sm font-semibold text-white shadow-glow"
                   >
                     {session.name}

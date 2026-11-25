@@ -64,12 +64,15 @@ function SpreadBadge({ spread }: { spread: WinnerSpread | null }) {
   );
 }
 
-function YearFilter({ years, current }: { years: number[]; current: number | null }) {
+function YearFilter({ years, current, inApp }: { years: number[]; current: number | null; inApp: boolean }) {
   const t = useTranslations("MarketInsights");
   const yearLabel = useYearLabel();
+  // Switching year keeps the reader in the view they are in (workspace or public).
+  const base = inApp ? "/insights?in=app" : "/insights";
+  const join = inApp ? "&" : "?";
   const options: { label: string; href: string; active: boolean }[] = [
-    { label: t("allYears"), href: "/insights", active: current === null },
-    ...years.map((year) => ({ label: yearLabel(year), href: `/insights?year=${year}`, active: current === year })),
+    { label: t("allYears"), href: base, active: current === null },
+    ...years.map((year) => ({ label: yearLabel(year), href: `${base}${join}year=${year}`, active: current === year })),
   ];
   return (
     <nav aria-label={t("yearFilter")} className="flex flex-wrap gap-1.5">
@@ -237,8 +240,19 @@ function AgencyTable({ rows }: { rows: AgencyInsight[] }) {
   );
 }
 
-/** `growthLink`: a company account also gets a way to its own growth path (#261). */
-export function MarketInsightsView({ data, growthLink = false }: { data: MarketInsights; growthLink?: boolean }) {
+/**
+ * `growthLink`: a company account also gets a way to its own growth path (#261).
+ * `inApp`: shown inside the company workspace, so the year links stay there.
+ */
+export function MarketInsightsView({
+  data,
+  growthLink = false,
+  inApp = false,
+}: {
+  data: MarketInsights;
+  growthLink?: boolean;
+  inApp?: boolean;
+}) {
   const t = useTranslations("MarketInsights");
   const baht = useBahtCompact();
   const yearLabel = useYearLabel();
@@ -259,7 +273,7 @@ export function MarketInsightsView({ data, growthLink = false }: { data: MarketI
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink sm:text-3xl">{t("title")}</h1>
         <p className="mt-2 max-w-3xl text-sm text-ink-muted">{t("subtitle")}</p>
         <div className="mt-5">
-          <YearFilter years={data.years} current={data.year} />
+          <YearFilter years={data.years} current={data.year} inApp={inApp} />
         </div>
         {growthLink && (
           <Link
