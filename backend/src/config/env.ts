@@ -241,7 +241,8 @@ export const env = {
       host: process.env.SMTP_HOST ?? "",
       port: optionalNumber("SMTP_PORT", 465),
       // 465 is TLS from the first byte; 587 starts plain and upgrades (STARTTLS).
-      secure: (process.env.SMTP_SECURE ?? String(optionalNumber("SMTP_PORT", 465) === 465)) === "true",
+      // Empty counts as unset: docker-compose passes `SMTP_SECURE=` when .env has none.
+      secure: (process.env.SMTP_SECURE || String(optionalNumber("SMTP_PORT", 465) === 465)) === "true",
       user: process.env.SMTP_USER ?? "",
       pass: process.env.SMTP_PASS ?? "",
     },
