@@ -3,7 +3,7 @@
 Release notes for deliverable D11 ([deliverables.md](./deliverables.md)).
 The same text is used for the GitHub release.
 
-**Released:** 26 Nov 2026 (final presentation) · **Commit:** `_______`
+**Released:** 26 Nov 2026 (final presentation) · **Commit:** `ea6fe41`
 (the commit presented) · **Shipped as:** a Docker Compose release that runs
 from a fresh clone (decided 25 Nov 2026, see [D10](./deliverables.md#decisions-that-changed-the-deliverables))
 
@@ -33,9 +33,11 @@ each company hears about the projects worth bidding on, early.
   staff passkeys, session management, internal mutual TLS. See
   [SECURITY.md](../../SECURITY.md).
 
-23 of the 24 SRS functional requirements in scope are done and FR-10 is
-partial. FR-20 and FR-24 were removed with their roles on 22 Nov. The
-pass/fail table is in [testing.md](../process/testing.md#functional-requirements-release-check-v10).
+21 of the 22 SRS functional requirements in scope are done and FR-10 is
+partial. FR-20 and FR-24 were removed with their roles on 22 Nov, and FR-19
+and FR-23 (public comments and their moderation) on 26 Nov. Every in-scope
+FR has at least one automated test; the manual check column was not filled
+in for this release. The pass/fail table is in [testing.md](../process/testing.md#functional-requirements-release-check-v10).
 
 ## Install
 
