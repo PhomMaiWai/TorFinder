@@ -1,4 +1,4 @@
-// A sign-up or comment form token, as the frontend's page would have issued it
+// A sign-up form token, as the frontend's page would have issued it
 // (ASVS 2.4.2; backend/src/common/form-timing.guard.ts). Backdated a few
 // seconds, as if a person had filled the form in. Must use the server's
 // SESSION_SECRET.
@@ -12,10 +12,9 @@ export function formToken(purpose, ageMs = 5000, secret = SESSION_SECRET) {
   return `${data}.${createHmac("sha256", secret).update(`form-timing:${data}`).digest("base64url")}`;
 }
 
-/** The token header a POST to the sign-up or comment route needs; nothing for any other request. */
+/** The token header a POST to the sign-up route needs; nothing for any other request. */
 export function formTimingHeaders(path, method = "GET") {
   if (String(method).toUpperCase() !== "POST") return {};
   if (/\/auth\/signup$/.test(path)) return { "x-form-token": formToken("signup") };
-  if (/\/tor\/[^/]+\/feedback$/.test(path)) return { "x-form-token": formToken("feedback") };
   return {};
 }

@@ -8,7 +8,7 @@ import { logSecurityEvent } from "./security-log";
 import { verifyingSecrets } from "./session-keys";
 
 /** The forms that carry a timing token; the purpose is signed in, so one form's token can't be used on another. */
-export type FormPurpose = "signup" | "feedback";
+export type FormPurpose = "signup";
 
 const FORM_PURPOSE = "formPurpose";
 
@@ -51,7 +51,7 @@ export function formStartedAt(token: string | undefined, purpose: FormPurpose): 
 }
 
 /**
- * ASVS 2.4.2: a person needs a few seconds to fill in a sign-up or a comment;
+ * ASVS 2.4.2: a person needs a few seconds to fill in a sign-up;
  * a script posting straight to the API doesn't. The page that serves the form
  * puts in a signed token saying when (frontend/src/lib/form-timing.ts), and
  * this guard refuses the submission if it comes back sooner than

@@ -36,10 +36,10 @@ How the mitigations are checked:
 | --- | --- |
 | User accounts and password hashes | Company, staff and public accounts; taking one over means acting as that organization or as an admin |
 | Session tokens and `SESSION_SECRET` | Whoever holds the secret can mint a token for any role |
-| Role and approval state | Decides who can edit TORs, approve companies and read moderation queues |
+| Role and approval state | Decides who can edit TORs, approve companies and read problem reports |
 | Company profiles, certificates and proposal library | Business details, certificate scans, CVs and past-project files; private to each company |
 | Notification channels | Where a company's alerts go: email, Slack webhook, LINE user id |
-| Moderation data | Pending and rejected feedback, problem reports, the audit log |
+| Moderation data | Problem reports, the audit log |
 | TOR records and documents | Public, but their integrity matters: a bidder acts on dates and budgets |
 | Secrets and credentials | `SESSION_SECRET`, MongoDB credentials, Resend and LINE keys, the LINE channel secret, Google Cloud credentials |
 | Availability | Sign-in, search and the scheduled imports from e-GP and MEA |
@@ -49,7 +49,7 @@ How the mitigations are checked:
 | Anonymous visitor | Untrusted; can search, read TORs, comment and report |
 | Public viewer (Google sign-in) | Low; approved automatically, can save TORs and searches |
 | Organization (`org`) | Medium; approved by an admin, sees its matches, keeps its certificates and library, drafts proposals |
-| Admin | High; manages accounts, TORs, moderation and imports |
+| Admin | High; manages accounts, TORs, problem reports and imports |
 | External attacker | Untrusted; may script requests, guess passwords or rotate IPs |
 | Procurement portals | Semi-trusted data sources; files and fields are checked before use |
 | LINE platform | Semi-trusted; its webhook calls are believed only with a valid signature |
@@ -105,7 +105,7 @@ L = likelihood and I = impact, each rated 1–3. Priority comes from L × I (see
 | T1 | NoSQL injection through query or body fields | Backend, MongoDB | 2 | 3 | High | Whitelisting DTOs drop unknown fields; typed filters with `$eq`; `$regex` input escaped (`backend/src/common/regex.ts`) | 1.2.4, 2.2.2 | Done |
 | T3 | Raise own role by editing the token or sending `role` in a body | Tokens, account APIs | 2 | 3 | High | HMAC checked before use; DTO whitelist; role change revokes sessions | 9.1.1, 8.2.3 | Done |
 | T6 | **New.** Upload a malicious file (HTML or SVG renamed `.pdf`, a script polyglot) that runs in our origin or attacks the company's own staff when opened | Certificate and library uploads | 2 | 3 | High | Type taken from the file's bytes, allowlist PDF/PNG/JPEG (+ `.docx` with real Word parts) (`backend/src/common/stored-files.ts` `sniffFileType`); name reduced to a display name with the real extension; stored in GridFS, never on disk; served as `attachment` with `nosniff` and `no-store` | 5.2.2, 5.3.1, 1.3.4, 3.2.1 | Done (#354, #355) |
-| I1 | Read pending and rejected feedback through the public route | `GET /tor/:id/feedback` | 3 | 2 | High | Public route returns approved comments only | 8.2.1 | Done (#321) |
+| I1 | Read pending and rejected feedback through the public route | `GET /tor/:id/feedback` | 3 | 2 | High | Public route returns approved comments only | 8.2.1 | Done (#321); route removed with public comments on 26 Nov 2026 |
 | I4 | Leak a secret that was once committed to a public repository | Git history | 2 | 3 | High | All 372 commits scanned: no real secret ever committed; `.env` files never tracked ([logging-and-errors.md](./logging-and-errors.md#secret-scan-of-the-git-history)) | 13.3.1 | Done (scan clean) |
 | I7 | Read another account's saved TORs, searches or notifications (IDOR) | Account data APIs | 2 | 3 | High | Every query filters on the session's user id, never a request field | 8.2.2 | Done |
 | I8 | **New.** Read, replace or delete another company's certificates, library records or files (IDOR) | `/certificates`, `/library` | 2 | 3 | High | `OrgGuard` on every route; records live inside the session user's own document and every query matches `_id` = session user plus the record id (`backend/src/certificates/certificates.service.ts`, `backend/src/library/library.service.ts`) | 8.2.2 | Done (#354, #355) |
@@ -177,7 +177,7 @@ Each principle (Saltzer and Schroeder, plus OWASP's secure-design list) is mappe
 | Defense in depth | IP throttle plus per-email lockout; SameSite cookie plus Origin checks; type allowlist plus magic bytes plus `nosniff` plus `attachment`; `idPath()` at each route plus a path check in the shared proxy | S2, T2, T4, T5, T6 |
 | Never trust input | Server-side DTOs with whitelisting validate every body and query; portal files and uploads are typed by their bytes, not their name; LINE events are believed only with a valid signature | T1, T4, T6, S7 |
 | Minimize attack surface | Debug route deleted; backend and database not exposed; the backend accepts no cookies, only bearer tokens; the webhook reads only the event fields it needs | I2, E4, T2 |
-| Separation of duties | Organizations are approved by an admin; moderators review feedback before it is published | I1 |
+| Separation of duties | Organizations are approved by an admin | — |
 | Economy of mechanism | One token format, one cookie helper, one JSON helper, one rate-limit module, one stored-file module (`stored-files.ts`) for every upload | S5, D1, T6 |
 | Open design | Security rests on the secrets and on scrypt/HMAC, not on hiding the code; the repository is public | S1, S7 |
 | Psychological acceptability | No composition rules; paste and password managers allowed; show-password toggle; clear lockout messages; LINE linking is one tap with the code pre-typed instead of finding a hidden user id | S2, T7 |

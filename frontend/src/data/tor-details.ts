@@ -7,7 +7,6 @@ export type TorDetailData = {
   priceBenchmark: string;
   budgetStatus?: "สูงกว่าปกติ" | "ต่ำกว่าปกติ" | "ปกติ";
   feedbackDeadline: string | null;
-  feedbackCount: number;
   matchedCompaniesCount: number;
   /** Only set when a specific document exists — the general portal homepage isn't "the" source of any one TOR. */
   sourceUrl?: string;
@@ -43,7 +42,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       "ราคากลาง ฿11,800,000 อ้างอิงจาก 3 บริษัทที่สอบถามราคา AI ประเมินว่าราคาอยู่ในช่วงปกติสำหรับโครงการ Platform ขนาดนี้",
     budgetStatus: "ปกติ",
     feedbackDeadline: "18 ส.ค. 2569",
-    feedbackCount: 3,
     matchedCompaniesCount: 14,
     publishedAt: "5 ส.ค. 2569",
   },
@@ -68,7 +66,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       "ราคากลาง ฿7,500,000 AI ประเมินว่าอยู่ในช่วงเหมาะสมสำหรับระบบ Omnichannel ขนาดกลาง",
     budgetStatus: "ปกติ",
     feedbackDeadline: null,
-    feedbackCount: 0,
     matchedCompaniesCount: 22,
     publishedAt: "8 ส.ค. 2569",
   },
@@ -93,7 +90,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       "ราคากลาง ฿23,500,000 AI ตรวจพบว่าราคาต่ำกว่ามาตรฐานตลาด HIS ระดับ Enterprise ประมาณ 15% — แนะนำให้ตรวจสอบขอบเขตงาน",
     budgetStatus: "ต่ำกว่าปกติ",
     feedbackDeadline: null,
-    feedbackCount: 1,
     matchedCompaniesCount: 8,
     publishedAt: "3 ส.ค. 2569",
     awardedVendor: {
@@ -126,7 +122,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       "ราคากลาง ฿5,750,000 AI ประเมินว่าอยู่ในช่วงเหมาะสมสำหรับแอปพลิเคชันสองแพลตฟอร์ม",
     budgetStatus: "ปกติ",
     feedbackDeadline: "2 ก.ย. 2569",
-    feedbackCount: 5,
     matchedCompaniesCount: 18,
     publishedAt: "9 ส.ค. 2569",
   },
@@ -146,7 +141,6 @@ export const TOR_DETAILS: TorDetailData[] = [
     priceBenchmark: "ราคากลาง ฿5,000,000 AI ประเมินว่าราคาสูงกว่าโครงการลักษณะใกล้เคียง (Dashboard + CRUD) อย่างมีนัยสำคัญ แนะนำให้ตรวจสอบเพิ่มเติม",
     budgetStatus: "สูงกว่าปกติ",
     feedbackDeadline: null,
-    feedbackCount: 0,
     matchedCompaniesCount: 5,
     publishedAt: "1 ส.ค. 2569",
     awardedVendor: {
@@ -179,7 +173,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       "ราคากลาง ฿2,200,000 AI ประเมินว่าอยู่ในช่วงเหมาะสมสำหรับแอปพลิเคชันแจ้งเตือนขนาดเล็กถึงกลาง",
     budgetStatus: "ปกติ",
     feedbackDeadline: "25 ส.ค. 2569",
-    feedbackCount: 2,
     matchedCompaniesCount: 11,
     publishedAt: "13 ส.ค. 2569",
   },
@@ -202,7 +195,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       "ราคากลาง ฿3,400,000 AI ประเมินว่าอยู่ในช่วงเหมาะสมสำหรับการปรับปรุงระบบสารบรรณขนาดกลาง",
     budgetStatus: "ปกติ",
     feedbackDeadline: null,
-    feedbackCount: 0,
     matchedCompaniesCount: 9,
     publishedAt: "10 ส.ค. 2569",
   },
@@ -226,7 +218,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       "ราคากลาง ฿18,000,000 AI ประเมินว่าอยู่ในช่วงเหมาะสมสำหรับโครงการขยายระบบ EMR ระดับเครือข่ายโรงพยาบาล",
     budgetStatus: "ปกติ",
     feedbackDeadline: "5 ก.ย. 2569",
-    feedbackCount: 1,
     matchedCompaniesCount: 7,
     publishedAt: "12 ส.ค. 2569",
   },
@@ -248,7 +239,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       "ราคากลาง ฿900,000 AI ประเมินว่าอยู่ในช่วงเหมาะสมสำหรับเว็บไซต์แสดงผลข้อมูลขนาดเล็ก",
     budgetStatus: "ปกติ",
     feedbackDeadline: null,
-    feedbackCount: 0,
     matchedCompaniesCount: 6,
     publishedAt: "2 ส.ค. 2569",
     awardedVendor: {
@@ -257,59 +247,6 @@ export const TOR_DETAILS: TorDetailData[] = [
       mismatchReasons: [],
       status: "normal",
     },
-  },
-];
-
-/** Mock feedback submissions for the owner/public views */
-export type FeedbackEntry = {
-  id: number;
-  torId: number;
-  author: string;
-  text: string;
-  submittedAt: string;
-  status: "รอตรวจสอบ" | "อนุมัติ" | "ปฏิเสธ";
-};
-
-export const FEEDBACK_ENTRIES: FeedbackEntry[] = [
-  {
-    id: 1,
-    torId: 1,
-    author: "บริษัท เทค เวิร์คส์ จำกัด",
-    text: "คุณสมบัติด้านประสบการณ์ Cloud 3 ปีอาจจำกัดผู้เสนอมากเกินไป แนะนำให้ปรับเป็น 2 ปีและเพิ่มเกณฑ์จำนวนโครงการแทน",
-    submittedAt: "10 ส.ค. 2569",
-    status: "อนุมัติ",
-  },
-  {
-    id: 2,
-    torId: 1,
-    author: "ประชาชนทั่วไป",
-    text: "ขอให้ระบุแผนการดูแลความปลอดภัยข้อมูลส่วนบุคคลให้ชัดเจนขึ้น",
-    submittedAt: "11 ส.ค. 2569",
-    status: "รอตรวจสอบ",
-  },
-  {
-    id: 3,
-    torId: 1,
-    author: "สมาคมผู้ประกอบการซอฟต์แวร์ไทย",
-    text: "งบประมาณ 11.8 ล้านบาทอาจไม่ครอบคลุม License ระบบ Cloud ระยะยาว ควรระบุ OPEX แยกออกมาด้วย",
-    submittedAt: "11 ส.ค. 2569",
-    status: "รอตรวจสอบ",
-  },
-  {
-    id: 4,
-    torId: 4,
-    author: "บริษัท โมบาย โซลูชัน จำกัด",
-    text: "ขอให้เพิ่มเกณฑ์ด้าน Accessibility (WCAG 2.1) ในขอบเขตงาน เพื่อรองรับผู้ใช้งานที่มีความพิการ",
-    submittedAt: "12 ส.ค. 2569",
-    status: "อนุมัติ",
-  },
-  {
-    id: 5,
-    torId: 4,
-    author: "ดร. วิชัย ประชาสรรค์",
-    text: "ควรกำหนด SLA ของ Push Notification ให้ชัดเจน เช่น ส่งภายในกี่วินาทีหลังเกิดเหตุการณ์",
-    submittedAt: "12 ส.ค. 2569",
-    status: "รอตรวจสอบ",
   },
 ];
 

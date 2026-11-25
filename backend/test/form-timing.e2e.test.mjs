@@ -7,7 +7,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 
-import { MongoClient, ObjectId } from "mongodb";
+import { MongoClient } from "mongodb";
 
 import { formToken } from "./helpers/form-token.mjs";
 
@@ -67,7 +67,7 @@ describe("sign-up form timing (ASVS 2.4.2)", () => {
   it("refuses a forged, other-form or day-old token", async () => {
     for (const token of [
       formToken("signup", 5000, "not-the-server-secret"),
-      formToken("feedback"),
+      formToken("some-other-form"),
       formToken("signup", 25 * 60 * 60 * 1000),
       "garbage",
     ]) {
@@ -78,23 +78,5 @@ describe("sign-up form timing (ASVS 2.4.2)", () => {
   it("accepts one filled in at a human pace", async () => {
     const res = await post("/auth/signup", signupBody(), formToken("signup"));
     assert.equal(res.status, 201, JSON.stringify(res.body));
-  });
-});
-
-describe("comment form timing (ASVS 2.4.2)", () => {
-  // The guard runs before the route looks the announcement up, so any id shows it.
-  const path = `/tor/${new ObjectId()}/feedback`;
-  const body = { text: "ความคิดเห็นทดสอบเรื่องเวลา", author: "CI" };
-
-  it("refuses a comment with no token, or one sent too fast", async () => {
-    assert.equal((await post(path, body)).status, 400);
-    const fast = await post(path, body, formToken("feedback", 500));
-    assert.equal(fast.status, 400);
-    assert.match(fast.body.message, /เร็วเกินไป/);
-  });
-
-  it("lets a human-paced comment through to the route itself", async () => {
-    // No such announcement: past the guard, the route answers for itself.
-    assert.notEqual((await post(path, body, formToken("feedback"))).status, 400);
   });
 });

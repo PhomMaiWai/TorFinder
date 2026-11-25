@@ -181,12 +181,12 @@ issue under milestone D11.
 | FR-15 | Bookmark a TOR | ✅ Done | `saved-tors.e2e` | |
 | FR-16 | Save and reuse a search | ✅ Done | `saved-searches.e2e`; frontend `saved-searches-api.e2e` | |
 | FR-17 | Show the lifecycle stage | ✅ Done | `tor-stages`; frontend `tor-timeline.e2e` | |
-| FR-18 | Flag TORs open for feedback | ✅ Done | `feedback-deadline.e2e`; frontend `feedback-window` | |
-| FR-19 | Public feedback on a draft | ✅ Done | `feedback-window.e2e`, `form-timing.e2e` | |
+| FR-18 | Flag TORs open for feedback | ✅ Done | `feedback-deadline.e2e`, `feedback-deadline`; frontend `feedback-window` | |
+| FR-19 | Public feedback on a draft | ❌ Removed | — | Comment form and moderation removed on 26 Nov 2026 |
 | FR-20 | Owner sees match count and feedback | ❌ Removed 22 Nov (PR #416) | — | — |
 | FR-21 | Report an error on a listing | ✅ Done | `reports.e2e`; frontend `admin-reports.e2e` | |
 | FR-22 | Admin corrects a record or classification | ✅ Done | `tor-corrections.e2e`, `tor-corrections` | |
-| FR-23 | Admin hides spam or abusive feedback | ✅ Done | `asvs-l1-regressions.e2e` (rejected comment hidden from the public) | |
+| FR-23 | Admin hides spam or abusive feedback | ❌ Removed | — | Nothing to moderate once comments were removed |
 | FR-24 | Flag unusual pricing or low competition | ❌ Removed 22 Nov (PR #414) | — | — |
 | FR-25 | Audit trail of admin actions | ✅ Done | `audit-hooks.e2e`, `admin-dashboard.e2e`, `retention.e2e` | |
 | FR-26 | Only BMA, only 2022 onward | ✅ Done | `scope-filter` | |

@@ -330,15 +330,5 @@ export type MatchedCompany = MatchFields & {
   score: number;
 };
 
-export type TorFeedback = {
-  id: string;
-  torId: string;
-  author: string;
-  text: string;
-  status: "รอตรวจสอบ" | "อนุมัติ" | "ปฏิเสธ";
-  createdAt: string;
-  reviewedAt?: string;
-};
-
 /** An announcement scored for one company — what the dashboard ranks by. */
 export type ScoredTor = TorRecord & MatchFields & { match: number };

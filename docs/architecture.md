@@ -31,7 +31,7 @@ flowchart TB
     subgraph People
         Public["Public visitor<br/>search, read, comment, report"]
         Org["Software company (org)<br/>profile, matches, alerts, saved"]
-        Admin["Admin<br/>accounts, corrections, moderation, sync"]
+        Admin["Admin<br/>accounts, corrections, sync"]
     end
 
     TF(["TorFinder<br/>Next.js frontend + NestJS backend + MongoDB"])
@@ -92,7 +92,6 @@ unit-tested from `dist/` without a database.
 | `matching/` | Company ranking, match alerts, budget and bid insight | `matching.scoring.ts`, `match-alerts.ts`, `bid-insight.ts` |
 | `similar/` | Find similar TORs from pasted text or one TOR: Vertex embeddings cached in `torEmbeddings`, TF-IDF keyword ranking when Vertex is off or fails | `similar-text.ts` |
 | `insights/` | Market insights across all awards (who wins, discounts, competition per agency) | `market-insights.ts` |
-| `feedback/` | Public comments and their moderation | |
 | `reports/` | "Report a problem" and the admin queue | |
 | `saved-tors/`, `saved-searches/` | Bookmarks and saved searches | |
 | `notifications/` | In-app notifications, email/LINE/Slack delivery, admin sync alerts | `notification-delivery.ts` |
@@ -127,7 +126,7 @@ flowchart LR
     E --> M2["Score again<br/>with richer data"]
     M1 & M2 --> A["Alert companies<br/>above their threshold"]
     U --> V["Listed: search,<br/>detail page"]
-    V --> C["Public comments<br/>(moderated)"]
+    V --> C["Comment-window status"]
     V --> R["Problem reports"] --> K["Admin corrects<br/>fields get locked"]
     K --> U
 ```
@@ -165,9 +164,9 @@ flowchart LR
    not marked not-software). Documents open through `TorDocumentService`,
    which streams the portal's file and only accepts a file already recorded
    on the TOR, by position, never a URL from the caller.
-8. **Feedback and fixes.** Anyone can comment while the comment window is
-   open; comments appear after an admin approves them. Anyone can report a
-   problem; an admin fixes the TOR from the report, which locks the edited
+8. **Comment window and fixes.** A draft shows whether it is still open for
+   public comment and until when; comments themselves go to the agency, not
+   through this site. Anyone can report a problem; an admin fixes the TOR from the report, which locks the edited
    fields and writes an audit entry.
 
 ## 5. Where does my change go?
@@ -200,7 +199,6 @@ flowchart LR
 | Documents are relayed, never stored or fetched by caller-supplied URL | No copyright or storage burden; no server-side request forgery | `TorDocumentService`, `TorArchiveService` |
 | The system works with AI switched off | Vertex costs money and may be unavailable | Empty `VERTEX_PROJECT_ID` disables extraction and drafts, and find similar falls back to keywords; matching and filtering never call the model |
 | Every AI value carries its confidence, model and version | Low-confidence values must show as unverified | `extraction.confidence`, `model`, `version`, `documentUrl` |
-| Public comments are shown only after moderation | Unreviewed text under a government notice is a liability | Default status filter in `FeedbackService`. Known gap: `?status=` on the per-TOR route is not guarded yet ([api.md](./design/api.md#known-issues)) |
 | Every admin action is in the audit log | Accountability (FR-25) | `AuditService.record` in each admin path |
 | Visible text exists in Thai and English; API errors are in Thai | The users are Thai; the course demo is bilingual | `messages/th.json` and `en.json`; exceptions thrown with Thai messages |
 | One backend instance | Rate limits and schedulers live in process memory | Not enforced; running two would double the imports and split the limits |

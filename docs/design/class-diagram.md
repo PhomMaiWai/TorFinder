@@ -181,13 +181,6 @@ classDiagram
         +findDeleted()
         +findNotSoftware()
     }
-    class FeedbackService {
-        +create(torId, dto)
-        +findForTor(torId, status)
-        +findAll(status)
-        +review(id, status, actor)
-        +countsByTor()
-    }
     class ReportsService {
         +create(torId, dto, reporter)
         +findAll(query)
@@ -237,7 +230,6 @@ classDiagram
     AccountsService --> SessionRevocationService
     TorService --> MatchingService
     TorService --> AuditService
-    FeedbackService --> AuditService
     ReportsService --> AuditService
     ProposalService --> VertexClient
     MatchingService --> NotificationsService

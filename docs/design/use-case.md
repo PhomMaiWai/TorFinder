@@ -51,7 +51,7 @@ flowchart LR
         UC1b(["UC1b Find similar TORs"])
         UC2(["UC2 View TOR detail, timeline and documents"])
         UC3(["UC3 See budget check and bid insight"])
-        UC4(["UC4 Comment during the hearing period"])
+        UC4(["UC4 See whether a draft is open for comment"])
         UC5(["UC5 Report a problem with a TOR"])
         UC6(["UC6 Sign up as a company"])
         UC7(["UC7 Sign in (password or Google)"])
@@ -87,14 +87,13 @@ flowchart LR
         UC17(["UC17 Approve or reject company sign-ups"])
         UC18(["UC18 Manage users: role, name, suspend"])
         UC19(["UC19 Create, edit, hide and restore TORs"])
-        UC21(["UC21 Moderate public comments"])
         UC22(["UC22 Resolve reports and fix the TOR"])
         UC23(["UC23 Run imports and AI extraction by hand"])
         UC24(["UC24 Watch pipeline health and audit log"])
         UC25(["UC25 See which companies fit a TOR"])
     end
 
-    Admin --- UC17 & UC18 & UC19 & UC21 & UC22 & UC23 & UC24 & UC25
+    Admin --- UC17 & UC18 & UC19 & UC22 & UC23 & UC24 & UC25
     UC22 -. extend .-> UC19
 ```
 
@@ -129,7 +128,7 @@ flowchart LR
 | UC1b | Find TORs similar to a past project, the company profile or a TOR | Anyone | `POST /api/tor/similar` | FR-09, FR-13 |
 | UC2 | View TOR detail, timeline and documents | Anyone | `GET /api/tor/:id`, `/documents/...`, `/egp-documents/...` | FR-11, FR-17 |
 | UC3 | See budget check and bid insight | Anyone | `GET /api/matching/tor/:id/budget`, `/bid-insight` | FR-24 |
-| UC4 | Comment during the hearing period | Anyone | `POST /api/tor/:torId/feedback` | FR-18, FR-19 |
+| UC4 | See whether a draft is open for comment, and until when | Anyone | `GET /api/tor/:id` (`feedbackDeadline`, `bidding`) | FR-18 |
 | UC5 | Report a problem | Anyone | `POST /api/tor/:torId/reports` | FR-21 |
 | UC6 | Sign up as a company | Public | `POST /api/auth/signup`, `/auth/google/complete` | FR-01 |
 | UC7 | Sign in | Anyone | `POST /api/auth/login`, `/auth/google` | FR-01 |
@@ -144,7 +143,6 @@ flowchart LR
 | UC17 | Approve company sign-ups | Admin | `GET /api/accounts`, `PATCH /api/accounts/:id` | FR-03 |
 | UC18 | Manage users | Admin | `/api/accounts/directory`, `/:id/details`, `/:id/suspend`, `/:id/reactivate` | FR-03 |
 | UC19 | Create, edit, hide, restore TORs | Admin | `POST/PATCH/DELETE /api/tor`, `/:id/restore` | FR-22 |
-| UC21 | Moderate comments | Admin | `GET /api/feedback`, `PATCH /api/feedback/:id` | FR-23 |
 | UC22 | Resolve reports and fix the TOR | Admin | `/api/reports` | FR-21, FR-22 |
 | UC23 | Run imports and AI by hand | Admin | `POST /api/{egp,mea}/sync`, `/gproc/capture`, `/ai/extract` | FR-04, FR-08 |
 | UC24 | Watch pipeline health and audit log | Admin | `GET /api/egp/metrics`, `/egp/near-misses`, `/audit` | FR-06, FR-25 |

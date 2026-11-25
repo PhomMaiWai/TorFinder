@@ -102,7 +102,6 @@ flowchart TB
     Egp["EgpModule"]
     Mea["MeaModule"]
     Gproc["GprocModule<br/>+ EgpDocumentsController"]
-    Feedback["FeedbackModule"]
     Reports["ReportsModule"]
     Insights["InsightsModule"]
     Similar["SimilarModule"]
@@ -119,7 +118,6 @@ flowchart TB
     Egp --> Tor & Notifications & Audit
     Mea --> Tor & Notifications & Audit
     Gproc --> Tor & Notifications & Audit
-    Feedback --> Audit
     Reports --> Audit
     Similar --> Ai
 ```
@@ -134,7 +132,7 @@ Every module also uses `DatabaseModule`; those arrows are left out.
 | Public | `/`, `/dashboard`, `/search`, `/public`, `/tor/[id]` | Server Components fetch from the backend; `/dashboard` is the public overview |
 | Sign-in and sign-up | `/login/*`, `/signup/*`, `/forgot-password`, `/reset-password`, `/verify-email` | Route handlers set or clear the cookie |
 | Signed-in | `/matches`, `/profile`, `/saved`, `/notifications` | A Viewer only gets `/saved` |
-| Admin | `/admin/{tor,accounts,users,moderation,reports,audit,notifications,companies}` | `/admin/companies` still uses mock data |
+| Admin | `/admin/{tor,accounts,users,reports,audit,notifications,companies}` | `/admin/companies` still uses mock data |
 | Route handlers | `frontend/src/app/api/*` | Thin proxies for calls made from client components (see [api.md](./api.md#frontend-route-handlers)) |
 | Translations | `frontend/messages/{th,en}.json` | next-intl |
 

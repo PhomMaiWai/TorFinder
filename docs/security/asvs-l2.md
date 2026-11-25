@@ -105,7 +105,6 @@ Both end in `AuthService.issueSession`, which applies the same status checks and
 | Company name and tax id can be set once, then are locked | Per account | `accounts.service.ts` |
 | Preferred budget minimum ≤ maximum | Per account | `accounts.service.ts` and the profile page |
 | Organizations must be approved by an admin before signing in | Per account | `issueSession` |
-| Feedback only during a TOR's comment window | Per TOR | `feedback.service.ts` |
 | Saved searches per account are capped | Per account | `saved-searches.service.ts` |
 | Rate limits, per-email lockout, AI call limits | Per client / per email | See [asvs-l1.md, Rate limits](./asvs-l1.md) |
 | The last admin can't be demoted | Global | `accounts.service.ts` |
@@ -147,7 +146,6 @@ TorFinder handles files from two sources: documents that procurement portals pub
 | Email | The account itself, admins | Nobody (fixed at signup) |
 | Company name, tax id | The account, admins | The account once, then locked; admins |
 | Other company profile fields | The account, admins | The account |
-| Feedback | Approved: everyone; pending or rejected: admins | Anyone creates; admins moderate |
 
 ## External communication
 
@@ -189,7 +187,7 @@ The one destination a user supplies is a Slack incoming-webhook URL in their not
 | --- | --- | --- |
 | Secret | Password hashes, `SESSION_SECRET`, session tokens, reset links | Never logged or returned; tokens only in httpOnly cookies; hashes projected out of every API |
 | Personal | Email, contact name, phone, company profile | Only the account and admins can read it; emails may appear in security logs |
-| Moderation | Pending or rejected feedback, problem reports, audit log | Admins only |
+| Moderation | Problem reports, audit log | Admins only |
 | Public | TOR records and their documents | Anyone can read; integrity matters more than secrecy |
 
 ## Resource-heavy functions

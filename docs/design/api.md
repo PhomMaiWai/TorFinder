@@ -12,7 +12,7 @@ in the same PR.
 - [Errors, status codes and rate limits](#errors-status-codes-and-rate-limits)
 - [Endpoints](#endpoints): [Health](#health) · [Auth](#auth) ·
   [Accounts](#accounts) · [Certificates](#certificates) · [Library](#library) · [TORs](#tors) · [TOR documents](#tor-documents) ·
-  [Matching](#matching) · [AI](#ai) · [Feedback](#feedback) ·
+  [Matching](#matching) · [AI](#ai) ·
   [Reports](#reports) · [Saved TORs](#saved-tors) ·
   [Saved searches](#saved-searches) · [Notifications](#notifications) ·
   [LINE webhook](#line-webhook) · [Imports](#imports) · [Audit](#audit)
@@ -402,19 +402,6 @@ when `VERTEX_PROJECT_ID` is not set.
 | POST | `/ai/extract/:torId` | Admin | — | 201 the stored extraction for one TOR |
 | POST | `/ai/proposal-draft/:torId` | Org | `{ previousProposal }` (200-20,000 chars) | 200 `{ sections: [{ heading, body }], gaps[] }` |
 
-### Feedback
-
-`backend/src/feedback/feedback.controller.ts`. Comment statuses are
-`รอตรวจสอบ` (pending), `อนุมัติ` (approved), `ปฏิเสธ` (rejected).
-
-| Method | Path | Guard | Body / query | Response |
-| --- | --- | --- | --- | --- |
-| POST | `/tor/:torId/feedback` | none (5/min) | `{ text (10-5000), author? (≤200) }` | 201 the comment, status `รอตรวจสอบ`. 400 after the hearing deadline |
-| GET | `/tor/:torId/feedback` | none | | Approved comments only; moderators read other statuses through `GET /feedback` |
-| GET | `/feedback/counts` | none | — | `{ "<torId>": <approved count> }` |
-| GET | `/feedback` | Admin | `?status=` | Moderation queue across all TORs |
-| PATCH | `/feedback/:id` | Admin | `{ status }` | The comment; writes the audit log |
-
 ### Reports
 
 `backend/src/reports/reports.controller.ts`.
@@ -465,7 +452,7 @@ All `Session`.
 | POST | `/notifications/channels/line/link` | — | 200 a one-time code the user sends to the LINE Official Account |
 | DELETE | `/notifications/channels/line` | — | Unlinks LINE |
 
-`type`: `match`, `approval`, `feedback`, `system`.
+`type`: `match`, `approval`, `system`.
 
 ### LINE webhook
 
@@ -525,13 +512,12 @@ backend route of the same name. `frontend/src/proxy.ts` refuses every
 | `/api/certificates`, `/api/certificates/none`, `/api/certificates/[id]`, `/api/certificates/[id]/file` | GET, POST, PUT, DELETE | `/certificates/…` | Bodies (JSON and the multipart upload) stream through unread; the file comes back as a download |
 | `/api/ai/proposal-draft/[torId]` | POST | `/ai/proposal-draft/:torId` | |
 | `/api/gproc/capture`, `/[runId]` | POST, GET | `/gproc/capture` | |
-| `/api/admin/badge-counts` | GET | `/accounts?status=pending` and `/feedback?status=รอตรวจสอบ`; returns only the two counts for the admin sidebar | |
+| `/api/admin/badge-counts` | GET | `/accounts?status=pending`; returns only the count, for the admin sidebar | |
 | `/api/notifications`, `/[id]/read`, `/read-all`, `/channels`, `/channels/test`, `/channels/line`, `/channels/line/link` | as backend | `/notifications/...` | |
 | `/api/saved-searches`, `/[id]` | GET, POST, DELETE | `/saved-searches` | |
 | `/api/saved-tors`, `/[torId]`, `/import` | GET, POST, DELETE | `/saved-tors` | |
 | `/api/tor/[id]/documents/...` | GET | `/tor/:id/documents/...` | ✓ |
 | `/api/tor/[id]/egp-documents/...` | GET | `/tor/:id/egp-documents/...` | ✓ |
-| `/api/tor/[id]/panel` | GET | `/matching/tor/:id/companies` + `/tor/:id/feedback` in one call | |
 
 Everything else (sign-up, TOR create and edit, admin actions, feedback,
 reports) goes through Server Actions in `frontend/src/app/**/actions.ts`
@@ -542,7 +528,6 @@ or is fetched by Server Components.
 Found while writing this page. They are listed here so the page is honest
 about the current code, not because they are intended.
 
-1. **`/api/tor/[id]/panel` looks unused.** No page calls it any more, and
    it asks the Admin-only `GET /matching/tor/:id/companies`, so for anyone
    but an admin the company list comes back empty. It can probably be
    deleted.

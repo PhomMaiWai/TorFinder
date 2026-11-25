@@ -23,10 +23,11 @@ each company hears about the projects worth bidding on, early.
   alerts in the app and by email, LINE and Slack, saved TORs and searches,
   "find similar", market insights, a growth path, a proposal library with
   certificates as records, and an AI proposal draft.
-- **For the public:** comments on draft TORs while the window is open, and
-  "report a problem" on any listing.
+- **For the public:** which draft TORs are still open for public comment and
+  until when (shown on the TOR and as a search filter), and "report a problem"
+  on any listing.
 - **For admins:** account approval and roles (role changes approved by a
-  second admin), TOR corrections with locked fields, feedback moderation,
+  second admin), TOR corrections with locked fields,
   problem reports, import health with alerts, and one audit trail.
 - **Security:** OWASP ASVS 5.0 Level 1 and Level 2 with no failing item,
   staff passkeys, session management, internal mutual TLS. See

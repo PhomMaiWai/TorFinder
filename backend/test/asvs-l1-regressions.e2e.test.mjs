@@ -1,7 +1,5 @@
 // Regression tests for the ASVS 5.0 Level 1 fixes (docs/security/asvs-l1.md),
 // run in CI against a freshly booted backend + MongoDB:
-//  - 8.2.1: the public feedback route never hands out pending or rejected
-//    comments, whatever `status` the caller asks for;
 //  - 6.3.1: failed logins are limited per email address, so changing IP does
 //    not buy more guesses at one account.
 // Requests carry their own X-Forwarded-For (trusted from loopback) so they get
@@ -9,27 +7,16 @@
 // made here is removed after.
 
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 
-import { MongoClient, ObjectId } from "mongodb";
+import { MongoClient } from "mongodb";
 import { formTimingHeaders } from "./helpers/form-token.mjs";
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:4000";
 const API = `${BASE_URL}/api`;
-const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-insecure-secret-change-me";
 const LOGIN_FAILURE_LIMIT = Number(process.env.LOGIN_FAILURE_LIMIT ?? "10");
 const mongo = new MongoClient(process.env.MONGODB_URI ?? "mongodb://localhost:27017/torfinder");
 const db = () => mongo.db();
-
-function makeToken(role, sub) {
-  const iat = Math.floor(Date.now() / 1000);
-  const payload = { sub, email: `${sub}@ci.test`, name: `CI ${role}`, role, iat, exp: iat + 3600 };
-  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  return `${data}.${createHmac("sha256", SESSION_SECRET).update(data).digest("base64url")}`;
-}
-
-const ADMIN_TOKEN = makeToken("admin", "0123456789abcdef01234568");
 
 async function api(path, { method = "GET", body, token, ip } = {}) {
   const headers = {};
@@ -46,62 +33,9 @@ async function api(path, { method = "GET", body, token, ip } = {}) {
   return { status: res.status, body: text ? JSON.parse(text) : undefined };
 }
 
-const created = [];
-
 before(() => mongo.connect());
 after(async () => {
-  await db().collection("feedback").deleteMany({ torId: { $in: created } });
-  await db().collection("tors").deleteMany({ _id: { $in: created } });
-  await db().collection("notifications").deleteMany({ torId: { $in: created } });
   await mongo.close();
-});
-
-describe("ASVS 8.2.1 — GET /api/tor/:torId/feedback is approved-only", () => {
-  it("hides a rejected comment from the public whatever status is asked for", async () => {
-    const tor = await api("/tor", {
-      method: "POST",
-      token: ADMIN_TOKEN,
-      body: {
-        title: `จ้างพัฒนาระบบทดสอบการซ่อนความคิดเห็น CI ${Date.now()}`,
-        agency: "สำนักงานทดสอบ ASVS",
-        budget: "฿1,000,000",
-        deadline: "31 ธ.ค. 2575",
-        daysLeft: 30,
-        tags: ["software"],
-        stage: "เปิดรับฟังความคิดเห็น",
-        summary: "ทดสอบว่าความคิดเห็นที่ถูกปฏิเสธไม่แสดงต่อสาธารณะ",
-      },
-    });
-    assert.equal(tor.status, 201, `create failed: ${JSON.stringify(tor.body)}`);
-    created.push(new ObjectId(tor.body.id));
-
-    const posted = await api(`/tor/${tor.body.id}/feedback`, {
-      method: "POST",
-      ip: "192.0.2.10",
-      body: { text: "ความคิดเห็นนี้จะถูกปฏิเสธ ห้ามแสดงต่อสาธารณะ", author: "CI" },
-    });
-    assert.equal(posted.status, 201);
-    const rejected = await api(`/feedback/${posted.body.id}`, {
-      method: "PATCH",
-      token: ADMIN_TOKEN,
-      body: { status: "ปฏิเสธ" },
-    });
-    assert.equal(rejected.status, 200);
-
-    for (const status of [undefined, "ปฏิเสธ", "รอตรวจสอบ"]) {
-      const query = status ? `?status=${encodeURIComponent(status)}` : "";
-      const res = await api(`/tor/${tor.body.id}/feedback${query}`);
-      assert.equal(res.status, 200);
-      assert.deepEqual(
-        res.body.map((comment) => comment.id),
-        [],
-        `public route leaked a comment for status=${status}`,
-      );
-    }
-
-    const moderation = await api(`/feedback?status=${encodeURIComponent("ปฏิเสธ")}`, { token: ADMIN_TOKEN });
-    assert.ok(moderation.body.some((comment) => comment.id === posted.body.id), "admins still see it");
-  });
 });
 
 describe("ASVS 6.2.2 / 6.2.3 — POST /api/auth/password", () => {
