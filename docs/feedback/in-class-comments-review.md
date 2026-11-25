@@ -33,7 +33,7 @@ two were merged within four weeks of the review (19 Oct → 18 Nov).
 | 3.1 | Reuse proposal documents (the client: "really important") | Proposal library per company, coverage per TOR, starter pack; AI proposal draft | #259 | #355 (17 Nov), #268 (26 Oct) | ✅ Done |
 | 3.2 | Certificates with issuer, date and a way to verify | Certificates as records: issuer, dates, verify link, file | #260 | #354 (17 Nov) | ✅ Done |
 | 3.3 | Growth path for small companies | Low-competition agencies and right-sized jobs | #261 | #356 (17 Nov) | ✅ Done |
-| 3.4 | Use the budget act as an earlier source | Researched; written up as a future data source, not built | #262 | #340 (17 Nov) | ✅ Done (research) |
+| 3.4 | Use the budget act as an earlier source | Researched; written up as a future data source, not built ([budget-bill.md](./budget-bill.md)) | #262 | #340 (17 Nov) | ✅ Done (research) |
 | 3.5 | Follow the DGA standard and WCAG | Planned as a full audit; text size (1.3) and chart contrast done so far | #263 | — | ⏳ Open |
 
 ### What changed in how we plan because of the feedback

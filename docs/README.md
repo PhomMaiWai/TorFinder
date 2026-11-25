@@ -9,11 +9,10 @@ docs/
 ├── architecture.md start here: the code map and the rules
 ├── project/        what we are building and how the work went
 ├── requirements/   what the system must do
-├── feedback/       client review and user acceptance test
+├── feedback/       client review, user acceptance test, research it led to
 ├── design/         how it is built: diagrams and API
 ├── process/        how we work: SDLC, team workflow, code, tests
 ├── operations/     running the import pipeline and deploying
-├── research/       investigations into new data sources
 └── security/       security self-audit
 ```
 
@@ -46,6 +45,7 @@ change must keep.
 | [in-class-comments-review.md](./feedback/in-class-comments-review.md) | The client's in-class review (19 Oct): each comment → decision → issue → PR |
 | [uat-script.md](./feedback/uat-script.md) | User acceptance test: 12 tasks, each tied to an FR or a client comment, and how to score them |
 | [uat-log.md](./feedback/uat-log.md) | UAT results, findings and the changes they caused |
+| [budget-bill.md](./feedback/budget-bill.md) | Research for client comment 3.4 (#262): budget documents as an early source of upcoming projects |
 
 ## Design
 
@@ -56,8 +56,9 @@ change must keep.
 | [system-architecture.md](./design/system-architecture.md) | Containers, external systems, backend modules |
 | [er-diagram.md](./design/er-diagram.md) | MongoDB collections, references, indexes |
 | [class-diagram.md](./design/class-diagram.md) | Backend classes |
-| [sequence-diagrams.md](./design/sequence-diagrams.md) | Six main flows |
+| [sequence-diagrams.md](./design/sequence-diagrams.md) | Seven main flows |
 | [api.md](./design/api.md) | Every backend route: guard, body, response, errors, rate limits |
+| [adr.md](./design/adr.md) | Architectural Decision Records: the 11 design decisions behind the code, with their trade-offs |
 
 ## Process
 
@@ -75,17 +76,11 @@ change must keep.
 | --- | --- |
 | [pipeline.md](./operations/pipeline.md) | The import and AI pipeline, precisely: jobs, config, dedup order, AI queue |
 | [pipeline-guide.md](./operations/pipeline-guide.md) | The same pipeline in plain words, and how to run it locally |
-| [sync-and-poll.md](./operations/sync-and-poll.md) | Older Thai notes on e-GP sync (pipeline.md says where they drifted) |
 | [deployment-checklist.md](./operations/deployment-checklist.md) | What to check before, during and after a deploy |
 | [maintenance.md](./operations/maintenance.md) | Keeping it running after release: monitoring, backups, updates, bug reports |
 | [limits-and-retention.md](./operations/limits-and-retention.md) | Connection limits, timeouts and retries, how long each kind of data is kept, secret rotation |
 | [configuration.md](./operations/configuration.md) | Every environment variable, demo-data seeding, data sources, backend against the Docker database |
 
-## Research
-
-| Document | Covers |
-| --- | --- |
-| [budget-bill.md](./research/budget-bill.md) | Budget documents (national act and Bangkok ordinance) as an early source of upcoming projects (#262) |
 
 ## Security
 

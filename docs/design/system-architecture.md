@@ -140,8 +140,8 @@ Every module also uses `DatabaseModule`; those arrows are left out.
 
 ## Deployment
 
-`docker-compose.yml` runs three containers: `frontend` (port 3000),
-`backend` (port 4000) and `db` (`mongo:7`, port 27017, seeded from
-`docker/mongo-seed/` the first time the volume is empty). There is no
-production deployment in the repo yet; see
+Three containers from `docker-compose.yml` (frontend, backend, MongoDB);
+v1.0 ships as a Docker Compose release ([ADR-011](./adr.md#adr-011-ship-v10-as-a-docker-compose-release)).
+Ports, seeding and the edge and hardening files are in
+[architecture.md §8](../architecture.md#8-how-it-runs) and
 [deployment-checklist.md](../operations/deployment-checklist.md).
