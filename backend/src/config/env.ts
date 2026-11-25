@@ -231,6 +231,9 @@ export const env = {
     // Email through Resend's HTTP API — no SMTP client to install.
     resendApiKey: process.env.RESEND_API_KEY ?? "",
     emailFrom: process.env.NOTIFY_EMAIL_FROM ?? "TOR Finder <noreply@torfinder.app>",
+    // Testing only: a Mailpit address (e.g. http://mailpit:8025). Every email
+    // then goes there instead of Resend — viewable in its web UI, never delivered.
+    mailCatcherUrl: process.env.MAIL_CATCHER_URL ?? "",
     // LINE Messaging API: the official account's long-lived channel access token.
     lineChannelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
     // Signs the webhook LINE calls when someone messages the OA — how a user

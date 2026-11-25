@@ -3,7 +3,8 @@ import { createHash, randomBytes } from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import { ClientSession, ObjectId } from "mongodb";
 
-import { canSendEmail, escapeHtml, sendEmail } from "../common/email";
+import { canSendEmail, sendEmail } from "../common/email";
+import { EmailTone, renderEmail } from "../common/email-layout";
 import { env } from "../config/env";
 import { DatabaseService, EmailLinkPurpose } from "../database/database.service";
 
@@ -48,22 +49,33 @@ export type AccountNotice =
   | "account-approved"
   | "account-rejected";
 
-const NOTICES: Record<AccountNotice, { subject: string; body: (origin: string) => string[] }> = {
+type Notice = {
+  subject: string;
+  body: (origin: string) => string[];
+  /** A button under the text, for a notice that has one obvious next step. */
+  action?: (origin: string) => { label: string; url: string };
+  tone?: EmailTone;
+};
+
+const NOTICES: Record<AccountNotice, Notice> = {
   // The company can't sign in while pending, so it can't have turned on email
   // alerts yet — the review outcome is mailed directly, whatever its settings.
   "account-approved": {
     subject: "บัญชีบริษัทของคุณได้รับการอนุมัติแล้ว — TOR Finder",
-    body: (origin) => [
-      "ผู้ดูแลระบบอนุมัติบัญชีบริษัทของคุณใน TOR Finder เรียบร้อยแล้ว",
-      `เข้าสู่ระบบได้ทันทีที่ ${origin}/login`,
+    body: () => [
+      "ผู้ดูแลระบบตรวจสอบและอนุมัติบัญชีบริษัทของคุณใน TOR Finder เรียบร้อยแล้ว",
+      "เข้าสู่ระบบเพื่อค้นหา TOR ที่ตรงกับบริษัท บันทึกรายการที่สนใจ และรับแจ้งเตือนเมื่อมี TOR ใหม่ได้ทันที",
     ],
+    action: (origin) => ({ label: "เข้าสู่ระบบ", url: `${origin}/login` }),
+    tone: "success",
   },
   "account-rejected": {
     subject: "บัญชีบริษัทของคุณไม่ผ่านการอนุมัติ — TOR Finder",
     body: () => [
-      "บัญชีบริษัทของคุณใน TOR Finder ไม่ผ่านการอนุมัติ",
-      "หากคิดว่าเป็นความผิดพลาดหรือต้องการข้อมูลเพิ่มเติม กรุณาติดต่อผู้ดูแลระบบ",
+      "ผู้ดูแลระบบตรวจสอบแล้ว บัญชีบริษัทของคุณใน TOR Finder ไม่ผ่านการอนุมัติ",
+      "หากคิดว่าเป็นความผิดพลาด หรือต้องการทราบเหตุผลเพิ่มเติม กรุณาติดต่อผู้ดูแลระบบ",
     ],
+    tone: "danger",
   },
   // ASVS 6.3.7
   "password-changed": {
@@ -182,34 +194,41 @@ export class AccountLinksService {
 
     const mail = { ...MAIL[purpose], ...(options.intro && { intro: options.intro }) };
     try {
-      await sendEmail({
-        to: user.email,
-        subject: mail.subject,
-        text: [mail.intro, link, mail.expiry].join("\n\n"),
-        html: `<p>${escapeHtml(mail.intro)}</p><p><a href="${escapeHtml(link)}">${escapeHtml(mail.action)}</a></p><p style="color:#6b7280;font-size:13px">${escapeHtml(mail.expiry)}</p>`,
+      const { html, text } = renderEmail({
+        heading: mail.action,
+        paragraphs: [mail.intro],
+        button: { label: mail.action, url: link },
+        footnote: mail.expiry,
       });
+      await sendEmail({ to: user.email, subject: mail.subject, text, html });
     } catch (error) {
       this.logger.warn(`${purpose} email to ${user.email} failed: ${String(error)}`);
     }
   }
 
   /** Mails a notice to the address. Like send(), failures are logged and never change the caller's answer. */
-  /** `details` are extra lines (e.g. when and from which browser), placed after the opening paragraph. */
+  /**
+   * `details` are extra lines (e.g. when and from which browser), placed after
+   * the opening paragraph. A line written "label: value" is shown as a row in
+   * the email's details box.
+   */
   async notify(email: string, notice: AccountNotice, details: string[] = []): Promise<void> {
     if (!canSendEmail()) {
       if (env.isProduction) this.logger.warn(`No RESEND_API_KEY: ${notice} notice to ${email} not sent`);
       return;
     }
-    const { subject, body } = NOTICES[notice];
+    const { subject, body, action, tone } = NOTICES[notice];
     const [opening, ...rest] = body(env.frontendOrigin);
-    const paragraphs = [opening, ...details, ...rest];
+    const rows = details.map((line) => /^([^:]{1,40}):\s+(.+)$/.exec(line));
+    const { html, text } = renderEmail({
+      heading: subject.replace(/ — TOR Finder$/, ""),
+      paragraphs: [opening, ...details.filter((_, i) => !rows[i]), ...rest],
+      details: rows.filter((row) => row !== null).map((row) => [row[1], row[2]] as [string, string]),
+      button: action?.(env.frontendOrigin),
+      tone,
+    });
     try {
-      await sendEmail({
-        to: email,
-        subject,
-        text: paragraphs.join("\n\n"),
-        html: paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join(""),
-      });
+      await sendEmail({ to: email, subject, text, html });
     } catch (error) {
       this.logger.warn(`${notice} notice to ${email} failed: ${String(error)}`);
     }
