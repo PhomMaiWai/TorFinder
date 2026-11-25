@@ -35,7 +35,7 @@ deploy (#235).
 | K15 | Backend tests passing in CI | 100% on every PR | About 520 tests, green on the last `main` run (PR #306) | ✅ Met |
 | K16 | Frontend tests run in CI | Yes | No | ❌ Not met |
 | K17 | Pull requests with a recorded review | 100% | 76 of 76 since the review rule on 3 Nov (81 of 168 over the whole project) | ✅ Met since 3 Nov |
-| K18 | UAT tasks completed by test users | 90% (team target) | UAT not run yet | ⏳ After #232 |
+| K18 | UAT tasks completed by test users | 90% (team target) | Script ready ([uat-script.md](../feedback/uat-script.md)); session not run yet | ⏳ After #232 |
 
 ## Data coverage and quality
 
@@ -85,7 +85,7 @@ runs somewhere stable.
 | **K15** Backend tests green | The Backend job in `.github/workflows/auth.yml` on every PR. |
 | **K16** Frontend tests in CI | A CI job that runs `frontend/` tests. See [testing.md](../process/testing.md#what-ci-runs). |
 | **K17** Reviewed PRs | Merged PRs (Dependabot not counted) with a review from a teammate other than the author, from the GitHub API. Since 3 Nov the `main` ruleset requires one approving review, which keeps this at 100%; the history is in [retrospectives.md](../process/retrospectives.md#review-and-issue-linking-per-iteration). Numbers as of 25 Nov 2026. |
-| **K18** UAT completion | Share of scripted tasks each test user finishes without help in the UAT session (#232), plus a short satisfaction score (1 to 5, team target 4 or more). |
+| **K18** UAT completion | Share of scripted task attempts finished without help in the UAT session (#232), plus a short satisfaction score (1 to 5, team target 4 or more). Tasks and scoring: [uat-script.md](../feedback/uat-script.md); results: [uat-log.md](../feedback/uat-log.md). |
 
 ## How often to measure
 

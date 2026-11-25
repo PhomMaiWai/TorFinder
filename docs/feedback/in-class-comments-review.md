@@ -54,8 +54,10 @@ two were merged within four weeks of the review (19 Oct → 18 Nov).
 - **3.5 Accessibility audit** (#263), the only open item.
 - **2.5 Structured scoring weights:** extract `price X%, technical Y%` as
   numbers and explain them to the bidder.
-- **User acceptance test** (#232) with a script and a feedback log, so the
-  next round of feedback comes from real users, not only the client review.
+- **User acceptance test** (#232), so the next round of feedback comes from
+  real users, not only the client review. The 12-task script is in
+  [uat-script.md](./uat-script.md), and each task names the client comment it
+  checks. Results go in [uat-log.md](./uat-log.md).
 
 ## Original analysis (19 Oct 2026)
 

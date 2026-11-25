@@ -9,6 +9,7 @@ docs/
 ├── architecture.md start here: the code map and the rules
 ├── project/        what we are building and how the work went
 ├── requirements/   what the system must do
+├── feedback/       client review and user acceptance test
 ├── design/         how it is built: diagrams and API
 ├── process/        how we work: SDLC, team workflow, code, tests
 ├── operations/     running the import pipeline and deploying
@@ -36,6 +37,14 @@ change must keep.
 | [srs.md](./requirements/srs.md) | The team's Software Requirements Specification (SRS v1.0, Aug 21 2026) |
 | [summary.md](./requirements/summary.md) | The SRS condensed: FR-01 to FR-26, NFRs, stakeholders, screens |
 | [kpi.md](./requirements/kpi.md) | Success measures with targets, how to measure them, and today's values |
+
+## Feedback
+
+| Document | Covers |
+| --- | --- |
+| [in-class-comments-review.md](./feedback/in-class-comments-review.md) | The client's in-class review (19 Oct): each comment → decision → issue → PR |
+| [uat-script.md](./feedback/uat-script.md) | User acceptance test: 12 tasks, each tied to an FR or a client comment, and how to score them |
+| [uat-log.md](./feedback/uat-log.md) | UAT results, findings and the changes they caused |
 
 ## Design
 
