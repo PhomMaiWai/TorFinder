@@ -61,6 +61,13 @@ describe("assessConfidence", () => {
     assert.equal(assessConfidence(cover, {}).level, "low");
   });
 
+  it("never scores a machine reading as certain, even when the model says 1.0", () => {
+    const sure = { ...FULL, confidence: 1 };
+    const result = assessConfidence(sure, { budgetAmount: 1_000_000, referencePrice: 980_000 });
+    assert.equal(result.score, 0.95);
+    assert.equal(result.level, "high");
+  });
+
   it("handles extractions stored before payment terms and reference price existed", () => {
     const v1 = { ...FULL };
     delete v1.paymentTerms;

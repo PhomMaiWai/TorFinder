@@ -33,6 +33,13 @@ const SAME_AMOUNT = 0.01;
 const MISMATCH_PENALTY = 0.25;
 const HIGH = 0.8;
 const MEDIUM = 0.6;
+/**
+ * The most a machine reading can score. A model often rates itself 1.0, and a
+ * full document whose figures match the portal would then show as 100% — a
+ * certainty no automatic reading has. Only a person checking the document can
+ * vouch for it, which is what `extraction.reviewed` records, separately.
+ */
+export const MAX_SCORE = 0.95;
 
 /**
  * How far an extraction can be trusted, judged on evidence rather than taken
@@ -58,7 +65,7 @@ export function assessConfidence(
   let score = extraction.confidence * (0.4 + 0.6 * coverage);
   score *= (1 - MISMATCH_PENALTY) ** verify.length;
   if (verify.length === 0 && confirmed.length > 0) score += 0.05;
-  score = Math.round(Math.min(1, Math.max(0, score)) * 100) / 100;
+  score = Math.round(Math.min(MAX_SCORE, Math.max(0, score)) * 100) / 100;
 
   return {
     score,

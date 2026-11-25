@@ -175,18 +175,17 @@ export function TorDocumentDetails({
       </h2>
       {extraction && assessment && (
         <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          {/* An admin checked it against the document: that replaces the model's own estimate. */}
-          {extraction.reviewed ? (
+          {/* The machine reading's own score always shows; an admin's check is told beside it, not in its place. */}
+          <span
+            title={t("confidenceHint")}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums ${LEVEL_STYLE[assessment.level]}`}
+          >
+            {t("confidenceLabel", { score: Math.round(assessment.score * 100) })}
+          </span>
+          {extraction.reviewed && (
             <span className="flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-0.5 text-xs font-semibold text-success">
               <CheckCircle2 size={12} />
               {t("reviewedBadge")}
-            </span>
-          ) : (
-            <span
-              title={t("confidenceHint")}
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums ${LEVEL_STYLE[assessment.level]}`}
-            >
-              {t("confidenceLabel", { score: Math.round(assessment.score * 100) })}
             </span>
           )}
           <p className="text-xs text-ink-subtle">{t("extractionDisclaimer", { model: extraction.model })}</p>
