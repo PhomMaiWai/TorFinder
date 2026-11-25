@@ -16,8 +16,11 @@ export const canSendEmail = () => Boolean(env.notify.mailCatcherUrl || env.notif
 
 /** "TOR Finder <noreply@x>" → { Name, Email }; a bare address has no name. */
 function parseFrom(from: string): { Name?: string; Email: string } {
-  const match = /^\s*(.*?)\s*<([^>]+)>\s*$/.exec(from);
-  return match ? { Name: match[1] || undefined, Email: match[2] } : { Email: from.trim() };
+  // Sliced rather than matched: no regex to backtrack on (test/regex-audit).
+  const open = from.lastIndexOf("<");
+  const close = from.lastIndexOf(">");
+  if (open === -1 || close < open) return { Email: from.trim() };
+  return { Name: from.slice(0, open).trim() || undefined, Email: from.slice(open + 1, close).trim() };
 }
 
 async function check(res: Response): Promise<void> {
