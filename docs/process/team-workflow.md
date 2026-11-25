@@ -87,7 +87,7 @@ other two roles were shared rather than held by one person.
 
 | Artifact | Where |
 | --- | --- |
-| Deliverables | [deliverables.md](../project/deliverables.md): D1 to D12 with owner, acceptance criteria and evidence; new issues and PRs name their deliverable |
+| Deliverables | [deliverables.md](../project/deliverables.md): D1 to D12 with owner, acceptance criteria and evidence. Each is a [GitHub milestone](https://github.com/PhomMaiWai/TorFinder/milestones), and all 207 issues sit under one (25 Nov); new issues and PRs name their deliverable |
 | Product backlog | GitHub Projects board "TORFinder": 207 issues so far (186 closed, 21 open), epics with sub-issues, each tagged with its FR and MoSCoW priority. New issues start from the [task or bug template](../../.github/ISSUE_TEMPLATE/) (goal, acceptance criteria, deliverable, design reference) |
 | Iteration backlog | The board's Iteration view; written up in [project/iterations/](../project/iterations/) |
 | Increment | `main`, always runnable with `docker compose up`; 168 pull requests merged into it (plus 13 from Dependabot) |

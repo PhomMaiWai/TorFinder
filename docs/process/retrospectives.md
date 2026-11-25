@@ -80,6 +80,6 @@ gh pr list --state merged --limit 500 --json number,mergedAt,author,reviews,clos
 | --- | --- | --- |
 | Issue templates (task and bug) with Goal, Acceptance criteria, Deliverable and Design reference; no blank issues | @SKlv1ain | ✅ Done 25 Nov: [`.github/ISSUE_TEMPLATE/`](../../.github/ISSUE_TEMPLATE/) |
 | PR template asks for the issue number, the deliverable and whether the design docs were updated; Definition of Done says the same | @SKlv1ain | ✅ Done 25 Nov: [`.github/pull_request_template.md`](../../.github/pull_request_template.md), [team-workflow.md](./team-workflow.md#definition-of-done) |
-| Every open issue gets a deliverable (milestone) | @SKlv1ain | This submission: milestones on GitHub |
+| Every issue gets a deliverable (milestone) | @SKlv1ain | ✅ Done 25 Nov: 12 milestones D1 to D12, 207 of 207 issues assigned ([milestones](https://github.com/PhomMaiWai/TorFinder/milestones)) |
 | Run the user acceptance test with a script and a feedback log | Whole team | #232 |
 | Write retrospective notes in this file at the end of each iteration, not only in chat | Whole team | From the next iteration |

@@ -25,7 +25,8 @@ through automated matching.
 - Docker Compose deployment for local/dev
 
 What we hand over, who owns each piece and how we know it is done is in
-[deliverables.md](./deliverables.md) (D1 to D12). New tasks name their
+[deliverables.md](./deliverables.md) (D1 to D12). Each deliverable is a
+GitHub milestone with every board task under one, and new tasks name their
 deliverable in the issue template's Deliverable field.
 
 **Out of scope**

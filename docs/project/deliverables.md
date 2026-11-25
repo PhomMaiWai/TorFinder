@@ -3,8 +3,10 @@
 What the team hands over at the end of the Collaborative Software Process
 and Project Management course (01219346), who owns each piece, how we know
 it is done, and where the evidence is. Every task on the board belongs to
-one of these deliverables (the `Deliverable` line in each issue, see
-[team-workflow.md](../process/team-workflow.md#how-a-task-is-written)).
+one of these deliverables: each deliverable is a
+[GitHub milestone](https://github.com/PhomMaiWai/TorFinder/milestones) of
+the same name (D1 to D12, all 207 issues assigned on 25 Nov), and new
+issues pick it in the task template's Deliverable field.
 
 Status checked against `main` on 25 Nov 2026. "Lead" is who wrote most of
 that deliverable according to the git history; the team can reassign.
