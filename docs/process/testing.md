@@ -170,7 +170,7 @@ issue under milestone D11.
 | FR-04 | Import TORs from e-GP for BMA | ✅ Done | `tor-integration.e2e`, `portal-fetch`, `mea.e2e`, `datagov.e2e` | |
 | FR-05 | De-duplicate across sources | ✅ Done | `tor-normalize-dedup` | |
 | FR-06 | Log and alert admin on sync failure | ✅ Done | `admin-alerts` | |
-| FR-07 | Classify software / not software | ✅ Done | Admin override only: `tor-corrections.e2e`. **No test for the import filter** | |
+| FR-07 | Classify software / not software | ✅ Done, changed on purpose: a keyword filter at import plus an admin override, instead of the AI classifier planned in #137 | Admin override only: `tor-corrections.e2e`. **No test for the import filter** | |
 | FR-08 | AI extracts scope, qualifications, price, deadline | ✅ Done (needs `VERTEX_PROJECT_ID`) | `extraction-confidence`, `tender-bundle`, `document-metadata`, `feedback-deadline` (model faked) | Skip without Vertex AI credentials |
 | FR-09 | Search by keyword, agency, category | ✅ Done | `tor.e2e`; frontend `tor-search-sort.e2e` | |
 | FR-10 | Filter by budget, deadline, tech stack | 🟡 Partial: no tech-stack filter | frontend `tor-deadline-filter` | |
