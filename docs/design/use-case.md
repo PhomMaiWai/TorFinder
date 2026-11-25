@@ -127,7 +127,7 @@ flowchart LR
 | UC1 | Search and filter TORs | Anyone | `GET /api/tor` | FR-09, FR-10 |
 | UC1b | Find TORs similar to a past project, the company profile or a TOR | Anyone | `POST /api/tor/similar` | FR-09, FR-13 |
 | UC2 | View TOR detail, timeline and documents | Anyone | `GET /api/tor/:id`, `/documents/...`, `/egp-documents/...` | FR-11, FR-17 |
-| UC3 | See budget check and bid insight | Anyone | `GET /api/matching/tor/:id/budget`, `/bid-insight` | FR-24 |
+| UC3 | See budget check and bid insight | Anyone | `GET /api/matching/tor/:id/budget`, `/bid-insight` | — (extra; FR-24 was removed) |
 | UC4 | See whether a draft is open for comment, and until when | Anyone | `GET /api/tor/:id` (`feedbackDeadline`, `bidding`) | FR-18 |
 | UC5 | Report a problem | Anyone | `POST /api/tor/:torId/reports` | FR-21 |
 | UC6 | Sign up as a company | Public | `POST /api/auth/signup`, `/auth/google/complete` | FR-01 |
@@ -151,7 +151,7 @@ flowchart LR
 | UC27 | Extract TOR fields with AI | Scheduler | `ExtractionScheduler` | FR-08 |
 | UC28 | Send match alerts | Scheduler | `MatchingService.notifyMatches` (after every import and extraction) | FR-14 |
 
-FR numbers refer to [requirements.md](../requirements/summary.md). They are the
+FR numbers refer to [summary.md](../requirements/summary.md). They are the
 closest match, not an official mapping from the SRS.
 
 ## Things the diagram does not show

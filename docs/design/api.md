@@ -519,7 +519,7 @@ backend route of the same name. `frontend/src/proxy.ts` refuses every
 | `/api/tor/[id]/documents/...` | GET | `/tor/:id/documents/...` | ✓ |
 | `/api/tor/[id]/egp-documents/...` | GET | `/tor/:id/egp-documents/...` | ✓ |
 
-Everything else (sign-up, TOR create and edit, admin actions, feedback,
+Everything else (sign-up, TOR create and edit, admin actions,
 reports) goes through Server Actions in `frontend/src/app/**/actions.ts`
 or is fetched by Server Components.
 
@@ -528,9 +528,6 @@ or is fetched by Server Components.
 Found while writing this page. They are listed here so the page is honest
 about the current code, not because they are intended.
 
-   it asks the Admin-only `GET /matching/tor/:id/companies`, so for anyone
-   but an admin the company list comes back empty. It can probably be
-   deleted.
-2. **Rate limits are per process.** With more than one backend instance,
+1. **Rate limits are per process.** With more than one backend instance,
    each one counts separately (see
    [deployment-checklist.md](../operations/deployment-checklist.md)).

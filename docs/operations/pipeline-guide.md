@@ -130,8 +130,7 @@ Beyond the audit log:
   the extraction prompt or schema changes, and every previously-extracted
   record becomes eligible for the queue again, once, instead of being
   trusted forever on an outdated read.
-- **There's no stage-priority in the AI queue today**, despite what the
-  older Thai-language `docs/operations/sync-and-poll.md` says. It's strictly
+- **There's no stage-priority in the AI queue today**. It's strictly
   newest-first among what qualifies. If you're relying on "drafts get read
   before awards," verify that against `pickPending()` yourself before
   depending on it — see `pipeline.md`'s correction.

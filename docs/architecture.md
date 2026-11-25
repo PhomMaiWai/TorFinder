@@ -222,9 +222,10 @@ Three containers from `docker-compose.yml`: `frontend` on port 3000,
 `backend` on 4000, `db` (MongoDB 7) on 27017, seeded with real TORs the
 first time its volume is empty. Only the frontend needs to be public. The
 importers and the AI queue run inside the backend process, so there is no
-separate worker or queue service. Production hosting is not chosen yet
-(#235); [deployment-checklist.md](./operations/deployment-checklist.md)
-lists what to get right first, and
+separate worker or queue service. v1.0 ships as a Docker Compose release,
+not a hosted site ([ADR-011](./design/adr.md#adr-011-ship-as-docker-compose-2026-11-25));
+[deployment-checklist.md](./operations/deployment-checklist.md)
+lists what to get right before a server deploy, and
 [maintenance.md](./operations/maintenance.md) what to watch after.
 
 ## 9. Where to look next
@@ -234,6 +235,7 @@ lists what to get right first, and
 - Collections and indexes: [er-diagram.md](./design/er-diagram.md)
 - Step-by-step flows: [sequence-diagrams.md](./design/sequence-diagrams.md)
 - Every route: [api.md](./design/api.md)
+- Why it is built this way: [adr.md](./design/adr.md)
 - Import and AI pipeline in full: [pipeline.md](./operations/pipeline.md)
 - Who can do what: [roles-and-features.md](./project/roles-and-features.md)
 - How we work on the code: [developer-guide.md](./process/developer-guide.md)
